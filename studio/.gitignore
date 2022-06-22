@@ -1,0 +1,11 @@
+# Build output
+/dist
+
+# Dependency directories
+/node_modules
+
+# Yarn
+yarn-error.log
+yarn.lock
+.pnp/
+.pnp.js
