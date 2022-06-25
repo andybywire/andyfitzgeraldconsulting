@@ -11,6 +11,9 @@ import article from './documents/article'
 import client from './documents/client'
 import review from './documents/review'
 import event from './documents/event'
+import collection from './documents/collection'
+import singleton from './documents/singleton'
+import settings from './documents/settings'
 
 // Then we give our schema to the builder and provide the result to Sanity
 export default createSchema({
@@ -24,6 +27,9 @@ export default createSchema({
     article,
     client,
     review,
-    event
+    event,
+    collection,
+    singleton,
+    settings
   ]),
 })

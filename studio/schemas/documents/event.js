@@ -39,7 +39,8 @@ export default {
         list: [
           {title: 'Talk', value: 'talk'},
           {title: 'Keynote', value: 'keynote'},
-          {title: 'Workshop', value: 'workshop'}
+          {title: 'Workshop', value: 'workshop'},
+          {title: 'Panel', value: 'panel'}
         ]
       }
     },

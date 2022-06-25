@@ -3,7 +3,7 @@ import S from '@sanity/desk-tool/structure-builder'
 // import { MdPerson } from "react-icons/md";
 
 const hiddenDocTypes = (listItem) =>
-!['media.tag', 'skosConcept', 'skosConceptScheme'].includes(
+!['media.tag', 'settings', 'skosConcept', 'skosConceptScheme'].includes(
   listItem.getId()
 )
 
@@ -13,8 +13,12 @@ export default () =>
     .items([
       ...S.documentTypeListItems().filter(hiddenDocTypes),
       S.divider(),
-      S.documentTypeListItem("skosConceptScheme").title("Taxonomy Schemes"),
-      S.documentTypeListItem("skosConcept").title("Concepts"),
+      S.listItem().title("Settings")
+        .child(
+          S.document().schemaType('settings').documentId('settings')
+        ),
+      S.documentTypeListItem('skosConceptScheme').title('Taxonomy Schemes'),
+      S.documentTypeListItem('skosConcept').title('Concepts'),
       // S.divider(),
       // S.listItem()
       //   .title('Settings')
