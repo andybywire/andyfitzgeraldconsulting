@@ -78,7 +78,14 @@ export default {
       description: '60 - 100 char',
       rows: 2
     }, 
-    // Review reference goes here
+    {
+      name: 'review',
+      title: 'Project Review',
+      type: 'reference',
+      to: [
+        {type: 'review'}
+      ]
+    },
     {
       title: 'At a Glance', 
       name: 'atGlance',
