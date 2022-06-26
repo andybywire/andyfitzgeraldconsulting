@@ -32,6 +32,15 @@ export default {
       type: 'image'
     },
     {
+      name: 'banner',
+      title: 'Banner',
+      type: 'banner',
+      options: {
+        collapsible: true,
+        collapsed: false
+      }
+    },
+    {
       title: 'Body', 
       name: 'bodyText',
       type: 'array', 

@@ -15,6 +15,9 @@ import collection from './documents/collection'
 import singleton from './documents/singleton'
 import settings from './documents/settings'
 
+// object schemas
+import banner from './objects/banner'
+
 // Then we give our schema to the builder and provide the result to Sanity
 export default createSchema({
   // We name our schema
@@ -30,6 +33,7 @@ export default createSchema({
     event,
     collection,
     singleton,
-    settings
+    settings,
+    banner
   ]),
 })

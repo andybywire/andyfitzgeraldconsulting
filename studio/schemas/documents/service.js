@@ -38,6 +38,11 @@ export default {
       ]
     },
     {
+      name: 'banner',
+      title: 'Banner',
+      type: 'banner'
+    },
+    {
       name: 'category',
       title: 'Category',
       type: 'reference',

@@ -24,15 +24,9 @@ export default {
       rows: 3
     },
     {
-      name: 'defaultBannerCopy',
-      title: 'Default Banner Copy',
-      type: 'text',
-      rows: 3
-    },
-    {
-      name: 'defaultBannerImg',
-      title: 'Default Banner Image',
-      type: 'image'
+      name: 'defaultBanner',
+      title: 'Default Banner',
+      type: 'banner'
     },
     {
       name: 'defaultCta',

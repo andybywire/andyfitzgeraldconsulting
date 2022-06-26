@@ -68,14 +68,13 @@ export default {
     },
     {
       name: 'banner',
-      title: 'Banner Copy',
-      type: 'text',
-      rows: 3
-    },
-    {
-      name: 'bannerImg',
-      title: 'Banner Image',
-      type: 'image'
+      title: 'Banner',
+      type: 'banner',
+      description: 'Banner image and caption for this collection type',
+      options: {
+        collapsible: true,
+        collapsed: false
+      }
     },
     {
       name: 'reviewBlockTitle',
