@@ -1,7 +1,10 @@
+import {MdOutlineDesignServices} from 'react-icons/md'
+
 export default {
   name: 'service',
   type: 'document',
   title: 'Services',
+  icon: MdOutlineDesignServices,
   fields: [
     {
       name: 'title',
@@ -77,13 +80,6 @@ export default {
       rows: 5
     },
     {
-      name: 'cta',
-      type: 'text',
-      title: 'Call to Action',
-      description: '60 - 100 char',
-      rows: 2
-    },
-    {
       title: 'Service Overview', 
       name: 'serviceOverview',
       type: 'array',
@@ -94,6 +90,11 @@ export default {
       name: 'bodyText',
       type: 'array', 
       of: [{type: 'block'}]
+    },
+    {
+      name: 'cta',
+      title: 'Call to Action',
+      type: 'cta'
     }
   ]
 }

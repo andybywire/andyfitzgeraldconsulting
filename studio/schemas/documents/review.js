@@ -1,7 +1,10 @@
+import {MdOutlineReviews} from 'react-icons/md'
+
 export default {
   name: 'review',
   type: 'document',
   title: 'Reviews',
+  icon: MdOutlineReviews,
   fields: [
     {
       name: 'author',

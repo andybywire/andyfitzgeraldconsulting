@@ -1,7 +1,10 @@
+import {MdEventAvailable} from 'react-icons/md'
+
 export default {
   name: 'event',
   type: 'document',
   title: 'Events',
+  icon: MdEventAvailable,
   initialValue: {
     type: 'talk'
   },

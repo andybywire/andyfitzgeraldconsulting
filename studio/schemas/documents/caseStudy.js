@@ -1,7 +1,10 @@
+import {GrBriefcase} from 'react-icons/gr'
+
 export default {
   name: 'caseStudy',
   type: 'document',
   title: 'Case Studies',
+  icon: GrBriefcase,
   fields: [
     {
       name: 'title',
@@ -23,9 +26,10 @@ export default {
       type: 'date'
     },
     {
-      title: 'Hero Image',
+      title: 'Card Hero Image',
       name: 'heroImage',
       type: 'image',
+      description: 'This image will appear on the case study preview card',
       options: {
         hotspot: true
       },
@@ -51,11 +55,13 @@ export default {
       }
     },
     {
-      name: 'coverText',
-      type: 'text',
-      title: 'Cover Text',
-      description: 'Text that appears over the header cover image. 60 - 75 char.',
-      rows: 2
+      name: 'banner',
+      title: 'Banner',
+      type: 'banner',
+      options: {
+        collapsible: true,
+        collapsed: false
+      }
     },
     {
       name: 'shortDescription',
@@ -71,13 +77,6 @@ export default {
       description: 'up to 150 char, likely truncation @ 70',
       rows: 3
     },
-    {
-      name: 'cta',
-      type: 'text',
-      title: 'Call to Action',
-      description: '60 - 100 char',
-      rows: 2
-    }, 
     {
       name: 'review',
       title: 'Project Review',
@@ -128,13 +127,63 @@ export default {
       title: 'Project Approach', 
       name: 'projectApproach',
       type: 'array', 
-      of: [{type: 'block'}]
+      of: [
+        {type: 'block'},
+        {type: 'image',
+        options: {
+            hotspot: true
+          },
+          fields: [
+            {
+              name: 'caption',
+              type: 'string',
+              title: 'Caption',
+              options: {
+                isHighlighted: true 
+              }
+            },
+            {
+              name: 'altText',
+              type: 'string',
+              title: 'Alt Text',
+              options: {
+                isHighlighted: true 
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       title: 'Project Outcome', 
       name: 'projectOutcome',
       type: 'array', 
-      of: [{type: 'block'}]
+      of: [
+        {type: 'block'},
+        {type: 'image',
+          options: {
+            hotspot: true
+          },
+          fields: [
+            {
+              name: 'caption',
+              type: 'string',
+              title: 'Caption',
+              options: {
+                isHighlighted: true 
+              }
+            },
+            {
+              name: 'altText',
+              type: 'string',
+              title: 'Alt Text',
+              options: {
+                isHighlighted: true 
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       title: 'After Image',
@@ -155,6 +204,11 @@ export default {
           title: 'Alt Text'
         }
       ]
+    },
+    {
+      name: 'cta',
+      title: 'Call to Action',
+      type: 'cta'
     }
   ]
 }

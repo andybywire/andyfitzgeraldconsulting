@@ -1,7 +1,10 @@
+import {FiUsers} from 'react-icons/fi'
+
 export default {
   name: 'client',
   type: 'document',
   title: 'Clients',
+  icon: FiUsers,
   fields: [
     {
       name: 'name',
@@ -21,13 +24,33 @@ export default {
       name: 'logo',
       title: 'Logo',
       type: 'image',
-      description: 'Logos should be square and 300px'
+      description: 'Logos should be square and 300px',
+      fields: [
+        {
+          name: 'altText',
+          type: 'string',
+          title: 'Alt Text',
+          options: {
+            isHighlighted: true 
+          }
+        }
+      ]
     },
     {
       name: 'tile',
       title: 'Tile',
       type: 'image',
-      description: 'Client tiles should be 500px by 300px'
+      description: 'Client tiles should be 500px by 300px',
+      fields: [
+        {
+          name: 'altText',
+          type: 'string',
+          title: 'Alt Text',
+          options: {
+            isHighlighted: true 
+          }
+        }
+      ]
     }
   ]
 }

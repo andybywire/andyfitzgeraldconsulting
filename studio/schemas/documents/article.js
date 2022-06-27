@@ -1,6 +1,9 @@
+import {GrArticle} from 'react-icons/gr'
+
 export default {
   name: 'article',
   type: 'document',
+  icon: GrArticle,
   title: "Articles",
   fields: [
     {
@@ -99,6 +102,9 @@ export default {
       of: [
         {type: 'block'},
         {type: 'image',
+          options: {
+            hotspot: true
+          },
           fields: [
             {
               name: 'caption',
@@ -119,6 +125,11 @@ export default {
           ]
         }
       ]
+    },
+    {
+      name: 'cta',
+      title: 'Call to Action',
+      type: 'cta'
     }
   ]
 }

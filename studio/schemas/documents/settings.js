@@ -26,14 +26,17 @@ export default {
     {
       name: 'defaultBanner',
       title: 'Default Banner',
-      type: 'banner'
+      type: 'banner',
+      description: '60 - 75 characters',
+      options: {
+        collapsible: false
+      }
     },
     {
       name: 'defaultCta',
-      type: 'text',
       title: 'Default Call to Action',
-      description: '60 - 100 char',
-      rows: 2
+      type: 'cta',
+      description: '60 - 100 characters'
     }
   ]
 }

@@ -64,7 +64,17 @@ export default {
       name: 'homeHero',
       title: 'Home Page Hero Image',
       hidden: ({parent}) => parent.type !== 'home',
-      type: 'image'
+      type: 'image',
+      fields: [
+        {
+          name: 'altText',
+          type: 'string',
+          title: 'Alt Text',
+          options: {
+            isHighlighted: true 
+          }
+        }
+      ]
     },
     {
       name: 'banner',
@@ -77,10 +87,23 @@ export default {
       }
     },
     {
+      name: 'servicesBlockTitle',
+      title: 'Services Block Title',
+      type: 'string',
+      hidden: ({parent}) => parent.type !== 'home'
+    },
+    {
+      name: 'servicesBlockCopy',
+      title: 'Services Block Copy',
+      hidden: ({parent}) => parent.type !== 'home',
+      type: 'text',
+      rows: 3
+    }, 
+    {
       name: 'reviewBlockTitle',
       title: 'Review Block Title',
       type: 'string',
-      hidden: ({parent}) => parent.type !== 'home',
+      hidden: ({parent}) => parent.type !== 'home'
     },
     {
       name: 'reviewBlockCopy',
@@ -94,7 +117,7 @@ export default {
       title: 'Review Block Entries',
       // consider validating based on type — 3 for home, two for everywhere else   
       hidden: ({parent}) => {
-        if (parent.type == 'home' || parent.type == 'services') {
+        if (parent.type == 'home' || parent.type == 'caseStudies') {
             return false
           } else {
             return true
@@ -114,7 +137,7 @@ export default {
       title: 'Client Grid Block Title',
       type: 'string',
       hidden: ({parent}) => {
-        if (parent.type == 'services' || parent.type == 'speaking') {
+        if (parent.type == 'home' || parent.type == 'caseStudy') {
             return false
           } else {
             return true
@@ -125,7 +148,7 @@ export default {
       name: 'clientBlockCopy',
       title: 'Client Grid Block Copy',
       hidden: ({parent}) => {
-        if (parent.type == 'services' || parent.type == 'speaking') {
+        if (parent.type == 'home' || parent.type == 'caseStudy') {
             return false
           } else {
             return true
@@ -148,10 +171,8 @@ export default {
     },
     {
       name: 'cta',
-      type: 'text',
       title: 'Call to Action',
-      description: '60 - 100 char',
-      rows: 2
+      type: 'cta'
     }
   ]
 }

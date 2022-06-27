@@ -1,6 +1,5 @@
 import S from '@sanity/desk-tool/structure-builder'
-// import { MdSettings } from "react-icons/md";
-// import { MdPerson } from "react-icons/md";
+import {RiSettings4Line} from 'react-icons/ri'
 
 const hiddenDocTypes = (listItem) =>
 !['media.tag', 'settings', 'skosConcept', 'skosConceptScheme'].includes(
@@ -13,19 +12,10 @@ export default () =>
     .items([
       ...S.documentTypeListItems().filter(hiddenDocTypes),
       S.divider(),
-      S.listItem().title("Settings")
+      S.listItem().title("Settings").icon(RiSettings4Line)
         .child(
           S.document().schemaType('settings').documentId('settings')
         ),
       S.documentTypeListItem('skosConceptScheme').title('Taxonomy Schemes'),
-      S.documentTypeListItem('skosConcept').title('Concepts'),
-      // S.divider(),
-      // S.listItem()
-      //   .title('Settings')
-      //   .icon(RiSettings4Line)
-      //   .child(
-      //     S.document()
-      //       .schemaType('siteSettings')
-      //       .documentId('siteSettings')
-      //   )
+      S.documentTypeListItem('skosConcept').title('Concepts')
     ])

@@ -17,6 +17,7 @@ import settings from './documents/settings'
 
 // object schemas
 import banner from './objects/banner'
+import cta from './objects/cta'
 
 // Then we give our schema to the builder and provide the result to Sanity
 export default createSchema({
@@ -25,15 +26,16 @@ export default createSchema({
   // Then proceed to concatenate our document type
   // to the ones provided by any plugins that are installed
   types: schemaTypes.concat([
-    service,
-    caseStudy,
     article,
+    caseStudy,
+    service,
     client,
     review,
     event,
     collection,
     singleton,
     settings,
-    banner
+    banner,
+    cta
   ]),
 })

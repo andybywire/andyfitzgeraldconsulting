@@ -1,6 +1,9 @@
+import {GrDocumentText} from 'react-icons/gr'
+
 export default {
   name: 'singleton',
   type: 'document',
+  icon: GrDocumentText,
   title: 'Singleton Pages',
   fields: [
     {
@@ -29,7 +32,20 @@ export default {
     {
       name: 'heroImg',
       title: 'Singleton Page Hero Image',
-      type: 'image'
+      type: 'image',
+      options: {
+        hotspot: true
+      },
+      fields: [
+        {
+          name: 'altText',
+          type: 'string',
+          title: 'Alt Text',
+          options: {
+            isHighlighted: true 
+          }
+        }
+      ]
     },
     {
       name: 'banner',
@@ -47,6 +63,9 @@ export default {
       of: [
         {type: 'block'},
         {type: 'image',
+          options: {
+            hotspot: true
+          },
           fields: [
             {
               name: 'caption',
