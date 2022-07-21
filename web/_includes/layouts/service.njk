@@ -1,0 +1,10 @@
+---
+layout: layouts/base.njk
+---
+<article>
+  <h1>{{ service.title }}</h1>
+  <img src="{% articleHero service.heroImage %}" alt="">
+  {{ service.overview | markdownify | safe }}
+  {{ service.body | markdownify | safe }}
+  <p><a href="{{ '/' | url }}">← Home</a></p>
+</article>

@@ -1,0 +1,22 @@
+// Typography
+$header: 'Lato', Roboto, Arial, sans-serif;
+$body: 'Open Sans', Roboto, Arial, sans-serif;
+
+// Colors
+$blue: #4e9dbc;
+$light-gray: rgba(43,40,40,0.05);
+$medium-gray: #646464;
+$dark-gray: #2b2b2b;
+$black: #000000;
+$white: #fefefe;
+
+// Grid
+$max-width: 1000px;
+$card-min: 330px; 
+$card-max: 375px;
+
+// Breakpoints
+$breakpoints: (
+  'medium': 600px,
+  'large':  800px
+) !default;

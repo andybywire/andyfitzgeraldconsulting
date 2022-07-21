@@ -18,6 +18,11 @@ export default {
       type: 'string'
     },
     {
+      name: 'siteSubtitle',
+      title: 'Site Subtitle',
+      type: 'string'
+    },
+    {
       name: 'description',
       title: 'Site Meta Description',
       type: 'text',

@@ -1,0 +1,8 @@
+---
+layout: layouts/base.njk
+---
+<article>
+  <h1>{{ landing.title }}</h1>
+  {{ landing.copy | markdownify | safe }}
+  <p><a href="{{ '/' | url }}">← Home</a></p>
+</article>
