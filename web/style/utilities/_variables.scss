@@ -1,3 +1,6 @@
+// Variables that are used across multiple style sheet
+// Variables used in a single sheet are located at the top of that sheet
+
 // Typography
 $header: 'Lato', Roboto, Arial, sans-serif;
 $body: 'Open Sans', Roboto, Arial, sans-serif;
@@ -10,8 +13,10 @@ $dark-gray: #2b2b2b;
 $black: #000000;
 $white: #fefefe;
 
+// Wrap
+$max-width: 1000px; // max page width on desktop
+
 // Grid
-$max-width: 1000px;
 $card-min: 330px; 
 $card-max: 375px;
 
