@@ -18,35 +18,36 @@
     <main>
       {{ content | safe }}
     </main>
+ 
+    <section class="cta">
+      <div>
+        <p>Here's the CTA block</p>
+        <p>This will be a button.</p>
+      </div>
+    </section>
+
     <footer>
-        <section class="cta">
-          {# <div class="wrap"> #}
-            <p class="wrap">Here's the CTA block</p>
-          {# </div> #}
-        </section>
-        <section class="footer">
-          <div class="detail wrap">
-            <p class="description">Andy Fitzgerald Consulting, LLC is an independent user experience architecture and design practice based in Seattle.</p>    
-            <ul class="nav">
-              <li><a href="/services">services</a></li>
-              <li><a href="/case-studies">studies</a></li>
-              <li><a href="/reviews">reviews</a></li>
-              <li><a href="/writing">writing</a></li>
-              <li><a href="/speaking">speaking</a></li>
-              <li><a href="/about">about</a></li>
-              <!-- <li><a href="/contact">contact</a></li> -->
-            </ul> 
-          </div>
-          <div class="wrap">
-            <ul class="social">
-              <li class="linkedin"><a href="http://www.linkedin.com/in/andyfitzgerald" target="_blank" rel="noopener">{% include '../icons/linkedin.svg' %}</a></li>
-              <li class="twitter"><a href="https://twitter.com/andybywire" target="_blank" rel="noopener">{% include '../icons/twitter.svg' %}</a></li>
-              <li class="slideshare"><a href="https://www.slideshare.net/andybywire" target="_blank" rel="noopener">{% include '../icons/slideshare.svg' %}</a></li>
-              <li class="github"><a href="https://www.github.com/andybywire" target="_blank" rel="noopener">{% include '../icons/github.svg' %}</a></li>
-            </ul> 
-          </div>
-          <p class="copyright wrap">© 2016-2022 Andy Fitzgerald Consulting, LLC</p>
-        </section>
+      <section class="site-info">
+        <p class="description">Andy Fitzgerald Consulting, LLC is an independent user experience architecture and design practice based in Seattle.</p>    
+        <ul class="nav">
+          <li><a href="/services">services</a></li>
+          <li><a href="/case-studies">studies</a></li>
+          <li><a href="/reviews">reviews</a></li>
+          <li><a href="/writing">writing</a></li>
+          <li><a href="/speaking">speaking</a></li>
+          <li><a href="/about">about</a></li>
+          <!-- <li><a href="/contact">contact</a></li> -->
+        </ul> 
+      </section>
+      <section class="social">
+        <ul>
+          <li class="linkedin"><a href="http://www.linkedin.com/in/andyfitzgerald" target="_blank" rel="noopener">{% include '../icons/linkedin.svg' %}</a></li>
+          <li class="twitter"><a href="https://twitter.com/andybywire" target="_blank" rel="noopener">{% include '../icons/twitter.svg' %}</a></li>
+          <li class="slideshare"><a href="https://www.slideshare.net/andybywire" target="_blank" rel="noopener">{% include '../icons/slideshare.svg' %}</a></li>
+          <li class="github"><a href="https://www.github.com/andybywire" target="_blank" rel="noopener">{% include '../icons/github.svg' %}</a></li>
+        </ul> 
+      </section>
+      <p class="copyright">© 2016-2022 Andy Fitzgerald Consulting, LLC</p>
     </footer>
 
     <!-- Current page: {{ page.url | url }} -->

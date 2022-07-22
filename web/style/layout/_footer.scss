@@ -1,16 +1,9 @@
 @import '../utilities/variables.scss';
 @import '../utilities/mixins.scss';
 
-.cta {
-  background-color: $dark-gray;
-  color: $white;
-  .wrap {
-    border: 1px solid whitesmoke;
-  }
-}
-.footer {
+footer {
   background-color: $blue;
-  .detail {
+  .site-info {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -63,7 +56,7 @@
       }
     }
   }
-  .social {
+  .social ul {
     display: flex;
     justify-content: space-around;
     padding-inline-start: 0;
