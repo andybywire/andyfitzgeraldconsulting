@@ -11,9 +11,6 @@ document.addEventListener('scroll', () => {
 })
 
 
-
-
-
 // $(window).scroll(function() {    
 //     var scroll = $(window).scrollTop();
 
