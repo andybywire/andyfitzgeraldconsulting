@@ -9,11 +9,12 @@ footer {
     align-items: center;
     padding-top: 1rem;
     padding-bottom: 2rem;
-    @include breakpoint(large) {
+    @include breakpoint(medium) {
       flex-direction: row;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: stretch;
+      //this needs adjustment:
       p, ul {
           width: max(45%, 360px);
         }

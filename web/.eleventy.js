@@ -10,6 +10,9 @@ module.exports = function(eleventyConfig) {
 	});
   // Need to change this for 2.0? https://www.11ty.dev/docs/watch-serve/#add-your-own-watch-targets
 
+  eleventyConfig.addPassthroughCopy("fonts");
+  eleventyConfig.addPassthroughCopy("js");
+
   eleventyConfig.addShortcode('imageUrlFor', (image, width="400") => {
     return urlFor(image)
       .width(width)
@@ -59,7 +62,7 @@ module.exports = function(eleventyConfig) {
     dataTemplateEngine: "njk",
     passthroughFileCopy: true,
     dir: {
-      input: "src",
+      input: "_src",
       includes: "../_includes",
       data: "../_data",
       output: "_site"
