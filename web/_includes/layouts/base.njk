@@ -8,6 +8,10 @@
           <li class="title"><a href="{{ '/' | url }}">{{ metadata.siteTitle }}</a></li>
           <li class="subtitle">{{ metadata.siteSubtitle }}</li>
         </ul>
+        {# cf. https://gomakethings.com/progressive-enhancement-the-new-hotness/ #}
+        <a href="#site-navigation" class="menu-toggle">
+          {% include '../icons/menu.svg' %}
+        </a>
         <div class="nav-menu"> 
           <div class="menu">
             <ul>
@@ -47,7 +51,7 @@
     <footer>
       <section class="site-info">
         <p class="description">Andy Fitzgerald Consulting, LLC is an independent user experience architecture and design practice based in Seattle.</p>    
-        <ul class="nav">
+        <ul id="site-navigation" class="nav">
           <li><a href="/services">services</a></li>
           <li><a href="/case-studies">studies</a></li>
           <li><a href="/reviews">reviews</a></li>

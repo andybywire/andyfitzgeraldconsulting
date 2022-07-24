@@ -8,9 +8,13 @@
 }
 // Create centered stackable elements within bands
 @mixin fragment {
-  width: calc(100% - 1rem);
+  width: calc(100% - 1em);
   max-width: $max-width;
-  margin: 0 .5rem;
+  margin: 0 .5em;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 // Wrap styles

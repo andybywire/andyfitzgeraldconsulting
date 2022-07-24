@@ -3,26 +3,37 @@
 
 header {
   background-color: $white;
-  font-family: $header;
+  // font-family: $header;
   color: $black;
   position: fixed;
   z-index: 10;
   width: 100%;
-  height: 120px;
+  height: 65px;
+  @include breakpoint(small) {
+    height: 80px;  
+  }
   transition: height .3s linear;
-  &.compact {
-    box-shadow: 0 2px 3px #888888;
-    height: 4.166665rem; // 75px, 2.5 lines
-    nav .nav-title .subtitle, .rule {
-      visibility: hidden;
-      opacity: 0;
-      transition: visibility .25s, opacity .25s linear;
+  @include breakpoint(large) {
+    height: 120px;
+    &.compact {
+      box-shadow: 0 2px 3px #888888;
+      height: 75px;
+      nav .nav-title .subtitle, .rule {
+        visibility: hidden;
+        opacity: 0;
+        transition: visibility .25s, opacity .25s linear;
+      }
     }
   }
   nav {
     // padding: .25rem 0 5px;
     // height: 6.6111084667rem; //119 px
     display: flex;
+    padding-top: 5px;
+    justify-content: space-between;
+    @include breakpoint(large){
+      padding-top: 10px;
+    }
     a {
         color: $black;
         text-decoration: none;
@@ -40,15 +51,40 @@ header {
           list-style: none;
       }
       .title {
-        font-size: 2rem; // 32 pt.
-        padding-top: .125rem;
+        font-size: 1em; // 18px
         font-weight: 400;
+        @include breakpoint(small) {
+          font-size: 1.5rem; // 24px
+          font-weight: 400;
+        }
+        @include breakpoint(large){
+          font-size: 2rem; // 32px
+          padding-top: .125rem;
+        }
       }
       .subtitle {
+        font-size: .8rem;
         font-weight: 300;
-        letter-spacing: 2.15px;
-        margin-top: -6px;
+        margin-top: -4px;
+        @include breakpoint(small) {
+          font-size: 1rem; // 16px
+          letter-spacing: .5px;
+        }
+        @include breakpoint(large){
+          font-size: 1em; // 18px
+          letter-spacing: 2.15px; 
+          margin-top: -6px;
+        }
         transition: visibility .25s, opacity .25s linear;
+      }
+    }
+    .menu-toggle {
+      $size: 1.8rem;
+      width: $size;
+      height: $size;
+      align-self: center;
+      @include breakpoint(large) {
+        display: none;
       }
     }
     .nav-menu {

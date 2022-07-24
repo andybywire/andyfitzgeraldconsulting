@@ -22,6 +22,7 @@ $card-max: 375px;
 
 // Breakpoints
 $breakpoints: (
+  'small': 375px,
   'medium': 600px,
   'large':  900px
 ) !default;
