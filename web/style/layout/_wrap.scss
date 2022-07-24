@@ -26,6 +26,12 @@ header {
     @include fragment;
   }
 }
+section.banner {
+  @include segment;
+  div.cover-text {
+    @include fragment;
+  }
+}
 main {
   padding-top: 60px; // leaves room for the header
   // @include breakpoint(medium) {

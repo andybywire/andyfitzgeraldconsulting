@@ -1,0 +1,33 @@
+.banner {
+  margin-top: 120px;
+  overflow: hidden;
+  position: relative;        
+  background: $blue url("https://www.andyfitzgeraldconsulting.com/img/cover/home.jpg") center top/cover no-repeat ;
+  // Shaded layer between banner image & text
+  .cover-overlay {
+      position: absolute;
+      height: 100%;
+      width: 100%;
+      background-color: rgba(0, 0, 0, .75);
+      @include breakpoint(medium) {
+          left: -48%;
+          transform: skew(38deg);
+      }
+  }
+  .cover-text {
+      z-index: 2;
+      color: $blue;  
+      p {
+          font-size: 1.66rem;
+          line-height: 1.5;
+          font-weight: 500;
+          padding: 1rem 0;
+          margin: 0;
+          @include breakpoint(medium) {
+            font-size: 1.9rem;
+            width: 45%;
+            padding: 1.5rem 3rem 1.5rem 0;
+          }
+      }
+  }
+}
