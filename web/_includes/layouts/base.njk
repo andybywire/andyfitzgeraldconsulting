@@ -9,9 +9,21 @@
           <li class="subtitle">{{ metadata.siteSubtitle }}</li>
         </ul>
         {# cf. https://gomakethings.com/progressive-enhancement-the-new-hotness/ #}
-        <a href="#site-navigation" class="menu-toggle">
+        <a href="#site-navigation" id="menu-toggle" class="menu-toggle">
           {% include '../icons/menu.svg' %}
         </a>
+        <div id="sidenav">
+          <ul>
+            <!-- Need to add .njk support for selected page -->
+            <!-- <li><a href="/services" {% if page.category == "services" %} class="selected"{% endif %}>Services</a></li> -->
+            <li><a href="/services">Services</a></li>
+            <li><a href="/case-studies">Case Studies</a></li>
+            <li><a href="/writing">Writing</a></li>
+            <li><a href="/speaking">Speaking</a></li>
+            {# <li><a href="/about">About</a></li> #}
+            <li><a href="/contact">Contact</a></li>          
+          </ul>
+        </div>
         <div class="nav-menu"> 
           <div class="menu">
             <ul>

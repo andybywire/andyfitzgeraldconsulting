@@ -1,3 +1,4 @@
+// Desktop header resize on scroll
 const header = document.getElementById('header');
 
 document.addEventListener('scroll', () => {
@@ -9,6 +10,29 @@ document.addEventListener('scroll', () => {
     header.classList.remove('compact');
   }
 })
+
+// Progressive enhancement for mobile menu
+// Cf. https://gomakethings.com/progressive-enhancement-the-new-hotness/
+let toggle = document.getElementById("menu-toggle");
+let sidenav = document.getElementById("sidenav");
+
+// Add a11y attribute to link
+toggle.setAttribute('role', 'button');
+
+document.getElementById("menu-toggle").addEventListener("click", function(event){
+  event.preventDefault();
+  sidenav.style.transform = "translateX(0)";
+});
+
+
+// From UX Methods
+// document.getElementById("openMenu").addEventListener("click", function () {
+//   document.getElementById("globalNav").style.transform = "translateX(0)";
+// });
+// document.getElementById("closeMenu").addEventListener("click", function () {
+//   document.getElementById("globalNav").style.transform = "translateX(100%)";
+// });
+
 
 
 // $(window).scroll(function() {    

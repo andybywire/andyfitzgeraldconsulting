@@ -87,6 +87,23 @@ header {
         display: none;
       }
     }
+    
+    // Copied from UX Methods — Restyle
+    #sidenav {
+      background-color: #182125;
+      color: #f9fafb;
+      // font-family: Nunito Sans,Arial,sans-serif;
+      height: 100%;
+      overflow-x: hidden;
+      padding-top: 13px;
+      position: fixed;
+      right: 0;
+      top: 0;
+      transform: translate3d(100%,0,0);
+      transition: .33s cubic-bezier(.22,.61,.36,1);
+      width: 100%;
+      z-index: 2;
+    }
     .nav-menu {
       margin-top: 11px;
       margin-left: 10px;
