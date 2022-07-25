@@ -87,15 +87,12 @@ header {
         display: none;
       }
     }
-    
-    // Copied from UX Methods — Restyle
     #sidenav {
-      background-color: #182125;
-      color: #f9fafb;
-      // font-family: Nunito Sans,Arial,sans-serif;
+      background-color: $blue;
+      color: $black;
       height: 100%;
       overflow-x: hidden;
-      padding-top: 13px;
+      padding-top: 50px;
       position: fixed;
       right: 0;
       top: 0;
@@ -103,6 +100,28 @@ header {
       transition: .33s cubic-bezier(.22,.61,.36,1);
       width: 100%;
       z-index: 2;
+      button {
+        $size: 1.8rem;
+        width: $size;
+        height: $size;
+        position: absolute;
+        padding: 0;
+        top: 22px;
+        right: 10px;
+        background: content-box;
+        border: none;
+      }
+      ul {
+        padding-top: 2rem;
+      }
+      li {
+        text-transform: lowercase;
+        padding: 0.75rem 1.75rem;
+        text-align: right;
+        @include breakpoint(small) {
+          font-size: 1.5rem; // 24px
+        }
+      }
     }
     .nav-menu {
       margin-top: 11px;

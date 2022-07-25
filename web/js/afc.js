@@ -13,25 +13,25 @@ document.addEventListener('scroll', () => {
 
 // Progressive enhancement for mobile menu
 // Cf. https://gomakethings.com/progressive-enhancement-the-new-hotness/
-let toggle = document.getElementById("menu-toggle");
+let navOpen = document.getElementById("open-menu");
+let navClose = document.getElementById("close-menu");
 let sidenav = document.getElementById("sidenav");
 
 // Add a11y attribute to link
-toggle.setAttribute('role', 'button');
+navOpen.setAttribute('role', 'button');
 
-document.getElementById("menu-toggle").addEventListener("click", function(event){
+navOpen.addEventListener("click", function(event){
   event.preventDefault();
   sidenav.style.transform = "translateX(0)";
 });
 
+navClose.addEventListener("click", function(event){
+  event.preventDefault();
+  sidenav.style.transform = "translateX(100%)";
+});
 
-// From UX Methods
-// document.getElementById("openMenu").addEventListener("click", function () {
-//   document.getElementById("globalNav").style.transform = "translateX(0)";
-// });
-// document.getElementById("closeMenu").addEventListener("click", function () {
-//   document.getElementById("globalNav").style.transform = "translateX(100%)";
-// });
+// Consider listening w/ event delegation: 
+// https://gomakethings.com/listening-for-events-on-multiple-elements-using-javascript-event-delegation/
 
 
 
