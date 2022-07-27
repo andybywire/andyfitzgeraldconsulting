@@ -93,7 +93,7 @@ header {
       height: 100%;
       overflow-x: hidden;
       padding-top: 50px;
-      position: fixed;
+      position: fixed; // This is relative to the browser window — so doesn't depend on its parent element. Which means I can use the menu already being used by d/t nav. Will need some style gymnastics, but ought to be cleaner html. 
       right: 0;
       top: 0;
       transform: translate3d(100%,0,0);
