@@ -12,8 +12,9 @@
         <a href="#site-navigation" id="open-menu" class="menu-toggle">
           {% include '../icons/menu.svg' %}
         </a>
+
         <div id="sidenav">
-          <button id="close-menu" aria-label="Close site menu" class="sideNav-module--close-btn--Sbsby" type="button">
+          <button id="close-menu" aria-label="Close site menu" type="button">
             {% include '../icons/close.svg' %}
           </button>
           <ul>
@@ -26,8 +27,11 @@
             <li><a href="/contact">Contact</a>  </li>          
           </ul>
         </div>
-        <div class="nav-menu"> 
-          <div class="menu">
+        <div id="nav-menu"> 
+          <div id="menu">
+            {# <button id="close-menu" aria-label="Close site menu" type="button">
+              {% include '../icons/close.svg' %}
+            </button> #}
             <ul>
               <!-- Need to add .njk support for selected page -->
               <!-- <li><a href="/services" {% if page.category == "services" %} class="selected"{% endif %}>Services</a></li> -->
