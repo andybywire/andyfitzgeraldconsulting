@@ -15,25 +15,23 @@ document.addEventListener('scroll', () => {
 // Cf. https://gomakethings.com/progressive-enhancement-the-new-hotness/
 let navOpen = document.getElementById("open-menu");
 let navClose = document.getElementById("close-menu");
-let sidenav = document.getElementById("nav-menu");
+let navMenu = document.getElementById("nav-menu");
 
 // Add a11y attribute to link
 navOpen.setAttribute('role', 'button');
 
 navOpen.addEventListener("click", function(event){
   event.preventDefault();
-  sidenav.style.transform = "translateX(0)";
+  navMenu.classList.replace('side-nav-closed', 'side-nav-open')
 });
 
 navClose.addEventListener("click", function(event){
   event.preventDefault();
-  sidenav.style.transform = "translateX(100%)";
+  navMenu.classList.replace('side-nav-open', 'side-nav-closed')
 });
 
 // Consider listening w/ event delegation: 
 // https://gomakethings.com/listening-for-events-on-multiple-elements-using-javascript-event-delegation/
-
-
 
 // $(window).scroll(function() {    
 //     var scroll = $(window).scrollTop();

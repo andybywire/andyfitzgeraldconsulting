@@ -8,29 +8,10 @@
           <li class="title"><a href="{{ '/' | url }}">{{ metadata.siteTitle }}</a></li>
           <li class="subtitle">{{ metadata.siteSubtitle }}</li>
         </ul>
-
-        <!-- <div id="sidenav">
-          <button id="close-menu" aria-label="Close site menu" type="button">
-            {% include '../icons/close.svg' %}
-          </button>
-          <ul>
-            {# consider _not_ duplicating this, but rather moving it w/ .js to better support disabled CSS #}
-            <li><a href="/services">Services</a></li>
-            <li><a href="/case-studies">Case Studies</a></li>
-            <li><a href="/writing">Writing</a></li>
-            <li><a href="/speaking">Speaking</a></li>
-            <li><a href="/about">About</a></li>
-            <li><a href="/contact">Contact</a>  </li>          
-          </ul>
-        </div> -->
-
-        <div id="nav-menu"> 
-          
-            {# Get d/t styles working first, then add this via .js #}
-            {# <button id="close-menu" aria-label="Close site menu" type="button">
+        <div id="nav-menu" class="side-nav-closed"> 
+            <button id="close-menu" aria-label="Close site menu" type="button">
               {% include '../icons/close.svg' %}
-            </button> #}
-
+            </button>
             <ul>
               <!-- Need to add .njk support for selected page -->
               <!-- <li><a href="/services" {% if page.category == "services" %} class="selected"{% endif %}>Services</a></li> -->
