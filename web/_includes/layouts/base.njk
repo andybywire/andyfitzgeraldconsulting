@@ -8,12 +8,8 @@
           <li class="title"><a href="{{ '/' | url }}">{{ metadata.siteTitle }}</a></li>
           <li class="subtitle">{{ metadata.siteSubtitle }}</li>
         </ul>
-        {# cf. https://gomakethings.com/progressive-enhancement-the-new-hotness/ #}
-        <a href="#site-navigation" id="open-menu" class="menu-toggle">
-          {% include '../icons/menu.svg' %}
-        </a>
 
-        <div id="sidenav">
+        <!-- <div id="sidenav">
           <button id="close-menu" aria-label="Close site menu" type="button">
             {% include '../icons/close.svg' %}
           </button>
@@ -26,12 +22,15 @@
             <li><a href="/about">About</a></li>
             <li><a href="/contact">Contact</a>  </li>          
           </ul>
-        </div>
+        </div> -->
+
         <div id="nav-menu"> 
-          <div id="menu">
+          
+            {# Get d/t styles working first, then add this via .js #}
             {# <button id="close-menu" aria-label="Close site menu" type="button">
               {% include '../icons/close.svg' %}
             </button> #}
+
             <ul>
               <!-- Need to add .njk support for selected page -->
               <!-- <li><a href="/services" {% if page.category == "services" %} class="selected"{% endif %}>Services</a></li> -->
@@ -42,9 +41,12 @@
               {# <li><a href="/about">About</a></li> #}
               <li><a href="/contact">Contact</a></li>          
             </ul>
-          </div>
+          
           <div class="rule"></div> 
         </div>
+        <a href="#site-navigation" id="open-menu" class="menu-toggle">
+          {% include '../icons/menu.svg' %}
+        </a>
       </nav>
     </header>
 

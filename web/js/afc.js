@@ -15,7 +15,7 @@ document.addEventListener('scroll', () => {
 // Cf. https://gomakethings.com/progressive-enhancement-the-new-hotness/
 let navOpen = document.getElementById("open-menu");
 let navClose = document.getElementById("close-menu");
-let sidenav = document.getElementById("sidenav");
+let sidenav = document.getElementById("nav-menu");
 
 // Add a11y attribute to link
 navOpen.setAttribute('role', 'button');
