@@ -157,6 +157,9 @@ header {
           &:last-child {
             padding-right: .5rem;
           }
+          &.nav-bar-hidden {
+            display: none;
+          }
         }
       }
       .rule {

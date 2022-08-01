@@ -14,13 +14,13 @@
             </button>
             <ul>
               <!-- Need to add .njk support for selected page -->
-              <!-- <li><a href="/services" {% if page.category == "services" %} class="selected"{% endif %}>Services</a></li> -->
               <li><a href="/services">Services</a></li>
               <li><a href="/case-studies">Case Studies</a></li>
               <li><a href="/writing">Writing</a></li>
               <li><a href="/speaking">Speaking</a></li>
-              {# <li><a href="/about">About</a></li> #}
-              <li><a href="/contact">Contact</a></li>          
+              <li class="nav-bar-hidden"><a href="/reviews">Reviews</a></li>
+              <li class="nav-bar-hidden"><a href="/about">About</a></li>
+              <li><a href="/contact">Contact</a></li>              
             </ul>
           
           <div class="rule"></div> 
@@ -52,14 +52,13 @@
     <footer>
       <section class="site-info">
         <p class="description">Andy Fitzgerald Consulting, LLC is an independent user experience architecture and design practice based in Seattle.</p>    
-        <ul id="site-navigation" class="nav">
+        <ul id="site-navigation" class="nav">         
           <li><a href="/services">services</a></li>
           <li><a href="/case-studies">studies</a></li>
           <li><a href="/reviews">reviews</a></li>
           <li><a href="/writing">writing</a></li>
           <li><a href="/speaking">speaking</a></li>
           <li><a href="/about">about</a></li>
-          <!-- <li><a href="/contact">contact</a></li> -->
         </ul> 
       </section>
       <section class="social">
@@ -72,8 +71,6 @@
       </section>
       <p class="copyright">© 2016-2022 Andy Fitzgerald Consulting, LLC</p>
     </footer>
-
-    <!-- Current page: {{ page.url | url }} -->
   </body>
   <script src="/js/afc.js"></script>
 </html>
