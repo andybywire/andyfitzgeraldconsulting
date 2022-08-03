@@ -42,13 +42,19 @@
       <nav aria-label="breadcrumb" class="breadcrumb">
         <ul>
           <li><a href="/">Home</a></li>
-            <li>
-              <a href="/services/">Services
-                </a>
-            </li>
-          <li>Information Architecture</li>
+          <li>
+            <a href="/{{ tags }}/">{{ tags }}
+              </a>
+          </li>
+          <li>
+            {% if tags == "services" %} {{ service.title }}
+            {% elif tags == "articles" %} article
+            {% endif %}  
+          </li>
         </ul>
       </nav>
+      <pre>{{ page | dump(2) }}</pre>
+      <pre>{{ service.title }}</pre>
       {{ content | safe }}
     </main>
  
