@@ -1,0 +1,34 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+nav.breadcrumb {
+  @include segment;
+  ul {
+    @include fragment;
+    display: flex;
+    flex-wrap: wrap;
+    list-style: none;
+    border-bottom: 1px solid rgba(0,0,0,.3);
+    font-weight: 300;
+    font-size: .8rem;
+    text-transform: uppercase;
+    padding: 0.25rem 0 0.125rem 0.125rem;
+    @include breakpoint(medium) {
+      padding-top: .333333rem;
+    }
+    li {
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      a:hover {
+        color: $blue;
+      }
+      &:not(:last-child)::after {
+        margin: 0 0.75rem;
+        content: "\\";
+      }
+    } 
+  }
+}
+

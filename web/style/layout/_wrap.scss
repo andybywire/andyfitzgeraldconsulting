@@ -1,17 +1,5 @@
 @import '../utilities/variables.scss';
-
-// Create wrap for horizontal color bands
-@mixin segment {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-// Create centered stackable elements within bands
-@mixin fragment {
-  width: calc(100% - 1em);
-  max-width: $max-width;
-  margin: 0 .5em;
-}
+@import '../utilities/mixins.scss';
 
 html {
   scroll-behavior: smooth;
@@ -37,10 +25,9 @@ section.banner {
   }
 }
 main {
-  padding-top: 60px; // leaves room for the header
-  // @include breakpoint(medium) {
-  //   padding-top: 110px;
-  // }
+  img {
+    max-width: 100%;
+  }
 }
 section.cta {
   @include segment;
