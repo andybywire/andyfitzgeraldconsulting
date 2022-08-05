@@ -1,10 +1,7 @@
 @import '../utilities/variables.scss';
-@import '../utilities/mixins.scss';
 
 nav.breadcrumb {
-  @include segment;
   ul {
-    @include fragment;
     display: flex;
     flex-wrap: wrap;
     list-style: none;
@@ -13,6 +10,7 @@ nav.breadcrumb {
     font-size: .8rem;
     text-transform: uppercase;
     padding: 0.25rem 0 0.125rem 0.125rem;
+    margin: 0;
     @include breakpoint(medium) {
       padding-top: .333333rem;
     }

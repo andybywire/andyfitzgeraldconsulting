@@ -4,25 +4,26 @@ tags:
   - nav
 navtitle: Home
 ---
+<section>
+  <h1>Here's a home page.</h1>
 
-<h1>Here's a home page.</h1>
+  <h2>Articles</h2>
+  <ul>
+  {% for article in collections.articles %}
+    <li>
+      <a href="{{ article.url | url }}">{{ article.data.article.title }}</a>
+    </li>
+  {% endfor %}
+  </ul>
 
-<h2>Articles</h2>
-<ul>
-{% for article in collections.articles %}
-  <li>
-    <a href="{{ article.url | url }}">{{ article.data.article.title }}</a>
-  </li>
-{% endfor %}
-</ul>
-
-<h2>Services</h2>
-<ul>
-{% for service in collections.services %}
-  <li>
-    <a href="{{ service.url | url }}">{{ service.data.service.title }}</a>
-  </li>
-{% endfor %}
-</ul>
+  <h2>Services</h2>
+  <ul>
+  {% for service in collections.services %}
+    <li>
+      <a href="{{ service.url | url }}">{{ service.data.service.title }}</a>
+    </li>
+  {% endfor %}
+  </ul>
+</section>
 
 

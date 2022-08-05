@@ -5,14 +5,14 @@ const serializers = require('../utils/serializers')
 const overlayDrafts = require('../utils/overlayDrafts')
 const hasToken = !!client.config().token
 
-function generateLanding (landing) {
+function generateCategory (category) {
   return {
-    ...landing,
-    copy: BlocksToMarkdown(landing.copy, { serializers, ...client.config() })
+    ...category,
+    copy: BlocksToMarkdown(category.copy, { serializers, ...client.config() })
   }
 }
 
-async function getLanding () {
+async function getCategory () {
   // Learn more: https://www.sanity.io/docs/data-store/how-queries-work
   const filter = groq`*[_type == "collection" && !(_id in path("drafts.**"))]`
   const projection = groq`{
@@ -25,8 +25,8 @@ async function getLanding () {
   const query = [filter, projection].join(' ')
   const docs = await client.fetch(query).catch(err => console.error(err))
   const reducedDocs = overlayDrafts(hasToken, docs)
-  const prepareLandings = reducedDocs.map(generateLanding)
-  return prepareLandings
+  const prepareCategories = reducedDocs.map(generateCategory)
+  return prepareCategories
 }
 
-module.exports = getLanding
+module.exports = getCategory

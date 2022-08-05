@@ -1,6 +1,20 @@
 @import '../utilities/variables.scss';
 @import '../utilities/mixins.scss';
 
+// Create wrap for horizontal color bands
+@mixin segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+// Create centered stackable elements within bands
+@mixin fragment {
+  width: calc(100% - 1em);
+  max-width: $max-width;
+  margin: 0 .5em;
+}
+
+// Site-wide styles
 html {
   scroll-behavior: smooth;
 }
@@ -25,9 +39,13 @@ section.banner {
   }
 }
 main {
-  img {
-    max-width: 100%;
-  }
+  @include segment;
+  section, nav.breadcrumb {
+    @include fragment;
+    img {
+      max-width: 100%;
+    }
+  } 
 }
 section.cta {
   @include segment;

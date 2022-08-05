@@ -1,0 +1,9 @@
+---
+# Layout template for category index pages
+layout: layouts/base.njk
+---
+<article>
+  <h1>{{ category.title }}</h1>
+  {{ category.copy | markdownify | safe }}
+  <p><a href="{{ '/' | url }}">← Home</a></p>
+</article>

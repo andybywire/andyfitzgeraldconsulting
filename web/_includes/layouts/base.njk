@@ -30,15 +30,14 @@
         </a>
       </nav>
     </header>
-
     <section class="banner">
       <div class="cover-overlay"></div>
       <div class="cover-text">
         <p>Complex information made easy to understand and pleasant to use.</p>
       </div>
     </section>
-
     <main>
+      {% if page.url != "/" %}
       <nav aria-label="breadcrumb" class="breadcrumb">
         <ul>
           <li><a href="/">Home</a></li>
@@ -53,8 +52,7 @@
           </li>
         </ul>
       </nav>
-      <pre>{{ page | dump(2) }}</pre>
-      <pre>{{ service.title }}</pre>
+      {% endif %}
       {{ content | safe }}
     </main>
  

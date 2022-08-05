@@ -1,11 +1,14 @@
 ---
+# Layout template for Service and Case Study detail pages.
 layout: layouts/base.njk
 ---
 <article>
-  <h1>{{ service.title }}</h1>
-  <pre>{{ tags }}</pre>
-  <img src="{% articleHero service.heroImage %}" alt="">
-  {{ service.overview | markdownify | safe }}
-  {{ service.body | markdownify | safe }}
-  <p><a href="{{ '/' | url }}">← Home</a></p>
+  <section>
+    <h1>{{ service.title }}</h1>
+    <pre>{{ tags }}</pre>
+    <img src="{% articleHero service.heroImage %}" alt="">
+    {{ service.overview | markdownify | safe }}
+    {{ service.body | markdownify | safe }}
+    <p><a href="{{ '/' | url }}">← Home</a></p>
+  </section>
 </article>
