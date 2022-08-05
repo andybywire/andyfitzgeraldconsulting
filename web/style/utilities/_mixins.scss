@@ -1,6 +1,19 @@
 // Mixins that are used across multiple style sheets
 // Mixins used in a single sheet are located at the top of that sheet
 
+// Create wrap for horizontal color bands
+@mixin segment {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+// Create centered stackable elements within bands
+@mixin fragment {
+  width: calc(100% - 1em);
+  max-width: $max-width;
+  margin: 0 .5em;
+}
+
 // Responsive breakpoints
 /// @author Kitty Giraudel: https://css-tricks.com/snippets/sass/mixin-manage-breakpoints/
 /// @param {String} $breakpoint - Breakpoint name

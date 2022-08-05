@@ -1,0 +1,12 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.service {
+  @include segment;
+   section {
+    @include fragment;
+    img {
+      margin: 1rem 0;
+    }
+  }
+}

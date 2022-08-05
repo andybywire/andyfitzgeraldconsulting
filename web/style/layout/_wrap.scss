@@ -39,13 +39,9 @@ section.banner {
   }
 }
 main {
-  @include segment;
-  section, nav.breadcrumb {
-    @include fragment;
-    img {
-      max-width: 100%;
-    }
-  } 
+  img {
+    max-width: 100%;
+  }
 }
 section.cta {
   @include segment;

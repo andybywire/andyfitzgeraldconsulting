@@ -1,0 +1,15 @@
+---
+# Layout template for Case Study detail pages.
+layout: layouts/base.njk
+---
+<article>
+  <section class="overview">
+    <h1>{{ study.title }}</h1>
+    <img src="{% articleHero study.heroImage %}" alt="">
+    {{ study.overview | markdownify | safe }}
+  </section>
+  <section>
+    {{ study.body | markdownify | safe }}
+    <p><a href="{{ '/' | url }}">← Home</a></p>
+  </section>
+</article>
