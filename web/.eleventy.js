@@ -26,6 +26,31 @@ module.exports = function(eleventyConfig) {
       .auto('format')
   });
 
+  // need to fine tune this
+  eleventyConfig.addShortcode('responsiveImage', (image, srcs="320,640,900", sizes="100vw", classList="") => {
+    const sizeArray = srcs.split(',');
+    const firstSize = sizeArray[0];
+    const lastSize = sizeArray[sizeArray.length - 1];
+    const srcSetContent = sizeArray.map((size) => {
+        const height = Math.floor(size * 0.5625); // set to 16:9
+        const url = urlFor(image)
+          .width(size)
+          .height(height)
+          .auto('format')
+          .url();
+
+        return `${url} ${size}w`
+    }).join(',')
+
+    return (
+        `<img src="${urlFor(image).width(firstSize)}"
+            ${classList ? "class='" + classList + "'" : ""}
+            srcset="${srcSetContent}"
+            sizes="${sizes}"
+            width="${lastSize.trim()}">`
+    )
+  });
+
   let markdownIt = require("markdown-it");
   let markdownItAnchor = require("markdown-it-anchor");
   let options = {

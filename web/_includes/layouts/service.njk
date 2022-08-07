@@ -4,7 +4,7 @@ layout: layouts/base.njk
 ---
 <article class="service">
   <section class="overview">
-    <img src="{% articleHero service.heroImage %}" alt="">
+    {% responsiveImage service.heroImage %}
     <h1>{{ service.title }}</h1>
     {{ service.overview | markdownify | safe }}
   </section>
