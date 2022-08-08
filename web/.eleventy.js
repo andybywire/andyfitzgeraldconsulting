@@ -31,6 +31,7 @@ module.exports = function(eleventyConfig) {
     const sizeArray = srcs.split(',');
     const firstSize = sizeArray[0];
     const lastSize = sizeArray[sizeArray.length - 1];
+    const lastHeight = (lastSize * 0.5625);
     const srcSetContent = sizeArray.map((size) => {
         const height = Math.floor(size * 0.5625); // set to 16:9
         const url = urlFor(image)
@@ -47,7 +48,11 @@ module.exports = function(eleventyConfig) {
             ${classList ? "class='" + classList + "'" : ""}
             srcset="${srcSetContent}"
             sizes="${sizes}"
-            width="${lastSize.trim()}">`
+            width="${lastSize.trim()}"
+            height="${lastHeight}"
+            loading="lazy">`
+            // height included to avoid layout shift: lets the browser know what the aspect ratio is
+            // set loading to "eager" if above the fold
     )
   });
 

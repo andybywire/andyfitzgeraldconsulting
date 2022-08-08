@@ -2,11 +2,16 @@
 
 body {
   font-family: $body;
-  font-size: 18px;
+  font-size: 1.125rem; //18px
   line-height: 1.6666;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 a {
   transition: all .25s ease;
+}
+h1 {
+  font-size: 2rem;
+  // margin: 0;
+  line-height: initial;
 }

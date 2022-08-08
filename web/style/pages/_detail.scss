@@ -3,10 +3,40 @@
 
 .service {
   @include segment;
-   section {
+  section.overview {
     @include fragment;
-    img {
-      margin: 1rem 0;
+    display: flex;
+    flex-direction: column;
+    @include breakpoint(large) {
+      flex-direction: row;
+      flex-wrap: wrap;
+      column-gap: 1rem;
     }
+    .img {
+      margin: .5rem 0 0;
+      @include breakpoint(medium) {
+        order: 10;
+      }
+      @include breakpoint(large) {
+        margin: 1rem 0;
+        flex: 1 0 calc(33% - 0.5rem);
+      }
+    }
+    h1 {
+      flex: 0 0 100%;
+    }
+    .copy {
+      p:first-of-type {
+        font-size: 1.25rem;
+        margin-top: 0;
+      }
+      @include breakpoint(large) {
+        margin: 1rem 0;
+        flex: 1 0 calc(66% - 0.5rem);
+      }
+    }
+  }
+  section {
+    @include fragment;
   }
 }

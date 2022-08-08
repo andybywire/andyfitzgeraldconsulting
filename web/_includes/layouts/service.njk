@@ -4,9 +4,9 @@ layout: layouts/base.njk
 ---
 <article class="service">
   <section class="overview">
-    {% responsiveImage service.heroImage %}
+    <div class="img">{% responsiveImage service.heroImage %}</div>
     <h1>{{ service.title }}</h1>
-    {{ service.overview | markdownify | safe }}
+    <div class="copy">{{ service.overview | markdownify | safe }}</div>
   </section>
   <section>
     {{ service.body | markdownify | safe }}

@@ -18,7 +18,10 @@
 html {
   scroll-behavior: smooth;
 }
-
+img {
+  max-inline-size: 100%; // element alway fits in containing frame
+  block-size: auto; // aspect ratio of images remains constant
+}
 // Wrap styles
 body {
   min-height: 100vh;
@@ -38,11 +41,7 @@ section.banner {
     @include fragment;
   }
 }
-main {
-  img {
-    max-width: 100%;
-  }
-}
+// main {}
 section.cta {
   @include segment;
   > div {
