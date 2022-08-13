@@ -1,6 +1,4 @@
-const sass = require("sass");
-const urlFor = require('./utils/imageUrl');
-// const util = require('util');
+const urlFor = require('./utils/imageUrl');``
 
 module.exports = function(eleventyConfig) {
   
@@ -8,11 +6,12 @@ module.exports = function(eleventyConfig) {
 	eleventyConfig.setBrowserSyncConfig({
 		files: './_site/style/*.css'
 	});
-  // Need to change this for 2.0? https://www.11ty.dev/docs/watch-serve/#add-your-own-watch-targets
 
-  eleventyConfig.addPassthroughCopy("fonts");
-  eleventyConfig.addPassthroughCopy("js");
+  // Assets to pass through to _site
+  eleventyConfig.addPassthroughCopy({"assets/fonts": "fonts"});
+  eleventyConfig.addPassthroughCopy({"assets/js": "js"});
 
+  // move these shortcodes to macros
   eleventyConfig.addShortcode('imageUrlFor', (image, width="400") => {
     return urlFor(image)
       .width(width)
@@ -56,6 +55,7 @@ module.exports = function(eleventyConfig) {
     )
   });
 
+  // Not yet used, but plan to in the near future
   let markdownIt = require("markdown-it");
   let markdownItAnchor = require("markdown-it-anchor");
   let options = {
@@ -98,6 +98,4 @@ module.exports = function(eleventyConfig) {
       output: "_site"
     }
   };
-
-
 };
