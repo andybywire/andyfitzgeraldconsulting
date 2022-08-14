@@ -4,6 +4,8 @@
 Inspired by Webstoemp's [Structuring Eleventy projects](https://www.webstoemp.com/blog/eleventy-projects-structure/)
 
 ```
++-- _11ty/            // Imported into .eleventy.js. Filters can go here, too. 
+  +-- shortcodes/
 +-- _data/            // Sanity content generator functions
 +-- _includes/      
   +-- icons/

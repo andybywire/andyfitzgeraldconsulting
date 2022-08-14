@@ -23,7 +23,14 @@ async function getServices () {
     bodyText,
     pubDate,
     slug,
-    heroImage
+    heroImage,
+    "relatedStudies": *[_type=='caseStudy' && references(^.category._ref)] {
+      title,
+      heroImage,
+      shortDescription,
+      slug,
+      _type
+    }[0..1]
   }`
   const order = `| order(pubDate asc)`
   const query = [filter, projection, order].join(' ')

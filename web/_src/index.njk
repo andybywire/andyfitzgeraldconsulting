@@ -20,7 +20,7 @@ navtitle: Home
   <ul>
   {% for service in collections.services %}
     <li>
-      <a href="{{ service.url | url }}">{{ service.data.service.title }}</a>
+      <a href="{{ service.url | url }}">{{ service.data.resource.title }}</a>
     </li>
   {% endfor %}
   </ul>

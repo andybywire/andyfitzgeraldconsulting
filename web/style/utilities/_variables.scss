@@ -1,12 +1,15 @@
 // Variables that are used across multiple style sheet
 // Variables used in a single sheet are located at the top of that sheet
 
+@use "sass:color";
+
 // Typography
 $header: 'Lato', Roboto, Arial, sans-serif;
 $body: 'Open Sans', Roboto, Arial, sans-serif;
 
 // Colors
 $blue: #4e9dbc;
+$dark-blue: color.scale($blue, $lightness: -10%);
 $light-gray: rgba(43,40,40,0.05);
 $medium-gray: #646464;
 $dark-gray: #2b2b2b;

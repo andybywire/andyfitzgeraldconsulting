@@ -1,4 +1,7 @@
-const urlFor = require('./utils/imageUrl');``
+const urlFor = require('./utils/imageUrl');
+
+// Shortcodes
+const responsiveImage = require("./_11ty/shortcodes/responsiveImage.js");
 
 module.exports = function(eleventyConfig) {
   
@@ -11,7 +14,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({"assets/fonts": "fonts"});
   eleventyConfig.addPassthroughCopy({"assets/js": "js"});
 
-  // move these shortcodes to macros
+  // Move these shortcodes to their own directory
   eleventyConfig.addShortcode('imageUrlFor', (image, width="400") => {
     return urlFor(image)
       .width(width)
@@ -25,35 +28,8 @@ module.exports = function(eleventyConfig) {
       .auto('format')
   });
 
-  // need to fine tune this
-  eleventyConfig.addShortcode('responsiveImage', (image, srcs="320,640,900", sizes="100vw", classList="") => {
-    const sizeArray = srcs.split(',');
-    const firstSize = sizeArray[0];
-    const lastSize = sizeArray[sizeArray.length - 1];
-    const lastHeight = (lastSize * 0.5625);
-    const srcSetContent = sizeArray.map((size) => {
-        const height = Math.floor(size * 0.5625); // set to 16:9
-        const url = urlFor(image)
-          .width(size)
-          .height(height)
-          .auto('format')
-          .url();
-
-        return `${url} ${size}w`
-    }).join(',')
-
-    return (
-        `<img src="${urlFor(image).width(firstSize)}"
-            ${classList ? "class='" + classList + "'" : ""}
-            srcset="${srcSetContent}"
-            sizes="${sizes}"
-            width="${lastSize.trim()}"
-            height="${lastHeight}"
-            loading="lazy">`
-            // height included to avoid layout shift: lets the browser know what the aspect ratio is
-            // set loading to "eager" if above the fold
-    )
-  });
+  // Shortcodes
+  eleventyConfig.addShortcode('responsiveImage', responsiveImage);
 
   // Not yet used, but plan to in the near future
   let markdownIt = require("markdown-it");
@@ -77,6 +53,8 @@ module.exports = function(eleventyConfig) {
     const md = new markdownIt(options)
     return md.render(value)
   })
+
+  // Base config
   return {
     templateFormats: [
       "md",

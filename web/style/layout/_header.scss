@@ -32,7 +32,7 @@ header {
     @include breakpoint(large){
       padding-top: 10px;
     }
-    a {
+    a, a:hover {
         color: $black;
         text-decoration: none;
     }

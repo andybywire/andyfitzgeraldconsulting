@@ -9,11 +9,15 @@ footer {
     align-items: center;
     padding-top: 1rem;
     padding-bottom: 2rem;
+    @include breakpoint(medium) {
+      margin-top: 1rem;
+    }
     @include breakpoint(large) {
       flex-direction: row;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: stretch;
+      margin-top: 2rem;
       p, ul {
           width: max(48%, 360px);
         }
