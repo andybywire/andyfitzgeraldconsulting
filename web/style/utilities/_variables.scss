@@ -20,8 +20,8 @@ $white: #fefefe;
 $max-width: 1000px; // max page width on desktop
 
 // Grid
-$card-min: 330px; 
-$card-max: 375px;
+$card-min: 300px; 
+$card-max: 2fr;
 
 // Breakpoints
 $breakpoints: (
@@ -29,3 +29,6 @@ $breakpoints: (
   'medium': 600px,
   'large':  900px
 ) !default;
+
+// Global styles
+$radius: 3px;

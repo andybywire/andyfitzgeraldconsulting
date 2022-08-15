@@ -21,10 +21,25 @@ layout: layouts/base.njk
       {% if count < 2 %}
         <li>
           <a href="/case-studies/{{ card.slug.current }}">
-            {% responsiveImage card.heroImage %}
+            <p class="tag">Case Study<p>
+            {% responsiveImage card.heroImage, ".75" %}
             <div>
               <h3>{{ card.title }}</h3>
-              <p>{{ card.shortDescription }}</p>
+              <p>{{ card.shortDescription }}  {{ count }}</p>
+            </div>
+          </a>
+        </li>
+      {% set count = count + 1 %}
+      {% endif%}
+    {% endfor %}
+    {% for card in resource.relatedStudies %}
+      {% if count < 4 %}
+        <li>
+          <a href="/case-studies/{{ card.slug.current }}">
+            {% responsiveImage card.heroImage, ".75" %}
+            <div>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.shortDescription }}  {{ count }}</p>
             </div>
           </a>
         </li>
