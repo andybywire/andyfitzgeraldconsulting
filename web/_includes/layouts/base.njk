@@ -1,3 +1,7 @@
+---
+banner: Complex information made easy to understand and pleasant to use.
+cta: Ready to tame your complex information environment to better meet business goals and user needs?
+---
 <!doctype html>
 <html lang="en">
   {% include '../partials/head.njk' %}
@@ -14,8 +18,8 @@
             </button>
             <ul>
               <!-- Need to add .njk support for selected page -->
-              <li><a href="/services">Services</a></li>
-              <li><a href="/case-studies">Case Studies</a></li>
+              <li><a href="/services" {% if tags == "services" %} class="selected"{% endif %}>Services</a></li>
+              <li><a href="/case-studies" {% if tags == "case studies" %} class="selected"{% endif %}>Case Studies</a></li>
               <li><a href="/writing">Writing</a></li>
               <li><a href="/speaking">Speaking</a></li>
               <li class="nav-bar-hidden"><a href="/reviews">Reviews</a></li>
@@ -33,7 +37,13 @@
     <section class="banner">
       <div class="cover-overlay"></div>
       <div class="cover-text">
-        <p>Complex information made easy to understand and pleasant to use.</p>
+        <p>
+          {% if resource.banner %}
+            {{ resource.banner }}
+          {% else %}
+            {{ banner }}
+          {% endif %}
+        </p>
       </div>
     </section>
     <main>
@@ -56,7 +66,13 @@
  
     <section class="cta">
       <div>
-        <p>Ready to tame your complex information environment to better meet business goals and user needs?</p>
+        <p>
+          {% if resource.cta %}
+            {{ resource.cta }}
+          {% else %}
+            {{ cta }}
+          {% endif %}
+        </p>
         <a class="button" href="/contact">Let's Talk</a> 
       </div>
     </section>

@@ -24,6 +24,16 @@ navtitle: Home
     </li>
   {% endfor %}
   </ul>
+
+  <h2>Case Studies</h2>
+  <ul>
+  {% for study in collections['case studies'] %}
+    <li>
+      <a href="{{ study.url | url }}">{{ study.data.resource.title }}</a>
+    </li>
+  {% endfor %}
+  </ul>
+
 </section>
 
 

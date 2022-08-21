@@ -5,25 +5,34 @@ const serializers = require('../utils/serializers')
 const overlayDrafts = require('../utils/overlayDrafts')
 const hasToken = !!client.config().token
 
-function generateService (service) {
+function generateStudy (study) {
   return {
-    ...service,
-    body: BlocksToMarkdown(service.bodyText, { serializers, ...client.config() }),
-    overview: BlocksToMarkdown(service.serviceOverview, { serializers, ...client.config() })
+    ...study,
+    body: BlocksToMarkdown(study.bodyText, { serializers, ...client.config() }),
+    atGlance: BlocksToMarkdown(study.atGlance, { serializers, ...client.config() }),
+    whatDid: BlocksToMarkdown(study.whatDid, { serializers, ...client.config() }),
+    projectGoal: BlocksToMarkdown(study.projectGoal, { serializers, ...client.config() }),
+    projectOutcome: BlocksToMarkdown(study.projectOutcome, { serializers, ...client.config() }),
+    projectApproach: BlocksToMarkdown(study.projectApproach, { serializers, ...client.config() })
   }
 }
 
-async function getServices () {
+async function getStudies () {
   // Learn more: https://www.sanity.io/docs/data-store/how-queries-work
-  const filter = groq`*[_type == "service" && defined(slug)]`
+  const filter = groq`*[_type == "caseStudy" && defined(slug)]`
   const projection = groq`{
     _id,
     title,
-    serviceOverview,
-    bodyText,
+    atGlance,
+    whatDid,
+    projectGoal,
+    projectOutcome,
+    projectApproach,
     pubDate,
     slug,
     heroImage,
+    beforeImage,
+    afterImage,
     "banner": banner.bannerCopy,
     cta,
     "relatedStudies": *[_type=='caseStudy' && references(^.category._ref)] {
@@ -38,8 +47,8 @@ async function getServices () {
   const query = [filter, projection, order].join(' ')
   const docs = await client.fetch(query).catch(err => console.error(err))
   const reducedDocs = overlayDrafts(hasToken, docs)
-  const prepareServices = reducedDocs.map(generateService)
-  return prepareServices
+  const prepareStudies = reducedDocs.map(generateStudy)
+  return prepareStudies
 }
 
-module.exports = getServices
+module.exports = getStudies

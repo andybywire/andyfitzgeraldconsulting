@@ -31,9 +31,6 @@
       }
       @include breakpoint(large) {
         flex: 1 0 calc(66% - 0.5rem);
-        p {
-          padding-right: 2rem;
-        }
       }
     }
   }

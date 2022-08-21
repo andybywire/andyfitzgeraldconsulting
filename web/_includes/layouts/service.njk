@@ -3,7 +3,7 @@ layout: layouts/base.njk
 ---
 <article class="service">
   <section class="overview">
-    <div class="img">{% responsiveImage resource.heroImage %}</div>
+    <div class="img">{% responsiveImage resource.heroImage, ".75"  %}</div>
     <h1>{{ resource.title }}</h1>
     <div class="copy">{{ resource.overview | markdownify | safe }}</div>
   </section>
@@ -13,7 +13,6 @@ layout: layouts/base.njk
     </div>
   </section>
   <section class="related-content">
-    {# {{ resource.relatedStudies | dump }} #}
     <h2>Case Studies & Insights</h2>
     <ul>
     {% set count = 0 %}
@@ -25,7 +24,7 @@ layout: layouts/base.njk
             {% responsiveImage card.heroImage, ".75" %}
             <div>
               <h3>{{ card.title }}</h3>
-              <p>{{ card.shortDescription }}  {{ count }}</p>
+              <p>{{ card.shortDescription }}</p>
             </div>
           </a>
         </li>
@@ -39,7 +38,7 @@ layout: layouts/base.njk
             {% responsiveImage card.heroImage, ".75" %}
             <div>
               <h3>{{ card.title }}</h3>
-              <p>{{ card.shortDescription }}  {{ count }}</p>
+              <p>{{ card.shortDescription }}</p>
             </div>
           </a>
         </li>
