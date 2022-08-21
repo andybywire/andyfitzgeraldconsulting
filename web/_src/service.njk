@@ -1,5 +1,5 @@
 ---
-layout: layouts/service
+layout: layouts/base
 tags:
   - services
 pagination:
@@ -10,3 +10,57 @@ pagination:
 banner: “A hands on leader … through all aspects of the design process”
 permalink: "services/{{ resource.slug.current | slug }}/index.html"
 ---
+<article class="service">
+  <section class="overview">
+    <div class="img">{% responsiveImage resource.heroImage, ".75"  %}</div>
+    <h1>{{ resource.title }}</h1>
+    <div class="copy">{{ resource.overview | markdownify | safe }}</div>
+  </section>
+  <section class="detail">
+    <div>
+      {{ resource.body | markdownify | safe }}
+    </div>
+  </section>
+  <section class="related-content">
+    <h2>Case Studies & Insights</h2>
+    <ul>
+    {% set count = 0 %}
+    {% for card in resource.relatedStudies %}
+      {% if count < 2 %}
+        <li>
+          <a href="/case-studies/{{ card.slug.current }}">
+            <p class="tag">Case Study<p>
+            {% responsiveImage card.heroImage, ".75" %}
+            <div>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.shortDescription }}</p>
+            </div>
+          </a>
+        </li>
+      {% set count = count + 1 %}
+      {% endif%}
+    {% endfor %}
+    {% for card in resource.relatedStudies %}
+      {% if count < 4 %}
+        <li>
+          <a href="/case-studies/{{ card.slug.current }}">
+            {% responsiveImage card.heroImage, ".75" %}
+            <div>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.shortDescription }}</p>
+            </div>
+          </a>
+        </li>
+      {% set count = count + 1 %}
+      {% endif%}
+    {% endfor %}
+    {# Add articles loop, for count up to 4 #}
+    {# {% for card in sorted %}
+      {% if card-count < 4 and card.category == page.category %}
+        {%- include card.html -%}
+        {% assign card-count = card-count | plus: 1 %}
+      {% endif %}
+    {% endfor %} #}
+    </ul>
+  </section>
+</article>
