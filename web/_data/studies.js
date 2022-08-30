@@ -25,6 +25,12 @@ async function getStudies () {
     title,
     atGlance,
     whatDid,
+    review->{
+      author,
+      title,
+      excerpt, 
+      "employer":employer->name
+    },
     projectGoal,
     projectOutcome,
     projectApproach,

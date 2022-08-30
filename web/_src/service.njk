@@ -14,7 +14,7 @@ permalink: "services/{{ resource.slug.current | slug }}/index.html"
   <section class="overview">
     <div class="img">{% responsiveImage resource.heroImage, ".75"  %}</div>
     <h1>{{ resource.title }}</h1>
-    <div class="copy">{{ resource.overview | markdownify | safe }}</div>
+    <div class="copy display">{{ resource.overview | markdownify | safe }}</div>
   </section>
   <section class="detail">
     <div>

@@ -35,3 +35,47 @@ p, ul, ol {
   font-weight: 300;
   margin-top: 0;
 }
+// consider which of these to break into individual page style pages
+blockquote {
+  margin: 2.5rem 1rem;
+  @include breakpoint(large) {
+    margin: 2.5rem 0;
+  }
+  p {
+    font-weight: 500;
+    @include breakpoint(medium) {
+      columns: 2;
+      column-gap: 2rem;
+    }
+    @include breakpoint(large) {
+      column-gap: 3rem;
+    }
+  }
+  cite {
+    display: inline-block; // tightens line height
+    color: $white;
+    font-size: 0.999999rem; // 16px
+    font-weight: 300;
+    &::before {
+      content: "— "
+    }
+    @include breakpoint(medium) {
+      width: 45%;
+      margin-left: 55%;
+      text-align: right;
+    }
+    @include breakpoint(large) {
+      width: 40%;
+      margin-left: 60%;
+    }  
+  }
+}
+figure { // does this belong in a "global elements" file?
+  margin: 0; 
+  line-height: 1.25;
+  figcaption {
+    font-size: 0.999999rem;
+    font-weight: 300;
+    font-style: italic;
+  }
+}
