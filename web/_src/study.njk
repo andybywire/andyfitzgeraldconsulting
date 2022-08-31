@@ -1,5 +1,5 @@
 ---
-layout: layouts/study
+layout: layouts/base.njk
 tags:
   - case studies
 pagination:
@@ -7,5 +7,101 @@ pagination:
   data: studies
   size: 1
   addAllPagesToCollections: true
+banner: “A hands on leader … through all aspects of the design process”
 permalink: "case-studies/{{ resource.slug.current | slug }}/index.html"
 ---
+<article class="study" aria-labelledby="article-title">
+  <div>
+    <section class="overview">
+        <div class="img">{% responsiveImage resource.heroImage, ".75" %}</div>
+        <h1 id="article-title">{{ resource.title }}</h1>
+        <div class="copy">
+          <h2>At a Glance</h2>
+          {{ resource.atGlance | markdownify | safe }}
+          <h2>What I Did </h2>
+          {{ resource.whatDid | markdownify | safe }}
+        </div>
+
+    </section>
+  </div>
+  <div class="feedback">
+    <section>
+      <blockquote>
+        <p>"{{ resource.review.excerpt }}"</p>
+        <cite>
+          {{ resource.review.author }}, {{ resource.review.title }}, {{ resource.review.employer }}
+        </cite>
+      </blockquote>
+    </section>
+  </div>
+  <div class="goals"> 
+    <section class="study-segment">      
+      <p class="section-type">Project Goal</p> 
+      {{ resource.projectGoal | markdownify | safe }}
+      <figure>
+        {% responsiveImage resource.beforeImage %}
+        <figcaption>{{ resource.beforeImage.caption }}</figcaption>
+      </figure>  
+    </section>
+  </div>
+  <div>
+    <section class="study-segment">
+      <div>
+        <p class="section-type">Project Approach</p> 
+        {{ resource.projectApproach | markdownify | safe }}
+      </div>
+    </section>
+    <section class="study-segment running">
+      <div>
+        <p class="section-type">Project Outcome</p> 
+        {{ resource.projectOutcome | markdownify | safe }}
+        {% responsiveImage resource.afterImage %}
+      </div>
+    </section>
+  </div>
+  <div>
+    {# Abstract this out into a Macro #}
+    <section class="related-content">
+      <h2>Case Studies & Insights</h2>
+      <ul>
+      {% set count = 0 %}
+      {% for card in resource.relatedStudies %}
+        {% if count < 2 %}
+          <li>
+            <a href="/case-studies/{{ card.slug.current }}">
+              <p class="tag">Case Study<p>
+              {% responsiveImage card.heroImage, ".75" %}
+              <div>
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.shortDescription }}</p>
+              </div>
+            </a>
+          </li>
+        {% set count = count + 1 %}
+        {% endif%}
+      {% endfor %}
+      {% for card in resource.relatedStudies %}
+        {% if count < 4 %}
+          <li>
+            <a href="/case-studies/{{ card.slug.current }}">
+              {% responsiveImage card.heroImage, ".75" %}
+              <div>
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.shortDescription }}</p>
+              </div>
+            </a>
+          </li>
+        {% set count = count + 1 %}
+        {% endif%}
+      {% endfor %}
+      {# Add articles loop, for count up to 4 #}
+      {# {% for card in sorted %}
+        {% if card-count < 4 and card.category == page.category %}
+          {%- include card.html -%}
+          {% assign card-count = card-count | plus: 1 %}
+        {% endif %}
+      {% endfor %} #}
+      </ul>
+    </section>
+  </div>
+</article>

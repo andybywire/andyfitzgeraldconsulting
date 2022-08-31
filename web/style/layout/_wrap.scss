@@ -1,18 +1,18 @@
 @import '../utilities/variables.scss';
 @import '../utilities/mixins.scss';
 
-// Create wrap for horizontal color bands
-@mixin segment {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-// Create centered stackable elements within bands
-@mixin fragment {
-  width: calc(100% - 1em);
-  max-width: $max-width;
-  margin: 0 .5em;
-}
+// // Create wrap for horizontal color bands
+// @mixin segment {
+//   display: flex;
+//   flex-direction: column;
+//   align-items: center;
+// }
+// // Create centered stackable elements within bands
+// @mixin fragment {
+//   width: calc(100% - 1em);
+//   max-width: $max-width;
+//   margin: 0 .5em;
+// }
 
 // Site-wide styles
 html {

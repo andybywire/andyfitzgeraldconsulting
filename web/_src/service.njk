@@ -21,6 +21,7 @@ permalink: "services/{{ resource.slug.current | slug }}/index.html"
       {{ resource.body | markdownify | safe }}
     </div>
   </section>
+  {# Abstract this out into a Macro #}
   <section class="related-content">
     <h2>Case Studies & Insights</h2>
     <ul>

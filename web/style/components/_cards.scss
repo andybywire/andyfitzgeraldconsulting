@@ -1,7 +1,7 @@
 @import '../utilities/variables.scss';
 @import '../utilities/mixins.scss';
 
-section.related-content{
+.related-content{
   @include fragment;
   a {
     text-decoration: none;
