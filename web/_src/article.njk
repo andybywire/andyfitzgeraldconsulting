@@ -1,5 +1,5 @@
 ---
-layout: layouts/article
+layout: layouts/base.njk
 tags:
   - articles
 pagination:
@@ -9,3 +9,37 @@ pagination:
   addAllPagesToCollections: true
 permalink: articles/{{ article.slug.current | slug }}/index.html
 ---
+<div class="article">
+  <div class="col">
+    <article>
+      <h1>{{ article.title }}</h1>
+      <img src="{% articleHero article.heroImage %}" alt="{{ article.heroImage.altText }}">
+      {{ article.body | markdownify | safe }}
+      <p><a href="{{ '/' | url }}">← Home</a></p>
+    </article>
+    <nav>
+      <h2>Categories</h2>
+        <ul>
+          <li>information architecture</li>
+          <li>content strategy</li>
+          <li>structured content design</li>
+          <li>knowledge graph engineering</li>
+        </ul>
+      <h2>Topics</h2>
+        <ul>
+          <li>content analysis</li>
+          <li>design</li>
+          <li>development</li>
+          <li>discovery</li>
+          <li>integration</li>
+          <li>knowledge graphs</li>
+          <li>modeling</li>
+          <li>prototyping</li>
+          <li>strategy</li>
+          <li>structured content</li>
+          <li>systems</li>
+          <li>testing</li>
+        </ul>
+    </nav>
+  </div>
+</div>  

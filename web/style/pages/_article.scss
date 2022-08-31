@@ -1,0 +1,23 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.article {
+  @include segment;
+  .col {
+    @include fragment;
+    @include breakpoint(large) {
+      display: flex;
+      justify-content: space-between;
+    }
+  }
+  article {
+    @include breakpoint(large) {
+      flex: 0 0 66%;
+    }
+  }
+  nav {
+    @include breakpoint(large) {
+      flex: 0 0 28%;
+    }
+  }
+}
