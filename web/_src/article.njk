@@ -1,45 +1,95 @@
 ---
 layout: layouts/base.njk
 tags:
-  - articles
+  - writing
 pagination:
-  alias: article
+  alias: resource
   data: articles
   size: 1
   addAllPagesToCollections: true
-permalink: articles/{{ article.slug.current | slug }}/index.html
+banner: “Complex issues … written about patiently, clearly, and accurately.”
+permalink: writing/{{ resource.slug.current | slug }}/index.html
+crumbTitle: article
 ---
 <div class="article">
   <div class="col">
     <article>
-      <h1>{{ article.title }}</h1>
-      <img src="{% articleHero article.heroImage %}" alt="{{ article.heroImage.altText }}">
-      {{ article.body | markdownify | safe }}
-      <p><a href="{{ '/' | url }}">← Home</a></p>
+      <h1>{{ resource.title }}</h1>
+      <time datetime="{{ resource.pubdate }}">{{ resource.pubDate | date("MMMM D, YYYY") }}</time>
+      <img src="{% articleHero resource.heroImage %}" alt="{{ resource.heroImage.altText }}">
+      {{ resource.body | markdownify | safe }}
+      <nav class="related">
+        <h2>Topics</h2>
+          <ul>
+          {%- for label in resource.topic -%}
+            <li><a href="/topic/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+          {%- endfor -%}
+          </ul>
+      </nav>
     </article>
-    <nav>
+
+    <nav class="sidebar">
       <h2>Categories</h2>
         <ul>
-          <li>information architecture</li>
-          <li>content strategy</li>
-          <li>structured content design</li>
-          <li>knowledge graph engineering</li>
+          {%- for label in taxonomy -%}
+            {% if label.scheme == "Category" %}
+              <li><a href="/category/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+            {% endif %}
+          {%- endfor -%}
         </ul>
       <h2>Topics</h2>
         <ul>
-          <li>content analysis</li>
-          <li>design</li>
-          <li>development</li>
-          <li>discovery</li>
-          <li>integration</li>
-          <li>knowledge graphs</li>
-          <li>modeling</li>
-          <li>prototyping</li>
-          <li>strategy</li>
-          <li>structured content</li>
-          <li>systems</li>
-          <li>testing</li>
+          {%- for label in taxonomy -%}
+            {% if label.scheme == "Topic" %}
+              <li><a href="/topic/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+            {% endif %}
+          {%- endfor -%}
         </ul>
     </nav>
   </div>
+
+  {# Abstract this out into a Macro #}
+  <section class="related-content">
+    <h2>Related Services & Case Studies</h2>
+    <ul>
+    {% set count = 0 %}
+    {% for card in resource.relatedServices %}
+      {% if count < 2 %}
+        <li>
+          <a href="/services/{{ card.slug.current }}">
+            <p class="tag">Case Study<p>
+            {% responsiveImage card.heroImage, ".75" %}
+            <div>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.shortDescription }}</p>
+            </div>
+          </a>
+        </li>
+      {% set count = count + 1 %}
+      {% endif%}
+    {% endfor %}
+    {% for card in resource.relatedServices %}
+      {% if count < 4 %}
+        <li>
+          <a href="/services/{{ card.slug.current }}">
+            {% responsiveImage card.heroImage, ".75" %}
+            <div>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.shortDescription }}</p>
+            </div>
+          </a>
+        </li>
+      {% set count = count + 1 %}
+      {% endif%}
+    {% endfor %}
+    {# Add articles loop, for count up to 4 #}
+    {# {% for card in sorted %}
+      {% if card-count < 4 and card.category == page.category %}
+        {%- include card.html -%}
+        {% assign card-count = card-count | plus: 1 %}
+      {% endif %}
+    {% endfor %} #}
+    </ul>
+  </section>
+
 </div>  

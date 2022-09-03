@@ -56,7 +56,11 @@ cta: Ready to tame your complex information environment to better meet business 
               </a>
           </li>
           <li>
-            {{ resource.title }} 
+            {% if crumbTitle %}
+              {{ crumbTitle }} 
+            {% else %}
+              {{ resource.title }} 
+            {% endif %}
           </li>
         </ul>
       </nav>

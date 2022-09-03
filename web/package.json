@@ -23,6 +23,7 @@
     "luxon": "^1.19.3",
     "markdown-it": "^10.0.0",
     "markdown-it-anchor": "^5.2.5",
+    "nunjucks-date-filter": "^0.1.1",
     "sass": "^1.53.0"
   }
 }

@@ -1,4 +1,5 @@
 const urlFor = require('./utils/imageUrl');
+const dateFilter = require('nunjucks-date-filter');
 
 // Shortcodes
 const responsiveImage = require("./_11ty/shortcodes/responsiveImage.js");
@@ -48,6 +49,8 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.setLibrary("md", markdownIt(options)
     .use(markdownItAnchor, opts)
   );
+
+  eleventyConfig.addFilter('date', dateFilter); // Moment.js
 
   eleventyConfig.addFilter("markdownify", function(value) {
     const md = new markdownIt(options)

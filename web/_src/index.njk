@@ -9,9 +9,9 @@ navtitle: Home
 
   <h2>Articles</h2>
   <ul>
-  {% for article in collections.articles %}
+  {% for article in collections.writing %}
     <li>
-      <a href="{{ article.url | url }}">{{ article.data.article.title }}</a>
+      <a href="{{ article.url | url }}">{{ article.data.resource.title }}</a>
     </li>
   {% endfor %}
   </ul>

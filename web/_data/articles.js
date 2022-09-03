@@ -20,8 +20,18 @@ async function getArticles () {
     title,
     bodyText,
     pubDate,
+    "published": dateTime(_updatedAt),
+    _updatedAt,
     slug,
-    heroImage
+    heroImage,
+    topic[]->{prefLabel},
+    "relatedServices": *[_type=='service' && references(^.category._ref)] {
+      title,
+      heroImage,
+      shortDescription,
+      slug,
+      _type
+    }
   }`
   const order = `| order(pubDate asc)`
   const query = [filter, projection, order].join(' ')

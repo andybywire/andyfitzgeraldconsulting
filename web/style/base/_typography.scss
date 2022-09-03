@@ -16,7 +16,10 @@ a:hover {
   color: $dark-blue;
 }
 h1, h2, h3 {
-  margin: 2rem 0 0;
+  margin: 1rem 0 0;
+  @include breakpoint(large) {
+    margin: 2rem 0 0;
+  }
 }
 h1, h2 {
   color: $blue;
@@ -34,6 +37,13 @@ h3 {
 p, ul, ol {
   font-weight: 300;
   margin-top: 0;
+}
+time {
+  display: block;
+  margin-bottom: .5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: $medium-gray;
 }
 // consider which of these to break into individual page style pages
 blockquote {
