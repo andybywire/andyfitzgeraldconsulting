@@ -66,6 +66,32 @@
   section {
     @include fragment;
   }
+  blockquote {
+    margin: 2.5rem 1rem;
+    @include breakpoint(large) {
+      margin: 2.5rem 0;
+    }
+    p {
+      @include breakpoint(medium) {
+        columns: 2;
+        column-gap: 2rem;
+      }
+      @include breakpoint(large) {
+        column-gap: 3rem;
+      }
+    }
+    cite {
+      @include breakpoint(medium) {
+        width: 45%;
+        margin-left: 55%;
+        text-align: right;
+      }
+      @include breakpoint(large) {
+        width: 40%;
+        margin-left: 60%;
+      }  
+    }
+  }
   &.feedback {
     background-color: $dark-gray;
     margin-top: 2rem;

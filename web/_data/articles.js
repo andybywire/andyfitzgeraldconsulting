@@ -8,7 +8,8 @@ const hasToken = !!client.config().token
 function generateArticle (article) {
   return {
     ...article,
-    body: BlocksToMarkdown(article.bodyText, { serializers, ...client.config() })
+    body: BlocksToMarkdown(article.bodyText, { serializers, ...client.config() }),
+    lede: BlocksToMarkdown(article.lede, { serializers, ...client.config() })
   }
 }
 
@@ -19,6 +20,7 @@ async function getArticles () {
     _id,
     title,
     bodyText,
+    lede,
     pubDate,
     "published": dateTime(_updatedAt),
     _updatedAt,

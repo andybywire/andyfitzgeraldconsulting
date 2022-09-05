@@ -16,7 +16,7 @@ export default {
         list: [
           {title: 'Home', value: 'home'},
           {title: 'Services', value: 'services'},
-          {title: 'Case Studies', value: 'caseStudies'},
+          {title: 'Case Studies', value: 'studies'},
           {title: 'Speaking', value: 'speaking'},
           {title: 'Reviews', value: 'reviews'}
         ]
@@ -103,12 +103,24 @@ export default {
       name: 'reviewBlockTitle',
       title: 'Review Block Title',
       type: 'string',
-      hidden: ({parent}) => parent.type !== 'home'
+      hidden: ({parent}) => {
+        if (parent.type == 'home' || parent.type == 'studies') {
+            return false
+          } else {
+            return true
+          }
+      } 
     },
     {
       name: 'reviewBlockCopy',
       title: 'Review Block Copy',
-      hidden: ({parent}) => parent.type !== 'home',
+      hidden: ({parent}) => {
+        if (parent.type == 'home' || parent.type == 'studies') {
+            return false
+          } else {
+            return true
+          }
+      }, 
       type: 'text',
       rows: 3
     },
@@ -117,7 +129,7 @@ export default {
       title: 'Review Block Entries',
       // consider validating based on type — 3 for home, two for everywhere else   
       hidden: ({parent}) => {
-        if (parent.type == 'home' || parent.type == 'caseStudies') {
+        if (parent.type == 'home' || parent.type == 'studies') {
             return false
           } else {
             return true
@@ -137,7 +149,7 @@ export default {
       title: 'Client Grid Block Title',
       type: 'string',
       hidden: ({parent}) => {
-        if (parent.type == 'home' || parent.type == 'caseStudy') {
+        if (parent.type == 'home' || parent.type == 'studies') {
             return false
           } else {
             return true
@@ -148,7 +160,7 @@ export default {
       name: 'clientBlockCopy',
       title: 'Client Grid Block Copy',
       hidden: ({parent}) => {
-        if (parent.type == 'home' || parent.type == 'caseStudy') {
+        if (parent.type == 'home' || parent.type == 'studies') {
             return false
           } else {
             return true

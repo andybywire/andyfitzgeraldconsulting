@@ -8,7 +8,8 @@ const hasToken = !!client.config().token
 function generateCategory (category) {
   return {
     ...category,
-    copy: BlocksToMarkdown(category.copy, { serializers, ...client.config() })
+    copy: BlocksToMarkdown(category.copy, { serializers, ...client.config() }),
+    clientBlockCopy: BlocksToMarkdown(category.clientBlockCopy, { serializers, ...client.config() })
   }
 }
 
@@ -20,7 +21,17 @@ async function getCategory () {
     title,
     type,
     copy,
-    type
+    type,
+    review[]->{
+      author,
+      title,
+      excerpt, 
+      "employer":employer->name
+    },
+    clientBlockTitle,
+    clientBlockCopy,
+    reviewBlockTitle,
+    reviewBlockCopy
   }`
   const query = [filter, projection].join(' ')
   const docs = await client.fetch(query).catch(err => console.error(err))

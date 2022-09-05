@@ -18,10 +18,10 @@ cta: Ready to tame your complex information environment to better meet business 
             </button>
             <ul>
               <!-- Need to add .njk support for selected page -->
-              <li><a href="/services" {% if tags == "services" %} class="selected"{% endif %}>Services</a></li>
-              <li><a href="/case-studies" {% if tags == "case studies" %} class="selected"{% endif %}>Case Studies</a></li>
+              <li><a href="/services" {% if tags == "services" or resource.type == "services" %} class="selected"{% endif %}>Services</a></li>
+              <li><a href="/case-studies" {% if tags == "case studies" or resource.type == "caseStudies" %} class="selected"{% endif %}>Case Studies</a></li>
               <li><a href="/writing">Writing</a></li>
-              <li><a href="/speaking">Speaking</a></li>
+              <li><a href="/speaking" {% if resource.type == "speaking" %} class="selected"{% endif %}>Speaking</a></li>
               <li class="nav-bar-hidden"><a href="/reviews">Reviews</a></li>
               <li class="nav-bar-hidden"><a href="/about">About</a></li>
               <li><a href="/contact">Contact</a></li>              
@@ -51,17 +51,18 @@ cta: Ready to tame your complex information environment to better meet business 
       <nav aria-label="breadcrumb" class="breadcrumb">
         <ul>
           <li><a href="/">Home</a></li>
-          <li>
-            <a href="/{{ tags }}/">{{ tags }}
-              </a>
-          </li>
-          <li>
+          {% if tags == "categories" %}
+          <li>{{ resource.title }}</li>
+          {% else %}
+            <li>
+              <a href="/{{ tags | slugify }}/">{{ tags }}</a>
+            </li>
             {% if crumbTitle %}
-              {{ crumbTitle }} 
+              <li>{{ crumbTitle }}</li> 
             {% else %}
-              {{ resource.title }} 
+              <li>{{ resource.title }} </li>
             {% endif %}
-          </li>
+          {% endif %}
         </ul>
       </nav>
       {% endif %}

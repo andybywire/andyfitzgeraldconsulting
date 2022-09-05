@@ -23,6 +23,7 @@ async function getStudies () {
   const projection = groq`{
     _id,
     title,
+    shortDescription,
     atGlance,
     whatDid,
     review->{

@@ -16,7 +16,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({"assets/js": "js"});
 
   // Move these shortcodes to their own directory
-  eleventyConfig.addShortcode('imageUrlFor', (image, width="400") => {
+  eleventyConfig.addShortcode('imageUrlFor', (image, width="300") => {
     return urlFor(image)
       .width(width)
       .auto('format')

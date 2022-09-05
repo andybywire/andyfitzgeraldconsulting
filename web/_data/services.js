@@ -21,6 +21,7 @@ async function getServices () {
     title,
     serviceOverview,
     bodyText,
+    shortDescription,
     pubDate,
     slug,
     heroImage,

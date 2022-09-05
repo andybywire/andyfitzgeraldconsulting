@@ -10,7 +10,7 @@
       justify-content: space-between;
     }
   }
-  article {
+  article, .previews {
     @include breakpoint(large) {
       flex: 0 0 66%;
     }
