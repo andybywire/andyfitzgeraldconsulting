@@ -10,7 +10,7 @@
       justify-content: space-between;
     }
   }
-  article, .previews {
+  article, .preview {
     @include breakpoint(large) {
       flex: 0 0 66%;
     }
@@ -18,6 +18,33 @@
   nav {
     @include breakpoint(large) {
       flex: 0 0 25%;
+    }
+    &.pagination {
+      a {
+        margin: 1rem 0 4rem; 
+      }
+      .newer {
+        float: left;
+      }
+      .older {
+        float: right;
+      }
+    }
+  }
+  .preview {
+    a.teaser {
+      text-decoration: none;
+      color: inherit;
+      &:hover p:after {
+        color: $dark-blue;
+        transition: all 0.25s ease;
+      }
+    }
+    p:after {
+      content: "Read the article »";
+      padding-left: 0.5rem;
+      text-decoration: underline;
+      transition: all 0.25s ease;
     }
   }
 }

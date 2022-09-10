@@ -12,13 +12,15 @@ permalink: /writing/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNum
 ---
 <div class="article">
   <div class="col">
-    <div class="previews">
+    <div class="preview">
       {%- for resource in pagination.items %}
       <article>
-        <h1>{{ resource.title }}</h1>
-        <time datetime="{{ resource.pubdate }}">{{ resource.pubDate | date("MMMM D, YYYY") }}</time>
-        <img src="{% articleHero resource.heroImage %}" alt="{{ resource.heroImage.altText }}">
-        {{ resource.lede | markdownify | safe }}
+        <a href="/writing/{{ resource.slug.current | slug }}" class="teaser">
+          <h1>{{ resource.title }}</h1>
+          <time datetime="{{ resource.pubdate }}">{{ resource.pubDate | date("MMMM D, YYYY") }}</time>
+          <img src="{% articleHero resource.heroImage %}" alt="{{ resource.heroImage.altText }}">
+          {{ resource.lede | markdownify | safe }}
+        </a>
         <nav class="related">
           <h2>Topics</h2>
           <ul>
@@ -26,10 +28,19 @@ permalink: /writing/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNum
             <li><a href="/topic/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
           {%- endfor -%}
           </ul>
+        </nav>
+      </article>
+      {% endfor %}
+
+      <nav class="pagination" aria-label="Pagination links">
+        {% if pagination.href.previous %}
+          <a href="{{ pagination.href.previous }}" class="newer">« Newer Articles</a>
+        {% endif %}
+        {% if pagination.href.next %}
+          <a href="{{ pagination.href.next }}" class="older">Older Articles »</a>
+        {% endif %}
       </nav>
-    </article>
-    {% endfor %}
-  </div>
+    </div>
 
     <nav class="sidebar">
       <h2>Categories</h2>
@@ -50,6 +61,4 @@ permalink: /writing/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNum
         </ul>
     </nav>
   </div>
-
-
 </div>  
