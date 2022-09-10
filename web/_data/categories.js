@@ -15,7 +15,7 @@ function generateCategory (category) {
 
 async function getCategory () {
   // Learn more: https://www.sanity.io/docs/data-store/how-queries-work
-  const filter = groq`*[_type == "collection" && !(_id in path("drafts.**"))]`
+  const filter = groq`*[_type == "collection" && !(_id in path("drafts.**")) && type != "home"]`
   const projection = groq`{
     _id,
     title,

@@ -88,6 +88,58 @@ export default {
       ]
     },
     {
+      name: 'servicesBlockTitle',
+      title: 'Services Block Title',
+      type: 'string',
+      description: 'For home page only',
+    },
+    {
+      name: 'servicesBlockCopy',
+      title: 'Services Block Copy',
+      description: 'For home page only',
+      type: 'text',
+      rows: 3
+    }, 
+    {
+      name: 'reviewBlockTitle',
+      title: 'Review Block Title',
+      type: 'string',
+      description: 'For home page only',
+    },
+    {
+      name: 'reviewBlockCopy',
+      title: 'Review Block Copy',
+      description: 'For home page only',
+      type: 'text',
+      rows: 3
+    },
+    {
+      name: 'review',
+      title: 'Review Block Entries',
+      description: 'For home page only. Use 3 references.', 
+      type: 'array',
+      of: [
+        {type: 'reference',
+          to: [
+            {type: 'review'}
+          ]
+        }
+      ]
+    },
+    {
+      name: 'clientBlockTitle',
+      title: 'Client Grid Block Title',
+      type: 'string',
+      description: 'For home page only'
+    },
+    {
+      name: 'clientBlockCopy',
+      title: 'Client Grid Block Copy',
+      description: 'For home page only',
+      type: 'text',
+      rows: 3
+    },
+    {
       name: 'cta',
       type: 'text',
       title: 'Call to Action',
