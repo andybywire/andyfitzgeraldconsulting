@@ -51,41 +51,22 @@ layout: layouts/base.njk
     <a class="button" href="/reviews">Read More Feedback</a> 
   </article>
 
-
-
-
-
-  {# <pre style="white-space: pre-wrap;">{{ resource | dump(2) }}</pre> #}
-  <h2>Articles</h2>
-  <ul>
-  {% for article in collections.writing %}
-    <li>
-      <a href="{{ article.url | url }}">{{ article.data.resource.title }}</a>
-    </li>
-  {% endfor %}
-  </ul>
-
-  <h2>Services</h2>
-  <ul>
-  {% for service in collections.services %}
-    <li>
-      <a href="{{ service.url | url }}">{{ service.data.resource.title }}</a>
-    </li>
-  {% endfor %}
-  </ul>
-
-  <h2>Case Studies</h2>
-  <ul>
-  {% for study in collections['case studies'] %}
-    <li>
-      <a href="{{ study.url | url }}">{{ study.data.resource.title }}</a>
-    </li>
-  {% endfor %}
-  </ul>
-
-
+  <article>
+    <section class="wrap client-block">
+      <h1>{{ resource.clientBlockTitle }}</h1>
+      <p>{{ resource.clientBlockCopy }}</p>
+    </section>
+    <section class="logofarm">
+      <ul>
+      {% for client in clients.slice(0,8) %}
+        <li>
+          <a href="/reviews#{{ client.slug.current }}"><img src="{% imageUrlFor client.tile %}" alt="{{ client.tile.altText }}" /></a>
+        </li>
+      {% endfor %}
+      </ul>
+    </section> 
+  </article>
 </div>
-
 
 {% endif %}
 {% endfor %}

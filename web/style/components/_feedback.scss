@@ -6,12 +6,18 @@
   background-color: $dark-gray;
   margin-top: 2rem;
   gap: 3rem;
-  padding: 4rem 0;
+  padding: 2rem 0;
+  @include breakpoint(medium) {
+    padding: 4rem 0;
+  }
   section {
     @include fragment;
     p, h1 {
       color: $white;
       margin-top: 0;
+    }
+    p {
+      margin-bottom: 0;
     }
   }
   .review {
