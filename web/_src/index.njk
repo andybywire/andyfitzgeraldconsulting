@@ -1,12 +1,61 @@
 ---
 layout: layouts/base.njk
-tags:
-  - nav
-navtitle: Home
 ---
-<section>
-  <h1>Here's a home page.</h1>
+{% for resource in singletons %}
+{% if resource.title == "Home" %}
 
+<div class="home">
+
+  <article class="value-prop">
+    <div class="wrap">
+      <div class="display">{{ resource.heroCopy | markdownify | safe }}</div>
+      <div class="img">{% responsiveImage resource.heroImg, ".75"  %}</div>
+    </div>
+  </article>
+
+  <article>
+    <section class="wrap">
+      <h1>{{ resource.servicesBlockTitle }}</h1>
+      <p>{{ resource.servicesBlockCopy }}</p>
+    </section>
+    <section class="related-content">
+      <ul>
+      {% for card in services %}
+          <li>
+            <a href="/{{ path }}/{{ card.slug.current }}">
+              {% responsiveImage card.heroImage, ".75" %}
+              <div>
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.shortDescription }}</p>
+              </div>
+            </a>
+          </li>
+      {% endfor %}
+      </ul>
+    </section>  
+  </article>
+  
+  <article class="client-feedback">
+      <section>
+        <h1>{{ resource.reviewBlockTitle }}</h1>
+        <p>{{ resource.reviewBlockCopy }}</p>
+      </section>
+    {% for review in resource.review %}
+      <blockquote class="review">
+        <p>"{{ review.excerpt }}"</p>
+        <cite>
+          {{ review.author }}, {{ review.title }}, {{ review.employer }}
+        </cite>
+      </blockquote>
+    {% endfor %}
+    <a class="button" href="/reviews">Read More Feedback</a> 
+  </article>
+
+
+
+
+
+  {# <pre style="white-space: pre-wrap;">{{ resource | dump(2) }}</pre> #}
   <h2>Articles</h2>
   <ul>
   {% for article in collections.writing %}
@@ -34,6 +83,9 @@ navtitle: Home
   {% endfor %}
   </ul>
 
-</section>
+
+</div>
 
 
+{% endif %}
+{% endfor %}

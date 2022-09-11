@@ -21,6 +21,7 @@ html {
 img {
   max-inline-size: 100%; // element alway fits in containing frame
   block-size: auto; // aspect ratio of images remains constant
+  border-radius: 2px;
 }
 // Wrap styles
 body {

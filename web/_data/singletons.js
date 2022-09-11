@@ -5,23 +5,21 @@ const serializers = require('../utils/serializers')
 const overlayDrafts = require('../utils/overlayDrafts')
 const hasToken = !!client.config().token
 
-function generateCategory (category) {
+function generateSingleton (Singleton) {
   return {
-    ...category,
-    copy: BlocksToMarkdown(category.copy, { serializers, ...client.config() }),
-    clientBlockCopy: BlocksToMarkdown(category.clientBlockCopy, { serializers, ...client.config() })
+    ...Singleton,
+    heroCopy: BlocksToMarkdown(Singleton.heroCopy, { serializers, ...client.config() })
   }
 }
 
-async function getCategory () {
+async function getSingleton () {
   // Learn more: https://www.sanity.io/docs/data-store/how-queries-work
-  const filter = groq`*[_type == "collection" && !(_id in path("drafts.**"))]`
+  const filter = groq`*[_type == "singleton" && !(_id in path("drafts.**"))]`
   const projection = groq`{
     _id,
     title,
-    type,
-    copy,
-    type,
+    heroCopy,
+    heroImg,
     review[]->{
       author,
       title,
@@ -31,13 +29,15 @@ async function getCategory () {
     clientBlockTitle,
     clientBlockCopy,
     reviewBlockTitle,
-    reviewBlockCopy
+    reviewBlockCopy,
+    servicesBlockTitle,
+    servicesBlockCopy
   }`
   const query = [filter, projection].join(' ')
   const docs = await client.fetch(query).catch(err => console.error(err))
   const reducedDocs = overlayDrafts(hasToken, docs)
-  const prepareCategories = reducedDocs.map(generateCategory)
-  return prepareCategories
+  const prepareSingletons = reducedDocs.map(generateSingleton)
+  return prepareSingletons
 }
 
-module.exports = getCategory
+module.exports = getSingleton

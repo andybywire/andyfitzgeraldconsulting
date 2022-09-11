@@ -7,37 +7,6 @@
     @include fragment;
   }
 }
-.category-feedback {
-  @include segment;
-  background-color: $dark-gray;
-  margin-top: 2rem;
-  gap: 3rem;
-  padding: 4rem 0;
-  section {
-    @include fragment;
-    p, h1 {
-      color: $white;
-      margin-top: 0;
-    }
-  }
-  .review {
-    @include fragment;
-    color: $blue;
-    p {
-      padding: 0 1rem;
-      @include breakpoint(medium) {
-        padding: 0 2rem;
-      }
-    }
-    cite {
-      padding: 0 1rem;
-      @include breakpoint(medium) {
-        padding-left: 4rem;
-        max-width: 50%;
-      }
-    }
-  }
-}
 .clients {
   @include segment;
   padding: 2rem 0;

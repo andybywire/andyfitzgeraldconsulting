@@ -1,0 +1,17 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+a.button {
+  flex: 0 1 auto;
+  font-family: $header;
+  color: $black;
+  background-color: $blue;
+  text-align: center;
+  text-decoration: none;
+  padding: .75rem 1rem;
+  border-radius: 2px;
+  transition: background-color .25s ease-out,color .25s ease-out;
+  @include breakpoint(medium) {
+    margin-top: 1rem;
+  }
+}

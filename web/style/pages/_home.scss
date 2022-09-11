@@ -1,0 +1,47 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.home {
+  article {
+    @include segment;
+  }
+  .wrap {
+    @include fragment;
+  }
+  .value-prop {
+    background-color: $light-gray;
+    .wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      padding: 3rem 0;
+      .display {
+        font-size: 1.35rem;
+        strong {
+          font-weight: 600;
+        }
+        em {
+          font-style: inherit;
+          font-weight: 600;
+          color: $blue;
+        }
+        P:last-of-type {
+          margin-bottom: 0;
+        }
+        @include breakpoint(medium) {
+          flex: 0 0 calc(55%);
+        }
+      }
+      .img {
+        @include breakpoint(medium) {
+          flex: 0 0 calc(35%);
+        }
+      }
+    }
+  }
+  .client-feedback .button {
+    @include breakpoint(medium) {
+      padding: .75rem 3rem;
+    }   
+  }
+}
