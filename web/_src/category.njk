@@ -15,13 +15,38 @@ permalink: /{{ resource.title | slug }}/index.html
     {{ resource.copy | markdownify | safe }}
   </section>
 
-  {# Abstract this out into a Macro #}
+  {# Abstract this out into a Macro ... or eliminate altogether #}
   {% if resource.type == "studies" %}
     {% set category = studies %}
   {% elif resource.type == "services" %}
     {% set category = services %}
   {% endif %}
-  
+
+
+  {% if resource.type == "services" %}
+    <section class="service-cards">
+      <ul>
+        {% for card in services %}
+        <a href="/services/{{ card.slug.current }}">
+          <li>
+            <div class="service-hero">
+              {% responsiveImage card.heroImage, "0.5625" %}
+            </div>
+            <div class="service-copy">
+              <h2>{{ card.title }}</h2>
+              <p>{{ card.mediumDescription }}</p>
+              <p class="cta">Learn More »</p>
+            </div>
+          </li>
+        </a>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+
+
+  {% if resource.type == "studies" %}
   <section class="related-content">
     <ul>
     {% set count = 0 %}
@@ -68,6 +93,8 @@ permalink: /{{ resource.title | slug }}/index.html
     </ul>
   {# <pre>{{ resource | dump(2) }}</pre> #}
   </section>  
+  {% endif %}
+
 </div>
 
 {% if resource.type == "studies" %}

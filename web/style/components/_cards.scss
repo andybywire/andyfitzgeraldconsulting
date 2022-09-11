@@ -60,3 +60,67 @@
     margin: 0;
   }
 }
+
+.service-cards {
+  @include fragment;
+  a {
+    text-decoration: none;
+    &:hover {
+      color: inherit;
+    }
+  }
+  ul {
+    padding: 0 0 2rem;
+  }
+  li {
+    list-style: none;
+    padding: 2rem 0;
+    @include breakpoint(medium) {
+      display: flex;
+      gap: 2rem;
+    }
+  }
+  .service-hero {
+    @include breakpoint(medium) {
+      flex: 0 0 35%;
+      padding-top: 1rem;
+    }
+    @include breakpoint(large) {
+      padding-top: .5rem;
+    }
+  }
+  .service-copy {
+    @include breakpoint(medium) {
+      flex: 1 0 50%;
+    }
+  }
+  h2 {
+    color: $blue;
+    font-weight: 700;
+    margin: 0;
+  }
+  p {
+    margin: 0;
+    &.cta {
+      display: inline-block;
+      color: #4e9dbc;
+      font-weight: 800;
+      position: relative;
+      &:after {
+        content: " ";
+        position: absolute;
+        bottom: 2px;
+        left: 0;
+        width: 0%;
+        border-bottom: 2px solid #4e9dbc;
+        transition: .3s;
+      }
+    }
+  }
+  a:hover .cta:after {
+    width: 100%;
+  }
+  img {
+    border-radius: $radius;
+  }
+}
