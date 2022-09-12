@@ -8,7 +8,8 @@ const hasToken = !!client.config().token
 function generateSingleton (Singleton) {
   return {
     ...Singleton,
-    heroCopy: BlocksToMarkdown(Singleton.heroCopy, { serializers, ...client.config() })
+    heroCopy: BlocksToMarkdown(Singleton.heroCopy, { serializers, ...client.config() }),
+    bodyText: BlocksToMarkdown(Singleton.bodyText, { serializers, ...client.config() })
   }
 }
 
@@ -20,6 +21,7 @@ async function getSingleton () {
     title,
     heroCopy,
     heroImg,
+    bodyText,
     review[]->{
       author,
       title,

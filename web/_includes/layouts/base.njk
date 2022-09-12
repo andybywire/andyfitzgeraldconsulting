@@ -51,8 +51,10 @@ cta: Ready to tame your complex information environment to better meet business 
       <nav aria-label="breadcrumb" class="breadcrumb">
         <ul>
           <li><a href="/">Home</a></li>
-          {% if tags == "categories" %}
-          <li>{{ resource.title }}</li>
+          {% if page.url == "/about/" %}
+            <li>About</li>
+          {% elif tags == "categories" %}
+            <li>{{ resource.title }}</li>
           {% else %}
             <li>
               <a href="/{{ tags | slugify }}/">{{ tags }}</a>
@@ -60,7 +62,7 @@ cta: Ready to tame your complex information environment to better meet business 
             {% if crumbTitle %}
               <li>{{ crumbTitle }}</li> 
             {% elif resource.title %}
-              <li>{{ resource.title }} </li>
+              <li>{{ resource.title }}</li>
             {% endif %}
           {% endif %}
         </ul>

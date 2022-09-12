@@ -1,7 +1,7 @@
 @import '../utilities/variables.scss';
 @import '../utilities/mixins.scss';
 
-.home {
+.singleton {
   article {
     @include segment;
   }
@@ -9,15 +9,17 @@
     @include fragment;
   }
   .value-prop {
-    background-color: $light-gray;
     .wrap {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
-      padding: 3rem 0;
+      padding-top: 3rem;
       .display {
         font-size: 1.35rem;
         padding-bottom: 3rem;
+        @include breakpoint(large) {
+          padding-bottom: 0;
+        }
         strong {
           font-weight: 600;
         }
@@ -38,6 +40,42 @@
           flex: 0 0 calc(35%);
         }
       }
+    }
+  }
+  &.home {
+    .value-prop {
+      background-color: $light-gray;
+      .wrap {
+        padding: 3rem 0;
+      }
+    }
+  }
+  &.about {
+    .value-prop .wrap {
+      .display {
+        @include breakpoint(medium) {
+          flex: 0 0 calc(55%);
+        }
+      }
+      .img {
+        @include breakpoint(medium) {
+          flex: 0 0 calc(35%);
+        }
+      }
+    }
+    .body-text .wrap {
+      display: flex;
+      padding-bottom: 4rem;
+      div {
+        @include breakpoint(large) {
+          flex: 0 0 66%;
+        }
+      }
+    }
+  }
+  &.speaking {
+    svg {
+      height: .75rem;
     }
   }
   .client-feedback .button {
