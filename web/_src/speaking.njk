@@ -12,7 +12,6 @@ layout: layouts/base.njk
       <ul>
       {% for event in events %}
         <li>
-
           <time class="timeclass" datetime="{{ event.date }}">
               {{ event.date | date("MMMM D, YYYY") }}
               <span class="future">upcoming</span>
