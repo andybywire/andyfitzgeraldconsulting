@@ -12,14 +12,21 @@ layout: layouts/base.njk
       <ul>
       {% for event in events %}
         <li>
-          {{ event.date | date("MMMM D, YYYY") }}
-          {% if event.link %}
-          <a href="{{ event.link }}">{{ event.event }}{% include '../_includes/icons/external.svg' %}</a>
-          {% else %}
-          {{ event.event }}
-          {% endif %}
-          {{ event.location.city }}, 
-          {{ event.location.state if event.location.state else event.location.country }}
+
+          <time class="timeclass" datetime="{{ event.date }}">
+              {{ event.date | date("MMMM D, YYYY") }}
+              <span class="future">upcoming</span>
+          </time>
+          <h3>
+            {% if event.link %}
+            <a href="{{ event.link }}">{{ event.event }}{% include '../_includes/icons/external.svg' %}</a>
+            {% else %}
+            {{ event.event }}
+            {% endif %}
+          </h3>
+          <p>
+            {{ event.location.city }}, {{ event.location.state if event.location.state else event.location.country }}
+          </p>
         </li>
       {% endfor %}
       </ul>

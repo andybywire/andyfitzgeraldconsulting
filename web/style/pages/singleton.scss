@@ -74,8 +74,41 @@
     }
   }
   &.speaking {
+    ul {
+      padding: 0;
+      list-style: none;
+      display: flex;
+      gap: 10%;
+      flex-wrap: wrap;
+      padding: 1rem 0 4rem;
+    }
+    li {
+      padding-bottom: 1rem;
+      flex: 0 0 100%;
+      @include breakpoint(medium) {
+        flex: 0 0 40%;
+      }
+      a {
+        text-decoration: none;
+      }
+    }
+    time {
+      margin: 0;
+    }
+    h3 {
+      margin-top: 0;
+    } 
     svg {
       height: .75rem;
+      margin-left: .5rem;
+    }
+    .future {
+      // display: none;
+      background: $blue;
+      padding: 0.25rem 0.5rem;
+      border-radius: 3px;
+      margin-left: .5rem;
+      color: #fff;
     }
   }
   .client-feedback .button {
