@@ -30,34 +30,17 @@ navClose.addEventListener("click", function(event){
   navMenu.classList.replace('side-nav-open', 'side-nav-closed')
 });
 
-// Consider listening w/ event delegation: 
-// https://gomakethings.com/listening-for-events-on-multiple-elements-using-javascript-event-delegation/
+// Add "upcoming" tag to events in the future
+const eventList = Array.from(document.querySelectorAll('#event-list>li>time'));
+const today = new Date();
 
-// $(window).scroll(function() {    
-//     var scroll = $(window).scrollTop();
-
-//     if (scroll >= 45) {
-//         $("nav").addClass("compact");
-//         $("div.nav-wrap").addClass("compact");
-//         $("li.title").addClass("compact");
-//         $("span.full").addClass("compact");
-//         $("nav.top-wrap").addClass("compact");
-//         $("div.mobile-nav").addClass("compact");
-//     } else {
-//         $("nav").removeClass("compact");
-//         $("div.nav-wrap").removeClass("compact");
-//         $("li.title").removeClass("compact"); 
-//         $("span.full").removeClass("compact");   
-//         $("nav.top-wrap").removeClass("compact");
-//         $("div.mobile-nav").removeClass("compact");   
-//     }
-// });
-
-// $("#event-list div.event-listing time").each(function () {
-//     var eventDate = new Date($(this).attr("datetime"));
-//     var currentDate = new Date();
-
-//     if (eventDate > currentDate) {
-//         $(this).children("span").css("display", "inline-block");
-//     }
-// });
+eventList.forEach((event) => {
+  let eventDatetime = Date.parse(event.getAttribute('datetime'));
+  if (eventDatetime > today ) {
+    const fragment = document.createDocumentFragment();
+    const future = fragment.appendChild(document.createElement('span'));
+    future.classList.add('future');
+    future.textContent = 'upcoming';
+    event.appendChild(future);
+  }
+});

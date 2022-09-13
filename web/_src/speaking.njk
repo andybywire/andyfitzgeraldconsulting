@@ -9,12 +9,11 @@ layout: layouts/base.njk
     <section class="wrap">
       <h1>{{ resource.title }}</h1>
       {{ resource.bodyText | markdownify | safe }}
-      <ul>
+      <ul id="event-list">
       {% for event in events %}
         <li>
           <time class="timeclass" datetime="{{ event.date }}">
               {{ event.date | date("MMMM D, YYYY") }}
-              <span class="future">upcoming</span>
           </time>
           <h3>
             {% if event.link %}
