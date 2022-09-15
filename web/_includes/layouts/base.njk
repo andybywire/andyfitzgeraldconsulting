@@ -17,11 +17,11 @@ cta: Ready to tame your complex information environment to better meet business 
               {% include '../icons/close.svg' %}
             </button>
             <ul>
-              {% for item in navigation.items %}
+            {% for item in navigation.items %}
               <li>
                 <a href="{{ item.url }}" {{ helpers.getLinkActiveState(item.url, page.url) | safe }}>{{ item.text }}</a>
               </li>
-              {% endfor %}
+            {% endfor %}
               {# Add these to navigation.json  #}
               <li class="nav-bar-hidden"><a href="/reviews">Reviews</a></li>
               <li class="nav-bar-hidden"><a href="/about">About</a></li>
@@ -52,19 +52,13 @@ cta: Ready to tame your complex information environment to better meet business 
       <nav aria-label="breadcrumb" class="breadcrumb">
         <ul>
           <li><a href="/">Home</a></li>
-          {% if page.url == "/about/" %}
-            <li>About</li>
+          {% if singletonCrumb %}
+            <li>{{ singletonCrumb }}</li>
           {% elif tags == "categories" %}
             <li>{{ resource.title }}</li>
           {% else %}
-            <li>
-              <a href="/{{ tags | slugify }}/">{{ tags }}</a>
-            </li>
-            {% if crumbTitle %}
-              <li>{{ crumbTitle }}</li> 
-            {% elif resource.title %}
-              <li>{{ resource.title }}</li>
-            {% endif %}
+            <li><a href="/{{ tags | slugify }}/">{{ tags }}</a></li>
+            <li>{{ crumbTitle if crumbTitle else resource.title}}</li> 
           {% endif %}
         </ul>
       </nav>
