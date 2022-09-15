@@ -111,6 +111,18 @@
       color: #fff;
     }
   }
+  &.reviews {
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    li {
+      display: flex;
+      .logo {
+        flex: 0 0 25%;
+      }
+    }
+  }
   .client-feedback .button {
     @include breakpoint(medium) {
       padding: .75rem 3rem;
