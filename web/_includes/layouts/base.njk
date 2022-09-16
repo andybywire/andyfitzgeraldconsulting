@@ -57,8 +57,14 @@ cta: Ready to tame your complex information environment to better meet business 
           {% elif tags == "categories" %}
             <li>{{ resource.title }}</li>
           {% else %}
-            <li><a href="/{{ tags | slugify }}/">{{ tags }}</a></li>
-            <li>{{ crumbTitle if crumbTitle else resource.title}}</li> 
+            <li>
+              <a href="/{{ tags | slugify }}/">{{ tags }}</a>
+            </li>
+            {% if crumbTitle %}
+              <li>{{ crumbTitle }}</li> 
+            {% elif resource.title %}
+              <li>{{ resource.title }}</li>
+            {% endif %}
           {% endif %}
         </ul>
       </nav>
