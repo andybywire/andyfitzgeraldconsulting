@@ -14,7 +14,10 @@ function generateReview (review) {
 
 async function getReview () {
   const filter = groq`*[_type == "review" && !(_id in path("drafts.**"))]`
-  const projection = groq`{...}`
+  const projection = groq`{
+    ...,
+    employer->
+  }`
   const query = [filter, projection].join(' ')
   const docs = await client.fetch(query).catch(err => console.error(err))
   const reducedDocs = overlayDrafts(hasToken, docs)

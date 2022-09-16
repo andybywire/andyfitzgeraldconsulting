@@ -112,14 +112,57 @@
     }
   }
   &.reviews {
-    ul {
+    .client-grid {
       list-style: none;
       padding-left: 0;
     }
-    li {
+    .review-grid {
       display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 2rem;
+      @include breakpoint(medium) {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-top: 0;
+      }
       .logo {
-        flex: 0 0 25%;
+        width: 50%;
+        @include breakpoint(medium) {
+          flex: 0 0 15%;
+          padding-top: 3rem;  
+          width: 100%;
+        }
+      }
+      .review-body {
+        flex: 0 0 80%;
+        @include breakpoint(large) { 
+          flex: 0 0 65%;
+          padding-right: 15%;
+        }
+      }
+    }
+    blockquote {
+      margin: 0;
+      p {
+        font-weight: 300;
+      }
+      ul {
+        margin: 1rem 0;
+        list-style: disc;
+      }
+      cite {
+        display: inline-block; // tightens line height
+        color: $black;
+        font-size: inherit;
+        font-weight: 300;
+        padding-left: 2rem;
+        text-indent: -1.25rem;
+        padding-bottom: 3rem;
+        &::before {
+          content: "— "
+        }
       }
     }
   }
