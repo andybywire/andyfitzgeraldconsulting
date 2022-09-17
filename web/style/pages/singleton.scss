@@ -120,12 +120,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-top: 2rem;
+      padding-top: 5rem;
       @include breakpoint(medium) {
         flex-direction: row;
         justify-content: space-between;
         align-items: flex-start;
-        padding-top: 0;
+        padding-top: 3rem;
       }
       .logo {
         width: 50%;
@@ -143,7 +143,7 @@
         }
       }
     }
-    blockquote {
+    blockquote.review {
       margin: 0;
       p {
         font-weight: 300;
@@ -159,10 +159,13 @@
         font-weight: 300;
         padding-left: 2rem;
         text-indent: -1.25rem;
-        padding-bottom: 3rem;
+        // padding-bottom: 3rem;
         &::before {
           content: "— "
         }
+      }
+      &:not(:last-of-type ) cite {
+        padding-bottom: 3rem;
       }
     }
   }

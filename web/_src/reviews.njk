@@ -13,7 +13,7 @@ singletonCrumb: reviews
 
       <ul class="client-grid">
       {% for client in clients %}
-        <li class="review-grid">
+        <li class="review-grid" id="{{ client.slug.current | slug }}">
           <div class="logo">{% responsiveImage client.logo, "1"  %}</div>
           <div class="review-body">
             <h2>{{ client.name }}</h2>
