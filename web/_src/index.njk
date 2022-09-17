@@ -22,7 +22,7 @@ layout: layouts/base.njk
       <ul>
       {% for card in services %}
           <li>
-            <a href="/{{ path }}/{{ card.slug.current }}">
+            <a href="/services/{{ card.slug.current }}">
               {% responsiveImage card.heroImage, ".75" %}
               <div>
                 <h3>{{ card.title }}</h3>
