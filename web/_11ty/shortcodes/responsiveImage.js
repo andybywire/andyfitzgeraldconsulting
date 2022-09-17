@@ -7,6 +7,7 @@ module.exports = (image, aspect=0.5625, srcs="320,640,900", sizes="100vw", class
   const firstSize = sizeArray[0];
   const lastSize = sizeArray[sizeArray.length - 1];
   const lastHeight = (lastSize * aspect);
+  const altText = image.altText;
   const srcSetContent = sizeArray.map((size) => {
     const height = Math.floor(size * aspect); // default is 16:9
     const url = urlFor(image)
@@ -20,13 +21,15 @@ module.exports = (image, aspect=0.5625, srcs="320,640,900", sizes="100vw", class
 
   return (
       `<img src="${urlFor(image).width(firstSize)}"
-          ${classList ? "class='" + classList + "'" : ""}
-          srcset="${srcSetContent}"
-          sizes="${sizes}"
-          width="${lastSize.trim()}"
-          height="${lastHeight}"
-          loading="lazy">`
-          // height included to avoid layout shift: lets the browser know what the aspect ratio is
-          // set loading to "eager" if above the fold
+        ${classList ? "class='" + classList + "'" : ""}
+        srcset="${srcSetContent}"
+        sizes="${sizes}"
+        width="${lastSize.trim()}"
+        height="${lastHeight}"
+        loading="lazy"
+        alt="${altText}"
+      >`
+      // height included to avoid layout shift: lets the browser know what the aspect ratio is
+      // set loading to "eager" if above the fold
   )
 };
