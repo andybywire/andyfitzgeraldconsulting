@@ -15,22 +15,7 @@ permalink: /writing/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNum
   <div class="col">
     <div class="preview">
       {%- for resource in pagination.items %}
-      <article>
-        <a href="/writing/{{ resource.slug.current | slug }}" class="teaser">
-          <h1>{{ resource.title }}</h1>
-          <time datetime="{{ resource.pubdate }}">{{ resource.pubDate | date("MMMM D, YYYY") }}</time>
-          <img src="{% articleHero resource.heroImage %}" alt="{{ resource.heroImage.altText }}">
-          {{ resource.lede | markdownify | safe }}
-        </a>
-        <nav class="related">
-          <h2>Topics</h2>
-          <ul>
-          {%- for label in resource.topic -%}
-            <li><a href="/topic/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-          {%- endfor -%}
-          </ul>
-        </nav>
-      </article>
+      {% include '../_includes/partials/articlePreview.njk' %}
       {% endfor %}
 
       <nav class="pagination" aria-label="Pagination links">
@@ -42,24 +27,6 @@ permalink: /writing/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNum
         {% endif %}
       </nav>
     </div>
-
-    <nav class="sidebar">
-      <h2>Categories</h2>
-        <ul>
-          {%- for label in taxonomy -%}
-            {% if label.scheme == "Category" %}
-              <li><a href="/category/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-            {% endif %}
-          {%- endfor -%}
-        </ul>
-      <h2>Topics</h2>
-        <ul>
-          {%- for label in taxonomy -%}
-            {% if label.scheme == "Topic" %}
-              <li><a href="/topic/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-            {% endif %}
-          {%- endfor -%}
-        </ul>
-    </nav>
+  {% include '../_includes/partials/articleSidebar.njk' %}
   </div>
 </div>  

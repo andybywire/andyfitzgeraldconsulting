@@ -22,30 +22,13 @@ crumbTitle: article
         <h2>Topics</h2>
           <ul>
           {%- for label in resource.topic -%}
-            <li><a href="/topic/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+            <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
           {%- endfor -%}
           </ul>
       </nav>
     </article>
 
-    <nav class="sidebar">
-      <h2>Categories</h2>
-        <ul>
-          {%- for label in taxonomy -%}
-            {% if label.scheme == "Category" %}
-              <li><a href="/category/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-            {% endif %}
-          {%- endfor -%}
-        </ul>
-      <h2>Topics</h2>
-        <ul>
-          {%- for label in taxonomy -%}
-            {% if label.scheme == "Topic" %}
-              <li><a href="/topic/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-            {% endif %}
-          {%- endfor -%}
-        </ul>
-    </nav>
+  {% include '../_includes/partials/articleSidebar.njk' %}
   </div>
 
   {# Abstract this out into a Macro #}

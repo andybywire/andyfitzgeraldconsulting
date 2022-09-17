@@ -27,6 +27,8 @@ async function getArticles () {
     slug,
     heroImage,
     topic[]->{prefLabel},
+    "topicTags":topic[]->prefLabel,
+    "categoryTag":category->prefLabel,
     "relatedServices": *[_type=='service' && references(^.category._ref)] {
       title,
       heroImage,
