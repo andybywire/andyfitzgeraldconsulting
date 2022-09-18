@@ -1,7 +1,23 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page Title</title>
+    <title>
+      {%- if resource.title -%}
+        {%- if "services" in tags -%}
+          {{ resource.title }} Services | {{ metadata.siteTitle }}
+        {%- elif "case studies" in tags -%}
+          {{ resource.title }} Case Study | {{ metadata.siteTitle }}
+        {%- else -%}
+          {{ resource.title }} | {{ metadata.siteTitle }}
+        {%- endif -%}
+      {% elif pagination.items[0].prefLabel %}
+        {{pagination.items[0].prefLabel}} | {{ metadata.siteTitle }}
+      {% elif singletonCrumb %}
+        {{ singletonCrumb }} | {{ metadata.siteTitle }}
+      {%- else -%}
+        {{ metadata.siteTitle }}
+      {%- endif -%}
+    </title>
     <link rel="stylesheet" type="text/css" href="/style/style.css" />
     {# re: font hosting: https://gomakethings.com/google-fonts-and-gdpr/ #}
     <style>
