@@ -37,7 +37,7 @@ async function getArticles () {
       _type
     }
   }`
-  const order = `| order(pubDate asc)`
+  const order = `| order(pubDate desc)`
   const query = [filter, projection, order].join(' ')
   const docs = await client.fetch(query).catch(err => console.error(err))
   const reducedDocs = overlayDrafts(hasToken, docs)

@@ -111,7 +111,7 @@ export default {
               type: 'string',
               title: 'Caption',
               options: {
-                isHighlighted: true 
+                isHighlighted: true
               }
             },
             {
@@ -119,7 +119,7 @@ export default {
               type: 'string',
               title: 'Alt Text',
               options: {
-                isHighlighted: true 
+                isHighlighted: true
               }
             }
           ]

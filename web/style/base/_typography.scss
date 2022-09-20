@@ -59,6 +59,9 @@ blockquote {
       content: "— "
     }
   }
+  .article & {
+    color: $dark-blue;
+  }
 }
 figure { // does this belong in a "global elements" file?
   margin: 0; 
