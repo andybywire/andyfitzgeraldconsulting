@@ -24,6 +24,9 @@ h1, h2, h3 {
 h1, h2 {
   color: $blue;
 }
+h4, h5 {
+  margin-bottom: 0;
+}
 h1 {
   font-size: 2rem;
   line-height: initial;
@@ -33,6 +36,9 @@ h1 {
 }
 h3 {
   font-weight: 400;
+}
+h4 {
+  margin-top: 3rem;
 }
 p, ul, ol {
   font-weight: 300;

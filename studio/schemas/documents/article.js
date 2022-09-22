@@ -121,6 +121,16 @@ export default {
               options: {
                 isHighlighted: true
               }
+            },
+            {
+              name: 'floatLeft',
+              type: 'boolean',
+              title: 'Float Left',
+              initialValue: false,
+              options: {
+                layout: 'checkbox',
+                isHighlighted: true
+              }
             }
           ]
         }

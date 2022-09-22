@@ -9,6 +9,18 @@
       display: flex;
       justify-content: space-between;
     }
+    img.left-float {
+      max-width: 36%;
+      float: left;
+      margin-right: 1rem;
+      margin-top: 2rem;
+      @include breakpoint(medium) {
+        max-width: 25%;
+      }
+      @include breakpoint(medium) {
+        margin-right: 2rem;
+      }
+    }
   }
   article, .preview {
     @include breakpoint(large) {
