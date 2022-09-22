@@ -18,4 +18,9 @@ const sanity = {
 }
 */
 
-module.exports = sanityClient({...sanity, useCdn: !process.env.SANITY_READ_TOKEN, token: process.env.SANITY_READ_TOKEN});
+module.exports = sanityClient({
+  ...sanity, 
+  useCdn: false, 
+  apiVersion: '2021-10-21',
+  token: process.env.SANITY_READ_TOKEN
+});
