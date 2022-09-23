@@ -136,18 +136,9 @@ export default {
           fields: [
             {
               name: 'caption',
-              type: 'array',
+              type: 'text',
               title: 'Caption',
-              of: [
-                {
-                  type: 'block',
-                  styles: [],
-                  lists: [],
-                  marks: {
-                    decorators: []
-                  }
-                }
-              ],
+              rows: 2,
               options: {
                 isHighlighted: true
               }
