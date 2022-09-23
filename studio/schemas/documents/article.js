@@ -101,15 +101,53 @@ export default {
       type: 'array', 
       of: [
         {type: 'block'},
-        {type: 'image',
+        {
+          type: 'image',
+          options: {
+            hotspot: true
+          },
+          fields: [
+            {
+              name: 'altText',
+              type: 'string',
+              title: 'Alt Text',
+              options: {
+                isHighlighted: true
+              }
+            },
+            {
+              name: 'floatLeft',
+              type: 'boolean',
+              title: 'Float Left',
+              initialValue: false,
+              options: {
+                layout: 'checkbox',
+                isHighlighted: true
+              }
+            }
+          ]
+        },
+        { 
+          type: 'image',
+          name: 'figure',
           options: {
             hotspot: true
           },
           fields: [
             {
               name: 'caption',
-              type: 'string',
+              type: 'array',
               title: 'Caption',
+              of: [
+                {
+                  type: 'block',
+                  styles: [],
+                  lists: [],
+                  marks: {
+                    decorators: []
+                  }
+                }
+              ],
               options: {
                 isHighlighted: true
               }
@@ -123,9 +161,10 @@ export default {
               }
             },
             {
-              name: 'floatLeft',
+              name: 'outline',
               type: 'boolean',
-              title: 'Float Left',
+              title: 'Outline',
+              description: 'Give images with white backgrounds a light outline to help them not disappear onto the page at the edges',
               initialValue: false,
               options: {
                 layout: 'checkbox',

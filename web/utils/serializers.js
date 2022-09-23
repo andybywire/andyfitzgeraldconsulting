@@ -8,10 +8,18 @@ module.exports = {
       '```' + node.language + '\n' + node.code + '\n```',
     mainImage: ({node}) => `![${node.alt}](${imageUrl(node).width(600).url()})`,
     // image: ({node}) => `![${node.alt}](${imageUrl(node).width(100).url()})`,
-    image: ({node}) => `<img src="${imageUrl(node).url()}" alt="${node.altText || ''}" class="${node.floatLeft ? 'left-float' : ''}">`
+    image: ({node}) => `<img src="${imageUrl(node).url()}" alt="${node.altText || ''}" class="${node.floatLeft ? 'left-float' : ''}">`,
+    // figure: ({}) => ``
   }
 }
 
+
+// figure: 
+// image
+// title (block content)
+// altText
+
+// body: BlocksToMarkdown(article.bodyText, { serializers, ...client.config() }),
 
 // serializer in block-content-to-markdown:
 // function image(props) {

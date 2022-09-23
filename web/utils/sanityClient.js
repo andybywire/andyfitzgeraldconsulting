@@ -5,22 +5,9 @@ const sanityClient = require("@sanity/client");
 
 const { sanity } = require('../client-config')
 
-/**
- * Set manually. Find configuration in
- * studio/sanity.json or on manage.sanity.io
- */
-
-/*
-const sanity = {
-  projectId: 'anokeucs',
-  dataset: 'eleventy',
-  useCdn: true
-}
-*/
-
 module.exports = sanityClient({
   ...sanity, 
-  useCdn: false, 
+  useCdn: false, // set to true in production (manage w/ .env)
   apiVersion: '2021-10-21',
   token: process.env.SANITY_READ_TOKEN
 });
