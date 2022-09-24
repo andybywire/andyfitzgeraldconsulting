@@ -69,12 +69,3 @@ blockquote {
     color: $dark-blue;
   }
 }
-figure { // does this belong in a "global elements" file?
-  margin: 0; 
-  line-height: 1.25;
-  figcaption {
-    font-size: 0.999999rem;
-    font-weight: 300;
-    font-style: italic;
-  }
-}

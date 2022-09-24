@@ -18,6 +18,7 @@ import settings from './documents/settings'
 // object schemas
 import banner from './objects/banner'
 import cta from './objects/cta'
+import figure from './objects/figure'
 
 // Then we give our schema to the builder and provide the result to Sanity
 export default createSchema({
@@ -36,6 +37,7 @@ export default createSchema({
     singleton,
     settings,
     banner,
-    cta
+    cta,
+    figure
   ]),
 })

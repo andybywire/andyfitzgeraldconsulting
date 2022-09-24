@@ -15,7 +15,7 @@ module.exports = {
     image: ({node}) => `<img src="${imageUrl(node).url()}" alt="${node.altText || ''}" ${node.floatLeft ? 'class="left-float"' : ''}>`,
     figure: ({node}) => {
       return `<figure>
-                <img src="${imageUrl(node).url()}" alt="${node.altText || ''}">
+                <img src="${imageUrl(node).url()}" alt="${node.altText || ''}" ${node.outline ? 'class="outline"' : ''}>
                 <figcaption>${node.caption}</figcaption>
               </figure>`
     }

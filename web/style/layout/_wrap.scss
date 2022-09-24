@@ -23,6 +23,22 @@ img {
   block-size: auto; // aspect ratio of images remains constant
   border-radius: 2px;
 }
+// sort out figure across articles (second use) and case studies (first use, which is currently borked)
+figure {
+  margin: 0; 
+  line-height: 1.25;
+  figcaption {
+    font-size: 0.999999rem;
+    font-weight: 300;
+    font-style: italic;
+  }
+}
+figure {
+  margin: 3rem 0;
+  .outline {
+    border: 1px solid $light-gray;
+  }
+}
 // Wrap styles
 body {
   min-height: 100vh;
