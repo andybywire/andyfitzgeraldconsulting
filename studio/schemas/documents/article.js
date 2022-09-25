@@ -138,6 +138,11 @@ export default {
       name: 'cta',
       title: 'Call to Action',
       type: 'cta'
+    },
+    {
+      name: 'canonical',
+      title: 'Canonical URL',
+      type: 'url'
     }
   ]
 }
