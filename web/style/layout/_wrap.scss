@@ -27,6 +27,9 @@ img {
 figure {
   margin: 0; 
   line-height: 1.25;
+  img {
+    max-height: 60vh;
+  }
   figcaption {
     font-size: 0.999999rem;
     font-weight: 300;

@@ -1,3 +1,5 @@
+@use "sass:color";
+
 @import '../utilities/variables.scss';
 @import '../utilities/mixins.scss';
 
@@ -50,6 +52,10 @@ time {
   font-size: 1rem;
   font-weight: 600;
   color: $medium-gray;
+}
+code {
+  background-color: color.scale($blue, $lightness: 60%);
+  border-radius: $radius;
 }
 // consider which of these to break into individual page style pages
 blockquote {
