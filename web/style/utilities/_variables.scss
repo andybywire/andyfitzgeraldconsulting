@@ -30,5 +30,8 @@ $breakpoints: (
   'large':  900px
 ) !default;
 
+// Minimum height breakpoint (for sticky elements)
+$min-height: 700px;
+
 // Global styles
 $radius: 3px;

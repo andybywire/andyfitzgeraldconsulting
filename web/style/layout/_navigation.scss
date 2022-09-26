@@ -19,6 +19,14 @@
   display: none;
   @include breakpoint(large) {
     display: block;
+    &.index {
+      @media (min-height: $min-height) {
+        position: sticky;
+        top: 50px;
+        align-self: flex-start;
+        padding-bottom: 10rem;
+      }
+    }
   }
 }
 .related {

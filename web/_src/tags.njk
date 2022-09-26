@@ -20,6 +20,8 @@ permalink: /writing/tag/{{ tag.prefLabel | slug }}/index.html
       {% endif %}
       {% endfor %}
     </div>
-  {% include '../_includes/partials/articleSidebar.njk' %}
+    <nav class="sidebar index">
+      {% include '../_includes/partials/articleSidebar.njk' %}
+    </nav>
   </div>
 </div>  

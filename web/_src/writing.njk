@@ -6,7 +6,7 @@ tags:
 pagination:
   alias: resource
   data: articles
-  size: 2
+  size: 5
   addAllPagesToCollections: true
 eleventyExcludeFromCollections: true
 banner: “Complex issues … written about patiently, clearly, and accurately.”
@@ -23,11 +23,14 @@ permalink: /writing/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNum
         {% if pagination.href.previous %}
           <a href="{{ pagination.href.previous }}" class="newer">« Newer Articles</a>
         {% endif %}
+        <span class="info">Page {{ pagination.pageNumber + 1 }} of {{ pagination.pages.length }}</span>
         {% if pagination.href.next %}
           <a href="{{ pagination.href.next }}" class="older">Older Articles »</a>
         {% endif %}
       </nav>
     </div>
-  {% include '../_includes/partials/articleSidebar.njk' %}
+    <nav class="sidebar index">
+      {% include '../_includes/partials/articleSidebar.njk' %}
+    </nav>
   </div>
 </div>  
