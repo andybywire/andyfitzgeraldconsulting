@@ -2,7 +2,13 @@
  * @todo Add Content Pillar boolean and conditional prioritization field for promoting content pillars to the home page.
  */
 
+import React from 'react'
 import {GrArticle} from 'react-icons/gr'
+
+const Preformatted = props => (
+  <pre style={{whiteSpace: 'pre-wrap',
+    backgroundColor: '#f2f3f5'}}>{props.children}</pre>
+)
 
 export default {
   name: 'article',
@@ -104,7 +110,22 @@ export default {
       name: 'bodyText',
       type: 'array', 
       of: [
-        {type: 'block'},
+        {
+          type: 'block',
+          styles: [
+            {title: 'Normal', value: 'normal'},
+            {title: 'H1', value: 'h1'},
+            {title: 'H2', value: 'h2'},
+            {title: 'H4', value: 'h4'},
+            {title: 'H5', value: 'h5'},
+            {title: 'Quote', value: 'blockquote'}
+          ]
+        },
+        {
+          name: 'pre',
+          title: 'Pre',
+          type: 'code',
+        },
         {
           type: 'image',
           options: {

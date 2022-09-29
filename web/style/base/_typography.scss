@@ -56,6 +56,15 @@ time {
 code {
   background-color: color.scale($blue, $lightness: 60%);
   border-radius: $radius;
+  padding: 0 .25rem;
+  overflow-wrap: break-word;
+}
+pre {
+  background-color: color.scale($blue, $lightness: 60%);
+  border-radius: $radius;
+  white-space: pre;
+  overflow: auto;
+  padding: 1rem;
 }
 // consider which of these to break into individual page style pages
 blockquote {
@@ -73,5 +82,10 @@ blockquote {
   }
   .article & {
     color: $dark-blue;
+  }
+}
+li {
+  article & {
+    margin-bottom: 1rem;
   }
 }

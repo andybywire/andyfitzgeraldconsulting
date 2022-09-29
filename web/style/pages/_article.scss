@@ -23,6 +23,7 @@
     }
   }
   article, .preview {
+    overflow: hidden;
     @include breakpoint(large) {
       flex: 0 0 66%;
     }

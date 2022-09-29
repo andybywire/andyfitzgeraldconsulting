@@ -6,11 +6,9 @@
 
 const imageUrl = require('./imageUrl')
 
-// Learn more on https://www.sanity.io/guides/introduction-to-portable-text
 module.exports = {
   types: {
-    code: ({node}) =>
-      '```' + node.language + '\n' + node.code + '\n```',
+    pre: ({node}) => `<pre>${node.code}</pre>`,
     mainImage: ({node}) => `![${node.alt}](${imageUrl(node).url()})`,
     image: ({node}) => `<img src="${imageUrl(node).url()}" alt="${node.altText || ''}" ${node.floatLeft ? 'class="left-float"' : ''}>`,
     figure: ({node}) => {

@@ -13,7 +13,8 @@
     "@sanity/default-login",
     "@sanity/desk-tool",
     "media",
-    "taxonomy-manager"
+    "taxonomy-manager",
+    "@sanity/code-input"
   ],
   "env": {
     "development": {

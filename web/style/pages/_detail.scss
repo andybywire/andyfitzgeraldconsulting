@@ -28,6 +28,9 @@
       font-size: 1.33rem;
       margin-top: 0;
     }
+    li {
+      margin-bottom: 0;
+    }
     &.display p:first-of-type {
       font-size: 1.5rem; // 24px
       margin-top: 0;
@@ -112,6 +115,7 @@
       }
     }
     figure {
+      margin: 0;
       @include breakpoint(medium) {
         width: 45%;
       }
