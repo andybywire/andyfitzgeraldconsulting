@@ -170,6 +170,9 @@
       }
     }
   }
+  &.calendar {
+    margin-bottom: 3rem;
+  }
   .client-feedback .button {
     @include breakpoint(medium) {
       padding: .75rem 3rem;
