@@ -160,6 +160,7 @@ export default {
       type: 'array', 
       of: [
         {type: 'block'},
+        {type: 'figure'},
         {type: 'image',
           options: {
             hotspot: true

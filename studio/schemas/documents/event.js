@@ -43,7 +43,8 @@ export default {
           {title: 'Talk', value: 'talk'},
           {title: 'Keynote', value: 'keynote'},
           {title: 'Workshop', value: 'workshop'},
-          {title: 'Panel', value: 'panel'}
+          {title: 'Panel', value: 'panel'},
+          {title: 'Podcast', value: 'podcast'}
         ]
       }
     },

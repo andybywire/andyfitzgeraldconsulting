@@ -24,6 +24,7 @@ permalink: "case-studies/{{ resource.slug.current | slug }}/index.html"
 
     </section>
   </div>
+  {% if resource.review %}
   <div class="feedback">
     <section>
       <blockquote>
@@ -34,6 +35,7 @@ permalink: "case-studies/{{ resource.slug.current | slug }}/index.html"
       </blockquote>
     </section>
   </div>
+  {% endif %}
   <div class="goals"> 
     <section class="study-segment">      
       <p class="section-type">Project Goal</p> 
@@ -55,7 +57,12 @@ permalink: "case-studies/{{ resource.slug.current | slug }}/index.html"
       <div>
         <p class="section-type">Project Outcome</p> 
         {{ resource.projectOutcome | markdownify | safe }}
-        {% responsiveImage resource.afterImage, ".62399" %}
+        {% if resource.afterImage %}
+        <figure>
+          {% responsiveImage resource.afterImage, ".62399" %}
+          <figcaption>{{ resource.afterImage.caption}}</figcaption>
+        </figure> 
+        {% endif %}
       </div>
     </section>
   </div>

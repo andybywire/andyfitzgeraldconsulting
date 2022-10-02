@@ -73,7 +73,8 @@ cta: Ready to tame your complex information environment to better meet business 
       {% endif %}
       {{ content | safe }}
     </main>
- 
+
+    {% if page.url != "/contact/index.php" %}
     <section class="cta">
       <div>
         <p>
@@ -86,6 +87,7 @@ cta: Ready to tame your complex information environment to better meet business 
         <a class="button" href="/contact">Let's Talk</a> 
       </div>
     </section>
+    {% endif %}
 
     <footer>
       <section class="site-info">

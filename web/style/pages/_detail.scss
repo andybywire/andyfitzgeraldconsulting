@@ -16,6 +16,7 @@
     }
     @include breakpoint(large) {
       flex: 1 0 calc(33% - 0.5rem);
+      // margin-top: 2.5rem;
     }
   }
   h1 {
@@ -68,6 +69,11 @@
   @include segment;
   section {
     @include fragment;
+  }
+  .overview .img {
+    @include breakpoint(large) {
+      margin-top: 2.5rem;
+    }
   }
   blockquote {
     margin: 2.5rem 1rem;

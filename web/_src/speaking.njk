@@ -24,7 +24,12 @@ singletonCrumb: Speaking
             {% endif %}
           </h3>
           <p>
-            {{ event.location.city }}, {{ event.location.state if event.location.state else event.location.country }}
+            {{ event.location.city }}
+            {%- if event.location.state -%}
+              , {{ event.location.state }}
+            {%- elif event.location.country -%}
+              , {{ event.location.country }}
+            {%- endif -%}
           </p>
         </li>
       {% endfor %}

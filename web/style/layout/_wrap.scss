@@ -21,7 +21,7 @@ html {
 img {
   max-inline-size: 100%; // element alway fits in containing frame
   block-size: auto; // aspect ratio of images remains constant
-  border-radius: 2px;
+  border-radius: $radius;
 }
 // sort out figure across articles (second use) and case studies (first use, which is currently borked)
 figure {
@@ -40,6 +40,9 @@ figure {
   margin: 3rem 0;
   .outline {
     border: 1px solid $light-gray;
+    img {
+      max-inline-size: calc(100% - 2px); // element alway fits in containing frame
+    }
   }
 }
 // Wrap styles
