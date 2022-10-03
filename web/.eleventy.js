@@ -14,6 +14,7 @@ module.exports = function(eleventyConfig) {
   // Assets to pass through to _site
   eleventyConfig.addPassthroughCopy({"assets/fonts": "fonts"});
   eleventyConfig.addPassthroughCopy({"assets/js": "js"});
+  eleventyConfig.addPassthroughCopy({".htaccess": ".htaccess"});
 
   // Move these shortcodes to their own directory
   eleventyConfig.addShortcode('imageUrlFor', (image, width="300") => {

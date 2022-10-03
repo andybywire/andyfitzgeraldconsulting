@@ -1,0 +1,42 @@
+RewriteEngine On
+
+ErrorDocument 404 /404/index.html
+
+Redirect 301 /work /services
+
+Redirect 301 /services/linked-data-engineering /services/linked-data
+
+Redirect 301 /topic/index.html /writing
+
+Redirect 301 /topic/information%20architecture /topic/information-architecture/index.html
+Redirect 301 /topic/assessment /writing
+
+Redirect 301 /category/index.html /writing
+
+Redirect 301 /writing/architecting-the-connected-world /writing
+Redirect 301 /writing/architecture-design-and-the-connected-environment /writing
+Redirect 301 /writing/the-lingering-seduction-of-the-page /writing
+
+#------------------------------------------------------------------------
+# Redirect pages from Blog to Writing
+#------------------------------------------------------------------------
+Redirect 301 /blog/the-trouble-with-systems /writing/the-trouble-with-systems
+Redirect 301 /blog/architecting-the-connected-world /writing/architecting-the-connected-world
+Redirect 301 /blog/architecture-design-and-the-connected-environment /writing/architecture-design-and-the-connected-environment
+Redirect 301 /blog/cognitive-science-for-designers /writing/cognitive-science-for-designers
+Redirect 301 /blog/designing-for-the-human-scale /writing/designing-for-the-human-scale
+Redirect 301 /blog/designing-with-code /writing/designing-with-code
+Redirect 301 /blog/desiring-ecologies-meaning-making-in-the-network-wilderness /writing/desiring-ecologies-meaning-making-in-the-network-wilderness
+Redirect 301 /blog/language-arts-for-the-lizard-brain /writing/language-arts-for-the-lizard-brain
+Redirect 301 /blog/language-meaning-user-experience-architecture /writing/language-meaning-user-experience-architecture
+Redirect 301 /blog/prototyping-ia /writing/prototyping-ia
+Redirect 301 /blog/site-maps-connected-content /writing/site-maps-connected-content
+Redirect 301 /blog/structured-content-design /writing/structured-content-design
+Redirect 301 /blog/the-lingering-seduction-of-the-page /writing/the-lingering-seduction-of-the-page
+
+#------------------------------------------------------------------------
+# Redirect client docs directories
+#------------------------------------------------------------------------
+Redirect 301 /client-documents/index.html /services
+Redirect 301 /client-documents/who-kap/index.html /services
+Redirect 301 /client-documents/geo/index.html /services
