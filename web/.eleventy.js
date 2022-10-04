@@ -1,6 +1,9 @@
 const urlFor = require('./utils/imageUrl');
 const dateFilter = require('nunjucks-date-filter');
 
+require('dotenv').config();
+console.log(process.env)
+
 // Shortcodes
 const responsiveImage = require("./_11ty/shortcodes/responsiveImage.js");
 

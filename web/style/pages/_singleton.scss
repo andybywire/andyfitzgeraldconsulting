@@ -126,7 +126,7 @@
         flex-direction: row;
         justify-content: space-between;
         align-items: flex-start;
-        padding-top: 1rem;
+        padding-top: 3rem; // ensures that scroll-to links don't hide content under the header
       }
       .logo {
         width: 50%;

@@ -20,7 +20,9 @@
     </title>
     <link rel="stylesheet" type="text/css" href="/style/style.css" />
     {# re: font hosting: https://gomakethings.com/google-fonts-and-gdpr/ #}
+    {% if page.url != "/contact/index.php" %}
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
     <style>
       /* lato-300 - latin */
       @font-face {

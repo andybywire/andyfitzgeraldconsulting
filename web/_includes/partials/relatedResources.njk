@@ -1,0 +1,16 @@
+    <ul>
+    {% for card in resource.relatedResources %}
+        <li>
+          <a href="/{{ card.path }}/{{ card.slug.current }}">
+            {% if card.tag %}
+            <p class="tag">{{ card.tag }}<p>
+            {% endif %}
+            {% responsiveImage card.heroImage, ".75" %}
+            <div>
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.shortDescription }}</p>
+            </div>
+          </a>
+        </li>
+    {% endfor %}
+    </ul>

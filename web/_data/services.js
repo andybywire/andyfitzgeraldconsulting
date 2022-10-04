@@ -28,13 +28,16 @@ async function getServices () {
     heroImage,
     "banner": banner.bannerCopy,
     cta,
-    "relatedStudies": *[_type=='caseStudy' && references(^.category._ref)] {
+    "relatedResources": *[_type=='caseStudy' && references(^.category._ref) || _type=='article' && references(^.category._ref)] {
       title,
       heroImage,
       shortDescription,
       slug,
-      _type
-    }[0..1]
+      pubDate,
+      _type,
+      _type == 'caseStudy' => {"tag": "Case Study", "path":"case-studies"},
+      _type == 'article' => {"tag": "Article", "path":"writing"}
+    }[0..3] | order(_type desc, pubDate desc)
   }`
   const order = `| order(pubDate asc)`
   const query = [filter, projection, order].join(' ')

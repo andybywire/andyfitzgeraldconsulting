@@ -3,6 +3,8 @@ layout: layouts/base.njk
 singletonCrumb: Contact
 permalink: /contact/index.php
 ---
+{# To develop this page, run `php -S localhost:8000` from the _site directory #}
+
 {% for resource in singletons %}
 {% if resource.title == "Contact" %}
 
@@ -48,7 +50,7 @@ permalink: /contact/index.php
               $headers .= "X-Mailer: PHP/". phpversion() . PHP_EOL;
 
               if(isset($_POST['g-recaptcha-response'])) {
-                $secret = '6Lcpq_IZAAAAAGA3Qsuw7vJQSPaRdrYRI9SARmyg';
+                $secret = '{{ env.recaptchaSecret }}';
                 $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$secret.'&response='.$_POST['g-recaptcha-response']);
                 $responseData = json_decode($verifyResponse);
                 if($responseData->success) {
@@ -106,7 +108,7 @@ permalink: /contact/index.php
               </div>
 
             <div class="send">
-              <div class="g-recaptcha" data-sitekey="6Lcpq_IZAAAAAOK-YOS-lvyERHILtOuNL4gIAuFv"></div>
+              <div class="g-recaptcha" data-sitekey="{{ env.recaptchaKey }}"></div>
               <button type="submit" class="button">Send</button>
             </div>
           </form>
