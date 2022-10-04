@@ -17,9 +17,15 @@ permalink: /contact/index.php
         {{ resource.bodyText | markdownify | safe }}
         
         <?php
+          if($_SERVER['HTTP_HOST'] == "dev.andyfitzgeraldconsulting.com") {
+            $adminEmail =  "inquiry@dev.andyfitzgeraldconsulting.com"; 
+            } else {
+            $adminEmail =  "inquiry@andyfitzgeraldconsulting.com"; 
+          }
+
           $subjectPrefix = '';
           $emailTo = 'andy@andyfitzgeraldconsulting.com';
-          $emailFrom = 'inquiry@andyfitzgeraldconsulting.com';
+          $emailFrom = $adminEmail;
 
           if($_SERVER['REQUEST_METHOD'] == 'POST') {
             $name    = stripslashes(trim($_POST['form-name']));

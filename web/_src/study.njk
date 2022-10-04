@@ -67,48 +67,9 @@ permalink: "case-studies/{{ resource.slug.current | slug }}/index.html"
     </section>
   </div>
   <div>
-    {# Abstract this out into a Macro #}
     <section class="related-content">
-      <h2>Case Studies & Insights</h2>
-      <ul>
-      {% set count = 0 %}
-      {% for card in resource.relatedStudies %}
-        {% if count < 2 %}
-          <li>
-            <a href="/case-studies/{{ card.slug.current }}">
-              <p class="tag">Case Study<p>
-              {% responsiveImage card.heroImage, ".75" %}
-              <div>
-                <h3>{{ card.title }}</h3>
-                <p>{{ card.shortDescription }}</p>
-              </div>
-            </a>
-          </li>
-        {% set count = count + 1 %}
-        {% endif%}
-      {% endfor %}
-      {% for card in resource.relatedStudies %}
-        {% if count < 4 %}
-          <li>
-            <a href="/case-studies/{{ card.slug.current }}">
-              {% responsiveImage card.heroImage, ".75" %}
-              <div>
-                <h3>{{ card.title }}</h3>
-                <p>{{ card.shortDescription }}</p>
-              </div>
-            </a>
-          </li>
-        {% set count = count + 1 %}
-        {% endif%}
-      {% endfor %}
-      {# Add articles loop, for count up to 4 #}
-      {# {% for card in sorted %}
-        {% if card-count < 4 and card.category == page.category %}
-          {%- include card.html -%}
-          {% assign card-count = card-count | plus: 1 %}
-        {% endif %}
-      {% endfor %} #}
-      </ul>
+      <h2>Services & Insights</h2>
+      {% include '../_includes/partials/relatedResources.njk' %}
     </section>
   </div>
 </article>

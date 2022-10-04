@@ -37,7 +37,7 @@ async function getServices () {
       _type,
       _type == 'caseStudy' => {"tag": "Case Study", "path":"case-studies"},
       _type == 'article' => {"tag": "Article", "path":"writing"}
-    }[0..3] | order(_type desc, pubDate desc)
+    } | order(_type desc, pubDate desc) [0..3]
   }`
   const order = `| order(pubDate asc)`
   const query = [filter, projection, order].join(' ')

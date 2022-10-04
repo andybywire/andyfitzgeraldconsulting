@@ -29,13 +29,17 @@ async function getArticles () {
     topic[]->{prefLabel},
     "topicTags":topic[]->prefLabel,
     "categoryTag":category->prefLabel,
-    "relatedServices": *[_type=='service' && references(^.category._ref)] {
+    "relatedResources": *[_type=='service' && references(^.category._ref) || _type=='study' && references(^.category._ref) || _type=='article' && references(^.category._ref) && _id != ^._id] {
       title,
       heroImage,
       shortDescription,
       slug,
-      _type
-    }
+      pubDate,
+      _type,
+      _type == 'service' => {"tag": "Service", "path":"services"},
+      _type == 'study' => {"tag": "Case Study", "path":"case-studies"},
+      _type == 'article' => {"tag": "Article", "path":"writing"}
+    } | order(_type desc, pubDate desc) [0..3]
   }`
   const order = `| order(pubDate desc)`
   const query = [filter, projection, order].join(' ')
