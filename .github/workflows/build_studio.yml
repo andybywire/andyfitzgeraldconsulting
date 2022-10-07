@@ -1,0 +1,47 @@
+name: Studio
+
+on:
+  push:
+    paths: 
+      - 'studio/**'
+  workflow_dispatch: 
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Sanity Studio
+    if: ${{ github.ref == 'refs/heads/main' }} 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: '18.x'
+
+      - name: Install Project Dependencies
+        run: npm ci --legacy-peer-deps
+        working-directory: studio
+
+      - name: Install Sanity CLI
+        run: npm install -g @sanity/cli
+        working-directory: studio
+
+      - name: Build Studio
+        run: sanity build
+        working-directory: studio
+
+      - name: Verify Build
+        run: ls -la dist
+        working-directory: studio
+
+      - name: Set Up SSH
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.AFC_CMS_DREAMHOST_SSH_KEY }}" > ~/.ssh/afc_cms
+          sudo chmod 600 ~/.ssh/afc_cms
+          ssh-keyscan -H "jacksonville.dreamhost.com" > ~/.ssh/known_hosts
+
+      - name: SFTP Upload
+        run: sftp -i ~/.ssh/afc_cms afc_cms@jacksonville.dreamhost.com <<< $'cd cms.andyfitzgeraldconsulting.com \n put -r studio/dist/*'
