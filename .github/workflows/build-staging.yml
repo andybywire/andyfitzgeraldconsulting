@@ -20,7 +20,6 @@ jobs:
           uses: SpicyPizza/create-envfile@v1.3
           with:
             envkey_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET }}
-            envkey_RECAPTCHA_SITEKEY: ${{ secrets.RECAPTCHA_SITEKEY }}
             envkey_ELEVENTY_ENVIRONMENT: staging
             directory: web
         
