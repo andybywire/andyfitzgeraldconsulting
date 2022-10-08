@@ -22,6 +22,7 @@ jobs:
             envkey_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET }}
             envkey_RECAPTCHA_SITEKEY: ${{ secrets.RECAPTCHA_SITEKEY }}
             envkey_ELEVENTY_ENVIRONMENT: staging
+            directory: web
         
         - name: Install Node.js
           uses: actions/setup-node@v1
