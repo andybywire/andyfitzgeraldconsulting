@@ -20,8 +20,11 @@
     </title>
     <link rel="stylesheet" type="text/css" href="/style/style.css" />
     {# re: font hosting: https://gomakethings.com/google-fonts-and-gdpr/ #}
-    {% if page.url != "/contact/index.php" %}
+    {% if page.url == "/contact/index.php" %}
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endif %}
+    {% if env.environment == "staging" %}
+      <meta name="robots" content="noindex">
     {% endif %}
     <style>
       /* lato-300 - latin */
