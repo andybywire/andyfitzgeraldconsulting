@@ -1,0 +1,15 @@
+{
+          "@id": "https://www.andyfitzgeraldconsulting.com/#website",
+          "@type": "WebSite",
+          "additionalType": "CreativeWork",
+          "url": "https://andyfitzgeraldconsulting.com",
+          "name": "Andy Fitzgerald Consulting",
+          "inLanguage": "en-US",
+          "description": "{{ metadata.description }}",
+          "author": { 
+            "@id": "https://www.andyfitzgeraldconsulting.com/#person"
+          },
+          "publisher": {
+            "id": "https://www.andyfitzgeraldconsulting.com/#organization"
+          }
+        }
