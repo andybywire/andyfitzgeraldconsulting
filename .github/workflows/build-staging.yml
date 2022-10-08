@@ -10,8 +10,8 @@ jobs:
   build-and-deploy:
     name: Build and deploy 11ty site
     runs-on: ubuntu-latest
-    env:
-      11ty_STAGING: true
+    # env:
+    #   ELEVENTY_STAGING: true
     steps:
         - name: Checkout Code
           uses: actions/checkout@v2.3.1
@@ -26,7 +26,7 @@ jobs:
           working-directory: web
 
         - name: Build 11ty
-          run: npx @11ty/eleventy
+          run: ELEVENTY_ENVIRONMENT=staging npx @11ty/eleventy
           working-directory: web
 
         - name: Compile SCSS

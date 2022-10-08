@@ -1,6 +1,7 @@
 const urlFor = require('./utils/imageUrl');
 const dateFilter = require('nunjucks-date-filter');
 
+// Add keys the keys and values defined in .env to process.env
 require('dotenv').config();
 console.log(process.env)
 
