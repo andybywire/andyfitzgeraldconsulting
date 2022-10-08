@@ -20,6 +20,7 @@ jobs:
           uses: SpicyPizza/create-envfile@v1.3
           with:
             envkey_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET }}
+            envkey_RECAPTCHA_SITEKEY: ${{ secrets.RECAPTCHA_SITEKEY }}
             envkey_ELEVENTY_ENVIRONMENT: staging
         
         - name: Install Node.js
@@ -32,7 +33,7 @@ jobs:
           working-directory: web
 
         - name: Build 11ty
-          run: ELEVENTY_ENVIRONMENT=staging npx @11ty/eleventy
+          run: npx @11ty/eleventy
           working-directory: web
 
         - name: Compile SCSS
@@ -43,12 +44,12 @@ jobs:
           run: ls -la _site
           working-directory: web
 
-        # - name: Set Up SSH
-        #   run: |
-        #     mkdir -p ~/.ssh/
-        #     echo "${{ secrets.UXM_DEV_DREAMHOST_SSH_KEY }}" > ~/.ssh/uxm_dev
-        #     sudo chmod 600 ~/.ssh/uxm_dev
-        #     ssh-keyscan -H "jacksonville.dreamhost.com" > ~/.ssh/known_hosts
+        - name: Set Up SSH
+          run: |
+            mkdir -p ~/.ssh/
+            echo "${{ secrets.AFC_DEV_DREAMHOST_SSH_KEY }}" > ~/.ssh/afc_dev
+            sudo chmod 600 ~/.ssh/afc_dev
+            ssh-keyscan -H "jacksonville.dreamhost.com" > ~/.ssh/known_hosts
 
-        # - name: SFTP Upload
-        #   run: sftp -i ~/.ssh/uxm_dev uxm_dev@jacksonville.dreamhost.com <<< $'cd dev.uxmethods.org \n put -r web/public/*'
+        - name: SFTP Upload
+          run: sftp -i ~/.ssh/afc_dev afc_dev@jacksonville.dreamhost.com <<< $'cd dev.andyfitzgeraldconsulting.com \n put -r web/_site/*'
