@@ -11,6 +11,9 @@ header {
   height: 65px;
   @include breakpoint(small) {
     height: 80px;  
+    &.compact {
+      box-shadow: 0 2px 3px #888888;
+    }
   }
   transition: height .3s linear;
   @include breakpoint(large) {
@@ -39,6 +42,7 @@ header {
     ul {
       margin: 0;
       padding: 0;
+      list-style: none;
     }
     .nav-title {
       padding-right: .75rem;
@@ -107,6 +111,9 @@ header {
         right: 10px;
         background: content-box;
         border: none;
+        svg {
+          color: $black;
+        }
       }
       ul {
         padding-top: 2rem;
