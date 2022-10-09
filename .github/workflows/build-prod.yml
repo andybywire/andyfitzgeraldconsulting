@@ -1,10 +1,19 @@
 name: Production
 
 on:
+  workflow_dispatch:
+  repository_dispatch:
+    types:
+      - article
+      - caseStudy
+      - service
+      - client
+      - event
+      - review
+      - singleton
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   build-and-deploy:
