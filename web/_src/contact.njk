@@ -17,15 +17,16 @@ permalink: /contact/index.php
         {{ resource.bodyText | markdownify | safe }}
         
         <?php
-          if($_SERVER['HTTP_HOST'] == "dev.andyfitzgeraldconsulting.com") {
+          {# if($_SERVER['HTTP_HOST'] == "dev.andyfitzgeraldconsulting.com") {
             $adminEmail =  "inquiry@dev.andyfitzgeraldconsulting.com"; 
             } else {
             $adminEmail =  "inquiry@andyfitzgeraldconsulting.com"; 
-          }
+          } #}
 
           $subjectPrefix = '';
           $emailTo = 'andy@andyfitzgeraldconsulting.com';
-          $emailFrom = $adminEmail;
+          {# $emailFrom = $adminEmail; #}
+          $emailFrom = 'inquiry@andyfitzgeraldconsulting.com';
 
           if($_SERVER['REQUEST_METHOD'] == 'POST') {
             $name    = stripslashes(trim($_POST['form-name']));
@@ -78,7 +79,7 @@ permalink: /contact/index.php
           <h4>Thank you. Your message was sent.</h4>
         <?php else: ?>
           <?php if(!empty($spamDetection)): ?>
-            <h4>Oh no! It looks like you might be a bot.</h4>
+            <h4>Oh no! It looks like you might be a bot..</h4>
             <p>And I here I am trying to cut down on interactions with bots just now. If you think this message may be in error, please have another go at the form below, or feel free to reach out to me on <a href="https://www.linkedin.com/in/andyfitzgerald">LinkedIn.</a></p> 
           <?php elseif(!empty($hasError)): ?>
             <h4>I'm sorry about this, but there seems to have been a problem.</h4>
@@ -94,7 +95,7 @@ permalink: /contact/index.php
               </div>
               <div>
                 <label>Organization
-                  <input type ="text" class="form-field" id="form-org" name="form-org"
+                  <input type ="text" class="form-field" id="form-org" name="form-org" />
                 </label>
               </div>
               <div>
