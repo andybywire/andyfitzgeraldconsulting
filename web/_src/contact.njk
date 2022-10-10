@@ -55,8 +55,11 @@ permalink: /contact/index.php
               $headers .= "Return-Path: $emailTo" . PHP_EOL;
               $headers .= "Reply-To: $email" . PHP_EOL;
               $headers .= "X-Mailer: PHP/". phpversion() . PHP_EOL;
+              
+              mail($emailTo, $subject, $body, $headers);
+              $emailSent = true;
 
-              if(isset($_POST['g-recaptcha-response'])) {
+              {# if(isset($_POST['g-recaptcha-response'])) {
                 $secret = '{{ env.recaptchaSecret }}';
                 $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$secret.'&response='.$_POST['g-recaptcha-response']);
                 $responseData = json_decode($verifyResponse);
@@ -70,7 +73,7 @@ permalink: /contact/index.php
               } 
               else {
                 $hasError = true;
-              } 
+              }  #}
             }
           }
         ?>
