@@ -93,27 +93,27 @@ permalink: /contact/index.php
             <div class="form-content">
               <div>
                 <label>Name *
-                  <input type="text" class="form-field" id="form-name" name="form-name" required/>
+                  <input type="text" class="form-field" id="form-name" name="form-name" value="<?php echo $name;?>" required/>
                 </label>
               </div>
               <div>
                 <label>Organization
-                  <input type ="text" class="form-field" id="form-org" name="form-org" />
+                  <input type ="text" class="form-field" id="form-org" name="form-org" value="<?php echo $org;?>" />
                 </label>
               </div>
               <div>
                 <label>Email *
-                  <input type="email" class="form-field" id="form-email" name="form-email" required />
+                  <input type="email" class="form-field" id="form-email" name="form-email" value="<?php echo $email;?>" required />
                 </label>
               </div>
               <div>
                 <label>Subject *
-                  <input type="text" class="form-field" id="form-subject" name="form-subject" required/>
+                  <input type="text" class="form-field" id="form-subject" name="form-subject" value="<?php echo $subject;?>" required/>
                 </label>
               </div>
               <div class="message-text">
                 <label>What would you like to talk about? *
-                  <textarea class="form-field" rows="5" id="form-message" name="form-message" autocomplete="off" required></textarea>
+                  <textarea class="form-field" rows="5" id="form-message" name="form-message" autocomplete="off" required><?php echo $message;?></textarea>
                 </label>
               </div>
 
