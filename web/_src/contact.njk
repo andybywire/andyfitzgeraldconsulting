@@ -55,14 +55,14 @@ permalink: /contact/index.php
               $headers .= "Reply-To: $email" . PHP_EOL;
               $headers .= "X-Mailer: PHP/". phpversion() . PHP_EOL;
               
-              mail($emailTo, $subject, $body, $headers);
-              $emailSent = true;
+              {# mail($emailTo, $subject, $body, $headers);
+              $emailSent = true; #}
 
               if(isset($_POST['g-recaptcha-response'])) {
                 $secret = '{{ env.recaptchaSecret }}';
                 $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$secret.'&response='.$_POST['g-recaptcha-response']);
                 $responseData = json_decode($verifyResponse);
-                if($responseData->success == true) {
+                if($responseData->success) {
                   mail($emailTo, $subject, $body, $headers);
                   $emailSent = true;
                 } 
