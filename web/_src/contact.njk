@@ -19,12 +19,11 @@ permalink: /contact/index.php
         <?php
           if($_SERVER['HTTP_HOST'] == "dev.andyfitzgeraldconsulting.com") {
             $adminEmail =  "inquiry@dev.andyfitzgeraldconsulting.com"; 
-            $subjectPrefix = 'From AFC staging:';
             } else {
             $adminEmail =  "inquiry@andyfitzgeraldconsulting.com"; 
           }
 
-          $subjectPrefix = 'From AF consulting:';
+          $subjectPrefix = '';
           $emailTo = 'andy@andyfitzgeraldconsulting.com';
           $emailFrom = $adminEmail;
 
