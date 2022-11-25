@@ -29,6 +29,7 @@ async function getArticles () {
     topic[]->{prefLabel},
     "topicTags":topic[]->prefLabel,
     "categoryTag":category->prefLabel,
+    canonical,
     "relatedResources": *[_type=='service' && references(^.category._ref) || _type=='study' && references(^.category._ref) || _type=='article' && references(^.category._ref) && _id != ^._id] {
       title,
       heroImage,

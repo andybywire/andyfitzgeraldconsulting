@@ -22,6 +22,11 @@
       {%- endif -%}
     </title>
     <meta name="description" content="{{ metadata.description }}">
+    <link rel="canonical" {% if resource.canonical -%}
+                            href="{{ resource.canonical }}"
+                          {%- else -%}
+                            href="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
+                          {%- endif -%}>
     <link rel="stylesheet" type="text/css" href="/style/style.css" />
     {%- if page.url == "/contact/index.php" %}
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
