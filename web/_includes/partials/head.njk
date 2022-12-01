@@ -27,6 +27,17 @@
                           {%- else -%}
                             href="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
                           {%- endif -%}>
+
+    <meta property="og:title" content="{{ resource.title if resource.title else metadata.siteTitle }}" />
+    <meta property="og:description" content="{{ resource.shortDescription if resource.shortDescription else metadata.description }}" />
+    <meta property='og:image' content="{{ resource.heroImage | ogImage if resource.heroImage else "https://www.andyfitzgeraldconsulting.com/icons/icon-384x384.png" }}" />
+    <meta property='og:image:alt' content="{{ resource.heroImage.altText if resource.heroImage.altText else "Andy Fitzgerald Consulting" }}" />
+    <meta property='og:url' {% if resource.canonical -%}
+                              content="{{ resource.canonical }}"
+                            {%- else -%}
+                              content="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
+                            {%- endif -%} />
+
     <link rel="stylesheet" type="text/css" href="/style/style.css" />
     {%- if page.url == "/contact/index.php" %}
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>

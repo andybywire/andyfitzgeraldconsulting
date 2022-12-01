@@ -21,6 +21,7 @@ async function getArticles () {
     title,
     bodyText,
     lede,
+    shortDescription,
     pubDate,
     "published": dateTime(_updatedAt),
     _updatedAt,

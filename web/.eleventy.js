@@ -5,7 +5,8 @@ const dateFilter = require('nunjucks-date-filter');
 require('dotenv').config();
 // console.log(process.env)
 
-// Shortcodes
+// Filters & Shortcodes
+const ogImage = require("./_11ty/filters/ogImage.js");
 const responsiveImage = require("./_11ty/shortcodes/responsiveImage.js");
 
 module.exports = function(eleventyConfig) {
@@ -35,6 +36,9 @@ module.exports = function(eleventyConfig) {
       .height(height)
       .auto('format')
   });
+
+  // Filters
+  eleventyConfig.addFilter('ogImage', ogImage);
 
   // Shortcodes
   eleventyConfig.addShortcode('responsiveImage', responsiveImage);
