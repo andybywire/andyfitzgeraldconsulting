@@ -17,7 +17,6 @@ crumbTitle: article
       <h1>{{ resource.title }}</h1>
       <time datetime="{{ resource.pubdate }}">{{ resource.pubDate | date("MMMM D, YYYY") }}</time>
       <img src="{% articleHero resource.heroImage %}" alt="{{ resource.heroImage.altText }}">
-      <pre>{{ resource | dump(2) }}</pre>
       {{ resource.body | markdownify | safe }}
       <nav class="related">
         <h2>Topics</h2>
