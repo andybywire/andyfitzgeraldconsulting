@@ -20,8 +20,9 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({"assets/fonts": "fonts"});
   eleventyConfig.addPassthroughCopy({"assets/js": "js"});
   eleventyConfig.addPassthroughCopy({"assets/icons": "icons"});
-  eleventyConfig.addPassthroughCopy({"manifest.json": "manifest.json"});
-  eleventyConfig.addPassthroughCopy({".htaccess": ".htaccess"});
+  eleventyConfig.addPassthroughCopy("manifest.json");
+  eleventyConfig.addPassthroughCopy(".htaccess");
+  eleventyConfig.addPassthroughCopy("robots.txt");
 
   // Move these shortcodes to their own directory
   eleventyConfig.addShortcode('imageUrlFor', (image, width="300") => {
