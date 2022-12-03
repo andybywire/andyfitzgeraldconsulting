@@ -1,0 +1,23 @@
+{
+          "@id": "{{ metadata.url }}{{ page.url }}#article",
+          "@type": "Article",
+          "url": "{{ metadata.url }}{{ page.url }}",
+          "mainEntityOfPage": {
+              "@type": "WebPage",
+              "@id":  "{{ metadata.url }}{{ page.url }}#webpage"
+          },
+          "author": {
+            "@id": "https://www.andyfitzgeraldconsulting.com/#person"
+          },
+          "headline": "{{ resource.title }}",
+          "datePublished": "{{ resource.pubDate }}",
+          "publisher": {
+            "@id": "https://www.andyfitzgeraldconsulting.com/#organization"
+          },
+          "image": {
+            "@id": "https://www.andyfitzgeraldconsulting.com/writing/domain-modeling/#primaryimage",
+            "@type": "ImageObject",
+            "inLanguage": "en-US",
+            "url": "{{ resource.heroUrl }}"
+          }
+        }

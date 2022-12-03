@@ -27,6 +27,7 @@ async function getArticles () {
     _updatedAt,
     slug,
     heroImage,
+    "heroUrl":heroImage.asset->.url,
     topic[]->{prefLabel},
     "topicTags":topic[]->prefLabel,
     "categoryTag":category->prefLabel,

@@ -23,6 +23,11 @@ export default {
       type: 'string'
     },
     {
+      name: 'url',
+      title: 'Site Base URL',
+      type: 'url'
+    },
+    {
       name: 'description',
       title: 'Site Meta Description',
       type: 'text',

@@ -50,7 +50,14 @@
     {
       "@context": "https://schema.org",
       "@graph": [
+        {% include '../linked-data/organization.json' %},
+        {% include '../linked-data/person.json' %},
         {% include '../linked-data/website.json' %}
+        {#- // service -#}
+        {#- // caseStudy -#}
+        {%- if pagination.data == "articles" -%}
+          ,{% include '../linked-data/article.json' %}
+        {%- endif -%}
       ]
     }
     </script>

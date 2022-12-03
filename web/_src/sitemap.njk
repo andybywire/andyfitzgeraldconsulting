@@ -7,7 +7,7 @@ eleventyExcludeFromCollections: true
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   {% for page in collections.all %}
     <url>
-        <loc>https://www.andyfitzgeraldconsulting.com{{ page.url | url }}</loc>
+        <loc>{{ metadata.url }}{{ page.url | url }}</loc>
         {%- if page.data.resource.published %}
         <lastmod>{{ page.data.resource.published }}</lastmod>
         {%- elif page.data.resource.pubDate %}
