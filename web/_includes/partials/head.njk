@@ -53,9 +53,13 @@
         {% include '../linked-data/organization.json' %},
         {% include '../linked-data/person.json' %},
         {% include '../linked-data/website.json' %}
-        {#- // service -#}
-        {#- // caseStudy -#}
-        {%- if pagination.data == "articles" -%}
+        {%- if page.inputPath == "./_src/service.njk" -%}
+          ,{% include '../linked-data/service.json' %}
+        {%- endif -%}
+        {%- if page.inputPath == "./_src/study.njk" -%}
+          ,{% include '../linked-data/caseStudy.json' %}
+        {%- endif -%}
+        {%- if page.inputPath == "./_src/article.njk" -%}
           ,{% include '../linked-data/article.json' %}
         {%- endif -%}
       ]

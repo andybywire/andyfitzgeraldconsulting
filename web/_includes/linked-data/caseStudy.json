@@ -9,16 +9,19 @@
           "author": {
             "@id": "{{ metadata.url }}#person"
           },
-          "headline": "{{ resource.title }}",
-          "abstract": "{{ resource.shortDescription }}",
+          "headline": "{{ resource.title }} Case Study",
           "datePublished": "{{ resource.pubDate }}",
           "publisher": {
             "@id": "{{ metadata.url }}#organization"
           },
+          "abstract": "{{ resource.atGlance }}",
           "image": {
             "@id": "{{ metadata.url }}{{ page.url }}#primaryimage",
             "@type": "ImageObject",
             "inLanguage": "en-US",
             "url": "{{ resource.heroUrl }}"
+          },
+          "about": {
+            "@id": "{{ metadata.url }}/services/{{ resource.service | slugify }}/#service"
           }
         }
