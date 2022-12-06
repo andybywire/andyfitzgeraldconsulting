@@ -17,6 +17,8 @@ Redirect 301 /writing/architecting-the-connected-world /writing
 Redirect 301 /writing/architecture-design-and-the-connected-environment /writing
 Redirect 301 /writing/the-lingering-seduction-of-the-page /writing
 
+Redirect 302 /technical-details/ /about
+
 #------------------------------------------------------------------------
 # Redirect pages from Blog to Writing
 #------------------------------------------------------------------------
