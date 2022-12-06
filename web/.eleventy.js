@@ -20,6 +20,7 @@ module.exports = function(eleventyConfig) {
   eleventyConfig.addPassthroughCopy({"assets/fonts": "fonts"});
   eleventyConfig.addPassthroughCopy({"assets/js": "js"});
   eleventyConfig.addPassthroughCopy({"assets/icons": "icons"});
+  eleventyConfig.addPassthroughCopy({"assets/img": "img"});
   eleventyConfig.addPassthroughCopy("manifest.json");
   eleventyConfig.addPassthroughCopy(".htaccess");
   eleventyConfig.addPassthroughCopy("robots.txt");
