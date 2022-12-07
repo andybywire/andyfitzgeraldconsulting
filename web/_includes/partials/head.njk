@@ -42,7 +42,9 @@
     {%- if page.url == "/contact/index.php" %}
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     {%- endif %}
-    {%- if env.environment == "development" or "/writing/tag/" in page.url %}
+    {%- if env.environment == "development" 
+        or "/writing/tag/" in page.url 
+        or "/404" in page.url %}
     <meta name="robots" content="noindex">
     {%- endif %}
 
