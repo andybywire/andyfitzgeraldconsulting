@@ -36,13 +36,22 @@ cta: Ready to tame your complex information environment to better meet business 
       </nav>
     </header>
     <section class="banner">
+      {% if resource.bannerImg %}
+        {% bannerImage resource.bannerImg, resource.bannerPosition %}
+      {% else %}
+        {% bannerImage metadata.bannerImg, metadata.bannerPosition %}
+      {% endif %}
+      {# <img src="https://www.2020.andyfitzgeraldconsulting.com/img/cover/home.jpg"> #}
       <div class="cover-overlay"></div>
       <div class="cover-text">
         <p>
-          {% if resource.banner %}
-            {{ resource.banner }}
+          {% if resource.bannerCopy %}
+            {# Load page specific copy if available #}
+            {{ resource.bannerCopy }}
           {% else %}
+            {# If no page specific data, load copy from template #}
             {{ banner }}
+            {# Consider loading this from metadata instead #}
           {% endif %}
         </p>
       </div>

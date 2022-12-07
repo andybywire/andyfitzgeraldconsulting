@@ -7,6 +7,7 @@ require('dotenv').config();
 
 // Filters & Shortcodes
 const ogImage = require("./_11ty/filters/ogImage.js");
+const bannerImage = require("./_11ty/shortcodes/bannerImage.js");
 const responsiveImage = require("./_11ty/shortcodes/responsiveImage.js");
 
 module.exports = function(eleventyConfig) {
@@ -41,9 +42,10 @@ module.exports = function(eleventyConfig) {
 
   // Filters
   eleventyConfig.addFilter('ogImage', ogImage);
-
+  
   // Shortcodes
   eleventyConfig.addShortcode('responsiveImage', responsiveImage);
+  eleventyConfig.addShortcode('bannerImage', bannerImage);
 
   // Not yet used, but plan to in the near future
   let markdownIt = require("markdown-it");

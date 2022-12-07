@@ -31,7 +31,10 @@ async function getCategory () {
     clientBlockTitle,
     clientBlockCopy,
     reviewBlockTitle,
-    reviewBlockCopy
+    reviewBlockCopy,
+    "bannerCopy": banner.bannerCopy,
+    "bannerImg": banner.bannerImg.asset._ref,
+    "bannerPosition": coalesce(banner.horizontal, '') + ' ' + coalesce(banner.vertical, ''),
   }`
   const query = [filter, projection].join(' ')
   const docs = await client.fetch(query).catch(err => console.error(err))

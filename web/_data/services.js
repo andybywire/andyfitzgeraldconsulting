@@ -26,7 +26,9 @@ async function getServices () {
     pubDate,
     slug,
     heroImage,
-    "banner": banner.bannerCopy,
+    "bannerCopy": banner.bannerCopy,
+    "bannerImg": banner.bannerImg.asset._ref,
+    "bannerPosition": coalesce(banner.horizontal, '') + ' ' + coalesce(banner.vertical, ''),
     cta,
     "relatedResources": *[_type=='caseStudy' && references(^.category._ref) || _type=='article' && references(^.category._ref)] {
       title,

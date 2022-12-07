@@ -42,7 +42,9 @@ async function getStudies () {
     "heroUrl":heroImage.asset->.url,
     beforeImage,
     afterImage,
-    "banner": banner.bannerCopy,
+    "bannerCopy": banner.bannerCopy,
+    "bannerImg": banner.bannerImg.asset._ref,
+    "bannerPosition": coalesce(banner.horizontal, '') + ' ' + coalesce(banner.vertical, ''),
     cta,
     "relatedResources": *[_type=='service' && references(^.category._ref) || _type=='article' && references(^.category._ref)] {
       title,
