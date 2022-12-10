@@ -12,6 +12,9 @@ cta: Ready to tame your complex information environment to better meet business 
           <li class="title"><a href="{{ '/' | url }}">{{ metadata.siteTitle }}</a></li>
           <li class="subtitle">{{ metadata.siteSubtitle }}</li>
         </ul>
+        <a href="#site-navigation" id="open-menu" class="menu-toggle" aria-label="Open site menu">
+          {% include '../icons/menu.svg' %}
+        </a>
         <div id="nav-menu" class="side-nav-closed"> 
             <button id="close-menu" aria-label="Close site menu" type="button">
               {% include '../icons/close.svg' %}
@@ -30,9 +33,9 @@ cta: Ready to tame your complex information environment to better meet business 
           
           <div class="rule"></div> 
         </div>
-        <a href="#site-navigation" id="open-menu" class="menu-toggle">
+        {# <a href="#site-navigation" id="open-menu" class="menu-toggle" aria-label="Open site menu">
           {% include '../icons/menu.svg' %}
-        </a>
+        </a> #}
       </nav>
     </header>
     <section class="banner">
