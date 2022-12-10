@@ -124,5 +124,16 @@ cta: Ready to tame your complex information environment to better meet business 
       <p class="copyright">© 2016-2022 Andy Fitzgerald Consulting, LLC</p>
     </footer>
   </body>
+  <script>
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.register('/serviceworker.js')
+      .then( function (registration) {
+        console.log('Service worker registered with scope:', registration.scope);
+      })
+      .catch( function (error) {
+        console.log('Service worker registration error:', error);
+      });
+    }
+  </script>  
   <script src="/js/afc.js"></script>
 </html>
