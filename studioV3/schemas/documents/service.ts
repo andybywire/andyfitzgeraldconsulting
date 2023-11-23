@@ -1,4 +1,5 @@
 import {MdOutlineDesignServices} from 'react-icons/md'
+import {schemeFilter} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'service',
@@ -51,11 +52,7 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: '_type == $type && (scheme->title == $scheme)',
-        filterParams: {
-          type: 'skosConcept',
-          scheme: 'Category',
-        },
+        filter: () => schemeFilter({schemeId: '415dcc'}),
       },
     },
     {

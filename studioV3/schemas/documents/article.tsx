@@ -1,4 +1,5 @@
 import {GrArticle} from 'react-icons/gr'
+import {schemeFilter} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'article',
@@ -15,10 +16,10 @@ export default {
       title: 'Slug',
       name: 'slug',
       type: 'slug',
-        options: {
-          source: 'title',
-          slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200)
-        }
+      options: {
+        source: 'title',
+        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
+      },
     },
     {
       title: 'Date Published',
@@ -43,7 +44,7 @@ export default {
     {
       name: 'banner',
       title: 'Banner',
-      type: 'banner'
+      type: 'banner',
     },
     {
       name: 'category',
@@ -51,29 +52,22 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: '_type == $type && (scheme->title == $scheme)',
-        filterParams: {
-          type: 'skosConcept',
-          scheme: 'Category'
-        }
-      }
+        filter: () => schemeFilter({schemeId: '415dcc'}),
+      },
     },
     {
       name: 'topic',
       title: 'Topics',
       type: 'array',
       of: [
-        {type: 'reference',
+        {
+          type: 'reference',
           to: [{type: 'skosConcept'}],
           options: {
-            filter: '_type == $type && (scheme->title == $scheme)',
-            filterParams: {
-              type: 'skosConcept',
-              scheme: 'Topic'
-            }
-          }
-        }
-      ]
+            filter: () => schemeFilter({schemeId: '0e0d68'}),
+          },
+        },
+      ],
     },
     {
       name: 'shortDescription',
@@ -139,13 +133,13 @@ export default {
           name: 'pre',
           title: 'Pre',
           type: 'code',
-        }
+        },
       ],
     },
     {
       name: 'cta',
       title: 'Call to Action',
-      type: 'cta'
+      type: 'cta',
     },
     {
       name: 'canonical',
