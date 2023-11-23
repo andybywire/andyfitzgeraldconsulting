@@ -6,18 +6,18 @@ export default {
   title: 'Events',
   icon: MdEventAvailable,
   initialValue: {
-    type: 'talk'
+    type: 'talk',
   },
   fields: [
     {
       name: 'event',
       title: 'Event Name',
-      type: 'string'
+      type: 'string',
     },
     {
       name: 'date',
       title: 'Event Date',
-      type: 'date'
+      type: 'date',
     },
     {
       name: 'location',
@@ -26,13 +26,13 @@ export default {
       fields: [
         {name: 'city', type: 'string', title: 'City'},
         {name: 'state', type: 'string', title: 'State'},
-        {name: 'country', type: 'string', title: 'Country'}
-      ]
+        {name: 'country', type: 'string', title: 'Country'},
+      ],
     },
     {
       name: 'title',
       title: 'Presentation Title',
-      type: 'string'
+      type: 'string',
     },
     {
       name: 'type',
@@ -44,21 +44,21 @@ export default {
           {title: 'Keynote', value: 'keynote'},
           {title: 'Workshop', value: 'workshop'},
           {title: 'Panel', value: 'panel'},
-          {title: 'Podcast', value: 'podcast'}
-        ]
-      }
+          {title: 'Podcast', value: 'podcast'},
+        ],
+      },
     },
     {
       name: 'link',
       title: 'Event Link',
       description: 'If available, provide a link to the event detail page.',
-      type: 'url'
-    }
+      type: 'url',
+    },
   ],
   preview: {
     select: {
       title: 'event',
-      subtitle: 'title'
-    }
-  }
+      subtitle: 'title',
+    },
+  },
 }

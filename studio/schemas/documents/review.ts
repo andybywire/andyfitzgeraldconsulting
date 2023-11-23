@@ -17,7 +17,7 @@ export default {
       type: 'slug',
       options: {
         source: 'author',
-        slugify: input => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200)
+        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
       }
     },
     {

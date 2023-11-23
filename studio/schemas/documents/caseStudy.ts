@@ -1,4 +1,5 @@
 import {GrBriefcase} from 'react-icons/gr'
+import {schemeFilter, HierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'caseStudy',
@@ -9,7 +10,7 @@ export default {
     {
       name: 'title',
       type: 'string',
-      title: 'Title'
+      title: 'Title',
     },
     {
       title: 'Slug',
@@ -17,13 +18,13 @@ export default {
       type: 'slug',
       options: {
         source: 'title',
-        slugify: input => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200)
-      }
+        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
+      },
     },
     {
       title: 'Date Published',
       name: 'pubDate',
-      type: 'date'
+      type: 'date',
     },
     {
       title: 'Card Hero Image',
@@ -31,15 +32,15 @@ export default {
       type: 'image',
       description: 'This image will appear on the case study preview card',
       options: {
-        hotspot: true
+        hotspot: true,
       },
       fields: [
         {
           name: 'altText',
           type: 'string',
-          title: 'Alt Text'
-        }
-      ]
+          title: 'Alt Text',
+        },
+      ],
     },
     {
       name: 'category',
@@ -47,12 +48,9 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: '_type == $type && (scheme->title == $scheme)',
-        filterParams: {
-          type: 'skosConcept',
-          scheme: 'Category'
-        }
-      }
+        filter: () => schemeFilter({schemeId: '415dcc'}),
+      },
+      components: {field: HierarchyInput},
     },
     {
       name: 'banner',
@@ -60,156 +58,144 @@ export default {
       type: 'banner',
       options: {
         collapsible: true,
-        collapsed: false
-      }
+        collapsed: false,
+      },
     },
     {
       name: 'shortDescription',
       type: 'text',
       title: 'Short Description',
       description: 'approx. 100 char',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'description',
       type: 'text',
       title: 'Description',
       description: 'up to 150 char, likely truncation @ 70',
-      rows: 3
+      rows: 3,
     },
+    // {
+    //   name: 'review',
+    //   title: 'Project Review',
+    //   type: 'reference',
+    //   to: [{type: 'review'}],
+    // },
     {
-      name: 'review',
-      title: 'Project Review',
-      type: 'reference',
-      to: [
-        {type: 'review'}
-      ]
-    },
-    {
-      title: 'At a Glance', 
+      title: 'At a Glance',
       name: 'atGlance',
-      type: 'array', 
-      of: [{type: 'block'}]
+      type: 'array',
+      of: [{type: 'block'}],
     },
     {
-      title: 'What I Did', 
+      title: 'What I Did',
       name: 'whatDid',
-      type: 'array', 
-      of: [{type: 'block'}]
+      type: 'array',
+      of: [{type: 'block'}],
     },
     {
-      title: 'Project Goal', 
+      title: 'Project Goal',
       name: 'projectGoal',
-      type: 'array', 
-      of: [{type: 'block'}]
+      type: 'array',
+      of: [{type: 'block'}],
     },
     {
       title: 'Before Image',
       name: 'beforeImage',
       type: 'image',
       options: {
-        hotspot: true
+        hotspot: true,
       },
       fields: [
         {
           name: 'caption',
           type: 'string',
-          title: 'Caption'
+          title: 'Caption',
         },
         {
           name: 'altText',
           type: 'string',
-          title: 'Alt Text'
-        }
-      ]
+          title: 'Alt Text',
+        },
+      ],
     },
     {
-      title: 'Project Approach', 
+      title: 'Project Approach',
       name: 'projectApproach',
-      type: 'array', 
+      type: 'array',
       of: [
         {type: 'block'},
-        {type: 'image',
-        options: {
-            hotspot: true
+        {
+          type: 'image',
+          options: {
+            hotspot: true,
           },
           fields: [
             {
               name: 'caption',
               type: 'string',
               title: 'Caption',
-              options: {
-                isHighlighted: true 
-              }
             },
             {
               name: 'altText',
               type: 'string',
               title: 'Alt Text',
-              options: {
-                isHighlighted: true 
-              }
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     },
     {
-      title: 'Project Outcome', 
+      title: 'Project Outcome',
       name: 'projectOutcome',
-      type: 'array', 
+      type: 'array',
       of: [
         {type: 'block'},
         {type: 'figure'},
-        {type: 'image',
+        {
+          type: 'image',
           options: {
-            hotspot: true
+            hotspot: true,
           },
           fields: [
             {
               name: 'caption',
               type: 'string',
               title: 'Caption',
-              options: {
-                isHighlighted: true 
-              }
             },
             {
               name: 'altText',
               type: 'string',
               title: 'Alt Text',
-              options: {
-                isHighlighted: true 
-              }
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     },
     {
       title: 'After Image',
       name: 'afterImage',
       type: 'image',
       options: {
-        hotspot: true
+        hotspot: true,
       },
       fields: [
         {
           name: 'caption',
           type: 'string',
-          title: 'Caption'
+          title: 'Caption',
         },
         {
           name: 'altText',
           type: 'string',
-          title: 'Alt Text'
-        }
-      ]
+          title: 'Alt Text',
+        },
+      ],
     },
     {
       name: 'cta',
       title: 'Call to Action',
-      type: 'cta'
-    }
-  ]
+      type: 'cta',
+    },
+  ],
 }

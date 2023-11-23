@@ -1,4 +1,5 @@
 import {MdOutlineDesignServices} from 'react-icons/md'
+import {schemeFilter, HierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'service',
@@ -9,7 +10,7 @@ export default {
     {
       name: 'title',
       type: 'string',
-      title: 'Title'
+      title: 'Title',
     },
     {
       title: 'Slug',
@@ -17,33 +18,33 @@ export default {
       type: 'slug',
       options: {
         source: 'title',
-        slugify: input => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200)
-      }
+        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
+      },
     },
     {
       title: 'Date Published',
       name: 'pubDate',
-      type: 'date'
+      type: 'date',
     },
     {
       title: 'Hero Image',
       name: 'heroImage',
       type: 'image',
       options: {
-        hotspot: true
+        hotspot: true,
       },
       fields: [
         {
           name: 'altText',
           type: 'string',
-          title: 'Alt Text'
-        }
-      ]
+          title: 'Alt Text',
+        },
+      ],
     },
     {
       name: 'banner',
       title: 'Banner',
-      type: 'banner'
+      type: 'banner',
     },
     {
       name: 'category',
@@ -51,50 +52,47 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: '_type == $type && (scheme->title == $scheme)',
-        filterParams: {
-          type: 'skosConcept',
-          scheme: 'Category'
-        }
-      }
+        filter: () => schemeFilter({schemeId: '415dcc'}),
+      },
+      components: {field: HierarchyInput},
     },
     {
       name: 'shortDescription',
       type: 'text',
       title: 'Short Description',
       description: 'approx. 125 char',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'description',
       type: 'text',
       title: 'Description',
       description: 'up to 150 char, likely truncation @ 70',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'mediumDescription',
       type: 'text',
       title: 'Medium Description',
       description: 'approx. 250 char',
-      rows: 5
+      rows: 5,
     },
     {
-      title: 'Service Overview', 
+      title: 'Service Overview',
       name: 'serviceOverview',
       type: 'array',
-      of: [{type: 'block'}]
+      of: [{type: 'block'}],
     },
     {
-      title: 'Body', 
+      title: 'Body',
       name: 'bodyText',
-      type: 'array', 
-      of: [{type: 'block'}]
+      type: 'array',
+      of: [{type: 'block'}],
     },
     {
       name: 'cta',
       title: 'Call to Action',
-      type: 'cta'
-    }
-  ]
+      type: 'cta',
+    },
+  ],
 }

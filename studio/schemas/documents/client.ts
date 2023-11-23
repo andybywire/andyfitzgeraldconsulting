@@ -17,7 +17,7 @@ export default {
       type: 'slug',
       options: {
         source: 'name',
-        slugify: input => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200)
+        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
       }
     },
     {
@@ -30,9 +30,6 @@ export default {
           name: 'altText',
           type: 'string',
           title: 'Alt Text',
-          options: {
-            isHighlighted: true 
-          }
         }
       ]
     },
@@ -46,9 +43,6 @@ export default {
           name: 'altText',
           type: 'string',
           title: 'Alt Text',
-          options: {
-            isHighlighted: true 
-          }
         }
       ]
     }

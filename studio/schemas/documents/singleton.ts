@@ -9,7 +9,7 @@ export default {
     {
       name: 'title',
       title: 'Page Title',
-      type: 'string'
+      type: 'string',
     },
     {
       name: 'heroCopy',
@@ -22,30 +22,27 @@ export default {
           lists: [],
           marks: {
             decorators: [
-              { title: "Strong", value: "strong" },
-              { title: "Emphasis", value: "em" }
-            ]
-          }
-        }
-      ]
+              {title: 'Strong', value: 'strong'},
+              {title: 'Emphasis', value: 'em'},
+            ],
+          },
+        },
+      ],
     },
     {
       name: 'heroImg',
       title: 'Singleton Page Hero Image',
       type: 'image',
       options: {
-        hotspot: true
+        hotspot: true,
       },
       fields: [
         {
           name: 'altText',
           type: 'string',
           title: 'Alt Text',
-          options: {
-            isHighlighted: true 
-          }
-        }
-      ]
+        },
+      ],
     },
     {
       name: 'banner',
@@ -53,39 +50,34 @@ export default {
       type: 'banner',
       options: {
         collapsible: true,
-        collapsed: false
-      }
+        collapsed: false,
+      },
     },
     {
-      title: 'Body', 
+      title: 'Body',
       name: 'bodyText',
-      type: 'array', 
+      type: 'array',
       of: [
         {type: 'block'},
-        {type: 'image',
+        {
+          type: 'image',
           options: {
-            hotspot: true
+            hotspot: true,
           },
           fields: [
             {
               name: 'caption',
               type: 'string',
               title: 'Caption',
-              options: {
-                isHighlighted: true 
-              }
             },
             {
               name: 'altText',
               type: 'string',
               title: 'Alt Text',
-              options: {
-                isHighlighted: true 
-              }
-            }
-          ]
-        }
-      ]
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'servicesBlockTitle',
@@ -98,8 +90,8 @@ export default {
       title: 'Services Block Copy',
       description: 'For home page only',
       type: 'text',
-      rows: 3
-    }, 
+      rows: 3,
+    },
     {
       name: 'reviewBlockTitle',
       title: 'Review Block Title',
@@ -111,40 +103,34 @@ export default {
       title: 'Review Block Copy',
       description: 'For home page only',
       type: 'text',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'review',
       title: 'Review Block Entries',
-      description: 'For home page only. Use 3 references.', 
+      description: 'For home page only. Use 3 references.',
       type: 'array',
-      of: [
-        {type: 'reference',
-          to: [
-            {type: 'review'}
-          ]
-        }
-      ]
+      of: [{type: 'reference', to: [{type: 'review'}]}],
     },
     {
       name: 'clientBlockTitle',
       title: 'Client Grid Block Title',
       type: 'string',
-      description: 'For home page only'
+      description: 'For home page only',
     },
     {
       name: 'clientBlockCopy',
       title: 'Client Grid Block Copy',
       description: 'For home page only',
       type: 'text',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'cta',
       type: 'text',
       title: 'Call to Action',
       description: '60 - 100 char',
-      rows: 2
-    }
-  ]
+      rows: 2,
+    },
+  ],
 }

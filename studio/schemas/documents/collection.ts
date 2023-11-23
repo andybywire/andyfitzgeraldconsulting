@@ -6,7 +6,7 @@ export default {
     {
       name: 'title',
       title: 'Page Title',
-      type: 'string'
+      type: 'string',
     },
     {
       name: 'type',
@@ -18,14 +18,14 @@ export default {
           {title: 'Services', value: 'services'},
           {title: 'Case Studies', value: 'studies'},
           {title: 'Speaking', value: 'speaking'},
-          {title: 'Reviews', value: 'reviews'}
-        ]
-      }
+          {title: 'Reviews', value: 'reviews'},
+        ],
+      },
     },
     {
       name: 'copy',
       title: 'Introductory Copy',
-      hidden: ({parent}) => parent.type == 'home',
+      hidden: ({parent}: {parent: any}) => parent.type == 'home',
       type: 'array',
       of: [
         {
@@ -34,17 +34,17 @@ export default {
           lists: [],
           marks: {
             decorators: [
-              { title: "Strong", value: "strong" },
-              { title: "Emphasis", value: "em" }
-            ]
-          }
-        }
-      ]
+              {title: 'Strong', value: 'strong'},
+              {title: 'Emphasis', value: 'em'},
+            ],
+          },
+        },
+      ],
     },
     {
       name: 'homeCopy',
       title: 'Home Page Hero Copy',
-      hidden: ({parent}) => parent.type !== 'home',
+      hidden: ({parent}: {parent: any}) => parent.type !== 'home',
       type: 'array',
       of: [
         {
@@ -53,28 +53,25 @@ export default {
           lists: [],
           marks: {
             decorators: [
-              { title: "Strong", value: "strong" },
-              { title: "Emphasis", value: "em" }
-            ]
-          }
-        }
-      ]
+              {title: 'Strong', value: 'strong'},
+              {title: 'Emphasis', value: 'em'},
+            ],
+          },
+        },
+      ],
     },
     {
       name: 'homeHero',
       title: 'Home Page Hero Image',
-      hidden: ({parent}) => parent.type !== 'home',
+      hidden: ({parent}: {parent: any}) => parent.type !== 'home',
       type: 'image',
       fields: [
         {
           name: 'altText',
           type: 'string',
           title: 'Alt Text',
-          options: {
-            isHighlighted: true 
-          }
-        }
-      ]
+        },
+      ],
     },
     {
       name: 'banner',
@@ -83,88 +80,82 @@ export default {
       description: 'Banner image and caption for this collection type',
       options: {
         collapsible: true,
-        collapsed: false
-      }
+        collapsed: false,
+      },
     },
     {
       name: 'servicesBlockTitle',
       title: 'Services Block Title',
       type: 'string',
-      hidden: ({parent}) => parent.type !== 'home'
+      hidden: ({parent}: {parent: any}) => parent.type !== 'home',
     },
     {
       name: 'servicesBlockCopy',
       title: 'Services Block Copy',
-      hidden: ({parent}) => parent.type !== 'home',
+      hidden: ({parent}: {parent: any}) => parent.type !== 'home',
       type: 'text',
-      rows: 3
-    }, 
+      rows: 3,
+    },
     {
       name: 'reviewBlockTitle',
       title: 'Review Block Title',
       type: 'string',
-      hidden: ({parent}) => {
+      hidden: ({parent}: {parent: any}) => {
         if (parent.type == 'home' || parent.type == 'studies') {
-            return false
-          } else {
-            return true
-          }
-      } 
+          return false
+        } else {
+          return true
+        }
+      },
     },
     {
       name: 'reviewBlockCopy',
       title: 'Review Block Copy',
-      hidden: ({parent}) => {
+      hidden: ({parent}: {parent: any}) => {
         if (parent.type == 'home' || parent.type == 'studies') {
-            return false
-          } else {
-            return true
-          }
-      }, 
+          return false
+        } else {
+          return true
+        }
+      },
       type: 'text',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'review',
       title: 'Review Block Entries',
-      // consider validating based on type — 3 for home, two for everywhere else   
-      hidden: ({parent}) => {
+      // consider validating based on type — 3 for home, two for everywhere else
+      hidden: ({parent}: {parent: any}) => {
         if (parent.type == 'home' || parent.type == 'studies') {
-            return false
-          } else {
-            return true
-          }
-      },  
-      type: 'array',
-      of: [
-        {type: 'reference',
-          to: [
-            {type: 'review'}
-          ]
+          return false
+        } else {
+          return true
         }
-      ]
+      },
+      type: 'array',
+      of: [{type: 'reference', to: [{type: 'review'}]}],
     },
     {
       name: 'clientBlockTitle',
       title: 'Client Grid Block Title',
       type: 'string',
-      hidden: ({parent}) => {
+      hidden: ({parent}: {parent: any}) => {
         if (parent.type == 'home' || parent.type == 'studies') {
-            return false
-          } else {
-            return true
-          }
-      }
+          return false
+        } else {
+          return true
+        }
+      },
     },
     {
       name: 'clientBlockCopy',
       title: 'Client Grid Block Copy',
-      hidden: ({parent}) => {
+      hidden: ({parent}: {parent: any}) => {
         if (parent.type == 'home' || parent.type == 'studies') {
-            return false
-          } else {
-            return true
-          }
+          return false
+        } else {
+          return true
+        }
       },
       type: 'array',
       of: [
@@ -174,17 +165,17 @@ export default {
           lists: [],
           marks: {
             decorators: [
-              { title: "Strong", value: "strong" },
-              { title: "Emphasis", value: "em" }
-            ]
-          }
-        }
-      ]
+              {title: 'Strong', value: 'strong'},
+              {title: 'Emphasis', value: 'em'},
+            ],
+          },
+        },
+      ],
     },
     {
       name: 'cta',
       title: 'Call to Action',
-      type: 'cta'
-    }
-  ]
+      type: 'cta',
+    },
+  ],
 }

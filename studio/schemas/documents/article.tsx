@@ -1,25 +1,16 @@
-/**
- * @todo Add Content Pillar boolean and conditional prioritization field for promoting content pillars to the home page.
- */
-
-import React from 'react'
 import {GrArticle} from 'react-icons/gr'
-
-const Preformatted = props => (
-  <pre style={{whiteSpace: 'pre-wrap',
-    backgroundColor: '#f2f3f5'}}>{props.children}</pre>
-)
+import {schemeFilter, HierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'article',
   type: 'document',
   icon: GrArticle,
-  title: "Articles",
+  title: 'Articles',
   fields: [
     {
       name: 'title',
       type: 'string',
-      title: 'Title'
+      title: 'Title',
     },
     {
       title: 'Slug',
@@ -27,33 +18,33 @@ export default {
       type: 'slug',
       options: {
         source: 'title',
-        slugify: input => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200)
-      }
+        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
+      },
     },
     {
       title: 'Date Published',
       name: 'pubDate',
-      type: 'date'
+      type: 'date',
     },
     {
       title: 'Hero Image',
       name: 'heroImage',
       type: 'image',
       options: {
-        hotspot: true
+        hotspot: true,
       },
       fields: [
         {
           name: 'altText',
           type: 'string',
-          title: 'Alt Text'
-        }
-      ]
+          title: 'Alt Text',
+        },
+      ],
     },
     {
       name: 'banner',
       title: 'Banner',
-      type: 'banner'
+      type: 'banner',
     },
     {
       name: 'category',
@@ -61,54 +52,49 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: '_type == $type && (scheme->title == $scheme)',
-        filterParams: {
-          type: 'skosConcept',
-          scheme: 'Category'
-        }
-      }
+        filter: () => schemeFilter({schemeId: '415dcc'}),
+      },
+      components: {field: HierarchyInput},
     },
     {
       name: 'topic',
       title: 'Topics',
       type: 'array',
       of: [
-        {type: 'reference',
+        {
+          type: 'reference',
           to: [{type: 'skosConcept'}],
           options: {
-            filter: '_type == $type && (scheme->title == $scheme)',
-            filterParams: {
-              type: 'skosConcept',
-              scheme: 'Topic'
-            }
-          }
-        }
-      ]
+            filter: () => schemeFilter({schemeId: '0e0d68'}),
+          },
+          // components: { field: HierarchyInput }, // does not yet support arrays
+        },
+      ],
     },
     {
       name: 'shortDescription',
       type: 'text',
       title: 'Short Description',
       description: 'approx. 125 char',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'description',
       type: 'text',
       title: 'Description',
       description: 'up to 150 char, likely truncation @ 70',
-      rows: 3
+      rows: 3,
     },
     {
       name: 'lede',
       title: 'Lede',
       type: 'array',
-      of: [{type: 'block'}]
+      of: [{type: 'block'}],
     },
     {
-      title: 'Body', 
+      title: 'Body',
       name: 'bodyText',
-      type: 'array', 
+      type: 'array',
       of: [
         {
           type: 'block',
@@ -119,23 +105,20 @@ export default {
             {title: 'H3', value: 'h3'},
             {title: 'H4', value: 'h4'},
             {title: 'H5', value: 'h5'},
-            {title: 'Quote', value: 'blockquote'}
-          ]
+            {title: 'Quote', value: 'blockquote'},
+          ],
         },
         {type: 'figure'},
         {
           type: 'image',
           options: {
-            hotspot: true
+            hotspot: true,
           },
           fields: [
             {
               name: 'altText',
               type: 'string',
               title: 'Alt Text',
-              options: {
-                isHighlighted: true
-              }
             },
             {
               name: 'floatLeft',
@@ -144,27 +127,26 @@ export default {
               initialValue: false,
               options: {
                 layout: 'checkbox',
-                isHighlighted: true
-              }
-            }
-          ]
+              },
+            },
+          ],
         },
         {
           name: 'pre',
           title: 'Pre',
           type: 'code',
-        }
-      ]
+        },
+      ],
     },
     {
       name: 'cta',
       title: 'Call to Action',
-      type: 'cta'
+      type: 'cta',
     },
     {
       name: 'canonical',
       title: 'Canonical URL',
-      type: 'url'
-    }
-  ]
+      type: 'url',
+    },
+  ],
 }
