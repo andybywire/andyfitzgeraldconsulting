@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@11ty/eleventy": "^1.0.1",
+    "@11ty/eleventy": "^2.0.1",
     "@11ty/eleventy-plugin-syntaxhighlight": "^2.0.3",
     "@sanity/block-content-to-markdown": "^0.0.5",
     "@sanity/client": "^2.0.0",
@@ -25,5 +25,8 @@
     "markdown-it-anchor": "^5.2.5",
     "nunjucks-date-filter": "^0.1.1",
     "sass": "^1.53.0"
+  },
+  "dependencies": {
+    "@11ty/eleventy-upgrade-help": "^2.0.5"
   }
 }
