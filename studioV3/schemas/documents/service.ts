@@ -1,5 +1,5 @@
 import {MdOutlineDesignServices} from 'react-icons/md'
-import {schemeFilter} from 'sanity-plugin-taxonomy-manager'
+import {schemeFilter, HierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'service',
@@ -54,6 +54,7 @@ export default {
       options: {
         filter: () => schemeFilter({schemeId: '415dcc'}),
       },
+      components: {field: HierarchyInput},
     },
     {
       name: 'shortDescription',
