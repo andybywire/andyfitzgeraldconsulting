@@ -1,10 +1,15 @@
 {
   "cSpell.words": [
     "ELEVENTY",
+    "linkify",
+    "luxon",
+    "markdownify",
     "qvet",
+    "serviceworker",
     "Shortcode",
     "shortcodes",
-    "stackable"
+    "stackable",
+    "syntaxhighlight"
   ],
   "html.suggest.html5": true,
   "emmet.includeLanguages": {
