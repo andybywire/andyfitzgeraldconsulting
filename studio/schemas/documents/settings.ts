@@ -46,7 +46,8 @@ export default {
         name: 'defaultCta',
         title: 'Default Call to Action',
         type: 'cta',
-        description: '60 - 100 characters'
+        description: '60 - 100 characters',
+        deprecated: {reason: 'Design element no longer a part of 2024 site'},
       }
     ]
   }

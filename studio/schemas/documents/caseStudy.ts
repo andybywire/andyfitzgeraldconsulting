@@ -27,10 +27,9 @@ export default {
       type: 'date',
     },
     {
-      title: 'Card Hero Image',
+      title: 'Hero Image',
       name: 'heroImage',
       type: 'image',
-      description: 'This image will appear on the case study preview card',
       options: {
         hotspot: true,
       },
@@ -43,44 +42,37 @@ export default {
       ],
     },
     {
-      name: 'category',
-      title: 'Category',
+      name: 'insightType',
+      title: 'Insight Type',
       type: 'reference',
       to: [{type: 'skosConcept'}],
+      initialValue: {_ref: '89d6c3022255ade8c6f5867ca3b2354a'},
       options: {
-        filter: () => schemeFilter({schemeId: '415dcc'}),
+        filter: () => schemeFilter({schemeId: 'c88ca3'}),
+        disableNew: true,
       },
       components: {field: HierarchyInput},
-    },
-    {
-      name: 'banner',
-      title: 'Banner',
-      type: 'banner',
-      options: {
-        collapsible: true,
-        collapsed: false,
-      },
     },
     {
       name: 'shortDescription',
       type: 'text',
       title: 'Short Description',
-      description: 'approx. 100 char',
+      description: 'Used for related resources list item descriptions. Character count TBD.',
       rows: 3,
     },
     {
       name: 'description',
       type: 'text',
-      title: 'Description',
-      description: 'up to 150 char, likely truncation @ 70',
+      title: 'Meta Description',
+      description: 'Used for description meta tag. Up to 150 char, likely truncation @ 70',
       rows: 3,
     },
-    // {
-    //   name: 'review',
-    //   title: 'Project Review',
-    //   type: 'reference',
-    //   to: [{type: 'review'}],
-    // },
+    {
+      name: 'review',
+      title: 'Project Review',
+      type: 'reference',
+      to: [{type: 'review'}],
+    },
     {
       title: 'At a Glance',
       name: 'atGlance',
@@ -193,9 +185,26 @@ export default {
       ],
     },
     {
+      name: 'category',
+      title: 'Category',
+      type: 'reference',
+      to: [{type: 'skosConcept'}],
+      options: {
+        filter: () => schemeFilter({schemeId: '415dcc'}),
+      },
+      components: {field: HierarchyInput},
+      deprecated: {reason: 'No longer used in 2024 refresh'}
+    },
+    {
+      name: 'banner',
+      title: 'Banner',
+      type: 'banner',
+    },
+    {
       name: 'cta',
       title: 'Call to Action',
       type: 'cta',
+      deprecated: {reason: 'Article-specific CTAs are no longer used.'}
     },
   ],
 }
