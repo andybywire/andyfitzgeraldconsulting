@@ -4,6 +4,7 @@
     "linkify",
     "luxon",
     "markdownify",
+    "portabletext",
     "qvet",
     "serviceworker",
     "Shortcode",
@@ -15,5 +16,5 @@
   "emmet.includeLanguages": {
     "njk": "html",
     "nunjucks": "html"
-  }
+  },
 }
