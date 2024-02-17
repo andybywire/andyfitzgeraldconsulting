@@ -1,0 +1,13 @@
+---
+layout: base.njk
+---
+{% for resource in singletons %}
+  {% if resource.title == "About" %}
+    <div>
+      {{ resource.heroCopy | safe }}
+    </div>
+    <div>
+      {{ resource.bodyText | safe }}
+    </div>
+  {% endif %}
+{% endfor %}

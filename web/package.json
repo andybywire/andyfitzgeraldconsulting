@@ -1,8 +1,9 @@
 {
   "name": "web",
-  "version": "1.0.0",
-  "description": "",
+  "version": "1.1.0",
+  "description": "Static site generator for Andy Fitzgerald Consulting, LLC",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "npx @11ty/eleventy --watch --serve",
     "debug": "DEBUG=* npx eleventy",
@@ -12,6 +13,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@11ty/eleventy": "^2.0.1"
+    "@11ty/eleventy": "3.0.0-alpha.5",
+    "@portabletext/to-html": "^2.0.5",
+    "@sanity/client": "^6.13.3",
+    "groq": "^3.29.1"
   }
 }
