@@ -1,0 +1,16 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.category {
+  @include segment;
+  section {
+    @include fragment;
+  }
+}
+.clients {
+  @include segment;
+  padding: 2rem 0;
+  section {
+    @include fragment;
+  }
+}

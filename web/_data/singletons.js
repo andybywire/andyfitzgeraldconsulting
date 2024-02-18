@@ -40,7 +40,6 @@ async function getSingleton() {
 	const query = [filter, projection].join(' ');
 	const docs = await client.fetch(query).catch((err) => console.error(err));
 	const prepareSingletons = docs.map(generateSingleton);
-	console.log(prepareSingletons);
 	return prepareSingletons;
 }
 

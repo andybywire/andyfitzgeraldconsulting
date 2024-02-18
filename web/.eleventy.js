@@ -1,14 +1,24 @@
 export default function (eleventyConfig) {
-  // Assets to pass through to _site
-  eleventyConfig.addPassthroughCopy(".htaccess");
+	eleventyConfig.addPassthroughCopy('.htaccess');
+	eleventyConfig.addPassthroughCopy({ style: 'style' });
+	eleventyConfig.addPassthroughCopy({ 'assets/fonts': 'fonts' });
+	// eleventyConfig.addPassthroughCopy({ 'assets/js': 'js' });
+	// eleventyConfig.addPassthroughCopy({ 'assets/icons': 'icons' });
+	// eleventyConfig.addPassthroughCopy('manifest.json');
+	// eleventyConfig.addPassthroughCopy('serviceworker.js');
+	// eleventyConfig.addPassthroughCopy('robots.txt');
 
-  return {
-    htmlTemplateEngine: "njk",
-    dir: {
-      data: "../_data",
-      input: "_src",
-      includes: "../_includes",
-      layouts: "../_includes",
-    },
-  };
+	eleventyConfig.setServerOptions({
+		watch: ['style/**/*.css'],
+	});
+
+	return {
+		htmlTemplateEngine: 'njk',
+		dir: {
+			data: '../_data',
+			input: '_src',
+			includes: '../_includes',
+			layouts: '../_includes',
+		},
+	};
 }

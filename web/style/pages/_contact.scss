@@ -1,0 +1,53 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.singleton.contact .contact-form {
+  .alert {
+    display: none;
+    background-color: $alert-bg;
+    svg {
+      width: 24px;
+    }
+  }
+  div.form-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    div {
+      flex: 0 0 100%;
+      @include breakpoint(medium) {  
+        flex: 0 0 47%;
+      }
+    }
+    label, input, textarea {
+      display: block;
+      margin-bottom: 2rem;
+      width: 100%;
+    }
+    .message-text {
+      @include breakpoint(medium) {  
+        flex: 0 0 100%;
+      }
+    }
+    .form-field {
+      padding: .5rem;
+      width: calc(100% - 1rem);
+    }
+    .send {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      flex: 0 0 100%;
+      align-items: flex-start;
+      .button {
+        margin: 4rem 20% 0;
+        padding: 1rem;
+        flex: 0 0 60%;
+        @include breakpoint(medium) {  
+          flex: 0 0 30%;
+          margin: 0;
+        }        
+      }
+    }
+  }
+}

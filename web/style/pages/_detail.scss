@@ -1,0 +1,155 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  @include breakpoint(large) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    column-gap: 1rem;
+  }
+  .img {
+    margin: .5rem 0 0;
+    @include breakpoint(medium) {
+      order: 10;
+    }
+    @include breakpoint(large) {
+      flex: 1 0 calc(33% - 0.5rem);
+      // margin-top: 2.5rem;
+    }
+  }
+  h1 {
+    flex: 0 0 100%;
+  }
+  .copy {
+    h2 {
+      color: inherit;
+      font-weight: 400;
+      font-size: 1.33rem;
+      margin-top: 0;
+    }
+    li {
+      margin-bottom: 0;
+    }
+    &.display p:first-of-type {
+      font-size: 1.5rem; // 24px
+      margin-top: 0;
+    }
+    @include breakpoint(medium) {
+      ul {
+        columns: 2;
+      }
+    }
+    @include breakpoint(large) {
+      flex: 1 0 calc(66% - 0.5rem);
+      ul {
+        columns: 2;
+      }
+    }
+  }
+}
+
+.service {
+  @include segment;
+  section {
+    @include fragment;
+  }
+ .detail {  
+    @include breakpoint(large) {
+      display: flex;
+      div {
+        flex: 0 0 66%;
+      }
+    }
+  }
+}
+
+.study > div {
+  @include segment;
+  section {
+    @include fragment;
+  }
+  .overview .img {
+    @include breakpoint(large) {
+      margin-top: 2.5rem;
+    }
+  }
+  blockquote {
+    margin: 2.5rem 1rem;
+    @include breakpoint(large) {
+      margin: 2.5rem 0;
+    }
+    p {
+      @include breakpoint(medium) {
+        columns: 2;
+        column-gap: 2rem;
+      }
+      @include breakpoint(large) {
+        column-gap: 3rem;
+      }
+    }
+    cite {
+      @include breakpoint(medium) {
+        width: 45%;
+        margin-left: 55%;
+        text-align: right;
+      }
+      @include breakpoint(large) {
+        width: 40%;
+        margin-left: 60%;
+      }  
+    }
+  }
+  &.feedback {
+    background-color: $dark-gray;
+    margin-top: 2rem;
+    section {
+      color: $blue;
+    }
+  }
+  &.goals {
+    background-color: $light-gray;
+    H2 {
+      @include breakpoint(large) {
+        padding-right: 50%;
+      }
+    }
+    P:not(section-type) {
+      @include breakpoint(medium) {
+        width: 50%;
+      }
+    }
+    figure {
+      margin: 0;
+      @include breakpoint(medium) {
+        width: 45%;
+      }
+    }
+  } 
+  .study-segment {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 2rem;
+    margin-bottom: 3rem;
+    &.running {
+      margin-top: 0;
+    }
+    div {
+      @include breakpoint(large) {
+        flex: 0 0 66%;
+      }
+    }
+    p.section-type {
+      margin: 0;
+      font-weight: 400;
+      font-size: 1.375rem;
+    }
+    H2 {
+      margin: 0 0 .5rem;
+      color: $dark-blue;
+    }
+  } 
+}

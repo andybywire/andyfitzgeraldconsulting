@@ -1,0 +1,46 @@
+:root {
+	/* Typography */
+	--header: 'Lato', Roboto, Arial, sans-serif;
+  --headline: 'Noto Serif', Georgia, serif;
+	--body: 'Open Sans', Roboto, Arial, sans-serif;
+
+	/* Colors */
+
+	--blue: #4e9dbc;
+	/* $dark-blue: color.scale($blue, $lightness: -10%); */
+	--light-gray: rgba(43, 40, 40, 0.05);
+	--medium-gray: #646464;
+	--dark-gray: #2b2b2b;
+	--black: #000000;
+	--white: #fefefe;
+	--alert-bg: #f7e4e1;
+	--alert-text: #cc4b37;
+
+	/* Wrap */
+	/* max page width on desktop */
+	--max-width: 1024px;
+
+	/* Grid */
+	/* Consider increasing this */
+	/* 
+$card-min: 320px; 
+$card-max: 2fr; 
+*/
+
+	/* Breakpoints */
+	/* 
+$breakpoints: (
+  'small': 375px,
+  'medium': 600px,
+  'large':  900px
+) !default; 
+*/
+
+	/* Minimum height breakpoint (for sticky elements) */
+	/* 
+$min-height: 700px;
+*/
+
+	/* Global styles */
+	--radius: 3px;
+}

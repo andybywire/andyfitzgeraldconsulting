@@ -1,0 +1,24 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.logofarm {
+  @include fragment;
+  ul {
+    display: grid;
+    gap: 2rem;
+    padding: 2rem 1rem;
+    grid-template-columns: repeat(2, 1fr);
+    @include breakpoint(medium) {
+      grid-template-columns: repeat(4, 1fr);
+      padding: 2rem;
+    }
+    @include breakpoint(large) {
+      gap: 4rem;
+      padding: 4rem 3rem 6rem;
+
+    }
+  }
+  li {
+    list-style: none;
+  }
+}

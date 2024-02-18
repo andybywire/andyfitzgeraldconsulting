@@ -2,9 +2,35 @@
 ---
 <!doctype html>
 <html lang="en">
-    {% include 'partials/head.njk' %}
-    <body>
-        <h1>Page, yo.</h1>
-        {{ content | safe }}
-    </body>
+	{% include 'partials/head.njk' %}
+	<body>
+		{# <a href="#main-content" class="show-on-focus">Skip to Main Content</a> #}
+		<header>
+			<nav>
+				<ul class="masthead">
+					<li>
+						{% include 'icons/icon-dark.svg' %}
+					</li>
+					<li class="title">
+						{{ metadata.siteTitle }}
+					</li>
+					<li class="subtitle">
+						{{ metadata.siteSubtitle }}
+					</li>
+				</ul>
+				<ul class="menu">
+					{% for item in navigation.items %}
+						<li>
+							<a href="{{ item.url }}" 
+								{# {{ helpers.getLinkActiveState(item.url, page.url) | safe }} #}
+								>{{ item.text }}</a>
+						</li>
+					{% endfor %}
+				</ul>
+			</nav>
+		</header>
+		<main>
+			{{ content | safe }}
+		</main>
+	</body>
 </html>

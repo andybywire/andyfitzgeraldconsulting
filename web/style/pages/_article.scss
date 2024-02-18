@@ -1,0 +1,64 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.article {
+  @include segment;
+  .col {
+    @include fragment;
+    @include breakpoint(large) {
+      display: flex;
+      justify-content: space-between;
+    }
+    img.left-float {
+      max-width: 36%;
+      float: left;
+      margin-right: 1rem;
+      margin-top: 2rem;
+      @include breakpoint(medium) {
+        max-width: 25%;
+      }
+      @include breakpoint(medium) {
+        margin-right: 2rem;
+      }
+    }
+  }
+  article, .preview {
+    overflow: hidden;
+    @include breakpoint(large) {
+      flex: 0 0 66%;
+    }
+  }
+  // .preview h1 {
+  //   font-size: 1.75rem;
+  // }
+  nav {
+    @include breakpoint(large) {
+      flex: 0 0 25%;
+    }
+    &.pagination {
+      display: flex;
+      justify-content: space-between;
+      padding: 1rem 0 4rem;
+      .info {
+        font-size: 1rem;
+        font-weight: 300;
+      }
+    }
+  }
+  .preview {
+    a.teaser {
+      text-decoration: none;
+      color: inherit;
+      &:hover p:after {
+        color: $dark-blue;
+        transition: all 0.25s ease;
+      }
+    }
+    p:after {
+      content: "Read the article »";
+      padding-left: 0.5rem;
+      text-decoration: underline;
+      transition: all 0.25s ease;
+    }
+  }
+}

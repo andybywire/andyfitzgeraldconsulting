@@ -1,0 +1,189 @@
+@import '../utilities/variables.scss';
+@import '../utilities/mixins.scss';
+
+.singleton {
+  article {
+    @include segment;
+  }
+  .wrap {
+    @include fragment;
+  }
+  .value-prop {
+    .wrap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      padding-top: 3rem;
+      .display {
+        font-size: 1.35rem;
+        padding-bottom: 3rem;
+        @include breakpoint(large) {
+          padding-bottom: 0;
+        }
+        strong {
+          font-weight: 600;
+        }
+        em {
+          font-style: inherit;
+          font-weight: 600;
+          color: $dark-blue;
+        }
+        P:last-of-type {
+          margin-bottom: 0;
+        }
+        @include breakpoint(large) {
+          flex: 0 0 calc(55%);
+        }
+      }
+      .img {
+        @include breakpoint(large) {
+          flex: 0 0 calc(35%);
+        }
+      }
+    }
+  }
+  &.home {
+    .value-prop {
+      background-color: $light-gray;
+      .wrap {
+        padding: 3rem 0;
+      }
+    }
+  }
+  &.about, &.contact {
+    .value-prop .wrap {
+      .display {
+        @include breakpoint(medium) {
+          flex: 0 0 calc(55%);
+        }
+      }
+      .img {
+        @include breakpoint(medium) {
+          flex: 0 0 calc(35%);
+        }
+      }
+    }
+    .body-text .wrap {
+      display: flex;
+      padding-bottom: 4rem;
+      div {
+        @include breakpoint(large) {
+          flex: 0 0 66%;
+        }
+      }
+    }
+  }
+  &.speaking {
+    ul {
+      padding: 0;
+      list-style: none;
+      display: flex;
+      gap: 10%;
+      flex-wrap: wrap;
+      padding: 1rem 0 4rem;
+    }
+    li {
+      // padding-bottom: 1rem;
+      flex: 0 0 100%;
+      @include breakpoint(medium) {
+        flex: 0 0 40%;
+      }
+      a {
+        text-decoration: none;
+      }
+    }
+    time {
+      margin: 0;
+    }
+    h3 {
+      margin-top: 0;
+    } 
+    svg {
+      height: .75rem;
+      margin-left: .5rem;
+    }
+    .future {
+      // display: none;
+      background: $blue;
+      padding: 0.25rem 0.5rem;
+      border-radius: $radius;
+      margin-left: .5rem;
+      color: #fff;
+    }
+  }
+  &.reviews {
+    .client-grid {
+      list-style: none;
+      padding-left: 0;
+      padding-bottom: 4rem;
+    }
+    .review-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 5rem;
+      @include breakpoint(medium) {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-top: 3rem; // ensures that scroll-to links don't hide content under the header
+      }
+      .logo {
+        width: 50%;
+        @include breakpoint(medium) {
+          flex: 0 0 15%;
+          padding-top: 3rem;  
+          width: 100%;
+        }
+      }
+      .review-body {
+        flex: 0 0 80%;
+        @include breakpoint(large) { 
+          flex: 0 0 65%;
+          padding-right: 15%;
+        }
+      }
+    }
+    blockquote.review {
+      margin: 0;
+      p {
+        font-weight: 300;
+      }
+      ul {
+        margin: 1rem 0;
+        list-style: disc;
+      }
+      cite {
+        display: inline-block; // tightens line height
+        color: $black;
+        font-size: inherit;
+        font-weight: 300;
+        padding-left: 2rem;
+        text-indent: -1.25rem;
+        // padding-bottom: 3rem;
+        &::before {
+          content: "— "
+        }
+      }
+      &:not(:last-of-type ) cite {
+        padding-bottom: 3rem;
+      }
+    }
+  }
+  &.calendar, &.not-found {
+    margin-bottom: 3rem;
+  }
+  .client-feedback .button {
+    @include breakpoint(medium) {
+      padding: .75rem 3rem;
+    }   
+  }
+  .client-block {
+    h1 {
+      margin-top: 2rem;
+      @include breakpoint(medium) {
+        margin-top: 4rem;
+      }
+    }
+  }
+}
