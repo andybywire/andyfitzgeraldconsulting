@@ -73,3 +73,5 @@ yarn.lock
 # Yarn Integrity file
 .yarn-integrity
 
+# Development Source Docs
+__source_docs
