@@ -1,7 +1,7 @@
 export default function (eleventyConfig) {
 	eleventyConfig.addPassthroughCopy('.htaccess');
-	eleventyConfig.addPassthroughCopy({ style: 'style' });
-	eleventyConfig.addPassthroughCopy({ 'assets/fonts': 'fonts' });
+	eleventyConfig.addPassthroughCopy('style');
+	eleventyConfig.addPassthroughCopy('assets');
 	// eleventyConfig.addPassthroughCopy({ 'assets/js': 'js' });
 	// eleventyConfig.addPassthroughCopy({ 'assets/icons': 'icons' });
 	// eleventyConfig.addPassthroughCopy('manifest.json');
@@ -10,6 +10,7 @@ export default function (eleventyConfig) {
 
 	eleventyConfig.setServerOptions({
 		watch: ['style/**/*.css'],
+		showAllHosts: true,
 	});
 
 	return {
