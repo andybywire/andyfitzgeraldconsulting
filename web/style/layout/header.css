@@ -1,52 +1,65 @@
 header {
-	background-color: var(--white);
-	font-family: var(--header);
-	color: var(--black);
+	background-color: var(--blue);
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	& ul {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
 }
 nav {
-	display: flex;
+  display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+  align-items: center;
 	width: 100%;
+  font-family: var(--header);
+  & ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
 	.masthead {
-		display: flex;
+    display: flex;
 		flex-direction: column;
 		align-items: center;
+    text-align: center;
     padding: 1.5rem 0;
+    width: 100%;
+    background-color: var(--white);
+    color: var(--black);
 		& svg {
 			width: 8rem;
 		}
 		.title {
 			font-family: var(--headline);
-			font-size: 1.75rem; /* 28 px */
+			font-size: 1.5rem; /* 28 px */
+      padding: 0 1rem;
 		}
 		.subtitle {
-			font-size: 1.125rem;
+      font-size: 1.125rem;
+      padding: 0 1rem;
 		}
 	}
 	.menu {
-		background-color: var(--blue);
-		color: var(--black);
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); 
+    width: calc(100% - 2rem);
+    max-width: min(calc(100% - 2rem), 28rem);
+    row-gap: .5rem;
+    padding: 1rem;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--white);
     text-transform: lowercase;
+    @media (min-width: 40rem) {
+      display: flex;
+      justify-content: center;
+    } 
 		& li {
-			padding: 0.75rem 1rem;
+			padding: 0.25rem 1rem;
+      text-align: center;
 		}
 		& a {
-			border-bottom-color: rgba(0, 0, 0, 0);
+			/* Add animated underline, à la footer */
+      border-bottom-color: rgba(0, 0, 0, 0);
 			transition: border-color 0.2s linear;
 			text-decoration: none;
 			&:hover,
