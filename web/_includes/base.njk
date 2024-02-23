@@ -7,17 +7,19 @@
 		{# <a href="#main-content" class="show-on-focus">Skip to Main Content</a> #}
 		<header>
 			<nav>
-				<ul class="masthead">
-					<li>
-						{% include 'icons/icon-dark.svg' %}
-					</li>
-					<li class="title">
-						{{ metadata.siteTitle }}
-					</li>
-					<li class="subtitle">
-						{{ metadata.siteSubtitle }}
-					</li>
-				</ul>
+				<a href="#" class="masthead">
+					<div>
+						{% include 'icons/afc.svg' %}
+					</div>
+					<div class"title">
+						<div class="site-title">
+							{{ metadata.siteTitle }}
+						</div>
+						<div class="subtitle">
+							{{ metadata.siteSubtitle }}
+						</div>
+					</div>
+				</a>
 				<ul class="menu">
 					{% for item in navigation.items %}
 						<li>
@@ -51,12 +53,12 @@
 					<li class="github">
 						<a href="https://www.github.com/andybywire" target="_blank" rel="noopener">{% include 'icons/github.svg' %}</a>
 					</li>
-					<li class="github">
-						<a href="https://www.github.com/andybywire" target="_blank" rel="noopener">{% include 'icons/linkedin.svg' %}</a>
+					<li class="medium">
+						<a href="https://medium.com/@andybywire" target="_blank" rel="noopener">{% include 'icons/medium.svg' %}</a>
 					</li>
 				</ul>
 			</section>
-			<p class="copyright">© 2016-2022 Andy Fitzgerald Consulting, LLC</p>
+			<p class="copyright">© 2016-2024 Andy Fitzgerald Consulting, LLC</p>
 		</footer>
 	</body>
 </html>

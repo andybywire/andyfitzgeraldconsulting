@@ -4,7 +4,9 @@ body {
   flex-direction: column;
   background-color: var(--white);
 }
-
+main {
+  flex: 1;
+}
 
 /*
 // // Create wrap for horizontal color bands
