@@ -4,7 +4,7 @@
   & img {
     width: 100%; /* will oversize images that are too small */
     height: calc(0.5625 * 100vw); /* 16:9 ... */
-    max-height: 20rem; /* ... unless wide, then banner */
+    max-height: 30rem; /* ... unless wide, then banner */
     object-fit: cover;  
   }
   & figcaption {
