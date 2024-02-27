@@ -10,7 +10,8 @@
     "Shortcode",
     "shortcodes",
     "stackable",
-    "syntaxhighlight"
+    "syntaxhighlight",
+    "topline"
   ],
   "html.suggest.html5": true,
   "emmet.includeLanguages": {

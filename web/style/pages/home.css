@@ -1,0 +1,215 @@
+.home {
+	/* move this into wrap.css when I need to reuse it */
+	& section {
+		display: grid;
+		grid-template-columns: minmax(1rem, calc(50vw - var(--max-width) / 2)) [col] repeat(12, 1fr [col]) minmax(
+				1rem,
+				calc(50vw - var(--max-width) / 2)
+			);
+		column-gap: 1.5vw;
+		padding: 2rem 0;
+		@media (min-width: 60rem) {
+			& {
+				padding: 3rem 0;
+			}
+		}
+	}
+	.topline {
+		padding-bottom: 0;
+    @media (min-width: 60rem) {
+			& {
+				background-color: var(--blue);
+        padding-bottom: 3rem;
+			}
+		}
+		& p {
+			grid-column: col 1 / span 12;
+			font-family: var(--headline);
+			font-size: 2rem;
+			text-align: center;
+			font-weight: 400;
+			margin-bottom: 0;
+			@media (min-width: 40rem) {
+        &{
+          grid-column: col 1 / span 8;
+          text-align: left;
+        }
+      }
+      @media (min-width: 60rem) {
+        & {
+          color: var(--white);
+					font-size: 2.25rem;
+					font-weight: 500;
+				}
+			}
+		}
+		.img {
+      padding-top: 3rem;
+			grid-column: 1 / span 14;
+			/* aspect-ratio: 4 / 3; */
+			overflow: hidden;
+      & img {
+        width: 100%;
+        height: auto;
+      }
+      @media (min-width: 40rem) {
+        & {
+          grid-column: col 9 / span 4;
+          padding: 1rem 0;
+          & img {
+            height: 100%;
+            object-fit: cover;
+          }
+        }
+      }
+			@media (min-width: 60rem) {
+        & {
+					grid-column: col 9 / span 4;
+				}
+			}
+		}
+	}
+	.overview {
+		.copy {
+			grid-column: col 1 / span 12;
+      /* font-size: 1.125rem; */
+			@media (min-width: 60rem) {
+        & {
+          padding-top: 1.5rem;
+          /* font-size: 1.25rem; */
+					grid-column: col 1 / span 8;
+				}
+			}
+		}
+		.clients {
+			grid-column: col 1 / span 12;
+			list-style: none;
+			text-align: center;
+			padding: 0;
+      & img {
+        width: 80%;
+      }
+			@media (min-width: 40rem) {
+        & {
+          display: flex;
+        }
+      }
+      @media (min-width: 60rem) {
+        & {
+          display: block;
+          grid-column: col 9 / span 4;
+					& img {
+            width: 50%;
+					}
+				}
+			}
+		}
+	}
+	.cta {
+		grid-column: col 1 / span 12;
+		text-align: center;
+		padding: 3rem 0;
+	}
+	.quote-block {
+		background-color: var(--light-gray);
+		.two-up {
+			grid-column: col 1 / span 12;
+			display: flex;
+      flex-direction: column;
+			justify-content: space-between;
+			padding: 2rem 0 4rem;
+      gap: 4rem;
+      @media (min-width: 50rem) {
+        & {
+          flex-direction: row;
+          gap: 0;
+          padding-top: 3rem;
+        }
+      }
+			& blockquote {
+				display: flex;
+				flex-direction: column;
+				margin: 0;
+        @media (min-width: 50rem) {
+          & {
+            width: 45%;
+          }
+        }
+				& p {
+					font-family: var(--headline);
+					font-size: 1.25rem;
+				}
+				& cite {
+					font-family: var(--header);
+					font-style: normal;
+					text-align: right;
+					font-size: 1.125rem;
+					line-height: 1.5;
+					padding-top: 1rem;
+					& a {
+						text-decoration: none;
+						color: var(--blue);
+						&:hover {
+							text-decoration: underline;
+						}
+					}
+				}
+			}
+		}
+	}
+	.lead-in {
+		padding: 0 0 4rem;
+		& h1 {
+			grid-column: col 1 / span 12;
+			font-family: var(--header);
+			color: var(--black);
+			padding: 2rem 0 0;
+		}
+		.two-up {
+			grid-column: col 1 / span 12;
+			display: flex;
+      flex-direction: column;
+      gap: 4rem;
+			justify-content: space-between;
+			padding: 2rem 0;
+			font-family: var(--header);
+      @media (min-width: 50rem) {
+        & {
+          flex-direction: row;
+          gap: 0;
+        }
+      }
+			.preview {
+				display: flex;
+				flex-direction: column;
+				margin: 0;
+				text-decoration: none;
+        @media (min-width: 50rem) {
+          &{
+            width: 45%;
+            gap: 0.5rem;
+          }
+        }
+				&:hover {
+					color: var(--black);
+					& h2 {
+						text-decoration: underline;
+					}
+				}
+				.eyebrow {
+					color: var(--medium-gray);
+					font-weight: 600;
+				}
+				& h2 {
+					color: var(--blue);
+					margin-top: -0.25rem;
+					line-height: 1.25;
+				}
+				& p {
+					font-family: var(--body);
+					font-size: 1.25rem;
+				}
+			}
+		}
+	}
+}

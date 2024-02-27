@@ -1,13 +1,83 @@
 ---
 layout: base.njk
 ---
-{% for resource in singletons %}
-  {% if resource.title == "Home" %}
-    <div>
-      {{ resource.heroCopy | safe }}
-    </div>
-    <div>
-      {{ resource.bodyText | safe }}
-    </div>
+<main class="home">
+  {% for resource in singletons %}
+    {% if resource.title == "Home" %}
+      <section class="topline">
+        {{ resource.heroCopy | safe }}
+        <div class="img">{% responsiveImage resource.heroImg,
+          ".75" %}</div>
+      </section>
+      <section class="overview">
+        <div class="copy">
+          {{ resource.bodyText | safe }}
+        </div>
+        <ul class="clients">
+          {% for client in clients.slice(0, 3) %}
+            <li>
+              <a href="/reviews#{{ client.slug.current }}"><img src="{% imageUrlFor client.tile %}" alt="{{ client.tile.altText }}"/></a>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="cta">
+          <a href="#" class="button">learn more about my services</a>
+        </div>
+      </section>
+      <section class="quote-block">
+        <div class="two-up">
+          {% for review in resource.review %}
+            <blockquote class="review">
+              <p>"{{ review.excerpt }}"</p>
+              <cite>
+                <a href="#">
+                  {{ review.author }}, {{ review.title }}
+                </br>
+                {{ review.employer }}
+              </a>
+            </cite>
+          </blockquote>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="lead-in">
+      <figure class="banner">
+        {% bannerImage metadata.insightsBanner %}
+        <figcaption>{{ metadata.insightsBanner.caption }}</figcaption>
+      </figure>
+      <h1>Insights & Resources</h1>
+      <div class="two-up">
+        {% for article in articles.slice(0, 2) %}
+          <a href="#" class="preview">
+            <span class="eyebrow">{{ article.categoryTag}} | {{ article.published | date("MMMM D, YYYY") }}</span>
+            <h2>{{ article.title }}</h2>
+            <p>{{ article.shortDescription }}</p>
+          </a>
+        {% endfor %}
+      </div>
+      <div class="cta">
+        <a href="#" class="button">see all articles</a>
+      </div>
+    </section>
+    <section class="lead-in">
+      <figure class="banner">
+        {% bannerImage metadata.clientWorkBanner %}
+        <figcaption>{{ metadata.clientWorkBanner.caption }}</figcaption>
+      </figure>
+      <h1>Client Work</h1>
+      <div class="two-up">
+        {% for study in studies.slice(0, 2) %}
+          <a href="#" class="preview">
+            <span class="eyebrow">Case Study</span>
+            <h2>{{ study.title }}</h2>
+            <p>{{ study.description }}</p>
+          </a>
+        {% endfor %}
+      </div>
+      <div class="cta">
+        <a href="#" class="button">see more case studies</a>
+      </div>
+    </section>
   {% endif %}
 {% endfor %}
+</main>

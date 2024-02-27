@@ -1,0 +1,18 @@
+.banner {
+  grid-column: 1 / span 14;
+  margin: 0;
+  & img {
+    width: 100%; /* will oversize images that are too small */
+    height: calc(0.5625 * 100vw); /* 16:9 ... */
+    max-height: 20rem; /* ... unless wide, then banner */
+    object-fit: cover;  
+  }
+  & figcaption {
+    color: var(--medium-gray);
+    text-align: right;
+    padding: 0 1rem;
+    margin-top: -0.5rem;
+    font-size: 1rem;
+    font-style: italic;
+  }
+}

@@ -1,9 +1,14 @@
 body {
   font-family: var(--body);
   font-size: 1.125rem; /* 18px */
-  line-height: 1.6666;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  @media (min-width: 60rem) {
+    & {
+      line-height: 1.75;
+    }
+  }
 }
 a, a:visited {
   transition: all .25s ease;
@@ -39,6 +44,12 @@ h4 {
 }
 p, ul, ol {
   margin-top: 0;
+  font-size: 1.125rem;
+  @media (min-width: 60rem) {
+    & {
+      font-size: 1.25rem;
+    }
+  }
 }
 time {
   display: block;

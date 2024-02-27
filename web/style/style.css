@@ -3,15 +3,19 @@
 
 @import 'base/fonts.css';
 @import 'base/typography.css';
+@import 'base/images.css';
+
+@import 'components/button.css';
 
 @import 'layout/wrap.css';
 @import 'layout/header.css';
 @import 'layout/footer.css';
 
+@import 'pages/home.css'
+
 /* 
 @import 'components/cards';
 @import 'components/feedback';
-@import 'components/button';
 @import 'components/logofarm';
 
 @import 'layout/navigation';

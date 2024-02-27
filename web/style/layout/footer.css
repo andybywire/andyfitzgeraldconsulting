@@ -5,6 +5,7 @@ footer {
 	align-items: center;
 	color: var(--white);
 	font-weight: 500;
+	width: 100%;
 	& ul {
 		margin: 0;
 		padding: 0;
