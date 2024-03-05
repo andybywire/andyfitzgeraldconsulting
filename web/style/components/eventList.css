@@ -1,0 +1,64 @@
+.talks {
+	.overview {
+		.copy {
+			grid-column: col 1 / span 12;
+			/* font-size: 1.125rem; */
+			@media (min-width: 60rem) {
+				& {
+					padding-top: 1.5rem;
+					/* font-size: 1.25rem; */
+					grid-column: col 1 / span 8;
+				}
+			}
+		}
+	}
+  & h2, .event-list {
+    grid-column: col 1 / span 12;
+  }
+	& ul {
+		padding: 0;
+		list-style: none;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: 1.5vw;
+		padding: 1rem 0 4rem; 
+    &#upcomingEvents {
+      padding-bottom: 0;
+    }
+	}
+	& li {
+		padding-bottom: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: .25rem;
+    grid-column: span 12;
+		@media (min-width: 40rem) {
+      & {
+        grid-column: span 6;
+			}
+		}
+		& a {
+			text-decoration: none;
+		}
+	}
+	& h3 {
+		margin-top: 0;
+		font-weight: 500;
+    & span {
+			white-space: nowrap;
+    }
+		@media (min-width: 40rem) {
+			& {
+				padding-right: 1rem;
+			}
+		}
+		@media (min-width: 60rem) {
+			& {
+				padding-right: 2rem;
+			}
+		}
+	}
+	& svg {
+		height: 0.75rem;
+	}
+}

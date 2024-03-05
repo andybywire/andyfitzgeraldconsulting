@@ -1,20 +1,20 @@
-import { toHTML } from '@portabletext/to-html';
 import { client } from '../utils/sanityClient.js';
 import groq from 'groq';
-// import serializers from '../utils/serializers';
+import { toHTML } from '@portabletext/to-html';
+import { afcComponents } from '../utils/serializers.js';
 
-function generateArticle (article) {
-  return {
-    ...article,
-    // body: BlocksToMarkdown(article.bodyText, { serializers, ...client.config() }),
-    // lede: BlocksToMarkdown(article.lede, { serializers, ...client.config() })
-  }
+function generateArticle(article) {
+	return {
+		...article,
+		body: toHTML(article.bodyText, { components: afcComponents }),
+		lede: toHTML(article.lede, { components: afcComponents }),
+	};
 }
 
-async function getArticles () {
-  // Learn more: https://www.sanity.io/docs/data-store/how-queries-work
-  const filter = groq`*[_type == "article" && defined(slug)]`
-  const projection = groq`{
+async function getArticles() {
+	// Learn more: https://www.sanity.io/docs/data-store/how-queries-work
+	const filter = groq`*[_type == "article" && defined(slug)]`;
+	const projection = groq`{
     _id,
     title,
     bodyText,
@@ -41,12 +41,12 @@ async function getArticles () {
       _type == 'study' => {"tag": "Case Study", "path":"case-studies"},
       _type == 'article' => {"tag": "Article", "path":"writing"}
     } | order(_type desc, pubDate desc) [0..3]
-  }`
-  const order = `| order(pubDate desc)`
-  const query = [filter, projection, order].join(' ')
-  const docs = await client.fetch(query).catch(err => console.error(err))
-  const prepareArticles = docs.map(generateArticle)
-  return prepareArticles
+  }`;
+	const order = `| order(pubDate desc)`;
+	const query = [filter, projection, order].join(' ');
+	const docs = await client.fetch(query).catch((err) => console.error(err));
+	const prepareArticles = docs.map(generateArticle);
+	return prepareArticles;
 }
 
-export default getArticles
+export default getArticles;

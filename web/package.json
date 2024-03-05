@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "npx @11ty/eleventy --watch --serve",
+    "dev": "rm -rf _site && npx @11ty/eleventy --watch --serve",
     "debug": "DEBUG=* npx eleventy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

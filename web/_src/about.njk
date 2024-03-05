@@ -1,0 +1,24 @@
+---
+layout: base.njk
+---
+{% for resource in singletons %}
+  {% if resource.title == "About" %}
+    <main class="singleton">
+      {# {% include 'partials/singletonBody.njk' %} #}
+      <section class="grid">
+        <h1>{{ resource.title }}</h1>
+        <div class="hero-copy">
+          {{ resource.heroCopy | safe }}
+        </div>
+        {% if resource.heroImg %}
+          <div class="img">
+            {% singletonHero resource.heroImg %}
+          </div>
+        {% endif %}
+        <div class="copy">
+          {{ resource.bodyText | safe }}
+        </div>
+      </section>
+    </main>
+  {% endif %}
+{% endfor %}

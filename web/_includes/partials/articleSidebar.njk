@@ -1,0 +1,26 @@
+<nav class="sidebar">
+  <h2>Browse by Type</h2>
+  <ul>
+    <li>Case Study</li>
+    <li>Interview</li>
+    <li>Method</li>
+    <li>Perspective</li>
+    {# {%- for label in taxonomy -%}
+      {% if "Category" in label.scheme %}
+        <li>
+          <a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a>
+        </li>
+      {% endif %}
+    {%- endfor -%} #}
+  </ul>
+  <h2>Browse by Topic</h2>
+  <ul>
+    {%- for label in taxonomy -%}
+      {% if "Topic" in label.scheme %}
+        <li>
+          <a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a>
+        </li>
+      {% endif %}
+    {%- endfor -%}
+  </ul>
+</nav>

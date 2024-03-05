@@ -1,0 +1,26 @@
+/* Utility Classes */
+.grid {
+  display: grid;
+  grid-template-columns:
+    minmax(1rem, calc(50vw - var(--max-width) / 2))
+    [col] repeat(12, 1fr [col])
+    minmax(1rem, calc(50vw - var(--max-width) / 2));
+  column-gap: 1.5vw;
+}
+.segment-padding {
+	padding: 2rem 0;
+	@media (min-width: 60rem) {
+		& {
+			padding: 3rem 0;
+		}
+	}
+}
+.hidden {
+  display: none;
+}
+.visible {
+  display: block;
+}
+.unpad-list {
+  padding-inline-start: 0;
+}

@@ -1,75 +1,73 @@
 body {
-  font-family: var(--body);
-  font-size: 1.125rem; /* 18px */
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  @media (min-width: 60rem) {
-    & {
+	font-family: var(--body);
+	font-size: 1.125rem; /* 18 pt */
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	@media (min-width: 60rem) {
+		& {
+			font-size: 1.25rem; /* 20 pt*/
       line-height: 1.75;
-    }
-  }
+		}
+	}
 }
-a, a:visited {
-  transition: all .25s ease;
-  color: inherit;
+a,
+a:visited {
+	transition: all 0.25s ease;
+	color: inherit;
 }
-a:hover {    
-  color: var(--blue);
+a:hover {
+	color: var(--blue);
 }
-h1, h2, h3 {
-  margin: 1rem 0 0;
-  /* @include breakpoint(large) {
-    margin: 2rem 0 0;
-  } */
+h1,
+h2,
+h3 {
+	margin: 1rem 0 0;
+	font-family: var(--header);
 }
-h1, h2 {
-  /* color: $blue; */
-}
-h4, h5 {
-  margin-bottom: 0;
+h4,
+h5 {
+	margin-bottom: 0;
 }
 h1 {
-  font-size: 2rem;
-  line-height: initial;
-  /* @include breakpoint(medium) { */
-  /*   margin-bottom: .5rem; */
-  /* } */
+	font-size: 3rem; /* 48 pt*/
+	line-height: initial;
+	margin-bottom: .5rem;
+}
+h2 {
+	font-size: 2rem; /* 32 pt*/
+	padding-top: 1rem;
+	grid-column: col 1 / span 12;
 }
 h3 {
-  font-weight: 400;
+	font-size: 1.75rem;
+	line-height: 2.25rem; /* last change targeted preview block on the home page */
 }
 h4 {
-  margin-top: 3rem;
+	margin-top: 3rem;
 }
-p, ul, ol {
-  margin-top: 0;
-  font-size: 1.125rem;
-  @media (min-width: 60rem) {
-    & {
-      font-size: 1.25rem;
-    }
-  }
+p,
+ul,
+ol {
+	margin-top: 0;
 }
-time {
-  display: block;
-  margin-bottom: .5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  /* color: $medium-gray; */
+.eyebrow {
+	color: var(--eyebrow-gray);
+	font-weight: 600;
+	font-size: 1.25rem;
 }
 code {
-  /* background-color: color.scale($blue, $lightness: 60%); */
-  /* border-radius: $radius; */
-  padding: 0 .25rem;
-  overflow-wrap: break-word;
+	/* background-color: color.scale($blue, $lightness: 60%); */
+	/* border-radius: $radius; */
+	padding: 0 0.25rem;
+	overflow-wrap: break-word;
 }
 pre {
-  /* background-color: color.scale($blue, $lightness: 60%); */
-  /* border-radius: $radius; */
-  white-space: pre;
-  overflow: auto;
-  padding: 1rem;
+	/* background-color: color.scale($blue, $lightness: 60%); */
+	/* border-radius: $radius; */
+	white-space: pre;
+	overflow: auto;
+	padding: 1rem;
 }
 /* consider which of these to break into individual page style pages */
 /* blockquote {
@@ -78,16 +76,16 @@ pre {
   }
   cite {
     /* display: inline-block; tightens line height */
-    /* color: $white; */
-    /* font-size: 0.999999rem; 16px */
-    /* font-weight: 300;
+/* color: $white; */
+/* font-size: 0.999999rem; 16px */
+/* font-weight: 300;
     &::before {
       content: "— "
     }
   } */
-  /* .article & {
+/* .article & {
     /* color: $dark-blue; */
-  /* }
+/* }
 } */
 /* li {
   article & {

@@ -1,13 +1,16 @@
 body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--white);
-  align-items: center;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	background-color: var(--white);
+	align-items: center;
 }
 main {
-  flex: 1;
+	flex: 1;
 }
+
+
+
 
 /*
 // // Create wrap for horizontal color bands

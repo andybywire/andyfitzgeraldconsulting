@@ -1,0 +1,16 @@
+<section class="grid">
+  <h1>{{ resource.title }}</h1>
+  <div class="hero-copy">
+    {{ resource.heroCopy | safe }}
+  </div>
+  {% if resource.heroImg %}
+    <div class="img">
+      {% singletonHero resource.heroImg %}
+    </div>
+  {% endif %}
+  {% if resource.bodyText %}
+    <div class="copy">
+      {{ resource.bodyText | safe }}
+    </div>
+  {% endif %}
+</section>

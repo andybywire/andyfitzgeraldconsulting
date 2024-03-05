@@ -4,12 +4,14 @@ layout: base.njk
 <main class="home">
   {% for resource in singletons %}
     {% if resource.title == "Home" %}
-      <section class="topline">
+
+      <section class="grid topline segment-padding">
         {{ resource.heroCopy | safe }}
         <div class="img">{% responsiveImage resource.heroImg,
           ".75" %}</div>
       </section>
-      <section class="overview">
+
+      <section class="grid overview segment-padding">
         <div class="copy">
           {{ resource.bodyText | safe }}
         </div>
@@ -24,7 +26,8 @@ layout: base.njk
           <a href="#" class="button">learn more about my services</a>
         </div>
       </section>
-      <section class="quote-block">
+
+      <section class="grid quote-block segment-padding">
         <div class="two-up">
           {% for review in resource.review %}
             <blockquote class="review">
@@ -40,44 +43,49 @@ layout: base.njk
         {% endfor %}
       </div>
     </section>
-    <section class="lead-in">
+
+    <section class="grid preview-block">
       <figure class="banner">
         {% bannerImage metadata.insightsBanner %}
         <figcaption>{{ metadata.insightsBanner.caption }}</figcaption>
       </figure>
-      <h1>Insights & Resources</h1>
+      <h2>Articles</h2>
+
       <div class="two-up">
         {% for article in articles.slice(0, 2) %}
-          <a href="#" class="preview">
-            <span class="eyebrow">{{ article.categoryTag}} | {{ article.published | date("MMMM D, YYYY") }}</span>
-            <h2>{{ article.title }}</h2>
+          <a href="#">
+            <span class="eyebrow">{{ article.categoryTag}}</span>
+            <h3>{{ article.title }}</h3>
             <p>{{ article.shortDescription }}</p>
           </a>
         {% endfor %}
       </div>
+
       <div class="cta">
         <a href="#" class="button">see all articles</a>
       </div>
     </section>
-    <section class="lead-in">
+
+    <section class="grid preview-block">
       <figure class="banner">
         {% bannerImage metadata.clientWorkBanner %}
         <figcaption>{{ metadata.clientWorkBanner.caption }}</figcaption>
       </figure>
-      <h1>Client Work</h1>
+      <h2>Client Work</h2>
       <div class="two-up">
         {% for study in studies.slice(0, 2) %}
-          <a href="#" class="preview">
+          <a href="#">
             <span class="eyebrow">Case Study</span>
-            <h2>{{ study.title }}</h2>
+            <h3>{{ study.title }}</h3>
             <p>{{ study.description }}</p>
           </a>
         {% endfor %}
       </div>
       <div class="cta">
-        <a href="#" class="button">see more case studies</a>
+        <a href="#" class="button">see all case studies</a>
       </div>
     </section>
+
   {% endif %}
 {% endfor %}
 </main>

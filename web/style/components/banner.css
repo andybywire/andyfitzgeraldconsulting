@@ -1,0 +1,9 @@
+figure.banner {
+	grid-column: 1 / span 14;
+	@media (min-width: 60rem) {
+		& {
+			grid-row: 1;
+			padding: 0;
+		}
+	}
+}

@@ -1,15 +1,13 @@
 import { toHTML } from '@portabletext/to-html';
 import { client } from '../utils/sanityClient.js';
 import groq from 'groq';
-// import serializers from '../utils/serializers';
+import { afcComponents } from '../utils/serializers.js';
 
-function generateSingleton(Singleton) {
+function generateSingleton(singleton) {
 	return {
-		...Singleton,
-		heroCopy: toHTML(Singleton.heroCopy),
-		bodyText: toHTML(Singleton.bodyText),
-		// heroCopy: BlocksToMarkdown(Singleton.heroCopy, { serializers, ...config() }),
-		// bodyText: BlocksToMarkdown(Singleton.bodyText, { serializers, ...config() }),
+		...singleton,
+		heroCopy: toHTML(singleton.heroCopy, { components: afcComponents }),
+		bodyText: toHTML(singleton.bodyText, { components: afcComponents }),
 	};
 }
 
@@ -19,6 +17,7 @@ async function getSingleton() {
     _id,
     title,
     heroCopy,
+    slug,
     heroImg,
     bodyText,
     review[]->{

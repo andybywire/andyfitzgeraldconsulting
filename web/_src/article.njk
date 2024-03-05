@@ -1,0 +1,43 @@
+---
+layout: base.njk
+pagination:
+  alias: resource
+  data: articles
+  size: 1
+  addAllPagesToCollections: true
+permalink: insights/{{ resource.slug.current | slug }}/index.html
+---
+<main>
+  <article class="detail grid">
+    <figure class="banner">
+      {% bannerImage resource.heroImage %}
+      <figcaption>Caption here</figcaption>
+    </figure>
+    <time class="eyebrow" datetime="{{ resource.pubdate }}">{{ resource.categoryTag }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
+    <h1>{{ resource.title }}</h1>
+    {{ resource.body | safe }}
+    <nav class="related">
+      <h3>Topics</h3>
+      <ul class="unpad-list">
+        {%- for label in resource.topic -%}
+          {# This line must be kept together (do not "prettify"): #}
+          <li><a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+        {%- endfor -%}
+      </ul>
+    </nav>
+    <nav class="sidebar">
+      <h2>Insight Topics</h2>
+      <ul>
+        {%- for label in resource.topic -%}
+          <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+        {%- endfor -%}
+
+      </ul>
+    </nav>
+  </article>
+
+  <section class="related-content grid">
+    <h2>Related Resources</h2>
+    {# {% include '../_includes/partials/relatedResources.njk' %} #}
+  </section>
+</main>

@@ -1,0 +1,10 @@
+---
+layout: base.njk
+---
+{% for resource in singletons %}
+  {% if resource.title == "Calendar" %}
+    <main class="singleton">
+      {% include 'partials/singletonBody.njk' %}
+    </main>
+  {% endif %}
+{% endfor %}

@@ -1,0 +1,45 @@
+article.detail {
+	& h1,	h2,	h3,	h4, p, ul, ol, 
+  blockquote, time, .illustration, .related {
+		grid-column: col 1 / span 12;
+		@media (min-width: 60rem) {
+			& {
+				grid-column: col 1 / span 8;
+			}
+		}
+	}
+	.banner {
+		grid-row: 3;
+		padding-bottom: 1.5rem;
+		@media (min-width: 60rem) {
+			& {
+				grid-row: 1;
+				padding-bottom: 0;
+			}
+		}
+	}
+	.eyebrow {
+		padding-top: 1.5rem;
+		@media (min-width: 60rem) {
+			& {
+				padding-top: 1rem;
+			}
+		}
+	}
+	& h1 {
+		margin: 1rem 0;
+	}
+	& h3 {
+		padding-bottom: .75rem;
+	}
+	.sidebar {
+		display: none;
+		@media (min-width: 60rem) {
+			& {
+				display: block;
+				grid-column: col 10 / span 3;
+				grid-row: 4 / span 2;
+			}
+		}
+	}
+}
