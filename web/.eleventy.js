@@ -6,6 +6,7 @@ import bannerImage from './_11ty/shortcodes/bannerImage.js';
 import imageUrlFor from './_11ty/shortcodes/imageUrlFor.js';
 import singletonHero from './_11ty/shortcodes/singletonHero.js';
 import articleHero from './_11ty/shortcodes/articleHero.js';
+import clientLogo from './_11ty/shortcodes/clientLogo.js';
 
 export default function (eleventyConfig) {
 	eleventyConfig.addPassthroughCopy('.htaccess');
@@ -23,6 +24,7 @@ export default function (eleventyConfig) {
 	eleventyConfig.addShortcode('singletonHero', singletonHero);
 	eleventyConfig.addShortcode('articleHero', articleHero);
 	eleventyConfig.addShortcode('imageUrlFor', imageUrlFor);
+	eleventyConfig.addShortcode('clientLogo', clientLogo);
 
 	// Filters
 	eleventyConfig.addFilter('date', dateFilter); // Moment.js

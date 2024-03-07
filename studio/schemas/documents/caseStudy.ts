@@ -54,6 +54,14 @@ export default {
       components: {field: HierarchyInput},
     },
     {
+      name: 'client',
+      type: 'reference',
+      title: 'Client',
+      to: [
+        {type: 'client'}
+      ]
+    },
+    {
       name: 'shortDescription',
       type: 'text',
       title: 'Short Description',

@@ -24,7 +24,7 @@ import urlFor from '../../utils/imageUrl.js';
  * @param {*} classList 
  * @returns 
  */
-export default function responsiveImage(image, aspect = 0.75, src = '320,640,900', sizes = '100vw', classList = '') {
+export default function responsiveImage(image, aspect = 0.75, src = '320,640,900,1024, 1440', sizes = '100vw', classList = '') {
 	const sizeArray = src.split(',');
 	const firstSize = sizeArray[0];
 	const lastSize = sizeArray[sizeArray.length - 1];

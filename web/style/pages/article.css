@@ -1,6 +1,14 @@
 article.detail {
-	& h1,	h2,	h3,	h4, p, ul, ol, 
-  blockquote, time, .illustration, .related {
+	& h1,
+	h2,
+	h3,
+	h4,
+	p,
+	ul,
+	ol,
+	time,
+	.illustration,
+	.related {
 		grid-column: col 1 / span 12;
 		@media (min-width: 60rem) {
 			& {
@@ -30,8 +38,9 @@ article.detail {
 		margin: 1rem 0;
 	}
 	& h3 {
-		padding-bottom: .75rem;
+		padding-bottom: 0.75rem;
 	}
+	/* Article specific styles */
 	.sidebar {
 		display: none;
 		@media (min-width: 60rem) {
@@ -40,6 +49,127 @@ article.detail {
 				grid-column: col 10 / span 3;
 				grid-row: 4 / span 2;
 			}
+		}
+	}
+	/* Case study specific styles */
+	.overview {
+		& p {
+			@media (min-width: 40rem) {
+				& {
+					grid-column: col 1 / span 8;
+				}
+			}
+			@media (min-width: 60rem) {
+				& {
+					grid-column: col 1 / span 8;
+				}
+			}
+		}
+	}
+	.client-tile {
+		width: 100%;
+		height: auto;
+		grid-column: col 1 / span 12;
+		@media (min-width: 30rem) {
+			& {
+				grid-column: col 3 / span 8;
+			}
+		}
+		@media (min-width: 40rem) {
+			& {
+				grid-column: col 9 / span 4;
+			}
+		}
+		@media (min-width: 60rem) {
+			& {
+				grid-column: col 10 / span 3;
+			}
+		}
+	}
+	.two-col {
+		grid-column: col 1 / span 12;
+		& ul {
+			@media (min-width: 40rem) {
+				& {
+					grid-column: col 1 / span 12;
+					columns: 2;
+				}
+			}
+		}
+	}
+	.study-quote {
+		grid-column: span 14;
+		background-color: var(--light-gray);
+		padding: 2rem 0;
+		margin: 2rem 0;
+		@media (min-width: 40rem) {
+			padding: 4rem 0;
+			margin: 4rem 0;
+		}
+		& blockquote {
+			grid-column: col 1 / span 12;
+			margin: 0;
+			& p {
+				font-family: var(--headline);
+				@media (min-width: 40rem) {
+					columns: 2;
+					column-gap: 3rem;
+				}
+			}
+			& cite {
+				display: block;
+				text-align: right;
+				font-family: var(--header);
+				font-style: normal;
+				text-align: right;
+				font-size: 1.25rem;
+				line-height: 1.5;
+				padding-top: 1rem;
+				& a {
+					text-decoration: none;
+					color: var(--blue);
+					&:hover {
+						text-decoration: underline;
+					}
+				}
+			}
+		}
+	}
+	.study-segment {
+		padding-bottom: 3rem;
+		& h2 {
+			padding: 0 0 1rem;
+			margin: 0;
+			line-height: 1.5;
+		}
+		&.before {
+			& p {
+				@media (min-width: 60rem) {
+					& {
+						padding-right: 1rem;
+					}
+				}
+			}
+		}
+		.before-image {
+			grid-column: col 1 / span 12;
+			@media (min-width: 60rem) {
+				& {
+					grid-column: col 9 / span 4;
+				}
+			}
+			& img {
+				border: 1px solid var(--light-gray);
+			}
+		}
+
+		&.after {
+			& figure.after-image {
+				grid-column: col 1 / span 12;
+			}
+		}
+		.eyebrow {
+			margin-bottom: 0.5rem;
 		}
 	}
 }

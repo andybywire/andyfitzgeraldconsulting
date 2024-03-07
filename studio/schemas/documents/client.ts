@@ -25,6 +25,9 @@ export default {
       title: 'Logo',
       type: 'image',
       description: 'Logos should be square and 300px',
+      options: {
+        hotspot: true,
+      },
       fields: [
         {
           name: 'altText',
@@ -38,6 +41,9 @@ export default {
       title: 'Tile',
       type: 'image',
       description: 'Client tiles should be 500px by 300px',
+      options: {
+        hotspot: true,
+      },
       fields: [
         {
           name: 'altText',

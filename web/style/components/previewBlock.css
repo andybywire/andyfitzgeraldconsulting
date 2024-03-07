@@ -38,3 +38,36 @@
     }
   }
 }
+
+.four-up {
+  padding-inline-start: 0;
+  column-gap: 4rem;
+  row-gap: 2rem;
+  padding-bottom: 6rem;
+  & li {
+    grid-column: span 6;
+    list-style: none;
+    & h3 {
+      color: var(--blue);
+      margin: 0 0 .5rem;
+    }
+    & a {
+      display: flex;
+      flex-direction: column;
+      text-decoration: none;
+      &:hover {
+        & h3 {
+          text-decoration: underline;
+        }
+      }
+      & p {
+        color: var(--black);
+      }
+      @media (min-width: 50rem) {
+        & {
+          /* width: 45%; */
+        }
+      }
+    }
+  }
+}

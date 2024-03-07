@@ -1,6 +1,6 @@
 <article class="preview-listing">
   <a href="/insights/{{ resource.slug.current | slug }}" class="teaser">
-    <time class="eyebrow" datetime="{{ resource.pubdate }}"> {{ resource.categoryTag }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
+    <time class="eyebrow" datetime="{{ resource.pubdate }}"> {{ resource.insightType | default("Insight", true) }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
     <h2>{{ resource.title }}</h2>
     {% articleHero resource.heroImage %}
     {{ resource.lede | safe }}

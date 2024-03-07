@@ -13,31 +13,92 @@ permalink: insights/{{ resource.slug.current | slug }}/index.html
       {% bannerImage resource.heroImage %}
       <figcaption>Caption here</figcaption>
     </figure>
-    <time class="eyebrow" datetime="{{ resource.pubdate }}">{{ resource.categoryTag }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
+    <time class="eyebrow" datetime="{{ resource.pubdate }}">{{ resource.insightType | default("Insight", true) }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
     <h1>{{ resource.title }}</h1>
-    {{ resource.body | safe }}
-    <nav class="related">
-      <h3>Topics</h3>
-      <ul class="unpad-list">
-        {%- for label in resource.topic -%}
-          {# This line must be kept together (do not "prettify"): #}
-          <li><a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-        {%- endfor -%}
-      </ul>
-    </nav>
-    <nav class="sidebar">
-      <h2>Insight Topics</h2>
-      <ul>
-        {%- for label in resource.topic -%}
-          <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-        {%- endfor -%}
 
-      </ul>
-    </nav>
-  </article>
+    {# Start article-specific template elements #}
+    {% if resource._type == "article" %}
+      {{ resource.body | safe }}
+      <nav class="related">
+        <h3>Topics</h3>
+        <ul class="unpad-list">
+          {%- for label in resource.topic -%}
+            {# This line must be kept together (do not "prettify") #}
+            <li><a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+          {%- endfor -%}
+        </ul>
+      </nav>
+      <nav class="sidebar">
+        <h2>Insight Topics</h2>
+        <ul>
+          {%- for label in resource.topic -%}
+            {# This line must be kept together (do not "prettify") #}        
+            <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+          {%- endfor -%}
+        </ul>
+      </nav>
+      {# End article-specific template elements #}
 
-  <section class="related-content grid">
-    <h2>Related Resources</h2>
-    {# {% include '../_includes/partials/relatedResources.njk' %} #}
-  </section>
+      {# Case Study specific template elements #}
+    {% elif resource._type == "caseStudy" %}
+      <div class="subgrid overview">    {# these could be sections? #}
+
+        {{ resource.atGlance | safe }}
+        {% if resource.clientLogo %}
+          {% clientLogo resource.clientTile %}
+        {% endif %}
+      </div>
+      <h2>Project Activities</h2>
+      <div class="subgrid two-col">
+        {{ resource.whatDid | safe }}
+      </div>
+
+      {% if resource.review %}
+        <div class="study-quote grid">
+          <blockquote>
+            <p>"{{ resource.review.excerpt }}"</p>
+            <cite>
+              <a href="#">
+                {{ resource.review.author }}, {{ resource.review.title }}
+              </br>
+              {{ resource.review.employer }}</a>
+            </cite>
+          </blockquote>
+        </div>
+      {% endif %}
+  
+      <div class="subgrid study-segment before">
+          <p class="eyebrow">Project Goal</p> 
+          {{ resource.projectGoal | safe }}
+          <figure class="before-image">
+            {% responsiveImage resource.beforeImage, ".5625" %}
+            <figcaption>{{ resource.beforeImage.caption }}</figcaption>
+          </figure>  
+      </div>
+      <div class="subgrid study-segment">
+          <p class="eyebrow">Project Approach</p> 
+          {{ resource.projectApproach | safe }}
+      </div>
+      <div class="subgrid study-segment after">
+        <p class="eyebrow">Project Outcome</p> 
+        {{ resource.projectOutcome | safe }}
+        {% if resource.afterImage %}
+          <figure class="after-image">
+            {% responsiveImage resource.afterImage, ".62399" %}
+            <figcaption>{{ resource.afterImage.caption}}</figcaption>
+          </figure> 
+        {% endif %}
+      </div>
+  
+
+
+
+  {% endif %}
+  {# End Case Study specific template elements #}
+</article>
+
+<section class="related-content grid">
+  <h2>Related Resources</h2>
+  {% include '../_includes/partials/relatedResources.njk' %}
+</section>
 </main>
