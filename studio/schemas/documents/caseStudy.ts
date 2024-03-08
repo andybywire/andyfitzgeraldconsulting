@@ -54,6 +54,21 @@ export default {
       components: {field: HierarchyInput},
     },
     {
+      name: 'topic',
+      title: 'Topics',
+      type: 'array',
+      of: [
+        {
+          type: 'reference',
+          to: [{type: 'skosConcept'}],
+          options: {
+            filter: () => schemeFilter({schemeId: '0e0d68'}),
+          },
+          // components: { field: HierarchyInput }, // does not yet support arrays
+        },
+      ],
+    },
+    {
       name: 'client',
       type: 'reference',
       title: 'Client',

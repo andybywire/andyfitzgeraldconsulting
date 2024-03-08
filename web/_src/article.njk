@@ -5,7 +5,7 @@ pagination:
   data: articles
   size: 1
   addAllPagesToCollections: true
-permalink: insights/{{ resource.slug.current | slug }}/index.html
+permalink: /insights/{{ resource.slug.current | slug }}/index.html
 ---
 <main>
   <article class="detail grid">
@@ -22,18 +22,18 @@ permalink: insights/{{ resource.slug.current | slug }}/index.html
       <nav class="related">
         <h3>Topics</h3>
         <ul class="unpad-list">
-          {%- for label in resource.topic -%}
+          {%- for label in resource.topicTags -%}
             {# This line must be kept together (do not "prettify") #}
-            <li><a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+            <li><a href="/insights/tag/{{ label | slugify }}">{{ label }}</a></li>
           {%- endfor -%}
         </ul>
       </nav>
       <nav class="sidebar">
         <h2>Insight Topics</h2>
         <ul>
-          {%- for label in resource.topic -%}
+          {%- for label in resource.topicTags -%}
             {# This line must be kept together (do not "prettify") #}        
-            <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+            <li><a href="/insights/tag/{{ label | slugify }}">{{ label }}</a></li>
           {%- endfor -%}
         </ul>
       </nav>

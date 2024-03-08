@@ -22,19 +22,16 @@ permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNu
           {% include '../_includes/partials/articlePreview.njk' %}
         {% endfor %}
 
-        {# <nav class="pagination" aria-label="Pagination links">
-        {% if pagination.href.previous %}
-          <a href="{{ pagination.href.previous }}" class="newer">« Newer Articles</a>
-        {% endif %}
-        <span class="info">Page {{ pagination.pageNumber + 1 }} of {{ pagination.pages.length }}</span>
-        {% if pagination.href.next %}
-          <a href="{{ pagination.href.next }}" class="older">Older Articles »</a>
-        {% endif %}
-      </nav> #}
+        <nav class="pagination" aria-label="Pagination links">
+          {% if pagination.href.previous %}
+            <a href="{{ pagination.href.previous }}" class="newer">« Newer Articles</a>
+          {% endif %}
+          <span class="info">Page {{ pagination.pageNumber + 1 }} of {{ pagination.pages.length }}</span>
+          {% if pagination.href.next %}
+            <a href="{{ pagination.href.next }}" class="older">Older Articles »</a>
+          {% endif %}
+        </nav>
 
-        {# <nav class="sidebar index">
-      {% include '../_includes/partials/articleSidebar.njk' %}
-    </nav> #}
 
       </section>
     </main>

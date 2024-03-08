@@ -34,6 +34,27 @@ export default {
         rows: 3
       },
       {
+        name: 'insightsBanner',
+        title: 'Insights Banner',
+        description: 'Used above the Insights section on the home page',
+        type: 'image',
+        options: {
+          hotspot: true,
+        },
+        fields: [
+          {
+            name: 'caption',
+            type: 'string',
+            title: 'Caption'
+          },
+          {
+            name: 'altText',
+            type: 'string',
+            title: 'Alt Text'
+          }
+        ]
+      },
+      {
         name: 'clientWorkBanner',
         title: 'Client Work Banner',
         description: 'Used above the Client Work section on the home page',
@@ -55,23 +76,16 @@ export default {
         ]
       },
       {
-        name: 'insightsBanner',
-        title: 'Insights Banner',
-        description: 'Used above the Insights section on the home page',
-        type: 'image',
-        options: {
-          hotspot: true,
-        },
-        fields: [
+        name: 'featuredClients',
+        title: 'Featured Clients',
+        description: 'Used to populate "Featured Client Work" links on the home page.',
+        type: 'array',
+        of: [
           {
-            name: 'caption',
-            type: 'string',
-            title: 'Caption'
-          },
-          {
-            name: 'altText',
-            type: 'string',
-            title: 'Alt Text'
+            type: 'reference',
+            to: [
+              {type: 'caseStudy'}
+            ]
           }
         ]
       },

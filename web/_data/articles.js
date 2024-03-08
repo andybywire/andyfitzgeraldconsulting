@@ -4,7 +4,7 @@ import { toHTML } from '@portabletext/to-html';
 import { afcComponents } from '../utils/serializers.js';
 
 function generateArticle(article) {
-	return {
+  return {
 		...article,
 		body: toHTML(article.bodyText, { components: afcComponents }),
 		lede: toHTML(article.lede, { components: afcComponents }),
@@ -53,7 +53,6 @@ async function getArticles() {
     beforeImage,
     afterImage,
     "heroUrl":heroImage.asset->.url,
-    topic[]->{prefLabel},
     "topicTags":topic[]->prefLabel,
     "categoryTag":category->prefLabel,
     canonical,

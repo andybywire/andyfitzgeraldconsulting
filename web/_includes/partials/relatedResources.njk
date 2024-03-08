@@ -1,7 +1,7 @@
 <ul class="four-up subgrid">
   {% for resource in resource.relatedResources %}
     <li>
-      <a href="/{{ resource.path }}/{{ resource.slug.current }}">
+      <a href="/insights/{{ resource.slug.current }}">
         <div>
           <span class="eyebrow">{{ resource.insightType | default("Insight", true) }}</span>
           <h3>{{ resource.title }}</h3>

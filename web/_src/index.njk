@@ -49,20 +49,24 @@ layout: base.njk
         {% bannerImage metadata.insightsBanner %}
         <figcaption>{{ metadata.insightsBanner.caption }}</figcaption>
       </figure>
-      <h2>Articles</h2>
+      <h2>Latest Insights</h2>
 
       <div class="two-up">
-        {% for article in articles.slice(0, 2) %}
-          <a href="#">
-            <span class="eyebrow">{{ article.categoryTag}}</span>
-            <h3>{{ article.title }}</h3>
-            <p>{{ article.shortDescription }}</p>
-          </a>
+        {% set count = 0 %}
+        {% for article in articles.slice(0, 10) %}
+          {% if article.insightType != "Case Study" and count < 2 %}
+            <a href="/insights/{{ article.slug.current }}">
+              <span class="eyebrow">{{ article.insightType | default("Insight", true) }} | {{ article.pubDate | date("MMMM D, YYYY") }}</span>
+              <h3>{{ article.title }}</h3>
+              <p>{{ article.shortDescription }}</p>
+            </a>
+            {% set count = count + 1 %}
+          {% endif %}
         {% endfor %}
       </div>
 
       <div class="cta">
-        <a href="#" class="button">see all articles</a>
+        <a href="#" class="button">see all insights</a>
       </div>
     </section>
 
@@ -71,10 +75,10 @@ layout: base.njk
         {% bannerImage metadata.clientWorkBanner %}
         <figcaption>{{ metadata.clientWorkBanner.caption }}</figcaption>
       </figure>
-      <h2>Client Work</h2>
+      <h2>Featured Client Work</h2>
       <div class="two-up">
-        {% for study in studies.slice(0, 2) %}
-          <a href="#">
+        {% for study in metadata.featuredClients %}
+          <a href="/insights/{{ study.slug.current }}">
             <span class="eyebrow">Case Study</span>
             <h3>{{ study.title }}</h3>
             <p>{{ study.description }}</p>
