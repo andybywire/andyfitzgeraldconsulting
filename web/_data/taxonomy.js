@@ -4,6 +4,7 @@ export default async function getTaxonomies() {
   const query = `
   *[_type == "skosConcept" && !(_id in path("drafts.**"))]| order(prefLabel) {
     prefLabel,
+    "altLabel": altLabel[0],
     "scheme": *[_type == "skosConceptScheme" && references(^._id)].title
   }
   `;

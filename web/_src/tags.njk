@@ -10,7 +10,11 @@ permalink: /insights/tag/{{ tag.prefLabel | slug }}/index.html
     <main>
       <section class="grid singleton insights">
 
+        {% if tag.altLabel %}        
+        <h1>{{ tag.altLabel }}</h1>
+        {% else %}
         <h1>{{ tag.prefLabel }} Insights</h1>
+        {% endif%}
         <div class="hero-copy">
           {{ resource.heroCopy | safe }}
         </div>

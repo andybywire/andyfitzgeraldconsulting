@@ -34,6 +34,20 @@ export default {
         rows: 3
       },
       {
+        name: 'homeLogos',
+        title: 'Home Page Client Logos',
+        description: 'These are the client logos that are displayed alongside the services overview on the home page.',
+        type: 'array',
+        of: [
+          {
+            type: 'reference',
+            to: [
+              {type: 'client'}
+            ]
+          }
+        ]
+      },
+      {
         name: 'insightsBanner',
         title: 'Insights Banner',
         description: 'Used above the Insights section on the home page',

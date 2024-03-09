@@ -11,7 +11,7 @@ permalink: /insights/{{ resource.slug.current | slug }}/index.html
   <article class="detail grid">
     <figure class="banner">
       {% bannerImage resource.heroImage %}
-      <figcaption>Caption here</figcaption>
+      <figcaption>{{resource.heroImage.caption}}</figcaption>
     </figure>
     <time class="eyebrow" datetime="{{ resource.pubdate }}">{{ resource.insightType | default("Insight", true) }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
     <h1>{{ resource.title }}</h1>
@@ -56,7 +56,9 @@ permalink: /insights/{{ resource.slug.current | slug }}/index.html
       {% if resource.review %}
         <div class="study-quote grid">
           <blockquote>
-            <p>"{{ resource.review.excerpt }}"</p>
+            <div class="review-body">
+              {{ resource.condensedReviewBody | safe }}
+            </div>
             <cite>
               <a href="#">
                 {{ resource.review.author }}, {{ resource.review.title }}
@@ -97,7 +99,7 @@ permalink: /insights/{{ resource.slug.current | slug }}/index.html
   {# End Case Study specific template elements #}
 </article>
 
-<section class="related-content grid">
+<section class="related-content grid preview-block">
   <h2>Related Resources</h2>
   {% include '../_includes/partials/relatedResources.njk' %}
 </section>

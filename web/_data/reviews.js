@@ -7,6 +7,7 @@ function generateReview(review) {
 	return {
 		...review,
 		body: toHTML(review.body, { components: afcComponents }),
+		condensedBody: toHTML(review.condensedBody, { components: afcComponents }),
 	};
 }
 

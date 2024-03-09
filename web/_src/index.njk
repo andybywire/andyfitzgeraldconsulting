@@ -16,14 +16,14 @@ layout: base.njk
           {{ resource.bodyText | safe }}
         </div>
         <ul class="clients">
-          {% for client in clients.slice(0, 3) %}
+          {% for client in metadata.homeLogos %}
             <li>
               <a href="/reviews#{{ client.slug.current }}"><img src="{% imageUrlFor client.tile %}" alt="{{ client.tile.altText }}"/></a>
             </li>
           {% endfor %}
         </ul>
         <div class="cta">
-          <a href="#" class="button">learn more about my services</a>
+          <a href="/services/" class="button">learn more about my services</a>
         </div>
       </section>
 
@@ -66,7 +66,7 @@ layout: base.njk
       </div>
 
       <div class="cta">
-        <a href="#" class="button">see all insights</a>
+        <a href="/insights/" class="button">see all insights</a>
       </div>
     </section>
 
@@ -86,7 +86,7 @@ layout: base.njk
         {% endfor %}
       </div>
       <div class="cta">
-        <a href="#" class="button">see all case studies</a>
+        <a href="/insights/tag/case-study/" class="button">see all case studies</a>
       </div>
     </section>
 

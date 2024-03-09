@@ -8,7 +8,7 @@ import urlFor from './imageUrl.js';
 
 export const afcComponents = {
 	types: {
-		pre: ({ value }) => `<pre>${value}</pre>`,
+		pre: ({ value }) => `<pre>${value.code}</pre>`,
 		mainImage: ({ value }) => `![${value.alt}](${urlFor(value).url()})`,
 		image: ({ value }) =>
 			`<img src="${urlFor(value).url()}" alt="${value.altText || ''}" ${value.floatLeft ? 'class="left-float"' : ''}>`,

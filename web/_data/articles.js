@@ -10,7 +10,7 @@ function generateArticle(article) {
 		lede: toHTML(article.lede, { components: afcComponents }),
     atGlance: toHTML(article.atGlance, { components: afcComponents }),
     whatDid: toHTML(article.whatDid, { components: afcComponents }),
-    reviewBody: toHTML(article?.review?.body, { components: afcComponents }),
+    condensedReviewBody: toHTML(article?.review?.condensedBody, { components: afcComponents }),
     projectGoal: toHTML(article.projectGoal, { components: afcComponents }),
     projectOutcome: toHTML(article.projectOutcome, { components: afcComponents }),
     projectApproach: toHTML(article.projectApproach, { components: afcComponents })
@@ -41,6 +41,7 @@ async function getArticles() {
       title,
       excerpt, 
       body,
+      condensedBody,
       "employer":employer->name
     },
     "service":category->prefLabel,
@@ -56,7 +57,7 @@ async function getArticles() {
     "topicTags":topic[]->prefLabel,
     "categoryTag":category->prefLabel,
     canonical,
-    "relatedResources": *[_type=='service' && references(^.category._ref) || _type=='study' && references(^.category._ref) || _type=='article' && references(^.category._ref) && _id != ^._id] {
+    "relatedResources": *[_type=='study' && references(^.category._ref) || _type=='article' && references(^.category._ref) && _id != ^._id] {
       title,
       heroImage,
       shortDescription,

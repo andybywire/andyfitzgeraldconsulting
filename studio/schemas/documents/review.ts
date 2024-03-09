@@ -42,8 +42,16 @@ export default {
       rows: 3
     },
     {
+      name: 'condensedBody',
+      title: 'Condensed Review Body',
+      description: 'A condensed version of the review body is used on Case Study pages.',
+      type: 'array',
+      of: [{type: 'block'}]
+    },
+    {
       name: 'body',
       title: 'Review Body',
+      description: 'The full version of the review as given, used on the Reviews page.',
       type: 'array',
       of: [{type: 'block'}]
     }

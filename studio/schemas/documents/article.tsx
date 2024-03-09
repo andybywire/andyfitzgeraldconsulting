@@ -35,6 +35,11 @@ export default {
       },
       fields: [
         {
+          name: 'caption',
+          type: 'string',
+          title: 'Caption',
+        },
+        {
           name: 'altText',
           type: 'string',
           title: 'Alt Text',

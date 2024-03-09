@@ -2,6 +2,9 @@
 
 .preview-block {
   padding: 0 0 4rem;
+  & h2 {
+    margin: 0;
+  }
   .two-up {
     grid-column: col 1 / span 12;
     display: flex;
@@ -37,16 +40,27 @@
       }
     }
   }
-}
-
-.four-up {
-  padding-inline-start: 0;
-  column-gap: 4rem;
-  row-gap: 2rem;
-  padding-bottom: 6rem;
-  & li {
-    grid-column: span 6;
+  .four-up {
+    grid-column: col 1 / span 12;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 2rem 4rem;
+    justify-content: space-between;
+    padding: 2rem 0;
     list-style: none;
+    @media (min-width: 50rem) {
+      & {
+        flex-direction: row;
+      }
+    }
+    & li {
+      @media (min-width: 50rem) {
+        & {
+          width: 45%;
+        }
+      }
+    }
     & h3 {
       color: var(--blue);
       margin: 0 0 .5rem;
@@ -62,11 +76,6 @@
       }
       & p {
         color: var(--black);
-      }
-      @media (min-width: 50rem) {
-        & {
-          /* width: 45%; */
-        }
       }
     }
   }

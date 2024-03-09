@@ -9,6 +9,10 @@ export default async function getMetadata() {
         title,
         description,
         slug
+      },
+      homeLogos[]->{
+        slug,
+        tile
       }
     }
   `);

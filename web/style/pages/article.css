@@ -6,7 +6,9 @@ article.detail {
 	p,
 	ul,
 	ol,
+	pre,
 	time,
+	blockquote,
 	.illustration,
 	.related {
 		grid-column: col 1 / span 12;
@@ -39,6 +41,9 @@ article.detail {
 	}
 	& h3 {
 		padding-bottom: 0.75rem;
+	}
+	& blockquote {
+		margin: 1rem;
 	}
 	/* Article specific styles */
 	.sidebar {
@@ -109,12 +114,14 @@ article.detail {
 		& blockquote {
 			grid-column: col 1 / span 12;
 			margin: 0;
-			& p {
-				font-family: var(--headline);
+			.review-body {
 				@media (min-width: 40rem) {
 					columns: 2;
 					column-gap: 3rem;
 				}
+			}
+			& p {
+				font-family: var(--headline);
 			}
 			& cite {
 				display: block;

@@ -5,7 +5,6 @@
 	--body: 'Open Sans', Roboto, Arial, sans-serif;
 
 	/* Colors */
-
 	--blue: #4e9dbc;
 	--dark-blue: #1f4351;
 	--light-gray: rgba(43, 40, 40, 0.05);
@@ -18,30 +17,8 @@
 	--alert-text: #cc4b37;
 
 	/* Wrap */
-	/* max page width on desktop */
-	--max-width: 1024px;
+	--max-width: 1024px;	/* max page width on desktop */
 
-	/* Grid */
-	/* Consider increasing this */
-	/* 
-$card-min: 320px; 
-$card-max: 2fr; 
-*/
-
-	/* Breakpoints */
-	/* 
-$breakpoints: (
-  'small': 375px,
-  'medium': 600px,
-  'large':  900px
-) !default; 
-*/
-
-	/* Minimum height breakpoint (for sticky elements) */
-	/* 
-$min-height: 700px;
-*/
-
-	/* Global styles */
+	/* Global UI Look & Feel */
 	--radius: 3px;
 }

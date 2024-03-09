@@ -57,14 +57,14 @@ ol {
 	font-size: 1.25rem;
 }
 code {
-	/* background-color: color.scale($blue, $lightness: 60%); */
-	/* border-radius: $radius; */
+	background-color: var(--light-gray);
+	border-radius: var(--radius);
 	padding: 0 0.25rem;
 	overflow-wrap: break-word;
 }
 pre {
-	/* background-color: color.scale($blue, $lightness: 60%); */
-	/* border-radius: $radius; */
+	background-color: var(--light-gray);
+	border-radius: var(--radius);
 	white-space: pre;
 	overflow: auto;
 	padding: 1rem;
