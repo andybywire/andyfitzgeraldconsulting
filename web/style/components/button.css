@@ -3,7 +3,7 @@
   text-align: center;
   padding: 3rem 0;
 }
-a.button {
+a.button, button {
   font-family: var(--header);
   color: var(--white);
   background-color: var(--dark-blue);
