@@ -137,7 +137,7 @@ header {
 					font-size: 1.125rem;
 					padding: 1.5rem 2rem 0 0;
 					li {
-						padding: 0 0.5rem;
+						padding: 0 clamp(0.5rem, 1vw, 2rem);
 					}
 					a {
 						color: var(--black);
