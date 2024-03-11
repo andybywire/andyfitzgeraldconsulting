@@ -29,6 +29,7 @@ figcaption {
 	& figcaption {
 		text-align: right;
 		padding-right: 1rem;
+    padding-left: 1rem;
 	}
 }
 /* Currently not working consistently on Chrome */
