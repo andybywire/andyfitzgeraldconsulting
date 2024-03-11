@@ -31,6 +31,7 @@ figcaption {
 		padding-right: 1rem;
 	}
 }
+/* Currently not working consistently on Chrome */
 .dim {
   filter: brightness(0.95);
   -webkit-filter: brightness(0.95);

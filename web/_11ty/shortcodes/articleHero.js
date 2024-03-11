@@ -16,9 +16,11 @@ export default function (image, width = '650', height = '250') {
 		})
 		.join(',');
 	const altText = image.altText;
+	const classes = image.adjBright ? 'dim' : '';
 
 	return `<img src="${urlFor(image).width(firstSize)}"
-        srcset="${srcSetContent}"
+				class="${classes}"
+				srcset="${srcSetContent}"
         sizes="(min-width: 40rem) calc((var(--max-width) - (1.5vw * 13)) / 12 * 8),
                100vw"
         width="${lastSize.trim()}"

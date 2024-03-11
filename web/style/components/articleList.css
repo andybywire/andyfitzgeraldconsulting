@@ -100,8 +100,20 @@ nav.related {
   }
 }
 nav.pagination {
-	grid-column: col 1 / span 8;
+	grid-column: col 1 / span 12;
+	font-size: 1rem;
 	display: flex;
 	justify-content: space-between;
 	padding: 1rem 0 4rem;
+	@media (min-width: 40rem) {
+		& {
+			grid-column: col 1 / span 8;
+		font-size: 1.125rem;
+		}
+	}
+	@media (min-width: 60rem) {
+		& {
+			font-size: 1.25rem;
+		}
+	}
 }
