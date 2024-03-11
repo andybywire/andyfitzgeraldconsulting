@@ -17,6 +17,7 @@
     "@portabletext/to-html": "^2.0.5",
     "@sanity/client": "^6.13.3",
     "@sanity/image-url": "^1.0.2",
+    "dotenv": "^16.4.5",
     "groq": "^3.29.1",
     "nunjucks-date-filter": "^0.1.1"
   }

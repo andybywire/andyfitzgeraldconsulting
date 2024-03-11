@@ -13,4 +13,10 @@
       {{ resource.bodyText | safe }}
     </div>
   {% endif %}
+  {% if '/contact' in page.url %}
+    {% include 'partials/contactSidebar.njk' %}  
+  {% endif %}
+  {% if '/contact-success' in page.url %}
+    <p class="success">Thank you. Your message was sent.</p>
+  {% endif %}
 </section>

@@ -25,9 +25,11 @@ export default function bannerImage(image) {
 			return `${url} ${size}w`;
 		})
 		.join(',');
+	const classes = image.adjBright ? 'dim' : '';
 
 	return `<img src="${urlFor(image).width(firstSize)}"
-        srcset="${srcSetContent}"
+        class="${classes}"
+				srcset="${srcSetContent}"
         sizes="100vw"
         width="${lastSize.trim()}"
         height="${lastHeight}"

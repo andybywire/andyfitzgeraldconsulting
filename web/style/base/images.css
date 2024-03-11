@@ -1,33 +1,36 @@
 img {
-  border-radius: 3px;
-  max-width: 100%;
-  height: auto;
-  &.outline {
-    border: 1px solid var(--light-gray);
-  }
+	border-radius: 3px;
+	max-width: 100%;
+	height: auto;
+	&.outline {
+		border: 1px solid var(--light-gray);
+	}
 }
 figure {
-  margin: 0;
+	margin: 0;
 }
 figcaption {
-  color: var(--medium-gray);
-  margin-top: -0.5rem;
-  font-size: 1rem;
-  font-style: italic;
-  padding-bottom: 1.5rem;
+	color: var(--medium-gray);
+	margin-top: -0.5rem;
+	font-size: 1rem;
+	font-style: italic;
+	padding-bottom: 1.5rem;
 }
 .banner {
-  grid-column: 1 / span 14;
-  margin: 0;
-  & img {
-    width: 100%; /* will oversize images that are too small */
-    height: calc(0.5625 * 100vw); /* 16:9 ... */
-    max-height: 24rem; /* ... unless wide, then banner */
-    object-fit: cover;  
-    border-radius: 0;
-  }
-  & figcaption {
-    text-align: right;
-    padding-right: 1rem;
-  }
+	grid-column: 1 / span 14;
+	margin: 0;
+	& img {
+		width: 100%; /* will oversize images that are too small */
+		height: calc(0.5625 * 100vw); /* 16:9 ... */
+		max-height: 24rem; /* ... unless wide, then banner */
+		object-fit: cover;
+		border-radius: 0;
+	}
+	& figcaption {
+		text-align: right;
+		padding-right: 1rem;
+	}
+}
+.dim {
+  filter: brightness(0.95);
 }

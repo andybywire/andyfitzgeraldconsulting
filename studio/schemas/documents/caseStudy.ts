@@ -35,10 +35,22 @@ export default {
       },
       fields: [
         {
+          name: 'caption',
+          type: 'string',
+          title: 'Caption',
+        },
+        {
           name: 'altText',
           type: 'string',
           title: 'Alt Text',
         },
+        {
+          name: 'adjBright',
+          title: 'Adjust Brightness',
+          description: 'Lower the brightness on this image by .05% so that it displays more distinctly on a white background.',
+          type: 'boolean',
+          default: false,
+        }
       ],
     },
     {

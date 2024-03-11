@@ -1,5 +1,6 @@
 .singleton {
 	padding-top: 2rem;
+	padding-bottom: 4rem;
 	& h1,
 	.hero-copy,
 	.copy {
@@ -37,7 +38,7 @@
 		}
 	}
 }
-nav.sidebar {
+.sidebar {
 	display: none;
 	grid-column: col 10 / span 3;
 	grid-row: span 2;
@@ -48,6 +49,8 @@ nav.sidebar {
 	}
 	& h2 {
 		font-size: 1.5rem;
+		line-height: 1.25;
+		padding-bottom: .5rem;
 		&:first-of-type {
 			margin-top: 0;
 			padding-top: 0;
@@ -61,4 +64,10 @@ nav.sidebar {
 		font-family: var(--header);
 		text-decoration: none;
 	}
+}
+.success {
+	grid-column: col 1 / span 12;
+	margin-bottom: 5rem;
+	font-size: 2rem;
+	font-family: var(--headline);
 }

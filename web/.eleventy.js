@@ -1,6 +1,9 @@
-import dateFilter from 'nunjucks-date-filter'
+// Add keys the keys and values defined in .env to process.env
+import 'dotenv/config'
+// console.log(process.env)
 
-// Filters & Shortcodes
+// Filter & Shortcode imports
+import dateFilter from 'nunjucks-date-filter'
 import responsiveImage from './_11ty/shortcodes/responsiveImage.js';
 import bannerImage from './_11ty/shortcodes/bannerImage.js';
 import imageUrlFor from './_11ty/shortcodes/imageUrlFor.js';

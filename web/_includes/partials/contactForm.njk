@@ -1,5 +1,5 @@
-<section>
-  <form id="contact-form" class="grid contact-form" action="https://www.andyfitzgeraldconsulting.com/mailhandler.php" method="POST" autocomplete="on">
+<section class="grid">
+  <form id="contact-form" class="contact-form" action="https://www.andyfitzgeraldconsulting.com/mailhandler.php" method="POST" autocomplete="on">
     <label for="name">Name <span>(required)</span>
       <input type="text" class="form-field" id="name" name="name" required/>
     </label>
@@ -17,8 +17,15 @@
     </label>
 
     <div class="send">
-      {# <div class="g-recaptcha" data-sitekey="6Lcpq_IZAAAAAOK-YOS-lvyERHILtOuNL4gIAuFv"></div> #}
-      <button type="submit">Send</button>
+      <div class="g-recaptcha" data-sitekey="6Lcpq_IZAAAAAOK-YOS-lvyERHILtOuNL4gIAuFv"
+      data-callback="callback"></div>
+      <button id="submit-button" type="submit" disabled>Send</button>
     </div>
+    <script type="text/javascript">
+      function callback() {
+        const submitButton = document.getElementById("submit-button");
+        submitButton.removeAttribute("disabled");
+      }
+    </script>
   </form>
 </section>

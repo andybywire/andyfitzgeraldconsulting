@@ -1,4 +1,14 @@
 .contact-form {
+  display: grid;
+  grid-column: 1 col / span 12;
+  grid-template-columns: [col] repeat(12, 1fr [col]);
+  column-gap: 1.5vw;
+  @media (min-width: 50rem) {
+    & {
+      grid-column: 1 col / span 8;
+      grid-template-columns: [col] repeat(8, 1fr [col]);
+    }
+  }  
 	padding: 2rem 0 4rem;
 	& input,
 	textarea {
@@ -71,4 +81,7 @@
 			}
 		}
 	}
+  & button:disabled {
+    background-color: var(--medium-gray);
+  }
 }
