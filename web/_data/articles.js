@@ -39,6 +39,7 @@ async function getArticles() {
     review->{
       author,
       title,
+      slug,
       excerpt, 
       body,
       condensedBody,

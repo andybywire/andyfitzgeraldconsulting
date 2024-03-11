@@ -24,7 +24,8 @@ async function getSingleton() {
       author,
       title,
       excerpt, 
-      "employer":employer->name
+      "employer":employer->name,
+      "reviewSlug":employer->slug.current
     },
     clientBlockTitle,
     clientBlockCopy,
