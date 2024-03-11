@@ -15,7 +15,7 @@ export default function (eleventyConfig) {
 	eleventyConfig.addPassthroughCopy('.htaccess');
 	eleventyConfig.addPassthroughCopy('style');
 	eleventyConfig.addPassthroughCopy('assets');
-	// eleventyConfig.addPassthroughCopy('serviceworker.js');
+	eleventyConfig.addPassthroughCopy('serviceworker.js');
 	// eleventyConfig.addPassthroughCopy({ 'assets/js': 'js' });
 	// eleventyConfig.addPassthroughCopy({ 'assets/icons': 'icons' });
 	// eleventyConfig.addPassthroughCopy('manifest.json');
