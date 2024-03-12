@@ -50,7 +50,7 @@
 	& h2 {
 		font-size: 1.5rem;
 		line-height: 1.25;
-		padding-bottom: .5rem;
+		padding-bottom: 0.5rem;
 		&:first-of-type {
 			margin-top: 0;
 			padding-top: 0;
@@ -70,4 +70,18 @@
 	margin-bottom: 5rem;
 	font-size: 2rem;
 	font-family: var(--headline);
+}
+.not-found {
+	padding-bottom: 4rem;
+	& h1,
+	p,
+	h2,
+	ul {
+		grid-column: col 1 / span 12;
+		@media (min-width: 40rem) {
+			& {
+				grid-column: col 1 / span 8;
+			}
+		}
+	}
 }
