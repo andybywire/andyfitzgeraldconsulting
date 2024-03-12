@@ -40,20 +40,14 @@ jobs:
           run: ls -la _site
           working-directory: web
 
-        # - name: Set Up SSH
-        #   run: |
-        #     mkdir -p ~/.ssh/
-        #     echo "${{ secrets.AFC_DEV_DREAMHOST_SSH_KEY }}" > ~/.ssh/afc_dev
-        #     sudo chmod 600 ~/.ssh/afc_dev
-        #     ssh-keyscan -H "pdx1-shared-a1-18.dreamhost.com" > ~/.ssh/known_hosts
-
-        # - name: SFTP Upload
-        #   run: sftp -i ~/.ssh/afc_dev afc_dev@pdx1-shared-a1-18.dreamhost.com <<< $'cd dev.andyfitzgeraldconsulting.com \n put -r web/_site/*'
-
-        - name: SFTP Upload
+        - name: Set Up SSH
           run: |
             mkdir -p ~/.ssh/
             echo "${{ secrets.AFC_DEV_DREAMHOST_SSH_KEY }}" > ~/.ssh/afc_dev
-            chmod 600 ~/.ssh/afc_dev
+            sudo chmod 600 ~/.ssh/afc_dev
+            ssh-keyscan -H "pdx1-shared-a1-18.dreamhost.com" > ~/.ssh/known_hosts
+
+        - name: Clean & SFTP Upload
+          run: |
             ssh -i ~/.ssh/afc_dev afc_dev@pdx1-shared-a1-18.dreamhost.com "rm -rf dev.andyfitzgeraldconsulting.com/*"
             sftp -i ~/.ssh/afc_dev afc_dev@pdx1-shared-a1-18.dreamhost.com <<< $'cd dev.andyfitzgeraldconsulting.com \n put -r web/_site/*'
