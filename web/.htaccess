@@ -8,6 +8,11 @@ RewriteRule ^services(/.*)?$ /services/ [L]
 ErrorDocument 404 /404/index.html
 
 #------------------------------------------------------------------------
+# Single Page Moves
+#------------------------------------------------------------------------
+Redirect 301 /speaking /talks
+
+#------------------------------------------------------------------------
 # Removed Articles
 #------------------------------------------------------------------------
 Redirect 301 /writing/architecting-the-connected-world /writing
