@@ -56,5 +56,21 @@
 			</section>
 			<p class="copyright">© 2016-2024 Andy Fitzgerald Consulting, LLC</p>
 		</footer>
+		<script>
+			if (navigator.serviceWorker) {
+				navigator
+					.serviceWorker
+					.register('/serviceworker.js')
+					.then(function (registration) {
+						console.log('Service worker registered with scope:', registration.scope);
+					})
+					.catch(function (error) {
+						console.log('Service worker registration error:', error);
+					});
+			}
+		</script>
+	{% if '/talks' in page.url %}
+		<script src="/js/afc.js"></script>
+	{% endif %}
 	</body>
 </html>
