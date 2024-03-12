@@ -1,9 +1,9 @@
 RewriteEngine On
 
-RewriteRule ^/?blog/(.\*)$ /insights/$1 [R=301]
-RewriteRule ^/?writing/(.\*)$ /insights/$1 [R=301]
-RewriteRule ^/?case-studies/(.\*)$ /insights/$1 [R=301]
-RewriteRule ^services(/.*)?$ /services/ [L]
+RewriteRule ^/?blog/(.\*)$ /insights/$1 [R=301,L]
+RewriteRule ^/?writing/(.\*)$ /insights/$1 [R=301,L]
+RewriteRule ^/?case-studies/ /insights/ [R=301,L]
+RewriteRule ^/?services/ /services/ [R=301,L]
 
 ErrorDocument 404 /404/index.html
 
