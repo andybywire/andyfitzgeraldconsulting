@@ -35,11 +35,6 @@ jobs:
         - name: Build 11ty
           run: npx @11ty/eleventy
           working-directory: web
-
-        # replace with a compile/minimize CSS step?  
-        # - name: Compile SCSS
-        #   run: npx sass style:_site/style
-        #   working-directory: web
         
         - name: Verify build
           run: ls -la _site
