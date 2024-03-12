@@ -50,4 +50,4 @@ jobs:
         - name: Clean & SFTP Upload
           run: |
             ssh -i ~/.ssh/afc_dev afc_dev@pdx1-shared-a1-18.dreamhost.com "rm -rf dev.andyfitzgeraldconsulting.com/*"
-            sftp -i ~/.ssh/afc_dev afc_dev@pdx1-shared-a1-18.dreamhost.com <<< $'cd dev.andyfitzgeraldconsulting.com \n put -r web/_site/*'
+            sftp -i ~/.ssh/afc_dev afc_dev@pdx1-shared-a1-18.dreamhost.com <<< $'cd dev.andyfitzgeraldconsulting.com \n put -r web/_site/* \n put web/_site/.htaccess'
