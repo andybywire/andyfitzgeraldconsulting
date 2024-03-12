@@ -1,0 +1,87 @@
+.contact-form {
+  display: grid;
+  grid-column: 1 col / span 12;
+  grid-template-columns: [col] repeat(12, 1fr [col]);
+  column-gap: 1.5vw;
+  @media (min-width: 50rem) {
+    & {
+      grid-column: 1 col / span 8;
+      grid-template-columns: [col] repeat(8, 1fr [col]);
+    }
+  }  
+	padding: 2rem 0 4rem;
+	& input,
+	textarea {
+		padding: 0.5rem;
+		width: 95%;
+	}
+	& input {
+		@media (min-width: 50rem) {
+			& {
+				width: 90%;
+			}
+		}
+	}
+	& textarea {
+		@media (min-width: 50rem) {
+			& {
+				width: 95%;
+			}
+		}
+	}
+	& label {
+		width: 100%;
+		padding-bottom: 2rem;
+		grid-column: 1 col / span 12;
+		@media (min-width: 40rem) {
+			& {
+				grid-column: 1 col / span 8;
+			}
+		}
+		@media (min-width: 50rem) {
+			& {
+				&:nth-child(odd) {
+					grid-column: 1 col / span 4;
+				}
+				&:nth-child(even) {
+					grid-column: 5 col / span 4;
+				}
+				&.text-area {
+					grid-column: 1 col / span 8;
+				}
+			}
+		}
+	}
+	& span {
+		font-size: 0.875rem;
+		padding-left: 0.25rem;
+		color: var(--eyebrow-gray);
+	}
+	.send {
+		grid-column: 1 col / span 12;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		align-items: flex-start;
+		padding-right: 2%;
+		@media (min-width: 40rem) {
+			& {
+				grid-column: 1 col / span 8;
+			}
+		}
+		& button {
+			margin: 4rem 20% 0;
+			padding: 1rem;
+			flex: 0 0 60%;
+			@media (min-width: 40rem) {
+				& {
+					flex: 0 0 30%;
+					margin: 0;
+				}
+			}
+		}
+	}
+  & button:disabled {
+    background-color: var(--medium-gray);
+  }
+}

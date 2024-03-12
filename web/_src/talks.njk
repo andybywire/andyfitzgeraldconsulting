@@ -1,0 +1,44 @@
+---
+layout: base.njk
+---
+{% for resource in singletons %}
+  {% if resource.title == "Talks" %}
+    <main class="singleton">
+      {% include 'partials/singletonBody.njk' %}
+
+      <section class="grid talks">
+        <h2 class="upcoming hidden">Upcoming Events</h2>
+        <ul class="event-list upcoming hidden" id="upcomingEvents"></ul>
+        <h2>Past Events</h2>
+        <ul class="event-list" id="pastEvents">
+          {% for event in events %}
+            <li>
+              <time class="timeclass" datetime="{{ event.date }}">
+                {{ event.date | date("MMMM D, YYYY") }}
+              </time>
+              <h3>
+                {% if event.link %}
+                  {# This line must not have a line break in it #}
+                  <a href="{{ event.link }}">
+                    {{ event.event }}<span>&nbsp;{% include '../_includes/icons/external.svg' %}</span>
+                  </a>
+                {% else %}
+                  {{ event.event }}
+                {% endif %}
+              </h3>
+              <p>
+                {{ event.location.city }}
+                {%- if event.location.state -%}
+              , {{ event.location.state }}
+                {%- elif event.location.country -%}
+              , {{ event.location.country }}
+                {%- endif -%}
+              </p>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+      
+    </main>
+  {% endif %}
+{% endfor %}

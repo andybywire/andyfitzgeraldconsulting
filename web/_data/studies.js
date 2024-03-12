@@ -1,29 +1,28 @@
-const BlocksToMarkdown = require('@sanity/block-content-to-markdown')
-const groq = require('groq')
-const client = require('../utils/sanityClient.js')
-const serializers = require('../utils/serializers')
-const overlayDrafts = require('../utils/overlayDrafts')
-const hasToken = !!client.config().token
+import { toHTML } from '@portabletext/to-html';
+import { client } from '../utils/sanityClient.js';
+import groq from 'groq';
+import { afcComponents } from '../utils/serializers.js';
 
-function generateStudy (study) {
-  return {
-    ...study,
-    body: BlocksToMarkdown(study.bodyText, { serializers, ...client.config() }),
-    atGlance: BlocksToMarkdown(study.atGlance, { serializers, ...client.config() }),
-    whatDid: BlocksToMarkdown(study.whatDid, { serializers, ...client.config() }),
-    projectGoal: BlocksToMarkdown(study.projectGoal, { serializers, ...client.config() }),
-    projectOutcome: BlocksToMarkdown(study.projectOutcome, { serializers, ...client.config() }),
-    projectApproach: BlocksToMarkdown(study.projectApproach, { serializers, ...client.config() })
-  }
+function generateStudy(study) {
+	return {
+		...study,
+		body: toHTML(study.bodyText, { components: afcComponents }),
+		atGlance: toHTML(study.atGlance, { components: afcComponents }),
+		whatDid: toHTML(study.whatDid, { components: afcComponents }),
+		projectGoal: toHTML(study.projectGoal, { components: afcComponents }),
+		projectOutcome: toHTML(study.projectOutcome, { components: afcComponents }),
+		projectApproach: toHTML(study.projectApproach, { components: afcComponents }),
+	};
 }
 
-async function getStudies () {
-  // Learn more: https://www.sanity.io/docs/data-store/how-queries-work
-  const filter = groq`*[_type == "caseStudy" && defined(slug)]`
-  const projection = groq`{
+async function getStudies() {
+	// Learn more: https://www.sanity.io/docs/data-store/how-queries-work
+	const filter = groq`*[_type == "caseStudy" && defined(slug)]`;
+	const projection = groq`{
     _id,
     title,
     shortDescription,
+    description,
     atGlance,
     whatDid,
     review->{
@@ -56,13 +55,12 @@ async function getStudies () {
       _type == 'service' => {"tag": "Service", "path":"services"},
       _type == 'article' => {"tag": "Article", "path":"writing"}
     } | order(_type desc, pubDate desc) [0..3]
-  }`
-  const order = `| order(pubDate asc)`
-  const query = [filter, projection, order].join(' ')
-  const docs = await client.fetch(query).catch(err => console.error(err))
-  const reducedDocs = overlayDrafts(hasToken, docs)
-  const prepareStudies = reducedDocs.map(generateStudy)
-  return prepareStudies
+  }`;
+	const order = `| order(pubDate asc)`;
+	const query = [filter, projection, order].join(' ');
+	const docs = await client.fetch(query).catch((err) => console.error(err));
+	const prepareStudies = docs.map(generateStudy);
+	return prepareStudies;
 }
 
-module.exports = getStudies
+export default getStudies;

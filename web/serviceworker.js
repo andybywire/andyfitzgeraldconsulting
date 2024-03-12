@@ -21,7 +21,7 @@ addEventListener('fetch', fetchEvent => {
   ); // end respondWith
 }); // end addEventListener
 
-const version = 'v0.74';
+const version = 'v0.76';
 const staticCacheAFC = version + 'staticfiles';
 
 addEventListener('install', installEvent => {
@@ -29,44 +29,21 @@ addEventListener('install', installEvent => {
   installEvent.waitUntil(
     caches.open(staticCacheAFC)
     .then( staticCache => {
-      staticCache.addAll([  // nice to have
-        '/js/afc.js'
-        ]); // end nice to have
+      // staticCache.addAll([  // nice to have
+      //   '/js/afc.js'
+      //   ]); // end nice to have
       return staticCache.addAll([ // must have
         '/style/style.css',
         // '/offline/index.html',
         '/index.html',
-        '/manifest.json',
-        '/fonts/lato-v16-latin-300.eot',
-        '/fonts/lato-v16-latin-300.woff2',
-        '/fonts/lato-v16-latin-300.woff',
-        '/fonts/lato-v16-latin-300.ttf',
-        '/fonts/lato-v16-latin-300.svg',
-        '/fonts/lato-v16-latin-regular.eot',
-        '/fonts/lato-v16-latin-regular.woff2',
-        '/fonts/lato-v16-latin-regular.woff',
-        '/fonts/lato-v16-latin-regular.ttf',
-        '/fonts/lato-v16-latin-regular.svg',
-        '/fonts/lato-v16-latin-700.eot',
-        '/fonts/lato-v16-latin-700.woff2',
-        '/fonts/lato-v16-latin-700.woff',
-        '/fonts/lato-v16-latin-700.ttf',
-        '/fonts/lato-v16-latin-700.svg',
-        '/fonts/open-sans-v17-latin-300.eot',
-        '/fonts/open-sans-v17-latin-300.woff2',
-        '/fonts/open-sans-v17-latin-300.woff',
-        '/fonts/open-sans-v17-latin-300.ttf',
-        '/fonts/open-sans-v17-latin-300.svg',
-        '/fonts/open-sans-v17-latin-regular.eot',
-        '/fonts/open-sans-v17-latin-regular.woff2',
-        '/fonts/open-sans-v17-latin-regular.woff',
-        '/fonts/open-sans-v17-latin-regular.ttf',
-        '/fonts/open-sans-v17-latin-regular.svg',
-        '/fonts/open-sans-v17-latin-600.eot',
-        '/fonts/open-sans-v17-latin-600.woff2',
-        '/fonts/open-sans-v17-latin-600.woff',
-        '/fonts/open-sans-v17-latin-600.ttf',
-        '/fonts/open-sans-v17-latin-600.svg'
+        // '/manifest.json',
+        '/assets/fonts/Lato-Bold.woff2',
+        '/assets/fonts/Lato-Medium.woff2',
+        '/assets/fonts/Lato-Regular.woff2',
+        '/assets/fonts/NotoSerif-Italic-VariableFont_wdth,wght.woff2',
+        '/assets/fonts/NotoSerif-VariableFont_wdth,wght.woff2',
+        '/assets/fonts/OpenSans-Italic-VariableFont_wdth,wght.woff2',
+        '/assets/fonts/OpenSans-VariableFont_wdth,wght.woff2',
         ]); // end return addAll / must have
       }) // end open caches / then
   ); // end waitUntil

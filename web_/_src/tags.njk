@@ -1,0 +1,27 @@
+---
+layout: layouts/base.njk
+tags:
+  - writing
+pagination:
+  alias: tag
+  data: taxonomy
+  size: 1
+  addAllPagesToCollections: true
+eleventyExcludeFromCollections: true
+banner: “Complex issues … written about patiently, clearly, and accurately.”
+permalink: /writing/tag/{{ tag.prefLabel | slug }}/index.html
+---
+<div class="article">
+  <div class="col">
+    <div class="preview">
+      {%- for resource in articles %}
+      {% if pagination.items[0].prefLabel in resource.topicTags or pagination.items[0].prefLabel == resource.categoryTag  %}      
+      {% include '../_includes/partials/articlePreview.njk' %}
+      {% endif %}
+      {% endfor %}
+    </div>
+    <nav class="sidebar index">
+      {% include '../_includes/partials/articleSidebar.njk' %}
+    </nav>
+  </div>
+</div>  

@@ -1,8 +1,8 @@
-const groq = require('groq')
-const client = require('../utils/sanityClient')
+import { client } from '../utils/sanityClient.js';
+import groq from 'groq';
 
-module.exports =  async function() {
-  return await client.fetch(groq`
-  *[_type == "event" && !(_id in path("drafts.**"))]| order(date desc){...}
-  `)
+export default async function () {
+	return await client.fetch(groq`
+    *[_type == "event" && !(_id in path("drafts.**"))]| order(date desc){...}
+  `);
 }

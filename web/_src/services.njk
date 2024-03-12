@@ -1,0 +1,11 @@
+---
+layout: base.njk
+---
+{% for resource in singletons %}
+  {% if resource.title == "Services" %}
+    <main class="singleton">
+      {% include 'partials/singletonBody.njk' %}
+      {# {% include 'partials/contactForm.njk' %} #}
+    </main>
+  {% endif %}
+{% endfor %}

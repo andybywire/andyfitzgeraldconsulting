@@ -1,0 +1,16 @@
+<h2>Categories</h2>
+  <ul>
+  {%- for label in taxonomy -%}
+  {% if "Category" in label.scheme %}
+    <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+  {% endif %}
+  {%- endfor -%}
+  </ul>
+<h2>Topics</h2>
+  <ul>
+  {%- for label in taxonomy -%}
+  {% if "Topic"  in label.scheme %}
+    <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
+  {% endif %}
+  {%- endfor -%}
+  </ul>

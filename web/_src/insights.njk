@@ -1,0 +1,39 @@
+---
+layout: base.njk
+pagination:
+  alias: resource
+  data: articles
+  size: 5
+  addAllPagesToCollections: true
+eleventyExcludeFromCollections: true
+permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNumber + 1 }}/{% endif %}/index.html
+---
+{% for resource in singletons %}
+  {% if resource.title == "Insights" %}
+    <main>
+      <section class="grid singleton insights">
+        <h1>{{ resource.title }}</h1>
+        <div class="hero-copy">
+          {{ resource.heroCopy | safe }}
+        </div>
+        {% include '../_includes/partials/articleSidebar.njk' %}
+
+        {%- for resource in pagination.items %}
+          {% include '../_includes/partials/articlePreview.njk' %}
+        {% endfor %}
+
+        <nav class="pagination" aria-label="Pagination links">
+          {% if pagination.href.previous %}
+            <a href="{{ pagination.href.previous }}" class="newer">« Newer Articles</a>
+          {% endif %}
+          <span class="info">Page {{ pagination.pageNumber + 1 }} of {{ pagination.pages.length }}</span>
+          {% if pagination.href.next %}
+            <a href="{{ pagination.href.next }}" class="older">Older Articles »</a>
+          {% endif %}
+        </nav>
+
+
+      </section>
+    </main>
+  {% endif %}
+{% endfor %}

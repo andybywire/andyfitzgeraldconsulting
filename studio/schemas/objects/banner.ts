@@ -3,6 +3,7 @@ export default {
     title: 'Header Banner',
     type: 'object',
     description: 'Set a custom banner image and/or caption for this page type. If empty, default values apply. 60 - 75 characters.',
+    deprecated: {reason: 'Header banners will not be used as part of the 2024 refresh.'},
     fieldsets: [
       {
         name: 'position', 

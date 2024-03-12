@@ -2,6 +2,7 @@ export default {
   name: 'collection',
   type: 'document',
   title: 'Collection Pages',
+  deprecated: {reason: 'Collection pages will not be used as part of the 2024 AFC refresh.'},
   fields: [
     {
       name: 'title',

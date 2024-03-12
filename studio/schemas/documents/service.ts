@@ -6,6 +6,7 @@ export default {
   type: 'document',
   title: 'Services',
   icon: MdOutlineDesignServices,
+  deprecated: {description: 'This type not used in 2024 version of the site.'},
   fields: [
     {
       name: 'title',

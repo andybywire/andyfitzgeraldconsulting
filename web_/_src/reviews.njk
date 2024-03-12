@@ -1,0 +1,40 @@
+---
+layout: layouts/base.njk
+singletonCrumb: Reviews
+---
+{% for resource in singletons %}
+{% if resource.title == "Reviews" %}
+
+<div class="singleton reviews">
+  <article class="body-text">
+    <section class="wrap">
+      <h1>{{ resource.title }}</h1>
+      {{ resource.bodyText | markdownify | safe }}
+
+      <ul class="client-grid">
+      {% for client in clients %}
+        <li class="review-grid" id="{{ client.slug.current | slug }}">
+          <div class="logo">{% responsiveImage client.logo, "1"  %}</div>
+          <div class="review-body">
+            <h2>{{ client.name }}</h2>
+            {% for review in reviews%}
+              {% if review.employer._id == client._id %}
+              <blockquote class="review">
+                {{ review.body | markdownify | safe }}
+                <cite>
+                  {{ review.author }}, {{ review.title }}, {{ review.employer.name }}
+                </cite>
+              </blockquote>
+              {% endif %}
+            {% endfor %}
+          </div> 
+
+        </li>
+      {% endfor %}
+      </ul>
+
+    </section>
+</div>
+
+{% endif %}
+{% endfor %}

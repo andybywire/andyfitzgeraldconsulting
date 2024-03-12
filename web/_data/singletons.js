@@ -1,32 +1,31 @@
-const BlocksToMarkdown = require('@sanity/block-content-to-markdown')
-const groq = require('groq')
-const client = require('../utils/sanityClient.js')
-const serializers = require('../utils/serializers')
-const overlayDrafts = require('../utils/overlayDrafts')
-const hasToken = !!client.config().token
+import { toHTML } from '@portabletext/to-html';
+import { client } from '../utils/sanityClient.js';
+import groq from 'groq';
+import { afcComponents } from '../utils/serializers.js';
 
-function generateSingleton (Singleton) {
-  return {
-    ...Singleton,
-    heroCopy: BlocksToMarkdown(Singleton.heroCopy, { serializers, ...client.config() }),
-    bodyText: BlocksToMarkdown(Singleton.bodyText, { serializers, ...client.config() })
-  }
+function generateSingleton(singleton) {
+	return {
+		...singleton,
+		heroCopy: toHTML(singleton.heroCopy, { components: afcComponents }),
+		bodyText: toHTML(singleton.bodyText, { components: afcComponents }),
+	};
 }
 
-async function getSingleton () {
-  // Learn more: https://www.sanity.io/docs/data-store/how-queries-work
-  const filter = groq`*[_type == "singleton" && !(_id in path("drafts.**"))]`
-  const projection = groq`{
+async function getSingleton() {
+	const filter = groq`*[_type == "singleton" && !(_id in path("drafts.**"))]`;
+	const projection = groq`{
     _id,
     title,
     heroCopy,
+    slug,
     heroImg,
     bodyText,
     review[]->{
       author,
       title,
       excerpt, 
-      "employer":employer->name
+      "employer":employer->name,
+      "reviewSlug":employer->slug.current
     },
     clientBlockTitle,
     clientBlockCopy,
@@ -37,12 +36,11 @@ async function getSingleton () {
     "bannerCopy": banner.bannerCopy,
     "bannerImg": banner.bannerImg.asset._ref,
     "bannerPosition": coalesce(banner.horizontal, '') + ' ' + coalesce(banner.vertical, '') 
-  }`
-  const query = [filter, projection].join(' ')
-  const docs = await client.fetch(query).catch(err => console.error(err))
-  const reducedDocs = overlayDrafts(hasToken, docs)
-  const prepareSingletons = reducedDocs.map(generateSingleton)
-  return prepareSingletons
+  }`;
+	const query = [filter, projection].join(' ');
+	const docs = await client.fetch(query).catch((err) => console.error(err));
+	const prepareSingletons = docs.map(generateSingleton);
+	return prepareSingletons;
 }
 
-module.exports = getSingleton
+export default getSingleton;

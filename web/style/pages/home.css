@@ -1,0 +1,133 @@
+.home {
+	.topline {
+		padding-bottom: 0;
+		@media (min-width: 60rem) {
+			& {
+				background-color: var(--blue);
+				padding-bottom: 3rem;
+			}
+		}
+		& p {
+			grid-column: col 1 / span 12;
+			font-family: var(--headline);
+			font-size: 2rem;
+			text-align: center;
+			font-weight: 400;
+			margin-bottom: 0;
+			@media (min-width: 40rem) {
+				& {
+					grid-column: col 1 / span 8;
+					text-align: left;
+				}
+			}
+			@media (min-width: 60rem) {
+				& {
+					color: var(--white);
+					font-size: 2.25rem;
+					font-weight: 500;
+				}
+			}
+		}
+		.img {
+			padding-top: 3rem;
+			grid-column: 1 / span 14;
+			overflow: hidden;
+			& img {
+				width: 100%;
+				height: auto;
+			}
+			@media (min-width: 40rem) {
+				& {
+					grid-column: col 9 / span 4;
+					padding: 1rem 0;
+					& img {
+						height: 100%;
+						object-fit: cover;
+					}
+				}
+			}
+			@media (min-width: 60rem) {
+				& {
+					grid-column: col 9 / span 4;
+				}
+			}
+		}
+	}
+	.overview {
+		.copy {
+			grid-column: col 1 / span 12;
+			@media (min-width: 60rem) {
+				& {
+					padding-top: 1.5rem;
+					grid-column: col 1 / span 8;
+				}
+			}
+		}
+		.clients {
+			grid-column: col 1 / span 12;
+			list-style: none;
+			text-align: center;
+			padding: 0;
+			& img {
+				width: 80%;
+			}
+			@media (min-width: 40rem) {
+				& {
+					display: flex;
+				}
+			}
+			@media (min-width: 60rem) {
+				& {
+					display: block;
+					grid-column: col 9 / span 4;
+					& img {
+						width: 50%;
+					}
+				}
+			}
+		}
+	}
+	.lead-in {
+		padding-bottom: 4rem;
+		.two-up {
+			grid-column: col 1 / span 12;
+			display: flex;
+			flex-direction: column;
+			gap: 4rem;
+			justify-content: space-between;
+			padding: 2rem 0;
+			font-family: var(--header);
+			@media (min-width: 50rem) {
+				& {
+					flex-direction: row;
+					gap: 0;
+				}
+			}
+			.preview {
+				display: flex;
+				flex-direction: column;
+				margin: 0;
+				text-decoration: none;
+				@media (min-width: 50rem) {
+					& {
+						width: 45%;
+						gap: 0.5rem;
+					}
+				}
+				&:hover {
+					color: var(--black);
+					& h3 {
+						text-decoration: underline;
+					}
+				}
+				& h3 {
+					color: var(--blue);
+				}
+				& p {
+					font-family: var(--body);
+					font-size: 1.25rem;
+				}
+			}
+		}
+	}
+}

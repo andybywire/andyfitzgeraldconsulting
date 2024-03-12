@@ -1,0 +1,73 @@
+.reviews {
+	.client-grid {
+		grid-column: col 1 / span 12;
+		padding-left: 0;
+	}
+	.review-lockup {
+		display: grid;
+		grid-template-columns: repeat(12, 1fr);
+		column-gap: 1.5vw;
+		padding-top: 5rem;
+		.logo {
+			grid-column: 4 / span 6;
+			& img {
+				max-width: 100%;
+				height: auto;
+			}
+			@media (min-width: 40rem) {
+				& {
+					grid-column: 1 / span 3;
+				}
+			}
+			@media (min-width: 60rem) {
+				& {
+					grid-column: 1 / span 2;
+				}
+			}
+		}
+		.review {
+			grid-column: 1 / span 12;
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+			@media (min-width: 40rem) {
+				& {
+					grid-column: 5 / span 8;
+				}
+			}
+			@media (min-width: 60rem) {
+				& {
+					grid-column: 3 / span 8;
+				}
+			}
+			& h2 {
+				line-height: 1.25;
+				padding-top: 0;
+				margin-top: 0;
+				text-align: center;
+				@media (min-width: 40rem) {
+					& {
+						text-align: left;
+					}
+				}
+			}
+		}
+	}
+	& blockquote.review-copy {
+		margin: 0;
+		& ul {
+			list-style: disc;
+			margin-bottom: 1rem;
+		}
+		& cite {
+			display: block;
+			padding-left: 1rem;
+			&::before {
+				content: '— ';
+			}
+		}
+		&:not(:last-of-type) cite {
+			padding-bottom: 3rem;
+		}
+	}
+}

@@ -1,0 +1,32 @@
+/* Utility Classes */
+.grid {
+  display: grid;
+  grid-template-columns:
+    minmax(1rem, calc(50vw - var(--max-width) / 2))
+    [col] repeat(12, 1fr [col])
+    minmax(1rem, calc(50vw - var(--max-width) / 2));
+    column-gap: clamp(0.5rem, 1.5vw, 1.5rem);
+}
+.subgrid {
+  grid-column: 1 col / span 12;
+  display: grid;
+  grid-template-columns: [col] repeat(12, 1fr [col]);
+  column-gap: clamp(0.5rem, 1.5vw, 1.5rem);
+}
+.segment-padding {
+	padding: 2rem 0;
+	@media (min-width: 60rem) {
+		& {
+			padding: 3rem 0;
+		}
+	}
+}
+.hidden {
+  display: none;
+}
+.visible {
+  display: block;
+}
+.unpad-list {
+  padding-inline-start: 0;
+}

@@ -1,16 +1,22 @@
-<h2>Categories</h2>
+<nav class="sidebar">
+  <h2>Browse by Type</h2>
   <ul>
-  {%- for label in taxonomy -%}
-  {% if "Category" in label.scheme %}
-    <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-  {% endif %}
-  {%- endfor -%}
+    {%- for label in taxonomy -%}
+      {% if "Insight Type" in label.scheme %}
+        <li>
+          <a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a>
+        </li>
+      {% endif %}
+    {%- endfor -%}
   </ul>
-<h2>Topics</h2>
+  <h2>Browse by Topic</h2>
   <ul>
-  {%- for label in taxonomy -%}
-  {% if "Topic"  in label.scheme %}
-    <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-  {% endif %}
-  {%- endfor -%}
+    {%- for label in taxonomy -%}
+      {% if "Topic" in label.scheme %}
+        <li>
+          <a href="/insights/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a>
+        </li>
+      {% endif %}
+    {%- endfor -%}
   </ul>
+</nav>

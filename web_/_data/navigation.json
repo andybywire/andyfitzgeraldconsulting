@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "text": "Services",
+      "url": "/services/"
+    },
+    {
+      "text": "Case Studies",
+      "url": "/case-studies/"
+    },
+    {
+      "text": "Writing",
+      "url": "/writing/"
+    },
+    {
+      "text": "Speaking",
+      "url": "/speaking/"
+    }
+  ]
+}

@@ -1,72 +1,95 @@
 ---
-layout: layouts/base.njk
+layout: base.njk
 ---
-{% for resource in singletons %}
-{% if resource.title == "Home" %}
+<main class="home">
+  {% for resource in singletons %}
+    {% if resource.title == "Home" %}
 
-<div class="singleton home">
-
-  <article class="value-prop">
-    <div class="wrap">
-      <div class="display">{{ resource.heroCopy | markdownify | safe }}</div>
-      <div class="img">{% responsiveImage resource.heroImg, ".75"  %}</div>
-    </div>
-  </article>
-
-  <article>
-    <section class="wrap">
-      <h1>{{ resource.servicesBlockTitle }}</h1>
-      <p>{{ resource.servicesBlockCopy }}</p>
-    </section>
-    <section class="related-content">
-      <ul>
-      {% for card in services %}
-          <li>
-            <a href="/services/{{ card.slug.current }}">
-              {% responsiveImage card.heroImage, ".75" %}
-              <div>
-                <h2>{{ card.title }}</h2>
-                <p>{{ card.shortDescription }}</p>
-              </div>
-            </a>
-          </li>
-      {% endfor %}
-      </ul>
-    </section>  
-  </article>
-  
-  <article class="client-feedback">
-      <section>
-        <h1>{{ resource.reviewBlockTitle }}</h1>
-        <p>{{ resource.reviewBlockCopy }}</p>
+      <section class="grid topline segment-padding">
+        {{ resource.heroCopy | safe }}
+        <div class="img">{% responsiveImage resource.heroImg,
+          ".75" %}</div>
       </section>
-    {% for review in resource.review %}
-      <blockquote class="review">
-        <p>"{{ review.excerpt }}"</p>
-        <cite>
-          {{ review.author }}, {{ review.title }}, {{ review.employer }}
-        </cite>
-      </blockquote>
-    {% endfor %}
-    <a class="button" href="/reviews">Read More Feedback</a> 
-  </article>
 
-  <article>
-    <section class="wrap client-block">
-      <h1>{{ resource.clientBlockTitle }}</h1>
-      <p>{{ resource.clientBlockCopy }}</p>
+      <section class="grid overview segment-padding">
+        <div class="copy">
+          {{ resource.bodyText | safe }}
+        </div>
+        <ul class="clients">
+          {% for client in metadata.homeLogos %}
+            <li>
+              <a href="/reviews#{{ client.slug.current }}"><img src="{% imageUrlFor client.tile %}" alt="{{ client.tile.altText }}"/></a>
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="cta">
+          <a href="/services/" class="button">learn more about my services</a>
+        </div>
+      </section>
+
+      <section class="grid quote-block segment-padding">
+        <div class="two-up">
+          {% for review in resource.review %}
+            <blockquote class="review">
+              <p>"{{ review.excerpt }}"</p>
+              <cite>
+                <a href="/reviews#{{ review.reviewSlug }}">
+                  {{ review.author }}, {{ review.title }}
+                </br>
+                {{ review.employer }}
+              </a>
+            </cite>
+          </blockquote>
+        {% endfor %}
+      </div>
     </section>
-    <section class="logofarm">
-      <ul>
-      {% for client in clients.slice(0,8) %}
-        <li>
-          <a href="/reviews#{{ client.slug.current }}"><img src="{% imageUrlFor client.tile %}" alt="{{ client.tile.altText }}" /></a>
-        </li>
-      {% endfor %}
-      </ul>
-    </section> 
-  </article>
-</div>
 
-{% endif %}
+    <section class="grid preview-block">
+      <figure class="banner">
+        {% bannerImage metadata.insightsBanner %}
+        <figcaption>{{ metadata.insightsBanner.caption }}</figcaption>
+      </figure>
+      <h2>Latest Insights</h2>
+
+      <div class="two-up">
+        {% set count = 0 %}
+        {% for article in articles.slice(0, 10) %}
+          {% if article.insightType != "Case Study" and count < 2 %}
+            <a href="/insights/{{ article.slug.current }}">
+              <span class="eyebrow">{{ article.insightType | default("Insight", true) }} | {{ article.pubDate | date("MMMM D, YYYY") }}</span>
+              <h3>{{ article.title }}</h3>
+              <p>{{ article.shortDescription }}</p>
+            </a>
+            {% set count = count + 1 %}
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <div class="cta">
+        <a href="/insights/" class="button">see all insights</a>
+      </div>
+    </section>
+
+    <section class="grid preview-block">
+      <figure class="banner">
+        {% bannerImage metadata.clientWorkBanner %}
+        <figcaption>{{ metadata.clientWorkBanner.caption }}</figcaption>
+      </figure>
+      <h2>Featured Client Work</h2>
+      <div class="two-up">
+        {% for study in metadata.featuredClients %}
+          <a href="/insights/{{ study.slug.current }}">
+            <span class="eyebrow">Case Study</span>
+            <h3>{{ study.title }}</h3>
+            <p>{{ study.description }}</p>
+          </a>
+        {% endfor %}
+      </div>
+      <div class="cta">
+        <a href="/insights/tag/case-study/" class="button">see all case studies</a>
+      </div>
+    </section>
+
+  {% endif %}
 {% endfor %}
+</main>

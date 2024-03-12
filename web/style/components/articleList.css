@@ -1,0 +1,119 @@
+/* Used for article previews on the Insights list page. */
+
+.preview-listing {
+  grid-column: col 1 / span 12;
+	@media (min-width: 40rem) {
+		& {
+      padding-top: 2rem;
+      grid-column: col 1 / span 8;
+		}
+	}
+	& h2 {
+		font-size: 2rem;
+		line-height: 2.5rem;
+		padding-top: 0.25rem;
+		padding-bottom: 1rem;
+		margin: 0;
+	}
+	& img {
+    width: 100%;
+		max-width: 100%;
+		height: auto;
+	}
+	& a.teaser {
+    text-decoration: none;
+		color: inherit;
+    & h2 {
+      color: var(--blue);
+    }
+		&:hover {
+			& h2 {
+				text-decoration: underline;
+			}
+			& p:after {
+				color: var(--blue);
+				transition: all 0.25s ease;
+			}
+		}
+	}
+	& p:after {
+		content: 'Read the article »';
+		padding-left: 0.5rem;
+		text-decoration: underline;
+		transition: all 0.25s ease;
+	}
+	.related {
+		margin-bottom: 3rem;
+		& h3,
+		ul,
+		li {
+			display: inline;
+		}
+		& h3 {
+			font-size: 1.5rem;
+			&:after {
+				content: ': ';
+			}
+		}
+		& li:not(:last-of-type):after {
+			content: ', ';
+		}
+	}
+	/* Pagination */
+	& nav {
+		/* @include breakpoint(large) {
+      flex: 0 0 25%;
+    } */
+
+		&.pagination {
+			display: flex;
+			justify-content: space-between;
+			padding: 1rem 0 4rem;
+			.info {
+				font-size: 1rem;
+				font-weight: 300;
+			}
+		}
+	}
+}
+nav.related {
+  margin-bottom: 3rem;
+  & h3,
+  ul,
+  li {
+    display: inline;
+  }
+  & h3 {
+    font-size: 1.5rem;
+    &:after {
+      content: ': ';
+    }
+  }
+  & li:not(:last-of-type):after {
+    content: ', ';
+  }
+}
+.related-content {
+  & h2 {
+    grid-column: col 1 / span 12;
+    margin: 0.25rem 0 1rem;
+  }
+}
+nav.pagination {
+	grid-column: col 1 / span 12;
+	font-size: 1rem;
+	display: flex;
+	justify-content: space-between;
+	padding: 1rem 0 4rem;
+	@media (min-width: 40rem) {
+		& {
+			grid-column: col 1 / span 8;
+		font-size: 1.125rem;
+		}
+	}
+	@media (min-width: 60rem) {
+		& {
+			font-size: 1.25rem;
+		}
+	}
+}

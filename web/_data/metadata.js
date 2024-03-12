@@ -1,12 +1,19 @@
-const groq = require('groq')
-const client = require('../utils/sanityClient')
-module.exports =  async function() {
-  return await client.fetch(groq`
-    *[_id == "settings"]{
+import { client } from '../utils/sanityClient.js';
+import groq from 'groq';
+
+export default async function getMetadata() {
+	return await client.fetch(groq`
+    *[_id == "settings"][0] {
       ...,
-      "bannerCopy": defaultBanner.bannerCopy,
-      "bannerImg": defaultBanner.bannerImg.asset._ref,
-      "bannerPosition": coalesce(defaultBanner.horizontal, '') + ' ' + coalesce(defaultBanner.vertical, '')
-    }[0]
-  `)
+      featuredClients[]->{
+        title,
+        description,
+        slug
+      },
+      homeLogos[]->{
+        slug,
+        tile
+      }
+    }
+  `);
 }

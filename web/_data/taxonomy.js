@@ -1,9 +1,10 @@
-const client = require("../utils/sanityClient");
+import { client } from '../utils/sanityClient.js';
 
-async function getTaxonomies() {
+export default async function getTaxonomies() {
   const query = `
   *[_type == "skosConcept" && !(_id in path("drafts.**"))]| order(prefLabel) {
     prefLabel,
+    "altLabel": altLabel[0],
     "scheme": *[_type == "skosConceptScheme" && references(^._id)].title
   }
   `;
@@ -13,5 +14,3 @@ async function getTaxonomies() {
   });
   return data;
 }
-
-module.exports = getTaxonomies;

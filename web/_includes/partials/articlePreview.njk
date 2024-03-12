@@ -1,16 +1,18 @@
-<article>
-  <a href="/writing/{{ resource.slug.current | slug }}" class="teaser">
-    <h1>{{ resource.title }}</h1>
-    <time datetime="{{ resource.pubdate }}">{{ resource.pubDate | date("MMMM D, YYYY") }}</time>
-    <img src="{% articleHero resource.heroImage %}" alt="{{ resource.heroImage.altText }}">
-    {{ resource.lede | markdownify | safe }}
+<article class="preview-listing">
+  <a href="/insights/{{ resource.slug.current | slug }}" class="teaser">
+    <time class="eyebrow" datetime="{{ resource.pubdate }}"> {{ resource.insightType | default("Insight", true) }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
+    <h2>{{ resource.title }}</h2>
+    {% articleHero resource.heroImage %}
+    {{ resource.lede | safe }}
+    {{ resource.atGlance | safe }}
   </a>
   <nav class="related">
-    <h2>Topics</h2>
-    <ul>
-    {%- for label in resource.topic -%}
-      <li><a href="/writing/tag/{{ label.prefLabel | slugify }}">{{ label.prefLabel }}</a></li>
-    {%- endfor -%}
+    <h3>Topics</h3>
+    <ul class="unpad-list">
+      {%- for label in resource.topicTags -%}
+        {# This line must be kept together (do not "prettify"): #}
+        <li><a href="/insights/tag/{{ label | slugify }}">{{ label }}</a></li>
+      {%- endfor -%}
     </ul>
   </nav>
 </article>

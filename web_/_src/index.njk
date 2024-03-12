@@ -1,0 +1,72 @@
+---
+layout: layouts/base.njk
+---
+{% for resource in singletons %}
+{% if resource.title == "Home" %}
+
+<div class="singleton home">
+
+  <article class="value-prop">
+    <div class="wrap">
+      <div class="display">{{ resource.heroCopy | markdownify | safe }}</div>
+      <div class="img">{% responsiveImage resource.heroImg, ".75"  %}</div>
+    </div>
+  </article>
+
+  <article>
+    <section class="wrap">
+      <h1>{{ resource.servicesBlockTitle }}</h1>
+      <p>{{ resource.servicesBlockCopy }}</p>
+    </section>
+    <section class="related-content">
+      <ul>
+      {% for card in services %}
+          <li>
+            <a href="/services/{{ card.slug.current }}">
+              {% responsiveImage card.heroImage, ".75" %}
+              <div>
+                <h2>{{ card.title }}</h2>
+                <p>{{ card.shortDescription }}</p>
+              </div>
+            </a>
+          </li>
+      {% endfor %}
+      </ul>
+    </section>  
+  </article>
+  
+  <article class="client-feedback">
+      <section>
+        <h1>{{ resource.reviewBlockTitle }}</h1>
+        <p>{{ resource.reviewBlockCopy }}</p>
+      </section>
+    {% for review in resource.review %}
+      <blockquote class="review">
+        <p>"{{ review.excerpt }}"</p>
+        <cite>
+          {{ review.author }}, {{ review.title }}, {{ review.employer }}
+        </cite>
+      </blockquote>
+    {% endfor %}
+    <a class="button" href="/reviews">Read More Feedback</a> 
+  </article>
+
+  <article>
+    <section class="wrap client-block">
+      <h1>{{ resource.clientBlockTitle }}</h1>
+      <p>{{ resource.clientBlockCopy }}</p>
+    </section>
+    <section class="logofarm">
+      <ul>
+      {% for client in clients.slice(0,8) %}
+        <li>
+          <a href="/reviews#{{ client.slug.current }}"><img src="{% imageUrlFor client.tile %}" alt="{{ client.tile.altText }}" /></a>
+        </li>
+      {% endfor %}
+      </ul>
+    </section> 
+  </article>
+</div>
+
+{% endif %}
+{% endfor %}

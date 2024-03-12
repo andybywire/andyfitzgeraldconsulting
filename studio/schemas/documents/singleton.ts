@@ -12,6 +12,19 @@ export default {
       type: 'string',
     },
     {
+      title: 'Slug',
+      name: 'slug',
+      type: 'slug',
+      options: {
+        source: 'title',
+        maxLength: 200, // will be ignored if slugify is set
+        slugify: (input: string) => input
+                             .toLowerCase()
+                             .replace(/\s+/g, '-')
+                             .slice(0, 200)
+      }
+    },
+    {
       name: 'heroCopy',
       title: 'Singleton Page Hero Copy',
       type: 'array',
@@ -84,6 +97,7 @@ export default {
       title: 'Services Block Title',
       type: 'string',
       description: 'For home page only',
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
     {
       name: 'servicesBlockCopy',
@@ -91,12 +105,14 @@ export default {
       description: 'For home page only',
       type: 'text',
       rows: 3,
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
     {
       name: 'reviewBlockTitle',
       title: 'Review Block Title',
       type: 'string',
       description: 'For home page only',
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
     {
       name: 'reviewBlockCopy',
@@ -104,6 +120,7 @@ export default {
       description: 'For home page only',
       type: 'text',
       rows: 3,
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
     {
       name: 'review',
@@ -111,12 +128,14 @@ export default {
       description: 'For home page only. Use 3 references.',
       type: 'array',
       of: [{type: 'reference', to: [{type: 'review'}]}],
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
     {
       name: 'clientBlockTitle',
       title: 'Client Grid Block Title',
       type: 'string',
       description: 'For home page only',
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
     {
       name: 'clientBlockCopy',
@@ -124,6 +143,7 @@ export default {
       description: 'For home page only',
       type: 'text',
       rows: 3,
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
     {
       name: 'cta',
@@ -131,6 +151,7 @@ export default {
       title: 'Call to Action',
       description: '60 - 100 char',
       rows: 2,
+      deprecated: {reason: 'moved to block for 2024 refresh'},
     },
   ],
 }

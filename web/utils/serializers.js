@@ -4,17 +4,19 @@
  * @todo make image responsive
  */
 
-const imageUrl = require('./imageUrl')
+import urlFor from './imageUrl.js';
 
-module.exports = {
-  types: {
-    pre: ({node}) => `<pre>${node.code}</pre>`,
-    mainImage: ({node}) => `![${node.alt}](${imageUrl(node).url()})`,
-    image: ({node}) => `<img src="${imageUrl(node).url()}" alt="${node.altText || ''}" ${node.floatLeft ? 'class="left-float"' : ''}>`,
-    figure: ({node}) => {
-      return `<figure>
-                <img src="${imageUrl(node).url()}" alt="${node.altText || ''}" ${node.outline ? 'class="outline"' : ''}>
-                ${node.caption ? `<figcaption> ${node.caption} </figcaption>` : '' }</figure>`
-    }
-  }
-}
+export const afcComponents = {
+	types: {
+		pre: ({ value }) => `<pre>${value.code}</pre>`,
+		mainImage: ({ value }) => `![${value.alt}](${urlFor(value).url()})`,
+		image: ({ value }) =>
+			`<img src="${urlFor(value).url()}" alt="${value.altText || ''}" ${value.floatLeft ? 'class="left-float"' : ''}>`,
+		figure: ({value}) => {
+			return `<figure class="illustration">
+								<img src="${urlFor(value).url()}" alt="${value.altText || ''}" ${value.outline ? 'class="outline"' : ''}>
+								${value.caption ? `<figcaption> ${value.caption} </figcaption>` : ''}</figure>`;
+		},
+	},
+};
+

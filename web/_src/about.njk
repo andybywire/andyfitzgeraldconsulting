@@ -1,27 +1,24 @@
 ---
-layout: layouts/base.njk
-singletonCrumb: About
+layout: base.njk
 ---
 {% for resource in singletons %}
-{% if resource.title == "About" %}
-
-<div class="singleton about">
-
-  <article class="value-prop">
-    <div class="wrap">
-      <div class="display">{{ resource.heroCopy | markdownify | safe }}</div>
-      <div class="img">{% responsiveImage resource.heroImg, ".75"  %}</div>
-    </div>
-  </article>
-
-  <article class="body-text">
-    <section class="wrap">
-      <div>
-        {{ resource.bodyText | markdownify | safe }}
-      </div>  
-    </section>
-   
-</div>
-
-{% endif %}
+  {% if resource.title == "About" %}
+    <main class="singleton">
+      {# {% include 'partials/singletonBody.njk' %} #}
+      <section class="grid">
+        <h1>{{ resource.title }}</h1>
+        <div class="hero-copy">
+          {{ resource.heroCopy | safe }}
+        </div>
+        {% if resource.heroImg %}
+          <div class="img">
+            {% singletonHero resource.heroImg %}
+          </div>
+        {% endif %}
+        <div class="copy">
+          {{ resource.bodyText | safe }}
+        </div>
+      </section>
+    </main>
+  {% endif %}
 {% endfor %}

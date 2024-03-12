@@ -1,28 +1,24 @@
-const groq = require('groq')
-const client = require('../utils/sanityClient')
-const BlocksToMarkdown = require('@sanity/block-content-to-markdown')
-const serializers = require('../utils/serializers')
-const overlayDrafts = require('../utils/overlayDrafts')
-const hasToken = !!client.config().token
+import { client } from '../utils/sanityClient.js';
+import groq from 'groq';
+import { toHTML } from '@portabletext/to-html';
+import { afcComponents } from '../utils/serializers.js';
 
-function generateReview (review) {
-  return {
-    ...review,
-    body: BlocksToMarkdown(review.body, { serializers, ...client.config() })
-  }
+function generateReview(review) {
+	return {
+		...review,
+		body: toHTML(review.body, { components: afcComponents }),
+		condensedBody: toHTML(review.condensedBody, { components: afcComponents }),
+	};
 }
 
-async function getReview () {
-  const filter = groq`*[_type == "review" && !(_id in path("drafts.**"))]`
-  const projection = groq`{
+export default async function getReview() {
+	const filter = groq`*[_type == "review" && !(_id in path("drafts.**"))]`;
+	const projection = groq`{
     ...,
     employer->
-  }`
-  const query = [filter, projection].join(' ')
-  const docs = await client.fetch(query).catch(err => console.error(err))
-  const reducedDocs = overlayDrafts(hasToken, docs)
-  const prepareReviews = reducedDocs.map(generateReview)
-  return prepareReviews
+  }`;
+	const query = [filter, projection].join(' ');
+	const docs = await client.fetch(query).catch((err) => console.error(err));
+	const prepareReviews = docs.map(generateReview);
+	return prepareReviews;
 }
-
-module.exports = getReview

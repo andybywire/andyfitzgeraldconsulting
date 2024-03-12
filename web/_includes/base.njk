@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+	{% include 'partials/head.njk' %}
+	<body>
+		{# <a href="#main-content" class="show-on-focus">Skip to Main Content</a> #}
+		<header>
+			<nav>
+				<a href="/" class="masthead">
+					<div>
+						{% include 'icons/afc.svg' %}
+					</div>
+					<div class"title">
+						<div class="site-title">
+							{{ metadata.siteTitle }}
+						</div>
+						<div class="subtitle">
+							{{ metadata.siteSubtitle }}
+						</div>
+					</div>
+				</a>
+				<ul class="menu">
+					{% for item in navigation.items %}
+						<li>
+							<a href="{{ item.url }}" 
+								{{ helpers.getLinkActiveState(item.url, page.url) | safe }}
+								>{{ item.text }}</a>
+						</li>
+					{% endfor %}
+				</ul>
+			</nav>
+		</header>
+		{{ content | safe }}
+		<footer>
+			<section class="site-info">
+				<p class="description">Andy Fitzgerald Consulting, LLC is the independent information architecture and content design practice of Andy Fitzgerald, PhD.</p>
+				<ul class="menu">
+					{% for item in navigation.items %}
+						<li>
+							<a href="{{ item.url }}">{{ item.text }}</a>
+						</li>
+					{% endfor %}
+				</ul>
+			</section>
+			<section class="social">
+				<ul>
+					<li class="linkedin">
+						<a href="http://www.linkedin.com/in/andyfitzgerald" target="_blank" rel="noopener">{% include 'icons/linkedin.svg' %}</a>
+					</li>
+					<li class="github">
+						<a href="https://www.github.com/andybywire" target="_blank" rel="noopener">{% include 'icons/github.svg' %}</a>
+					</li>
+					<li class="medium">
+						<a href="https://medium.com/@andybywire" target="_blank" rel="noopener">{% include 'icons/medium.svg' %}</a>
+					</li>
+				</ul>
+			</section>
+			<p class="copyright">© 2016-2024 Andy Fitzgerald Consulting, LLC</p>
+		</footer>
+		<script>
+			if (navigator.serviceWorker) {
+				navigator
+					.serviceWorker
+					.register('/serviceworker.js')
+					.then(function (registration) {
+						console.log('Service worker registered with scope:', registration.scope);
+					})
+					.catch(function (error) {
+						console.log('Service worker registration error:', error);
+					});
+			}
+		</script>
+	{% if '/talks' in page.url %}
+		<script src="/js/upcomingTalks.js"></script>
+	{% endif %}
+	</body>
+</html>

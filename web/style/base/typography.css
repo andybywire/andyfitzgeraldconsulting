@@ -1,0 +1,94 @@
+body {
+	font-family: var(--body);
+	font-size: 1.125rem; /* 18 pt */
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	@media (min-width: 60rem) {
+		& {
+			font-size: 1.25rem; /* 20 pt*/
+      line-height: 1.75;
+		}
+	}
+}
+a,
+a:visited {
+	transition: all 0.25s ease;
+	color: inherit;
+}
+a:hover {
+	color: var(--blue);
+}
+h1,
+h2,
+h3 {
+	margin: 1rem 0 0;
+	font-family: var(--header);
+}
+h4,
+h5 {
+	margin-bottom: 0;
+}
+h1 {
+	font-size: 3rem; /* 48 pt*/
+	line-height: initial;
+	margin-bottom: .5rem;
+}
+h2 {
+	font-size: 2rem; /* 32 pt*/
+	padding-top: 1rem;
+	grid-column: col 1 / span 12;
+}
+h3 {
+	font-size: 1.75rem;
+	line-height: 2.25rem; /* last change targeted preview block on the home page */
+}
+h4 {
+	margin-top: 3rem;
+}
+p,
+ul,
+ol {
+	margin-top: 0;
+}
+.eyebrow {
+	color: var(--eyebrow-gray);
+	font-weight: 600;
+	font-size: 1.25rem;
+}
+code {
+	background-color: var(--light-gray);
+	border-radius: var(--radius);
+	padding: 0 0.25rem;
+	overflow-wrap: break-word;
+}
+pre {
+	background-color: var(--light-gray);
+	border-radius: var(--radius);
+	white-space: pre;
+	overflow: auto;
+	padding: 1rem;
+}
+/* consider which of these to break into individual page style pages */
+/* blockquote {
+  p {
+    font-weight: 500;
+  }
+  cite {
+    /* display: inline-block; tightens line height */
+/* color: $white; */
+/* font-size: 0.999999rem; 16px */
+/* font-weight: 300;
+    &::before {
+      content: "— "
+    }
+  } */
+/* .article & {
+    /* color: $dark-blue; */
+/* }
+} */
+/* li {
+  article & {
+    margin-bottom: 1rem;
+  }
+} */

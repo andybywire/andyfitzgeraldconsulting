@@ -1,10 +1,11 @@
-const groq = require('groq')
-const client = require('../utils/sanityClient')
+import { client } from '../utils/sanityClient.js';
+import groq from 'groq';
 
-module.exports =  async function() {
+export default async function() {
   return await client.fetch(groq`
-    *[_type == "client"] | order(name desc){
-      ...
+    *[_type == "client"] | order(name){
+      ...,
+      "reviews": count(*[_type == 'review' && references(^._id)])
     }
   `)
 }
