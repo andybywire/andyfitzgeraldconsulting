@@ -24,9 +24,9 @@ jobs:
             directory: web
         
         - name: Install Node.js
-          uses: actions/setup-node@v1
+          uses: actions/setup-node@v4
           with:
-            node-version: '18.x'
+            node-version: '20'
 
         - name: Install Project Dependencies
           run: npm ci --legacy-peer-deps
