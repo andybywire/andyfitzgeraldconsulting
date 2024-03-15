@@ -13,12 +13,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '20'
 
       - name: Install Project Dependencies
         run: npm ci --legacy-peer-deps
@@ -41,7 +41,7 @@ jobs:
           mkdir -p ~/.ssh/
           echo "${{ secrets.AFC_CMS_DREAMHOST_SSH_KEY }}" > ~/.ssh/afc_cms
           sudo chmod 600 ~/.ssh/afc_cms
-          ssh-keyscan -H "jacksonville.dreamhost.com" > ~/.ssh/known_hosts
+          ssh-keyscan -H "pdx1-shared-a1-18.dreamhost.com" > ~/.ssh/known_hosts
 
       - name: SFTP Upload
-        run: sftp -i ~/.ssh/afc_cms afc_cms@jacksonville.dreamhost.com <<< $'cd cms.andyfitzgeraldconsulting.com \n put -r studio/dist/*'
+        run: sftp -i ~/.ssh/afc_cms afc_cms@pdx1-shared-a1-18.dreamhost.com <<< $'cd cms.andyfitzgeraldconsulting.com \n put -r studio/dist/*'
