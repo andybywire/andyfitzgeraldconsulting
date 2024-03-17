@@ -3,7 +3,7 @@ layout: base.njk
 pagination:
   alias: resource
   data: articles
-  size: 5
+  size: 10
   addAllPagesToCollections: true
 eleventyExcludeFromCollections: true
 permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNumber + 1 }}/{% endif %}/index.html

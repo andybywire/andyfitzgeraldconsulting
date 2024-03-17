@@ -1,6 +1,7 @@
 RewriteEngine On
 
-# Remove www from URL
+# Remove www from URL — this causes a redirect loop; likely
+# to do with Cloudflare. 
 # RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
 # RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
 
