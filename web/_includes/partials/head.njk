@@ -32,8 +32,8 @@
       {{ metadata.siteTitle }}
     {% endif %}
   </title>
+  <meta name="description" content="{{ metadata.description }}">
   {# 
-    <meta name="description" content="{{ metadata.description }}">
     <link rel="canonical" {% if resource.canonical -%}
                             href="{{ resource.canonical }}"
                           {%- elif "/contact/" in page.url -%}
