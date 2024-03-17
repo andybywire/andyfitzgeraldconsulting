@@ -1,10 +1,10 @@
 /* Global Element, Layout, & Utility Styles */
 @import 'utilities/normalize.css';
-@import 'utilities/variables.css';
-@import 'utilities/utilityClasses.css';
-/* Fonts added in head: */
+/* Core CSS elements added in <head> */
+/* @import 'utilities/variables.css'; */
+/* @import 'utilities/utilityClasses.css'; */
 /* @import 'base/fonts.css'; */
-@import 'base/typography.css';
+/* @import 'base/typography.css'; */
 @import 'base/images.css';
 @import 'layout/wrap.css';
 @import 'layout/header.css';

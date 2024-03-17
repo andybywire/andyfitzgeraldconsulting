@@ -1,3 +1,137 @@
+:root {
+	/* Typography */
+	--header: 'Lato', Roboto, Arial, sans-serif;
+	--headline: 'Noto Serif', Georgia, serif;
+	--body: 'Open Sans', Roboto, Arial, sans-serif;
+
+	/* Colors */
+	--blue: #4e9dbc;
+	--dark-blue: #1f4351;
+	--light-gray: rgba(43, 40, 40, 0.05);
+	--eyebrow-gray: #777676;
+	--medium-gray: #646464;
+	--dark-gray: #2b2b2b;
+	--black: #051319;
+	--white: #fefefe;
+	--alert-bg: #f7e4e1;
+	--alert-text: #cc4b37;
+
+	/* Wrap */
+	--max-width: 1024px;	/* max page width on desktop */
+
+	/* Global UI Look & Feel */
+	--radius: 3px;
+}
+
+
+/* Utility Classes */
+.grid {
+  display: grid;
+  grid-template-columns:
+    minmax(1rem, calc(50vw - var(--max-width) / 2))
+    [col] repeat(12, 1fr [col])
+    minmax(1rem, calc(50vw - var(--max-width) / 2));
+    column-gap: clamp(0.5rem, 1.5vw, 1.5rem);
+}
+.subgrid {
+  grid-column: 1 col / span 12;
+  display: grid;
+  grid-template-columns: [col] repeat(12, 1fr [col]);
+  column-gap: clamp(0.5rem, 1.5vw, 1.5rem);
+}
+.segment-padding {
+	padding: 2rem 0;
+	@media (min-width: 60rem) {
+		& {
+			padding: 3rem 0;
+		}
+	}
+}
+.hidden {
+  display: none;
+}
+.visible {
+  display: block;
+}
+.unpad-list {
+  padding-inline-start: 0;
+}
+
+/* Typography */
+body {
+	font-family: var(--body);
+	font-size: 1.125rem; /* 18 pt */
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	@media (min-width: 60rem) {
+		& {
+			font-size: 1.25rem; /* 20 pt*/
+      line-height: 1.75;
+		}
+	}
+}
+a,
+a:visited {
+	transition: all 0.25s ease;
+	color: inherit;
+}
+a:hover {
+	color: var(--blue);
+}
+h1,
+h2,
+h3 {
+	margin: 1rem 0 0;
+	font-family: var(--header);
+}
+h4,
+h5 {
+	margin-bottom: 0;
+}
+h1 {
+	font-size: 3rem; /* 48 pt*/
+	line-height: initial;
+	margin-bottom: .5rem;
+}
+h2 {
+	font-size: 2rem; /* 32 pt*/
+	padding-top: 1rem;
+	grid-column: col 1 / span 12;
+}
+h3 {
+	font-size: 1.75rem;
+	line-height: 2.25rem; /* last change targeted preview block on the home page */
+}
+h4 {
+	margin-top: 3rem;
+}
+p,
+ul,
+ol {
+	margin-top: 0;
+}
+.eyebrow {
+	color: var(--eyebrow-gray);
+	font-weight: 600;
+	font-size: 1.25rem;
+}
+code {
+	background-color: var(--light-gray);
+	border-radius: var(--radius);
+	padding: 0 0.25rem;
+	overflow-wrap: break-word;
+}
+pre {
+	background-color: var(--light-gray);
+	border-radius: var(--radius);
+	white-space: pre;
+	overflow: auto;
+	padding: 1rem;
+}
+
+
+
 @font-face {
 	font-family: 'Noto Serif';
 	font-style: normal;
