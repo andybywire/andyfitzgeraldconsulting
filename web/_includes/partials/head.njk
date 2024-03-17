@@ -14,25 +14,25 @@
   <!-- For Google and Android -->
   <link rel="icon" type="image/png" sizes="48x48" href="/icons/maskable_icon_x48.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/maskable_icon_x192.png">
-
+  <title>
+    {% if '/services' in page.url %}
+      Services | {{ metadata.siteTitle }}
+    {% elif '/insights' in page.url %}
+      {# Add conditional logic here based on pagination variables for article title and tag title #}
+      Insights  | {{ metadata.siteTitle }}
+    {% elif '/talks' in page.url %}
+      Talks  | {{ metadata.siteTitle }}
+    {% elif '/reviews' in page.url %}
+      Reviews  | {{ metadata.siteTitle }}
+    {% elif '/about' in page.url %}
+      About  | {{ metadata.siteTitle }}
+    {% elif '/contact' in page.url %}
+      Contact  | {{ metadata.siteTitle }}
+    {% else %}
+      {{ metadata.siteTitle }}
+    {% endif %}
+  </title>
   {# 
-    <title>
-      {%- if resource.title -%}
-        {%- if "services" in tags -%}
-          {{ resource.title }} Services | {{ metadata.siteTitle }}
-        {%- elif "case studies" in tags -%}
-          {{ resource.title }} Case Study | {{ metadata.siteTitle }}
-        {%- else -%}
-          {{ resource.title }} | {{ metadata.siteTitle }}
-        {%- endif -%}
-      {%- elif pagination.items[0].prefLabel -%}
-        {{pagination.items[0].prefLabel}} | {{ metadata.siteTitle }}
-      {%- elif singletonCrumb -%}
-        {{ singletonCrumb }} | {{ metadata.siteTitle }}
-      {%- else -%}
-        {{ metadata.siteTitle }}
-      {%- endif -%}
-    </title>
     <meta name="description" content="{{ metadata.description }}">
     <link rel="canonical" {% if resource.canonical -%}
                             href="{{ resource.canonical }}"
