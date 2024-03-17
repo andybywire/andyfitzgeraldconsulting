@@ -1,8 +1,8 @@
 RewriteEngine On
 
 # Remove www from URL
-RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
-RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+# RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+# RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
 
 # Redirect resources from previous directories
 RewriteRule ^/?blog/(.\*)$ /insights/$1 [R=301,L]
