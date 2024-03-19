@@ -68,7 +68,7 @@ if (!empty($_POST)) {
             $responseData = json_decode($verifyResponse);
             if($responseData->success) {
                 if (mail($to, $subject, $body, $headers)) {
-                        header('Location: http://dev.andyfitzgeraldconsulting.com/contact-success/');
+                        header('Location: https://andyfitzgeraldconsulting.com/contact-success/');
              
                 } else {
                     // error sending
