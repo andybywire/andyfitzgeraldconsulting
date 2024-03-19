@@ -9,11 +9,11 @@ if (!empty($_POST)) {
     $errorMessage = '';
 
     if($_SERVER['HTTP_HOST'] == "dev.andyfitzgeraldconsulting.com") {
-            $adminEmail =  "inquiry@dev.andyfitzgeraldconsulting.com"; 
-        } elseif ($_SERVER['HTTP_HOST'] == "andyfitzgeraldconsulting.com") {
-            $adminEmail =  "inquiry@andyfitzgeraldconsulting.com"; 
-        } else {
-            $adminEmail =  "local@andyfitzgeraldconsulting.com"; 
+        $adminEmail =  "inquiry@dev.andyfitzgeraldconsulting.com"; 
+    } elseif ($_SERVER['HTTP_HOST'] == "andyfitzgeraldconsulting.com") {
+        $adminEmail =  "inquiry@andyfitzgeraldconsulting.com"; 
+    } else {
+        $adminEmail =  "local@andyfitzgeraldconsulting.com"; 
     } 
 
    $name = stripslashes(trim($_POST['name']));
@@ -49,7 +49,6 @@ if (!empty($_POST)) {
     $headers = [
         'From' => $adminEmail,
         'Reply-To' => $email,
-        'X-Sender' => 'testsite <mail@testsite.com>',
         'X-Mailer' => 'PHP/' . phpversion(),
         'MIME-Version' => '1.0',
         'Content-Type' => 'text/html; charset=iso-8859-1'
