@@ -9,6 +9,7 @@ article.detail {
 	pre,
 	time,
 	blockquote,
+	.podcast,
 	.illustration,
 	.related {
 		grid-column: col 1 / span 12;
@@ -46,6 +47,12 @@ article.detail {
 		margin: 1rem;
 	}
 	/* Article specific styles */
+	.podcast {
+		width: 100%;
+		overflow: hidden;
+		border-radius: var(--radius);
+		margin: 2rem 0 4rem;
+	}
 	.sidebar {
 		display: none;
 		@media (min-width: 60rem) {

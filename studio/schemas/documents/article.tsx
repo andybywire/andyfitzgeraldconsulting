@@ -54,6 +54,12 @@ export default {
       ],
     },
     {
+      name: 'podcastId',
+      title: 'Podcast Id',
+      description: 'Embed link ID for podcast interviews. Currently supports Apple podcasts links. Grab the url after `/us/podcast/`.',
+      type: 'string',
+    },
+    {
       name: 'insightType',
       title: 'Insight Type',
       type: 'reference',

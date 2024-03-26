@@ -27,6 +27,7 @@ async function getArticles() {
     _type,
     title,
     bodyText,
+    podcastId,
     lede,
     shortDescription,
     pubDate,
@@ -58,7 +59,7 @@ async function getArticles() {
     "topicTags":topic[]->prefLabel,
     "categoryTag":category->prefLabel,
     canonical,
-    "relatedResources": *[_type=='study' && references(^.category._ref) || _type=='article' && references(^.category._ref) && _id != ^._id] {
+    "relatedResources": *[(_type=='study' && references(^.category._ref) || _type=='article' && references(^.category._ref) || _type=='interview' && references(^.category._ref)) && _id != ^._id] {
       title,
       heroImage,
       shortDescription,
