@@ -6,9 +6,10 @@ RewriteEngine On
 # RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
 
 # Redirect resources from previous directories
-RewriteRule ^/?blog/(.\*)$ /insights/$1 [R=301,L]
-RewriteRule ^/?writing/(.\*)$ /insights/$1 [R=301,L]
-RewriteRule ^/?case-studies/ /insights/ [R=301,L]
+RewriteBase /
+RewriteRule ^blog/(.*)$ /insights/$1 [R=301,L]
+RewriteRule ^writing/(.*)$ /insights/$1 [R=301,L]
+RewriteRule ^case-studies/(.*)$ /insights/$1 [R=301,L]
 
 ErrorDocument 404 /404/index.html
 
