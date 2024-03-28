@@ -18,6 +18,14 @@ ErrorDocument 404 /404/index.html
 Redirect 301 /speaking /talks
 
 #------------------------------------------------------------------------
+# Redirect Services Pages
+#------------------------------------------------------------------------
+Redirect 301 /services/information-architecture /services
+Redirect 301 /services/content-strategy /services
+Redirect 301 /services/structured-content-design /services
+Redirect 301 /services/knowledge-graph-engineering /services
+
+#------------------------------------------------------------------------
 # Removed Articles
 #------------------------------------------------------------------------
 Redirect 301 /writing/architecting-the-connected-world /writing
