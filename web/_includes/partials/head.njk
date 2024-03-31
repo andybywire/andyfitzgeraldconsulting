@@ -1,16 +1,14 @@
-
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#4e9dbc">
   <link rel="stylesheet" type="text/css" href="/style/style.css"/>
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="/manifest.json"/>
   <!-- For browsers -->
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
   <!-- Apple touch -->
-  <link rel="apple-touch-icon" href="/icons/icon_x192.png" />
+  <link rel="apple-touch-icon" href="/icons/icon_x192.png"/>
   <!-- For Google and Android -->
   <link rel="icon" type="image/png" sizes="48x48" href="/icons/maskable_icon_x48.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/maskable_icon_x192.png">
@@ -33,6 +31,12 @@
     {% endif %}
   </title>
   <meta name="description" content="{{ metadata.description }}">
+  {% if env.environment == "development" 
+        or "/insights/tag/" in page.url 
+        or "/404" in page.url 
+        or "/calendar" in page.url -%}
+    <meta name="robots" content="noindex">
+  {%- endif %}
   {# 
     <link rel="canonical" {% if resource.canonical -%}
                             href="{{ resource.canonical }}"
@@ -52,9 +56,6 @@
                               content="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
                             {%- endif -%} />
 
-    {%- if page.url == "/contact/index.php" %}
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-    {%- endif %}
     {%- if env.environment == "development" 
         or "/writing/tag/" in page.url 
         or "/404" in page.url %}
