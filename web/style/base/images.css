@@ -37,3 +37,13 @@ figcaption {
   filter: brightness(0.975);
   -webkit-filter: brightness(0.975);
 }
+.left-float {
+	grid-column: col 3 / span 8;
+	padding-top: 4rem;
+	@media (min-width: 40rem) {
+		& {
+			grid-column: col 1 / span 3;
+			padding-top: 4rem;
+		}
+	}
+}
