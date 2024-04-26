@@ -18,7 +18,7 @@ addEventListener('fetch', (fetchEvent) => {
 	); // end respondWith
 }); // end addEventListener
 
-const version = 'v0.83';
+const version = 'v0.87';
 const staticCacheAFC = version + 'staticfiles';
 
 addEventListener('install', (installEvent) => {
@@ -53,7 +53,7 @@ addEventListener('install', (installEvent) => {
 				'/style/components/contactForm.css',
 				// '/offline/index.html',
 				'/index.html',
-				// '/manifest.json',
+				'/manifest.json',
 				'/assets/fonts/Lato-Bold.woff2',
 				'/assets/fonts/Lato-Medium.woff2',
 				'/assets/fonts/Lato-Regular.woff2',
