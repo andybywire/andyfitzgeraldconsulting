@@ -18,7 +18,7 @@ layout: base.njk
         <ul class="clients">
           {% for client in metadata.homeLogos %}
             <li>
-              <a href="/reviews#{{ client.slug.current }}"><img src="{% imageUrlFor client.tile %}" alt="{{ client.tile.altText }}"/></a>
+              <a href="/reviews#{{ client.slug.current }}">{% clientLogo client.tile%}</a>
             </li>
           {% endfor %}
         </ul>

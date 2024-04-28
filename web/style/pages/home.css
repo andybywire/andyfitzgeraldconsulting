@@ -74,6 +74,9 @@
 			@media (min-width: 40rem) {
 				& {
 					display: flex;
+					& img {
+						margin-top: 1rem;
+					}
 				}
 			}
 			@media (min-width: 60rem) {
@@ -81,7 +84,8 @@
 					display: block;
 					grid-column: col 9 / span 4;
 					& img {
-						width: 50%;
+						width: 55%;
+						margin-top: 0;
 					}
 				}
 			}
