@@ -171,6 +171,7 @@ article.detail {
 			@media (min-width: 60rem) {
 				& {
 					grid-column: col 9 / span 4;
+					grid-row: 3 / span 2;
 				}
 			}
 			& img {
