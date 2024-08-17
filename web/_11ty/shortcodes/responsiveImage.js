@@ -24,7 +24,8 @@ import urlFor from '../../utils/imageUrl.js';
  * @param {*} classList 
  * @returns 
  */
-export default function responsiveImage(image, aspect = 0.75, src = '320,640,900,1024, 1440', sizes = '100vw', classList = '') {
+export default function responsiveImage(image, aspect = 0.75, src = '320,640,900,1024, 1440', sizes = '100vw') {
+	const classList = image.outline ? 'outline' : '';
 	const sizeArray = src.split(',');
 	const firstSize = sizeArray[0];
 	const lastSize = sizeArray[sizeArray.length - 1];
@@ -38,16 +39,19 @@ export default function responsiveImage(image, aspect = 0.75, src = '320,640,900
 			return `${url} ${size}w`;
 		})
 		.join(',');
+	
+	// Ensure classList is a string
+	const classListString = Array.isArray(classList) ? classList.join(' ') : classList;	
 
 	return `<img src="${urlFor(image).width(firstSize)}"
-        ${classList ? "class='" + classList + "'" : ''}
-        srcset="${srcSetContent}"
-        sizes="${sizes}"
-        width="${lastSize.trim()}"
-        height="${lastHeight}"
-        loading="lazy"
-        alt="${altText}"
-      >`;
+						srcset="${srcSetContent}"
+						sizes="${sizes}"
+						class="${classListString}"
+						width="${lastSize.trim()}"
+						height="${lastHeight}"
+						loading="lazy"
+						alt="${altText}"
+					>`;
 	// height included to avoid layout shift: lets the browser know what the aspect ratio is
 	// set loading to "eager" if above the fold
 }
