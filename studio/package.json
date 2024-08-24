@@ -21,9 +21,9 @@
     "react-dom": "^18.2.0",
     "react-icons": "^4.12.0",
     "react-is": "^18.2.0",
-    "sanity": "^3.42.1",
-    "sanity-plugin-taxonomy-manager": "^3.1.2",
-    "styled-components": "^6.0.7"
+    "sanity": "^3.55.0",
+    "sanity-plugin-taxonomy-manager": "^3.1.5",
+    "styled-components": "^6.1.12"
   },
   "devDependencies": {
     "@sanity/eslint-config-studio": "^3.0.1",
