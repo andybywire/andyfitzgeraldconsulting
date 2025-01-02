@@ -1,6 +1,5 @@
 // Add keys the keys and values defined in .env to process.env
 import 'dotenv/config'
-// console.log(process.env)
 
 // Filter & Shortcode imports
 import dateFilter from 'nunjucks-date-filter'
