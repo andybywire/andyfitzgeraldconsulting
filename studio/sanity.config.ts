@@ -7,7 +7,7 @@ import {codeInput} from '@sanity/code-input'
 import {RiSettings4Line} from 'react-icons/ri'
 
 const hiddenDocTypes = (listItem: any) =>
-  !['media.tag', 'settings', 'skosConcept', 'skosConceptScheme'].includes(listItem.getId())
+  !['media.tag','settings','skosConcept','skosConceptScheme','service','collection'].includes(listItem.getId())
 
 export default defineConfig({
   name: 'default',
