@@ -1,5 +1,5 @@
 import {defineConfig} from 'sanity'
-import {deskTool} from 'sanity/desk'
+import {structureTool} from 'sanity/structure'
 import {taxonomyManager} from 'sanity-plugin-taxonomy-manager'
 import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemas'
@@ -17,7 +17,7 @@ export default defineConfig({
   dataset: 'production',
 
   plugins: [
-    deskTool({
+    structureTool({
       structure: (S) => {
         return S.list()
           .title('Content')
@@ -25,9 +25,10 @@ export default defineConfig({
             ...S.documentTypeListItems().filter(hiddenDocTypes),
             S.divider(),
             S.listItem()
-              .title('Settings')
-              .icon(RiSettings4Line)
-              .child(S.document().schemaType('settings').documentId('settings')),
+            .title('Settings')
+            .icon(RiSettings4Line)
+            .child(S.document().schemaType('settings').documentId('settings')),
+            S.divider(),
             S.documentTypeListItem('skosConceptScheme').title('Taxonomy Schemes'),
             S.documentTypeListItem('skosConcept').title('Concepts'),
           ])
@@ -39,8 +40,15 @@ export default defineConfig({
     visionTool(),
     codeInput(),
   ],
-
   schema: {
+    // @ts-expect-error — schema type deprecated does include a reason; this error appears over-ambitious
     types: schemaTypes,
   },
+  document: {
+    comments: {
+      enabled: false,
+    },
+  },
+  tasks: { enabled: false },
+  scheduledPublishing: { enabled: false },
 })
