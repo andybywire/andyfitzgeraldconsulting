@@ -2,6 +2,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#4e9dbc">
+  <link rel="manifest" href="/manifest.json"/>
+
   <!-- Preload header & nav fonts -->
   <link rel="preload" href="/assets/fonts/NotoSerif-VariableFont_wdth,wght.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/assets/fonts/Lato-Regular.woff2" as="font" type="font/woff2" crossorigin>
@@ -9,21 +11,23 @@
   <link rel="preload" href="/assets/fonts/Lato-Bold.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" type="text/css" href="/style/style.css"/>
-  <link rel="manifest" href="/manifest.json"/>
+  
   <!-- For browsers -->
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
+  
   <!-- Apple touch -->
   <link rel="apple-touch-icon" href="/icons/icon_x192.png"/>
+  
   <!-- For Google and Android -->
   <link rel="icon" type="image/png" sizes="48x48" href="/icons/maskable_icon_x48.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/maskable_icon_x192.png">
+  
   <title>
     {% if '/services' in page.url %}
       Services | {{ metadata.siteTitle }}
     {% elif '/insights' in page.url %}
-      {# Add conditional logic here based on pagination variables for article title and tag title #}
-      Insights  | {{ metadata.siteTitle }}
+      {{ resource.title if resource.title else "Insights" }} | {{ metadata.siteTitle }}
     {% elif '/talks' in page.url %}
       Talks  | {{ metadata.siteTitle }}
     {% elif '/reviews' in page.url %}
@@ -36,38 +40,43 @@
       {{ metadata.siteTitle }}
     {% endif %}
   </title>
-  <meta name="description" content="{{ metadata.description }}">
+
+  <meta name="description" content="{{ resource.metaDescription if resource.metaDescription else metadata.description }}">
+  
   {% if env.environment == "development" 
         or "/insights/tag/" in page.url 
         or "/404" in page.url 
         or "/calendar" in page.url -%}
     <meta name="robots" content="noindex">
   {%- endif %}
-  {# 
-    <link rel="canonical" {% if resource.canonical -%}
-                            href="{{ resource.canonical }}"
-                          {%- elif "/contact/" in page.url -%}
-                            href="https://www.andyfitzgeraldconsulting.com/contact"
+
+  <link rel="canonical" {% if resource.canonical -%}
+                          href="{{ resource.canonical }}"
+                        {%- elif "/contact/" in page.url -%}
+                          href="https://www.andyfitzgeraldconsulting.com/contact"
+                        {%- else -%}
+                          href="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
+                        {%- endif -%}>
+
+  <meta property="og:title" content="{{ resource.title if resource.title else metadata.siteTitle }}" />
+  <meta property="og:description" content="{{ resource.shortDescription if resource.shortDescription else metadata.description }}" />
+
+
+  <meta property='og:image' content="{{ resource.heroUrl if resource.heroUrl else "https://www.andyfitzgeraldconsulting.com/icons/icon_x512.png" }}" />
+  <meta property='og:image:alt' content="{{ resource.heroImage.altText if resource.heroImage.altText else "Andy Fitzgerald Consulting" }}" />
+  <meta property='og:url' {% if resource.canonical -%}
+                            content="{{ resource.canonical }}"
                           {%- else -%}
-                            href="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
-                          {%- endif -%}>
+                            content="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
+                          {%- endif -%} />
 
-    <meta property="og:title" content="{{ resource.title if resource.title else metadata.siteTitle }}" />
-    <meta property="og:description" content="{{ resource.shortDescription if resource.shortDescription else metadata.description }}" />
-    <meta property='og:image' content="{{ resource.heroImage | ogImage if resource.heroImage else "https://www.andyfitzgeraldconsulting.com/icons/icon-384x384.png" }}" />
-    <meta property='og:image:alt' content="{{ resource.heroImage.altText if resource.heroImage.altText else "Andy Fitzgerald Consulting" }}" />
-    <meta property='og:url' {% if resource.canonical -%}
-                              content="{{ resource.canonical }}"
-                            {%- else -%}
-                              content="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
-                            {%- endif -%} />
+  {%- if env.environment == "development" 
+      or "/writing/tag/" in page.url 
+      or "/404" in page.url %}
+  <meta name="robots" content="noindex">
+  {%- endif %}
 
-    {%- if env.environment == "development" 
-        or "/writing/tag/" in page.url 
-        or "/404" in page.url %}
-    <meta name="robots" content="noindex">
-    {%- endif %}
-
+  {# 
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",

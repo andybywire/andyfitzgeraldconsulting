@@ -4,6 +4,7 @@
     "linkify",
     "luxon",
     "markdownify",
+    "noindex",
     "portabletext",
     "qvet",
     "serviceworker",

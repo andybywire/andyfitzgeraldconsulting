@@ -29,6 +29,7 @@ async function getArticles() {
     bodyText,
     podcastId,
     lede,
+    "metaDescription": description,
     shortDescription,
     pubDate,
     "published": dateTime(_updatedAt),
