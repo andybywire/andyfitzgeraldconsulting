@@ -143,6 +143,16 @@ footer {
 					transition: stroke-dashoffset 0.33s cubic-bezier(1, 0, 1, 1), fill 0.33s;
 				}
 			}
+			.rss a {
+				stroke-dasharray: 300px;
+				stroke-dashoffset: 300px;
+				&:hover,
+				&:focus {
+					stroke-dashoffset: 150px;
+					stroke-width: 1px;
+					transition: stroke-dashoffset 0.33s cubic-bezier(1, 0, 1, 1), fill 0.33s;
+				}
+			}
 		}
 	}
 	.copyright {
