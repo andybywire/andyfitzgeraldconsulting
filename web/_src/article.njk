@@ -15,6 +15,9 @@ permalink: /insights/{{ resource.slug.current | slug }}/index.html
     </figure>
     <time class="eyebrow" datetime="{{ resource.pubdate }}">{{ resource.insightType | default("Insight", true) }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
     <h1>{{ resource.title }}</h1>
+    
+
+    
 
     {# Start article-specific template elements #}
     {% if resource._type == "article" %}

@@ -1,0 +1,43 @@
+---json
+{
+  "permalink": "feed.xml",
+  "eleventyExcludeFromCollections": true,
+  "metadata": {
+    "language": "en",
+    "title": "Andy Fitzgerald Consulting",
+    "subtitle": "Perspectives, methods, case studies, and interviews about information architecture and structured content design for the modern web.",
+		"base": "https://www.andyfitzgeraldconsulting.com/",
+    "author": {
+      "name": "Andy Fitzgerald"
+    }
+  }
+}
+---
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en">
+  <title><![CDATA[{{ metadata.title }}]]></title>
+  <subtitle><![CDATA[{{ metadata.subtitle }}]]></subtitle>
+  <link href="{{ metadata.url }}/" rel="self" type="application/rss+xml"/>
+  <link href="{{ metadata.url }}/" />
+  <updated>{{ collections.articles | getNewestCollectionItemDate | dateToRfc3339 }}</updated>
+  <id>{{ metadata.url }}/</id>
+  <author>
+    <name>Andy Fitzgerald</name>
+  </author>
+  {%- for resource in articles %}
+  {%- if resource._type != "caseStudy" %}
+  <entry>
+    <title type="html"><![CDATA[{{ resource.title }}]]></title>
+    <link href="{{ metadata.base }}insights/{{ resource.slug.current | slug }}/index.html" />
+    <updated>{{ resource.pubDate }}T00:00:00-08:00</updated>
+    <id>{{ metadata.base }}{{ resource.slug.current | slug }}/index.html</id>
+    <content type="html">
+      <![CDATA[{{ resource.body }}]]>
+    </content>
+    <summary type="html">
+      <![CDATA[{{ resource.metaDescription }}]]>
+    </summary>
+  </entry>
+  {%- endif %}
+  {%- endfor %}
+</feed>

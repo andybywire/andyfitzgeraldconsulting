@@ -10,6 +10,8 @@ import singletonHero from './_11ty/shortcodes/singletonHero.js';
 import articleHero from './_11ty/shortcodes/articleHero.js';
 import clientLogo from './_11ty/shortcodes/clientLogo.js';
 
+import pluginRss from "@11ty/eleventy-plugin-rss";
+
 export default function (eleventyConfig) {
 	eleventyConfig.addPassthroughCopy('.htaccess');
 	eleventyConfig.addPassthroughCopy('style');
@@ -30,6 +32,9 @@ export default function (eleventyConfig) {
 
 	// Filters
 	eleventyConfig.addFilter('date', dateFilter); // Moment.js
+
+	// RSS feed
+	eleventyConfig.addPlugin(pluginRss);
 
 	eleventyConfig.setServerOptions({
 		watch: ['style/**/*.css'],
