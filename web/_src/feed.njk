@@ -27,15 +27,15 @@
   {%- for resource in articles %}
   {%- if resource._type != "caseStudy" %}
   <entry>
-    <title type="html"><![CDATA[{{ resource.title }}]]></title>
+    <title type="html"><![CDATA[{{ resource.title | safe }}]]></title>
     <link href="{{ metadata.base }}insights/{{ resource.slug.current | slug }}/index.html" />
     <updated>{{ resource.pubDate }}T00:00:00-08:00</updated>
     <id>{{ metadata.base }}{{ resource.slug.current | slug }}/index.html</id>
     <content type="html">
-      <![CDATA[{{ resource.body }}]]>
+      <![CDATA[{{ resource.body | safe }}]]>
     </content>
     <summary type="html">
-      <![CDATA[{{ resource.metaDescription }}]]>
+      <![CDATA[{{ resource.metaDescription | safe }}]]>
     </summary>
   </entry>
   {%- endif %}
