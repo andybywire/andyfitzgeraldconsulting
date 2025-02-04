@@ -21,9 +21,11 @@
 # Misc
 .DS_Store
 *.pem
+/backups
 
 # Typescript
 *.tsbuildinfo
 
 # Dotenv and similar local-only files
 *.local
+

@@ -12,6 +12,7 @@
     "shortcodes",
     "stackable",
     "syntaxhighlight",
+    "taxo",
     "topline"
   ],
   "html.suggest.html5": true,

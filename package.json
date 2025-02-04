@@ -17,5 +17,8 @@
   "license": "ISC",
   "devDependencies": {
     "lerna": "^5.1.4"
+  },
+  "dependencies": {
+    "@sanity/client": "^6.27.2"
   }
 }
