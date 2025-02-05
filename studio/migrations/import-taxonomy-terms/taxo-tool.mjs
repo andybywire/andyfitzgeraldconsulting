@@ -12,6 +12,13 @@ import crypto from 'crypto'
 import csv from 'csv-parser'
 import {createClient} from '@sanity/client'
 
+// 🚨 Change these to your values
+const sourceFile = 'topic-taxonomy.csv' // required
+const conceptSchemeName = 'Topic Taxonomy' // required
+const baseIri = 'https://studio.sanity.io/taxonomy/' // required; your studio domain is usually a good choice
+const conceptSchemeDescription = 'A taxonomy of topics used in Sanity Studio' // optional
+
+// Load environment variables from .env file in this directory
 dotenv.config({path: '../../.env'})
 
 const projectId = process.env.STUDIO_PROJECT_ID
@@ -22,20 +29,19 @@ if (!token || !projectId || !dataset) {
   throw new Error('Required environment variables are not set.')
 }
 
+if (!conceptSchemeName) {
+  throw new Error('Concept scheme name is required.')
+}
+
 const client = createClient({
   projectId,
   dataset,
-  apiVersion: '2022-03-07',
+  apiVersion: '2025-01-01', // current date targets the latest version
   token, // ensure the token has write access
   useCdn: false, // We can't use the CDN for writing
 })
 
 // 1. Read CSV file
-const sourceFile = 'topic-taxonomy.csv' // TO DO: add as an argument from the CLI
-
-// can remove?
-const results = [] // Array to hold CSV data
-
 const headerRows = 4 // Header rows to skip: Google Sheets title, development headers, and instructions
 const headers = [
   'topConcept',
@@ -53,18 +59,25 @@ const headers = [
 ]
 const prefLabelKeys = headers.slice(0, 5)
 
-// 2. Define the SKOS Concept Scheme
-const conceptSchemeName = 'Topic Taxonomy' // TO DO: add as an argument from the CLI
-const conceptSchemeDescription = 'A taxonomy of topics used in the Studio' // TO DO: add as an argument from the CLI
-const baseIri = 'https://studio.sanity.io/taxonomy/'
-const schemeHash = crypto.createHash('md5').update(conceptSchemeName).digest('hex').slice(0, 12)
+const readCSV = () => {
+  return new Promise((resolve, reject) => {
+    const results = []
+    fs.createReadStream(sourceFile)
+      .pipe(csv({headers, skipLines: headerRows}))
+      .on('data', (data) => results.push(data))
+      .on('end', () => resolve(results))
+      .on('error', (error) => reject(error))
+  })
+}
 
+// 2. Define the SKOS Concept Scheme
+const schemeHash = crypto.createHash('md5').update(conceptSchemeName).digest('hex').slice(0, 12)
 const skosConcepts = []
 const skosConceptScheme = {
   _type: 'skosConceptScheme',
   _id: `skosConceptScheme${schemeHash}`,
   title: conceptSchemeName,
-  description: conceptSchemeDescription,
+  description: conceptSchemeDescription || '',
   baseIri,
   schemeId: schemeHash.slice(5, 12),
   topConcepts: [],
@@ -77,26 +90,15 @@ let hierarchy = [] // a snapshot of the hierarchy from the point of view of the 
 let topConceptSet = false
 let broaderDetected = false
 
-const readCSV = new Promise((resolve, reject) => {
-  fs.createReadStream(sourceFile)
-    .pipe(csv({headers, skipLines: headerRows}))
-    .on('data', (data) => results.push(data))
-    .on('end', () => {
-      // console.log('First three results: ', results.slice(0, 3))
-      resolve(results)
-    })
-    .on('error', (error) => reject(error))
-})
-
 // Child concept mapping function
-function mapChildConcept(
+const mapChildConcept = (
   hierarchy,
   currentConcept,
   broaderDetected,
   conceptLevel,
   currentConceptRef,
   toRemove,
-) {
+) => {
   for (let concept of hierarchy) {
     // add the concept _ref the next level up in the hierarchy to broader[]
     if (concept.level == conceptLevel - 1) {
@@ -122,12 +124,11 @@ function mapChildConcept(
   previous = currentConceptRef // set previous to the current concept _ref for the next iteration
 }
 
-function mapConcept(concept) {
+const mapConcept = (concept) => {
   let prefLabel = null // the location of the prefLabel is use to determine hierarchy position
   let conceptLevel = null
   let mappingLevel = 0
   let count = 0
-
   let toRemove = [] // used to remove concepts from the hierarchy array to keep it current
 
   // Verify that the hierarchy array has no more than one concept at each level
@@ -228,61 +229,102 @@ function mapConcept(concept) {
   skosConcepts.push(skosConcept)
 }
 
-function createConcepts(results) {
+const createConcepts = (results) => {
   for (const concept of results) {
     mapConcept(concept) // Map result hierarchy & assign attributes
   }
-  // return skosConcepts
 }
 
-async function processCSV() {
+const processCSV = async (log) => {
   try {
-    const results = await readCSV
-    // const skosConcepts = createConcepts(results)
+    const results = await readCSV()
     createConcepts(results)
-    // console.log('SKOS Concept Scheme: ', skosConceptScheme)
-    console.log('SKOS Concepts: ', skosConcepts)
+    if (log) {
+      console.log(`SKOS Concept Scheme created: ${skosConceptScheme.title}`)
+      console.log(`SKOS Concepts created: ${skosConcepts.length}`)
+    }
   } catch (error) {
     console.error('Error processing CSV file: ', error)
   }
 }
 
-async function importConcepts() {
-  await processCSV()
-  console.log('Client time ... ')
-  let transaction = client.transaction()
-  skosConcepts.forEach((concept) => {
-    transaction.createOrReplace(concept)
-  })
-  transaction.createOrReplace(skosConceptScheme)
-  return transaction.commit()
+const importConcepts = async () => {
+  try {
+    await processCSV(true)
+    console.log('Sanity Client time ... ')
+    let transaction = client.transaction()
+    skosConcepts.forEach((concept) => {
+      transaction.createOrReplace(concept)
+    })
+    transaction.createOrReplace(skosConceptScheme)
+    return transaction.commit()
+  } catch (error) {
+    console.error('Error importing taxonomy terms: ', error.message)
+  }
 }
 
-if (process.argv[3]) {
-  console.log('Usage: node taxo-tool.mjs [--test] [--remove] [--help]')
-  console.log('Only one argument is allowed.')
-} else if (process.argv[2] === '--test') {
-  test = true
-  console.log('Test mode: No data will be migrated.')
-} else if (process.argv[2] === '--remove') {
-  remove = true
-  console.log(
-    'Delete mode: Taxonomy terms previously created with this configuration will be removed.',
-  )
-} else if (process.argv[2] === '--help') {
-  console.log('Usage: node taxo-tool.mjs [--test] [--remove] [--help]')
-  console.log(
-    '--test: Run the script in test mode: returns the concept scheme and first three concepts. No data will be migrated.',
-  )
-  console.log('--remove: Remove any taxonomy terms previously imported from this configuration.')
-  console.log('--help: Print command line options.')
-} else {
-  console.log('Importing taxonomy terms ...')
-  importConcepts()
-    .then(() => {
-      console.log('Import complete.')
-    })
-    .catch((error) => {
-      console.error('Error importing taxonomy terms: ', error.message)
-    })
+const testConcepts = async () => {
+  try {
+    await processCSV(false)
+    console.log(`Concept Scheme: ${skosConceptScheme.title}`)
+    console.log(`\nFirst three of ${skosConcepts.length} Concepts:`)
+    console.log(skosConcepts.slice(0, 3))
+  } catch (error) {
+    console.error('Error testing taxonomy terms: ', error.message)
+  }
 }
+
+const removeConcepts = async () => {
+  try {
+    await processCSV(false)
+    console.log('Sanity Client time ... ')
+    let transaction = client.transaction()
+    skosConcepts.forEach((concept) => {
+      transaction.delete(concept._id)
+    })
+    transaction.delete(skosConceptScheme._id)
+    return transaction.commit()
+  } catch (error) {
+    console.error('Error removing taxonomy terms: ', error.message)
+  }
+}
+
+const main = async () => {
+  if (process.argv[3] || (process.argv[2] && !['--test', '--remove', '--help'].includes(process.argv[2]))) {
+    console.log('Usage: node taxo-tool.mjs [--test] [--remove] [--help]')
+  } else if (process.argv.includes('--test')) {
+    try {
+      await testConcepts()
+    } catch (error) {
+      console.error('Error testing taxonomy terms: ', error.message)
+    }
+  } else if (process.argv.includes('--remove')) {
+    console.log(
+      'Delete mode: Taxonomy terms previously created with this configuration will be removed.',
+    )
+    console.log('Reading taxonomy terms ...')
+    try {
+      await removeConcepts()
+      console.log('Concepts removed.')
+    } catch (error) {
+      console.error('Error removing taxonomy terms: ', error.message)
+    }
+  } else if (process.argv.includes('--help')) {
+    console.log('Usage: node taxo-tool.mjs [--test] [--remove] [--help]')
+    console.log(
+      '--test: Run the script in test mode: returns the concept scheme and first three concepts. No data will be migrated.',
+    )
+    console.log('--remove: Remove any taxonomy terms previously imported from this configuration.')
+    console.log('--help: Print command line options.')
+  } else {
+    console.log('Importing taxonomy terms ...')
+    try {
+      await importConcepts()
+      console.log('Import complete.')
+    } catch (error) {
+      console.error('Error importing taxonomy terms: ', error.message)
+    }
+  }
+}
+
+main()
