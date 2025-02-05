@@ -13,32 +13,32 @@ import csv from 'csv-parser'
 import {createClient} from '@sanity/client'
 
 // 🚨 Change these to your values
-const sourceFile = 'topic-taxonomy.csv' // required
+const sourceFile = 'topic-taxonomy.csv' // required; expects format described in description
 const conceptSchemeName = 'Topic Taxonomy' // required
 const baseIri = 'https://studio.sanity.io/taxonomy/' // required; your studio domain is usually a good choice
 const conceptSchemeDescription = 'A taxonomy of topics used in Sanity Studio' // optional
 
 // Load environment variables from .env file in this directory
-dotenv.config({path: '../../.env'})
+dotenv.config({path: '.env.local'})
 
 const projectId = process.env.STUDIO_PROJECT_ID
 const dataset = process.env.STUDIO_DATASET
-const token = process.env.TAXONOMY_MIGRATION_TOKEN
+const token = process.env.TAXONOMY_MIGRATION_TOKEN // ensure the token has write access
 
 if (!token || !projectId || !dataset) {
   throw new Error('Required environment variables are not set.')
 }
 
-if (!conceptSchemeName) {
-  throw new Error('Concept scheme name is required.')
+if (!sourceFile || !conceptSchemeName || !baseIri) {
+  throw new Error('Source file, concept scheme name, and base IRI are required.')
 }
 
 const client = createClient({
   projectId,
   dataset,
   apiVersion: '2025-01-01', // current date targets the latest version
-  token, // ensure the token has write access
-  useCdn: false, // We can't use the CDN for writing
+  token,
+  useCdn: false,
 })
 
 // 1. Read CSV file
@@ -290,7 +290,10 @@ const removeConcepts = async () => {
 }
 
 const main = async () => {
-  if (process.argv[3] || (process.argv[2] && !['--test', '--remove', '--help'].includes(process.argv[2]))) {
+  if (
+    process.argv[3] ||
+    (process.argv[2] && !['--test', '--remove', '--help'].includes(process.argv[2]))
+  ) {
     console.log('Usage: node taxo-tool.mjs [--test] [--remove] [--help]')
   } else if (process.argv.includes('--test')) {
     try {
