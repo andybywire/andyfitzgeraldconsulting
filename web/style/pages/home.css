@@ -23,7 +23,7 @@
 			@media (min-width: 60rem) {
 				& {
 					color: var(--white);
-					font-size: 2.25rem;
+					font-size: 2.5rem;
 					font-weight: 500;
 				}
 			}
@@ -81,7 +81,9 @@
 			}
 			@media (min-width: 60rem) {
 				& {
-					display: block;
+					display: flex;
+					flex-direction: column;
+					justify-content: space-evenly;
 					grid-column: col 9 / span 4;
 					& img {
 						width: 55%;
