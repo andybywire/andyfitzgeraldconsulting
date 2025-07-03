@@ -8,6 +8,7 @@
   .two-up {
     grid-column: col 1 / span 12;
     display: flex;
+    flex-wrap: wrap;
     flex-direction: column;
     gap: 4rem;
     justify-content: space-between;
