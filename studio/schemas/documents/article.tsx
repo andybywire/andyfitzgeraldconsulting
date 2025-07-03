@@ -47,28 +47,83 @@ export default {
         {
           name: 'adjBright',
           title: 'Adjust Brightness',
-          description: 'Lower the brightness on this image by .05% so that it displays more distinctly on a white background.',
+          description:
+            'Lower the brightness on this image by .05% so that it displays more distinctly on a white background.',
           type: 'boolean',
           default: false,
-        }
+        },
       ],
     },
     {
       name: 'podcastId',
       title: 'Podcast Id',
-      description: 'Embed link ID for podcast interviews. Currently supports Apple podcasts links. Grab the url after `/us/podcast/`.',
+      description:
+        'Embed link ID for podcast interviews. Currently supports Apple podcasts links. Grab the url after `/us/podcast/`.',
       type: 'string',
     },
     {
       name: 'insightType',
       title: 'Insight Type',
       type: 'reference',
-      to: [{type: 'skosConcept'}],
+      to: [
+        {type: 'skosConcept'}, 
+        {type: 'skosConceptScheme'}
+      ],
       options: {
-        filter: () => schemeFilter({schemeId: 'c88ca3'}),
+        // filter: () => schemeFilter({schemeId: 'c88ca3'}),
+        // filter: () => {
+        //   return {
+        //     filter: `!(_originalId in path("drafts.**"))
+        //         && _id in *[_type=="skosConceptScheme" && schemeId == $schemeId].concepts[]._ref
+        //         || _id in *[_type=="skosConceptScheme" && schemeId == $schemeId].topConcepts[]._ref`,
+        //     params: {
+        //       schemeId: 'c88ca3',
+        //     },
+        //   }
+        // },
+        // filter: async ({getClient}) => {
+        //   const client = getClient({apiVersion: '2023-01-01'})
+        //   const latestPersonId = await client.fetch(
+        //     '*[title in ["director", "actor", "producer"] && _id in path("*")] | order(_createdAt desc) [0]._id'
+        //   )
+        //   return {
+        //     filter: '_id != $latestPersonId',
+        //     params: {latestPersonId: latestPersonId},
+        //   }
+        // },
+        // Works as a filter, throws "Reference is not allowed in reference field according to filter" error on field paste:
+        filter: async ({getClient}: {getClient: (options: {apiVersion: string}) => any}, options:any, ) => {
+          const client = getClient({apiVersion: '2023-01-01'})
+          // const {schemeId} = options || {}
+          const schemeId = "c88ca3"
+          const {concepts, topConcepts} = await client.fetch(
+            `{
+              "concepts": *[_type=="skosConceptScheme" && schemeId == "${schemeId}"].concepts[]._ref,
+              "topConcepts": *[_type=="skosConceptScheme" && schemeId == "${schemeId}"].topConcepts[]._ref
+            }`
+          )
+          return {
+            filter: `!(_id in path("drafts.**"))
+            && _id in $concepts
+            || _id in topConcepts`,
+            params : {concepts, topConcepts},
+          }
+        },
+        // Works as a filter; works with field copy feature:
+        // filter: () => {
+        //   return {
+        //     filter: `!(_id in path("drafts.**"))`,
+        //   }
+        // },
+        // Works as a filter, throws "Reference is not allowed in reference field according to filter" error on field paste:
+        // filter: () => {
+        //   return {
+        //     filter: `!(_originalId in path("drafts.**"))`,
+        //   }
+        // },
         disableNew: true,
       },
-      components: {field: HierarchyInput},
+      // components: {field: HierarchyInput},
     },
     {
       name: 'topic',
@@ -157,7 +212,7 @@ export default {
       name: 'canonical',
       title: 'Canonical URL',
       type: 'url',
-      description: 'External site URL if article was first published elsewhere.'
+      description: 'External site URL if article was first published elsewhere.',
     },
     {
       name: 'category',
@@ -168,7 +223,7 @@ export default {
         filter: () => schemeFilter({schemeId: '415dcc'}),
       },
       components: {field: HierarchyInput},
-      deprecated: {reason: 'No longer used in 2024 refresh'}
+      deprecated: {reason: 'No longer used in 2024 refresh'},
     },
     {
       name: 'banner',
@@ -179,7 +234,7 @@ export default {
       name: 'cta',
       title: 'Call to Action',
       type: 'cta',
-      deprecated: {reason: 'Article-specific CTAs are no longer used.'}
+      deprecated: {reason: 'Article-specific CTAs are no longer used.'},
     },
   ],
 }
