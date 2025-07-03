@@ -18,7 +18,7 @@ addEventListener('fetch', (fetchEvent) => {
 	); // end respondWith
 }); // end addEventListener
 
-const version = 'v0.94';
+const version = 'v0.95';
 const staticCacheAFC = version + 'staticfiles';
 
 addEventListener('install', (installEvent) => {
