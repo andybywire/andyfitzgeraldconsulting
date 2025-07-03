@@ -11,12 +11,13 @@ body {
 		}
 	}
 }
+/* Global link styles - exclude footer */
 a,
-a:visited {
+a:visited{
 	transition: all 0.25s ease;
 	color: inherit;
 }
-a:hover {
+a:not(footer a):hover {
 	color: var(--blue);
 }
 h1,
