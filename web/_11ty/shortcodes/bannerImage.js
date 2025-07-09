@@ -1,6 +1,6 @@
 import urlFor from '../../utils/imageUrl.js';
 
-const sizeArray = ["375", "425", "768", "1024", "1440"];
+const sizeArray = ["375", "425", "768", "1024", "1200", "1440"];
 const aspect = 0.5625; // 16:9 aspect ratio
 
 /**
@@ -10,6 +10,8 @@ const aspect = 0.5625; // 16:9 aspect ratio
  * based on screen width.
  * - height included to avoid layout shift: lets the
  *   browser know what the aspect ratio is
+ * - max height is 390px to create panorama aspect ratio
+ *   for wide view ports
  * - set loading to "eager" if above the fold
  */
 export default function bannerImage(image) {
@@ -20,7 +22,7 @@ export default function bannerImage(image) {
 	const srcSetContent = sizeArray
 		.map((size) => {
 			const height = Math.floor(size * aspect);
-			const url = urlFor(image).width(size).height(height).auto('format').url();
+			const url = urlFor(image).width(size).height(height > 390 ? 390 : height).auto('format').url();
 
 			return `${url} ${size}w`;
 		})
