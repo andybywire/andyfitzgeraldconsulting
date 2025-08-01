@@ -1,5 +1,5 @@
 import {GrArticle} from 'react-icons/gr'
-import {schemeFilter, ReferenceHierarchyInput} from 'sanity-plugin-taxonomy-manager'
+import {schemeFilter, ReferenceHierarchyInput, ArrayHierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'article',
@@ -65,65 +65,11 @@ export default {
       name: 'insightType',
       title: 'Insight Type',
       type: 'reference',
-      to: [
-        {type: 'skosConcept'}, 
-        {type: 'skosConceptScheme'}
-      ],
+      to: [{type: 'skosConcept'}],
       options: {
-        // filter: () => schemeFilter({schemeId: 'c88ca3'}),
-        // filter: () => {
-        //   return {
-        //     filter: `!(_originalId in path("drafts.**"))
-        //         && _id in *[_type=="skosConceptScheme" && schemeId == $schemeId].concepts[]._ref
-        //         || _id in *[_type=="skosConceptScheme" && schemeId == $schemeId].topConcepts[]._ref`,
-        //     params: {
-        //       schemeId: 'c88ca3',
-        //     },
-        //   }
-        // },
-        // filter: async ({getClient}) => {
-        //   const client = getClient({apiVersion: '2023-01-01'})
-        //   const latestPersonId = await client.fetch(
-        //     '*[title in ["director", "actor", "producer"] && _id in path("*")] | order(_createdAt desc) [0]._id'
-        //   )
-        //   return {
-        //     filter: '_id != $latestPersonId',
-        //     params: {latestPersonId: latestPersonId},
-        //   }
-        // },
-        // Works as a filter, throws "Reference is not allowed in reference field according to filter" error on field paste:
-        filter: async ({getClient}: {getClient: (options: {apiVersion: string}) => any}, options:any, ) => {
-          const client = getClient({apiVersion: '2023-01-01'})
-          // const {schemeId} = options || {}
-          const schemeId = "c88ca3"
-          const {concepts, topConcepts} = await client.fetch(
-            `{
-              "concepts": *[_type=="skosConceptScheme" && schemeId == "${schemeId}"].concepts[]._ref,
-              "topConcepts": *[_type=="skosConceptScheme" && schemeId == "${schemeId}"].topConcepts[]._ref
-            }`
-          )
-          return {
-            filter: `!(_id in path("drafts.**"))
-            && _id in $concepts
-            || _id in topConcepts`,
-            params : {concepts, topConcepts},
-          }
-        },
-        // Works as a filter; works with field copy feature:
-        // filter: () => {
-        //   return {
-        //     filter: `!(_id in path("drafts.**"))`,
-        //   }
-        // },
-        // Works as a filter, throws "Reference is not allowed in reference field according to filter" error on field paste:
-        // filter: () => {
-        //   return {
-        //     filter: `!(_originalId in path("drafts.**"))`,
-        //   }
-        // },
-        disableNew: true,
+        filter: schemeFilter({schemeId: 'c88ca3'}),
       },
-      // components: {field: ReferenceHierarchyInput},
+      components: {field: ReferenceHierarchyInput},
     },
     {
       name: 'topic',
@@ -134,11 +80,11 @@ export default {
           type: 'reference',
           to: [{type: 'skosConcept'}],
           options: {
-            filter: () => schemeFilter({schemeId: '0e0d68'}),
+            filter: schemeFilter({schemeId: '0e0d68'}),
           },
-          // components: { field: ReferenceHierarchyInput }, // does not yet support arrays
         },
       ],
+      components: { field: ArrayHierarchyInput },
     },
     {
       name: 'shortDescription',
@@ -220,21 +166,10 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: () => schemeFilter({schemeId: '415dcc'}),
+        filter: schemeFilter({schemeId: '415dcc'}),
       },
       components: {field: ReferenceHierarchyInput},
-      deprecated: {reason: 'No longer used in 2024 refresh'},
-    },
-    {
-      name: 'banner',
-      title: 'Banner',
-      type: 'banner',
-    },
-    {
-      name: 'cta',
-      title: 'Call to Action',
-      type: 'cta',
-      deprecated: {reason: 'Article-specific CTAs are no longer used.'},
+      deprecated: {reason: 'To be removed for 2025 refresh'},
     },
   ],
 }
