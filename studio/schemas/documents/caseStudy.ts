@@ -1,5 +1,5 @@
 import {GrBriefcase} from 'react-icons/gr'
-import {schemeFilter, HierarchyInput} from 'sanity-plugin-taxonomy-manager'
+import {schemeFilter, ReferenceHierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'caseStudy',
@@ -63,7 +63,7 @@ export default {
         filter: () => schemeFilter({schemeId: 'c88ca3'}),
         disableNew: true,
       },
-      components: {field: HierarchyInput},
+      components: {field: ReferenceHierarchyInput},
     },
     {
       name: 'topic',
@@ -239,7 +239,7 @@ export default {
       options: {
         filter: () => schemeFilter({schemeId: '415dcc'}),
       },
-      components: {field: HierarchyInput},
+      components: {field: ReferenceHierarchyInput},
       deprecated: {reason: 'No longer used in 2024 refresh'}
     },
     {

@@ -1,5 +1,5 @@
 import {GrArticle} from 'react-icons/gr'
-import {schemeFilter, HierarchyInput} from 'sanity-plugin-taxonomy-manager'
+import {schemeFilter, ReferenceHierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'article',
@@ -123,7 +123,7 @@ export default {
         // },
         disableNew: true,
       },
-      // components: {field: HierarchyInput},
+      // components: {field: ReferenceHierarchyInput},
     },
     {
       name: 'topic',
@@ -136,7 +136,7 @@ export default {
           options: {
             filter: () => schemeFilter({schemeId: '0e0d68'}),
           },
-          // components: { field: HierarchyInput }, // does not yet support arrays
+          // components: { field: ReferenceHierarchyInput }, // does not yet support arrays
         },
       ],
     },
@@ -222,7 +222,7 @@ export default {
       options: {
         filter: () => schemeFilter({schemeId: '415dcc'}),
       },
-      components: {field: HierarchyInput},
+      components: {field: ReferenceHierarchyInput},
       deprecated: {reason: 'No longer used in 2024 refresh'},
     },
     {
