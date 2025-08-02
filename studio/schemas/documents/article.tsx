@@ -160,16 +160,5 @@ export default {
       type: 'url',
       description: 'External site URL if article was first published elsewhere.',
     },
-    {
-      name: 'category',
-      title: 'Category',
-      type: 'reference',
-      to: [{type: 'skosConcept'}],
-      options: {
-        filter: schemeFilter({schemeId: '415dcc'}),
-      },
-      components: {field: ReferenceHierarchyInput},
-      deprecated: {reason: 'To be removed for 2025 refresh'},
-    },
   ],
 }
