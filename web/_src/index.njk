@@ -29,7 +29,7 @@ layout: base.njk
 
       <section class="grid quote-block segment-padding">
         <div class="two-up">
-          {% for review in resource.review %}
+          {% for review in metadata.reviews %}
             <blockquote class="review">
               <p>"{{ review.excerpt }}"</p>
               <cite>

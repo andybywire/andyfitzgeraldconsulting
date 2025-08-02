@@ -20,22 +20,6 @@ async function getSingleton() {
     slug,
     heroImg,
     bodyText,
-    review[]->{
-      author,
-      title,
-      excerpt, 
-      "employer":employer->name,
-      "reviewSlug":employer->slug.current
-    },
-    clientBlockTitle,
-    clientBlockCopy,
-    reviewBlockTitle,
-    reviewBlockCopy,
-    servicesBlockTitle,
-    servicesBlockCopy,
-    "bannerCopy": banner.bannerCopy,
-    "bannerImg": banner.bannerImg.asset._ref,
-    "bannerPosition": coalesce(banner.horizontal, '') + ' ' + coalesce(banner.vertical, '') 
   }`;
 	const query = [filter, projection].join(' ');
 	const docs = await client.fetch(query).catch((err) => console.error(err));

@@ -48,6 +48,13 @@ export default {
         ]
       },
       {
+        name: 'reviews',
+        title: 'Home PageReview Block Entries',
+        description: 'These are the reviews that are displayed on the home page.',
+        type: 'array',
+        of: [{type: 'reference', to: [{type: 'review'}]}],
+      },
+      {
         name: 'insightsBanner',
         title: 'Insights Banner',
         description: 'Used above the Insights section on the home page',
@@ -103,21 +110,5 @@ export default {
           }
         ]
       },
-      {
-        name: 'defaultBanner',
-        title: 'Default Banner',
-        type: 'banner',
-        description: '60 - 75 characters',
-        options: {
-          collapsible: false
-        }
-      },
-      {
-        name: 'defaultCta',
-        title: 'Default Call to Action',
-        type: 'cta',
-        description: '60 - 100 characters',
-        deprecated: {reason: 'Design element no longer a part of 2024 site'},
-      }
     ]
   }
