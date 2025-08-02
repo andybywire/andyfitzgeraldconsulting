@@ -1,5 +1,5 @@
 import {GrBriefcase} from 'react-icons/gr'
-import {schemeFilter, ReferenceHierarchyInput} from 'sanity-plugin-taxonomy-manager'
+import {schemeFilter, ReferenceHierarchyInput, ArrayHierarchyInput} from 'sanity-plugin-taxonomy-manager'
 
 export default {
   name: 'caseStudy',
@@ -60,7 +60,7 @@ export default {
       to: [{type: 'skosConcept'}],
       initialValue: {_ref: '89d6c3022255ade8c6f5867ca3b2354a'},
       options: {
-        filter: () => schemeFilter({schemeId: 'c88ca3'}),
+        filter: schemeFilter({schemeId: 'c88ca3'}),
         disableNew: true,
       },
       components: {field: ReferenceHierarchyInput},
@@ -76,7 +76,7 @@ export default {
           options: {
             filter: () => schemeFilter({schemeId: '0e0d68'}),
           },
-          // components: { field: HierarchyInput }, // does not yet support arrays
+          components: { field: ArrayHierarchyInput },
         },
       ],
     },
@@ -237,21 +237,10 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: () => schemeFilter({schemeId: '415dcc'}),
+        filter: schemeFilter({schemeId: '415dcc'}),
       },
       components: {field: ReferenceHierarchyInput},
-      deprecated: {reason: 'No longer used in 2024 refresh'}
-    },
-    {
-      name: 'banner',
-      title: 'Banner',
-      type: 'banner',
-    },
-    {
-      name: 'cta',
-      title: 'Call to Action',
-      type: 'cta',
-      deprecated: {reason: 'Article-specific CTAs are no longer used.'}
+      deprecated: {reason: 'To be removed for 2025 refresh'},
     },
   ],
 }
