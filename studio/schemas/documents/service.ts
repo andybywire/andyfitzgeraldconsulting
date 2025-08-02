@@ -53,7 +53,7 @@ export default {
       type: 'reference',
       to: [{type: 'skosConcept'}],
       options: {
-        filter: () => schemeFilter({schemeId: '415dcc'}),
+        filter: schemeFilter({schemeId: '415dcc'}),
       },
       components: {field: ReferenceHierarchyInput},
     },
