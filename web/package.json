@@ -16,10 +16,10 @@
     "@11ty/eleventy": "^3.1.2",
     "@11ty/eleventy-plugin-rss": "^2.0.3",
     "@portabletext/to-html": "^2.0.5",
-    "@sanity/client": "^6.24.1",
+    "@sanity/client": "^7.8.2",
     "@sanity/image-url": "^1.0.2",
-    "dotenv": "^16.4.5",
-    "groq": "^3.29.1",
+    "dotenv": "^17.2.1",
+    "groq": "^4.3.0",
     "nunjucks-date-filter": "^0.1.1"
   }
 }
