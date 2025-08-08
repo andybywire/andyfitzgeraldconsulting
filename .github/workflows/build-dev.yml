@@ -1,0 +1,53 @@
+name: Dev
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    name: Build and deploy 11ty development site
+    runs-on: ubuntu-latest
+    # env:
+    #   ELEVENTY_ENVIRONMENT: dev
+    steps:
+        - name: Checkout Branch
+          uses: actions/checkout@v4
+
+        - name: Make envfile
+          uses: SpicyPizza/create-envfile@v2.0
+          with:
+            envkey_RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
+            envkey_ELEVENTY_ENVIRONMENT: dev
+            directory: web
+        
+        - name: Install Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: '20'
+
+        - name: Install Project Dependencies
+          run: npm ci --legacy-peer-deps
+          working-directory: web
+
+        - name: Build 11ty
+          run: npx @11ty/eleventy
+          working-directory: web
+        
+        - name: Verify build
+          run: ls -la _site
+          working-directory: web
+
+        - name: Set Up SSH
+          run: |
+            mkdir -p ~/.ssh/
+            echo "${{ secrets.AFC_SSH_KEY }}" > ~/.ssh/afc
+            sudo chmod 600 ~/.ssh/afc
+            ssh-keyscan -H "24.199.98.130" > ~/.ssh/known_hosts
+
+        - name: Clean & SFTP Upload
+          run: |
+            ssh -i ~/.ssh/afc afc@24.199.98.130 "rm -rf /var/www/dev.andyfitzgeraldconsulting.com/html/*"
+            sftp -i ~/.ssh/afc afc@24.199.98.130 <<< $'cd /var/www/dev.andyfitzgeraldconsulting.com/html \n put -r web/_site/*'
