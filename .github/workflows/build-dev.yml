@@ -10,8 +10,6 @@ jobs:
   build-and-deploy:
     name: Build and deploy 11ty development site
     runs-on: ubuntu-latest
-    # env:
-    #   ELEVENTY_ENVIRONMENT: dev
     steps:
         - name: Checkout Branch
           uses: actions/checkout@v4
