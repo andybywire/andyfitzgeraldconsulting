@@ -18,7 +18,7 @@ jobs:
           uses: SpicyPizza/create-envfile@v2.0
           with:
             envkey_RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
-            envkey_ELEVENTY_ENVIRONMENT: dev
+            envkey_ELEVENTY_ENVIRONMENT: development
             directory: web
         
         - name: Install Node.js
