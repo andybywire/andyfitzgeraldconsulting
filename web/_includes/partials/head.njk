@@ -69,13 +69,6 @@
                           {%- else -%}
                             content="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
                           {%- endif -%} />
-
-  {%- if env.environment == "development" 
-      or "/writing/tag/" in page.url 
-      or "/404" in page.url %}
-  <meta name="robots" content="noindex">
-  {%- endif %}
-
   
     <script type="application/ld+json">
     {
