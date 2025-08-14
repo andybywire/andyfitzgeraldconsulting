@@ -40,6 +40,9 @@ jobs:
           run: ls -la _site
           working-directory: web
 
+        - name: Copy .env into build output
+          run: cp web/.env web/_site/.env
+
         - name: Set Up SSH
           run: |
             mkdir -p ~/.ssh/
