@@ -2,97 +2,132 @@
 permalink: /mailhandler.php
 ---
 <?php
-if (!empty($_POST)) {
-    $to = 'andy@andyfitzgeraldconsulting.com';
-    
-    $errors = [];
-    $errorMessage = '';
+// mailhandler.php
 
-    if($_SERVER['HTTP_HOST'] == "dev.andyfitzgeraldconsulting.com") {
-        $adminEmail =  "inquiry@dev.andyfitzgeraldconsulting.com"; 
-    } elseif ($_SERVER['HTTP_HOST'] == "www.andyfitzgeraldconsulting.com") {
-        $adminEmail =  "inquiry@andyfitzgeraldconsulting.com"; 
-    } else {
-        $adminEmail =  "local@andyfitzgeraldconsulting.com"; 
-    } 
+declare(strict_types=1);
 
-   $name = stripslashes(trim($_POST['name']));
-   $email = stripslashes(trim($_POST['email']));
-   $subject = stripslashes(trim($_POST['subject']));
-   $org = $_POST['org'];
-   $message = $_POST['message'];
+require __DIR__ . '/vendor/autoload.php';
 
-    // check required fields
-    if (empty($name)) {
-        $errors[] = 'Name is empty';
-    }
-    if (empty($email)) {
-        $errors[] = 'Email is empty';
-    } else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Email is invalid';
-    }
-    if (empty($subject)) {
-        $errors[] = 'Subject is empty';
-    }
-    if (empty($message)) {
-        $errors[] = 'Message is empty';
-    }
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use Dotenv\Dotenv;
 
-    // check for header injection
-    $pattern  = '/[\r\n]|Content-Type:|Bcc:|Cc:/i';
+// Load environment variables from .env (safe if file is missing)
+if (class_exists(Dotenv::class)) {
+    $dotenv = Dotenv::createImmutable(__DIR__);
+    $dotenv->safeLoad();
+}
 
-    if (preg_match($pattern, $name) || preg_match($pattern, $email) || preg_match($pattern, $subject)) {
-        exit("Message not sent: Header injection detected.");
-    }
-
-    // compose headers
-    $headers = [
-        'From' => $adminEmail,
-        'Reply-To' => $email,
-        'X-Mailer' => 'PHP/' . phpversion(),
-        'MIME-Version' => '1.0',
-        'Content-Type' => 'text/html; charset=iso-8859-1'
-    ];
-
-    // compose body
-    $body = "Name: $name <br /> 
-                Email: $email <br /> 
-                Organization: $org <br/> 
-                Message: $message";
-
-
-    if (empty($errors)) {
-        if(isset($_POST['g-recaptcha-response'])) {
-            $secret = '{{ env.recaptchaSecret }}'; 
-            $verifyResponse = file_get_contents('https://www.google.com/recaptcha/api/siteverify?secret='.$secret.'&response='.$_POST['g-recaptcha-response']);
-            $responseData = json_decode($verifyResponse);
-            if($responseData->success) {
-                if (mail($to, $subject, $body, $headers)) {
-                    if ($_SERVER['HTTP_HOST'] == "dev.andyfitzgeraldconsulting.com") {
-                        header('Location: https://dev.andyfitzgeraldconsulting.com/contact-success/');
-                    } else {
-                        header('Location: https://andyfitzgeraldconsulting.com/contact-success/');
-                    }
-                } else {
-                    // error sending
-                    $errorMessage = "<p style='color: red;'>There was an server error while sending this message.</p>";
-                    echo "{$errorMessage}";
-                }
-            } else {
-                $spamDetection = true;
-                $errorMessage = "<p style='color: red;'>Message not sent. Spam was detected.</p>";
-                echo "{$errorMessage}";
-            }
-        } else {
-            // errors in form
-            $errors[] = 'Recaptcha response note detected.';
-            $allErrors = join('<br/>', $errors);
-            $errorMessage = "<p style='color: red;'>{$allErrors}</p>";
-            echo "{$errorMessage}";
-        }  
-    }
-} else {
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    // Direct hits to this file go home
     header('Location: https://andyfitzgeraldconsulting.com');
     exit;
 }
-?>
+
+// ---- Config ----
+$to = 'andy@andyfitzgeraldconsulting.com';
+
+// From/admin address varies by host
+$host = $_SERVER['HTTP_HOST'] ?? '';
+if ($host === 'dev.andyfitzgeraldconsulting.com') {
+    $adminEmail = 'inquiry@dev.andyfitzgeraldconsulting.com';
+} elseif ($host === 'www.andyfitzgeraldconsulting.com' || $host === 'andyfitzgeraldconsulting.com') {
+    $adminEmail = 'inquiry@andyfitzgeraldconsulting.com';
+} else {
+    $adminEmail = 'local@andyfitzgeraldconsulting.com';
+}
+
+// ---- Input ----
+$name    = isset($_POST['name'])    ? stripslashes(trim((string)$_POST['name']))    : '';
+$email   = isset($_POST['email'])   ? stripslashes(trim((string)$_POST['email']))   : '';
+$subject = isset($_POST['subject']) ? stripslashes(trim((string)$_POST['subject'])) : '';
+$org     = isset($_POST['org'])     ? (string)$_POST['org']                          : '';
+$message = isset($_POST['message']) ? (string)$_POST['message']                      : '';
+
+$errors = [];
+
+// Required checks
+if ($name === '')   { $errors[] = 'Name is empty'; }
+if ($email === '')  { $errors[] = 'Email is empty'; }
+elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $errors[] = 'Email is invalid'; }
+if ($subject === ''){ $errors[] = 'Subject is empty'; }
+if ($message === ''){ $errors[] = 'Message is empty'; }
+
+// Header injection check (defense-in-depth)
+$pattern = '/[\r\n]|Content-Type:|Bcc:|Cc:/i';
+if (preg_match($pattern, $name) || preg_match($pattern, $email) || preg_match($pattern, $subject)) {
+    http_response_code(400);
+    exit('Message not sent: Header injection detected.');
+}
+
+// ---- reCAPTCHA ----
+$recaptchaSecret = $_ENV['RECAPTCHA_SECRET'] ?? '';
+if (!isset($_POST['g-recaptcha-response'])) {
+    $errors[] = 'reCAPTCHA response not detected.';
+} else {
+    $verifyResponse = @file_get_contents(
+        'https://www.google.com/recaptcha/api/siteverify?secret=' .
+        urlencode($recaptchaSecret) .
+        '&response=' . urlencode((string)$_POST['g-recaptcha-response'])
+    );
+    $responseData = $verifyResponse ? json_decode($verifyResponse, false) : null;
+    if (!$responseData || empty($responseData->success)) {
+        $errors[] = 'Message not sent. Spam was detected or reCAPTCHA failed.';
+    }
+}
+
+if (!empty($errors)) {
+    $allErrors = implode('<br/>', array_map(static fn($e) => htmlspecialchars($e, ENT_QUOTES, 'UTF-8'), $errors));
+    echo "<p style='color: red;'>{$allErrors}</p>";
+    exit;
+}
+
+// ---- Compose body (HTML) ----
+$body = sprintf(
+    'Name: %s<br />Email: %s<br />Organization: %s<br />Message: %s',
+    htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
+    htmlspecialchars($email, ENT_QUOTES, 'UTF-8'),
+    htmlspecialchars($org, ENT_QUOTES, 'UTF-8'),
+    nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'))
+);
+
+// ---- Send via Gmail SMTP using PHPMailer ----
+$mail = new PHPMailer(true);
+
+try {
+    $mail->isSMTP();
+    $mail->Host       = 'smtp.gmail.com';
+    $mail->SMTPAuth   = true;
+    $mail->Username   = $_ENV['AFC_MAIL_USERNAME    ']     ?? ''; 
+    $mail->Password   = $_ENV['AFC_MAIL_PASSWORD'] ?? ''; // 16-char App Password
+    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;    // or ENCRYPTION_SMTPS with Port 465
+    $mail->Port       = 587;
+
+    // From/To/Reply-To
+    $mail->setFrom($adminEmail, 'Website Inquiry');
+    $mail->addAddress($to);
+    if ($email !== '') {
+        $mail->addReplyTo($email, $name !== '' ? $name : $email);
+    }
+
+    // Content
+    $mail->isHTML(true);
+    $mail->CharSet  = 'UTF-8';
+    $mail->Subject  = $subject;
+    $mail->Body     = $body;
+    $mail->AltBody  = strip_tags(str_replace('<br />', "\n", $body));
+
+    $mail->send();
+
+    if ($host === 'dev.andyfitzgeraldconsulting.com') {
+        header('Location: https://dev.andyfitzgeraldconsulting.com/contact-success/');
+    } else {
+        header('Location: https://andyfitzgeraldconsulting.com/contact-success/');
+    }
+    exit;
+
+} catch (Exception $e) {
+    $err = htmlspecialchars($mail->ErrorInfo ?: $e->getMessage(), ENT_QUOTES, 'UTF-8');
+    echo "<p style='color: red;'>There was a server error while sending this message: {$err}</p>";
+    exit;
+}
