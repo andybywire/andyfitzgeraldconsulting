@@ -53,7 +53,16 @@ jobs:
         - name: Clean & SFTP Upload
           run: |
             ssh -i ~/.ssh/afc afc@24.199.98.130 "rm -rf /var/www/dev.andyfitzgeraldconsulting.com/html/*"
-            sftp -i ~/.ssh/afc afc@24.199.98.130 <<< $'cd /var/www/dev.andyfitzgeraldconsulting.com/html \n put -r web/_site/*'
+            sftp -i ~/.ssh/afc afc@24.199.98.130 <<'SFTP'
+              cd /var/www/dev.andyfitzgeraldconsulting.com/html
+              lcd web/_site
+              put -r .
+              SFTP
+
+        - name: Lock down .env permissions
+          run: |
+            ssh -i ~/.ssh/afc afc@24.199.98.130 "chmod 600 /var/www/dev.andyfitzgeraldconsulting.com/html/.env || true"
+
 
         - name: Install Composer & PHP deps on Server
           run: |
