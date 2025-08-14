@@ -49,3 +49,23 @@ jobs:
           run: |
             ssh -i ~/.ssh/afc afc@24.199.98.130 "rm -rf /var/www/dev.andyfitzgeraldconsulting.com/html/*"
             sftp -i ~/.ssh/afc afc@24.199.98.130 <<< $'cd /var/www/dev.andyfitzgeraldconsulting.com/html \n put -r web/_site/*'
+
+        - name: Install Composer & PHP deps on Server
+          run: |
+            ssh -i ~/.ssh/afc afc@24.199.98.130 <<'EOF'
+            set -e
+            cd /var/www/dev.andyfitzgeraldconsulting.com/html
+            # Install Composer if missing
+            if ! command -v composer >/dev/null 2>&1; then
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              php composer-setup.php --install-dir=$HOME/.local/bin --filename=composer
+              rm -f composer-setup.php
+              export PATH="$HOME/.local/bin:$PATH"
+            fi
+            # Ensure PATH includes composer location for this session
+            if [ -f "$HOME/.local/bin/composer" ]; then
+              export PATH="$HOME/.local/bin:$PATH"
+            fi
+            # Install/Update PHP dependencies (recreates vendor/ after clean)
+            composer require --prefer-dist phpmailer/phpmailer vlucas/phpdotenv
+            EOF
