@@ -22,16 +22,85 @@
       <textarea class="form-field" rows="5" id="message" name="message" autocomplete="off" required></textarea>
     </label>
 
-    <div class="send">
-      <div class="g-recaptcha" data-sitekey="6Lcpq_IZAAAAAOK-YOS-lvyERHILtOuNL4gIAuFv"
-      data-callback="callback"></div>
-      <button id="submit-button" type="submit" disabled>Send</button>
-    </div>
-    <script type="text/javascript">
-      function callback() {
-        const submitButton = document.getElementById("submit-button");
-        submitButton.removeAttribute("disabled");
+<div class="send">
+  <div class="g-recaptcha"
+       data-sitekey="6Lcpq_IZAAAAAOK-YOS-lvyERHILtOuNL4gIAuFv"
+       data-callback="recaptchaSolved"
+       data-expired-callback="recaptchaExpired"
+       data-error-callback="recaptchaError"></div>
+  <button id="submit-button" type="submit" disabled>Send</button>
+</div>
+
+<script type="text/javascript">
+  (function () {
+    const form = document.getElementById('contact-form');
+    const submitBtn = document.getElementById('submit-button');
+
+    function disableSubmit(label) {
+      if (!submitBtn) return;
+      submitBtn.disabled = true;
+      submitBtn.setAttribute('aria-disabled', 'true');
+      if (!submitBtn.dataset.originalText) {
+        submitBtn.dataset.originalText = submitBtn.textContent || submitBtn.value || 'Send';
       }
-    </script>
+      if (label) {
+        if (submitBtn.tagName === 'BUTTON') submitBtn.textContent = label;
+        else submitBtn.value = label;
+      }
+    }
+
+    function enableSubmit() {
+      if (!submitBtn) return;
+      submitBtn.disabled = false;
+      submitBtn.removeAttribute('aria-disabled');
+      if (submitBtn.dataset.originalText) {
+        if (submitBtn.tagName === 'BUTTON') submitBtn.textContent = submitBtn.dataset.originalText;
+        else submitBtn.value = submitBtn.dataset.originalText;
+      }
+    }
+
+    // reCAPTCHA v2 callbacks (these names must match data-*-callback attrs)
+    window.recaptchaSolved = function () {
+      enableSubmit();
+    };
+    window.recaptchaExpired = function () {
+      // token expired; force user to re-check before enabling
+      if (window.grecaptcha && grecaptcha.reset) grecaptcha.reset();
+      disableSubmit(); // keep disabled until solved again
+    };
+    window.recaptchaError = function () {
+      // network/other error; keep disabled until solved again
+      disableSubmit();
+    };
+
+    // Prevent double-posts: lock the button at the moment of submit
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        // If somehow still disabled, block submit
+        if (submitBtn && submitBtn.disabled) {
+          e.preventDefault();
+          return;
+        }
+        // First-click only
+        if (form.dataset.submitted === 'true') {
+          e.preventDefault();
+          return;
+        }
+        form.dataset.submitted = 'true';
+        disableSubmit('Sending…');
+      });
+    }
+
+    // If coming back with BFCache, restore the button state
+    window.addEventListener('pageshow', function (evt) {
+      if (evt.persisted) {
+        form && delete form.dataset.submitted;
+        // Token may be stale—reset captcha and keep disabled until solved again
+        if (window.grecaptcha && grecaptcha.reset) grecaptcha.reset();
+        disableSubmit();
+      }
+    });
+  })();
+</script>
   </form>
 </section>
