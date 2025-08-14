@@ -59,10 +59,11 @@ jobs:
               put -r .
               SFTP
 
-        - name: Lock down .env permissions
+        - name: Fix .env permissions
           run: |
-            ssh -i ~/.ssh/afc afc@24.199.98.130 "chmod 600 /var/www/dev.andyfitzgeraldconsulting.com/html/.env || true"
-
+            ssh -i ~/.ssh/afc afc@24.199.98.130 \
+            "sudo chgrp www-data /var/www/dev.andyfitzgeraldconsulting.com/html/.env || true; \
+             sudo chmod 640 /var/www/dev.andyfitzgeraldconsulting.com/html/.env || true"
 
         - name: Install Composer & PHP deps on Server
           run: |
