@@ -3,31 +3,34 @@ permalink: /mailhandler.php
 ---
 <?php
 // mailhandler.php
-
 declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
 use Dotenv\Dotenv;
+use Google\Client as GoogleClient;
+use Google\Service\Gmail as GoogleGmail;
 
-// Load environment variables from .env (safe if file is missing)
+// --------------------
+// Load environment (.env beside this file)
+// --------------------
 if (class_exists(Dotenv::class)) {
     $dotenv = Dotenv::createImmutable(__DIR__);
     $dotenv->safeLoad();
 }
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    // Direct hits to this file go home
+// --------------------
+// Only allow POST
+// --------------------
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     header('Location: https://andyfitzgeraldconsulting.com');
     exit;
 }
 
-// ---- Config ----
+// --------------------
+// Config
+// --------------------
 $to = 'andy@andyfitzgeraldconsulting.com';
-
-// From/admin address varies by host
 $host = $_SERVER['HTTP_HOST'] ?? '';
 if ($host === 'dev.andyfitzgeraldconsulting.com') {
     $adminEmail = 'inquiry@dev.andyfitzgeraldconsulting.com';
@@ -37,7 +40,9 @@ if ($host === 'dev.andyfitzgeraldconsulting.com') {
     $adminEmail = 'local@andyfitzgeraldconsulting.com';
 }
 
-// ---- Input ----
+// --------------------
+// Input
+// --------------------
 $name    = isset($_POST['name'])    ? stripslashes(trim((string)$_POST['name']))    : '';
 $email   = isset($_POST['email'])   ? stripslashes(trim((string)$_POST['email']))   : '';
 $subject = isset($_POST['subject']) ? stripslashes(trim((string)$_POST['subject'])) : '';
@@ -45,30 +50,27 @@ $org     = isset($_POST['org'])     ? (string)$_POST['org']                     
 $message = isset($_POST['message']) ? (string)$_POST['message']                      : '';
 
 $errors = [];
+if ($name === '')    $errors[] = 'Name is empty';
+if ($email === '')   $errors[] = 'Email is empty';
+elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Email is invalid';
+if ($subject === '') $errors[] = 'Subject is empty';
+if ($message === '') $errors[] = 'Message is empty';
 
-// Required checks
-if ($name === '')   { $errors[] = 'Name is empty'; }
-if ($email === '')  { $errors[] = 'Email is empty'; }
-elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $errors[] = 'Email is invalid'; }
-if ($subject === ''){ $errors[] = 'Subject is empty'; }
-if ($message === ''){ $errors[] = 'Message is empty'; }
-
-// Header injection check (defense-in-depth)
+// Header injection guard
 $pattern = '/[\r\n]|Content-Type:|Bcc:|Cc:/i';
 if (preg_match($pattern, $name) || preg_match($pattern, $email) || preg_match($pattern, $subject)) {
     http_response_code(400);
     exit('Message not sent: Header injection detected.');
 }
 
-// ---- reCAPTCHA v2 (checkbox/invisible) ----
+// --------------------
+// reCAPTCHA v2 verify
+// --------------------
 $recaptchaSecret = $_ENV['RECAPTCHA_SECRET'] ?? '';
 $token = $_POST['g-recaptcha-response'] ?? '';
 $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
 
-// Collect errors so we can show precise messages
 $recaptchaErrors = [];
-
-// Basic presence checks
 if ($recaptchaSecret === '') {
     $recaptchaErrors[] = 'Server misconfiguration: reCAPTCHA secret is missing.';
 }
@@ -77,23 +79,24 @@ if ($token === '') {
 }
 
 $response = null;
-
 if (empty($recaptchaErrors)) {
-    // Verify with Google (cURL is more reliable than file_get_contents)
     $ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
         'secret'   => $recaptchaSecret,
         'response' => $token,
-        'remoteip' => $remoteIp, // optional
+        'remoteip' => $remoteIp,
     ]));
+    // Fail fast to avoid 504s
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
     $verifyResponse = curl_exec($ch);
     $curlErr = curl_error($ch);
     curl_close($ch);
 
     if ($verifyResponse === false) {
         $recaptchaErrors[] = 'Could not reach Google reCAPTCHA to verify your submission. Please try again.';
-        // (Optional) admin detail for logs:
         // error_log('reCAPTCHA cURL error: ' . $curlErr);
     } else {
         $response = json_decode($verifyResponse, true);
@@ -109,7 +112,6 @@ if (empty($recaptchaErrors) && is_array($response)) {
     $errorCodes = $response['error-codes'] ?? [];
 
     if (!$success) {
-        // Map common v2 error codes to clear messages
         $map = [
             'missing-input-secret'   => 'Server misconfiguration: reCAPTCHA secret is missing.',
             'invalid-input-secret'   => 'Server misconfiguration: reCAPTCHA secret is invalid.',
@@ -126,12 +128,9 @@ if (empty($recaptchaErrors) && is_array($response)) {
             $recaptchaErrors[] = 'reCAPTCHA failed. Please try again.';
         }
     } else {
-        // Optional: sanity check the hostname Google saw
         $expectedHost = $_SERVER['HTTP_HOST'] ?? '';
         if ($hostname && $expectedHost && stripos($hostname, $expectedHost) === false) {
             $recaptchaErrors[] = 'reCAPTCHA hostname mismatch. Please refresh and try again.';
-            // (Optional) admin detail for logs:
-            // error_log("reCAPTCHA hostname mismatch: got $hostname, expected $expectedHost");
         }
     }
 }
@@ -145,7 +144,9 @@ if (!empty($recaptchaErrors)) {
     exit;
 }
 
-// ---- Compose body (HTML) ----
+// --------------------
+// Compose body (HTML)
+// --------------------
 $body = sprintf(
     'Name: %s<br />Email: %s<br />Organization: %s<br />Message: %s',
     htmlspecialchars($name, ENT_QUOTES, 'UTF-8'),
@@ -154,33 +155,62 @@ $body = sprintf(
     nl2br(htmlspecialchars($message, ENT_QUOTES, 'UTF-8'))
 );
 
-// ---- Send via Gmail SMTP using PHPMailer ----
-$mail = new PHPMailer(true);
+// --------------------
+// Send via Gmail API (HTTPS/443) — no SMTP
+// --------------------
+function base64url_encode(string $data): string {
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+$fromEmail = $_ENV['GMAIL_FROM'] ?? $adminEmail;
+$toEmail   = $to;
+$encodedSubject = mb_encode_mimeheader($subject, 'UTF-8');
+$alt = strip_tags(str_replace('<br />', "\n", $body));
+
+$boundary = 'b_' . bin2hex(random_bytes(8));
+$rawMessage =
+    "From: {$fromEmail}\r\n" .
+    "To: {$toEmail}\r\n" .
+    "Reply-To: " . ($email ?: $fromEmail) . "\r\n" .
+    "Subject: {$encodedSubject}\r\n" .
+    "MIME-Version: 1.0\r\n" .
+    "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n" .
+    "\r\n" .
+    "--{$boundary}\r\n" .
+    "Content-Type: text/plain; charset=UTF-8\r\n" .
+    "Content-Transfer-Encoding: 7bit\r\n" .
+    "\r\n" .
+    "{$alt}\r\n" .
+    "\r\n" .
+    "--{$boundary}\r\n" .
+    "Content-Type: text/html; charset=UTF-8\r\n" .
+    "Content-Transfer-Encoding: 7bit\r\n" .
+    "\r\n" .
+    "{$body}\r\n" .
+    "\r\n" .
+    "--{$boundary}--\r\n";
+
+// Google client using refresh token from .env
+$client = new GoogleClient();
+$client->setClientId($_ENV['GOOGLE_CLIENT_ID'] ?? '');
+$client->setClientSecret($_ENV['GOOGLE_CLIENT_SECRET'] ?? '');
+$client->setAccessType('offline');
+$client->setScopes(['https://www.googleapis.com/auth/gmail.send']);
+
+// Exchange refresh token for access token
+$refreshToken = $_ENV['GOOGLE_REFRESH_TOKEN'] ?? '';
+$client->fetchAccessTokenWithRefreshToken($refreshToken);
+$accessToken = $client->getAccessToken();
+if (!$accessToken || empty($accessToken['access_token'])) {
+    echo "<p style='color:red'>Email send failed: could not obtain Gmail access token.</p>";
+    exit;
+}
+
+$service = new GoogleGmail($client);
 
 try {
-    $mail->isSMTP();
-    $mail->Host       = 'smtp.gmail.com';
-    $mail->SMTPAuth   = true;
-    $mail->Username   = $_ENV['AFC_MAIL_USERNAME    ']     ?? ''; 
-    $mail->Password   = $_ENV['AFC_MAIL_PASSWORD'] ?? ''; // 16-char App Password
-    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;    // or ENCRYPTION_SMTPS with Port 465
-    $mail->Port       = 587;
-
-    // From/To/Reply-To
-    $mail->setFrom($adminEmail, 'Website Inquiry');
-    $mail->addAddress($to);
-    if ($email !== '') {
-        $mail->addReplyTo($email, $name !== '' ? $name : $email);
-    }
-
-    // Content
-    $mail->isHTML(true);
-    $mail->CharSet  = 'UTF-8';
-    $mail->Subject  = $subject;
-    $mail->Body     = $body;
-    $mail->AltBody  = strip_tags(str_replace('<br />', "\n", $body));
-
-    $mail->send();
+    $gmailMessage = new GoogleGmail\Message(['raw' => base64url_encode($rawMessage)]);
+    $service->users_messages->send('me', $gmailMessage);
 
     if ($host === 'dev.andyfitzgeraldconsulting.com') {
         header('Location: https://dev.andyfitzgeraldconsulting.com/contact-success/');
@@ -188,9 +218,8 @@ try {
         header('Location: https://andyfitzgeraldconsulting.com/contact-success/');
     }
     exit;
-
-} catch (Exception $e) {
-    $err = htmlspecialchars($mail->ErrorInfo ?: $e->getMessage(), ENT_QUOTES, 'UTF-8');
-    echo "<p style='color: red;'>There was a server error while sending this message: {$err}</p>";
+} catch (Throwable $e) {
+    $msg = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
+    echo "<p style='color:red'>Email send failed via Gmail API: {$msg}</p>";
     exit;
 }
