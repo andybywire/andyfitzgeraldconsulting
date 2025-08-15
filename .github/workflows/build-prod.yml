@@ -13,7 +13,8 @@ on:
       - singleton
   push:
     branches:
-      - main
+      # - main
+      - dev
 
 jobs:
   build-and-deploy:
@@ -26,8 +27,12 @@ jobs:
         - name: Make envfile
           uses: SpicyPizza/create-envfile@v2.0
           with:
+            envkey_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+            envkey_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+            envkey_GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+            envkey_GMAIL_FROM: ${{ secrets.GMAIL_FROM }}
             envkey_RECAPTCHA_SECRET: ${{ secrets.RECAPTCHA_SECRET }}
-            envkey_ELEVENTY_ENVIRONMENT: production
+            envkey_ELEVENTY_ENVIRONMENT: development
             directory: web
         
         - name: Install Node.js
@@ -50,10 +55,51 @@ jobs:
         - name: Set Up SSH
           run: |
             mkdir -p ~/.ssh/
-            echo "${{ secrets.AFC_PROD_DREAMHOST_SSH_KEY }}" > ~/.ssh/afc_prod
-            sudo chmod 600 ~/.ssh/afc_prod
-            ssh-keyscan -H "pdx1-shared-a1-18.dreamhost.com" > ~/.ssh/known_hosts
+            echo "${{ secrets.AFC_SSH_KEY }}" > ~/.ssh/afc
+            sudo chmod 600 ~/.ssh/afc
+            ssh-keyscan -H "24.199.98.130" > ~/.ssh/known_hosts
             
-        - name: SFTP Upload
+        - name: Clean & SFTP Upload
           run: |
-            sftp -i ~/.ssh/afc_prod afc_prod@pdx1-shared-a1-18.dreamhost.com <<< $'cd andyfitzgeraldconsulting.com \n put -r web/_site/* \n put web/_site/.htaccess'
+            ssh -i ~/.ssh/afc afc@24.199.98.130 "rm -rf /var/www/andyfitzgeraldconsulting.com/html/*"
+            sftp -i ~/.ssh/afc afc@24.199.98.130 <<'SFTP'
+            cd /var/www/andyfitzgeraldconsulting.com/html
+            lcd web/_site
+            put -r .
+            SFTP
+
+        - name: Fix .env permissions
+          run: |
+            ssh -i ~/.ssh/afc afc@24.199.98.130 \
+            "sudo chgrp www-data /var/www/andyfitzgeraldconsulting.com/html/.env || true; \
+             sudo chmod 640 /var/www/andyfitzgeraldconsulting.com/html/.env || true"
+
+        - name: Install Composer & PHP deps on Server
+          run: |
+            ssh -i ~/.ssh/afc afc@24.199.98.130 <<'EOF'
+            set -e
+            cd /var/www/andyfitzgeraldconsulting.com/html
+            # Install Composer if missing
+            if ! command -v composer >/dev/null 2>&1; then
+              php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+              php composer-setup.php --install-dir=$HOME/.local/bin --filename=composer
+              rm -f composer-setup.php
+              export PATH="$HOME/.local/bin:$PATH"
+            fi
+            # Ensure PATH includes composer location for this session
+            if [ -f "$HOME/.local/bin/composer" ]; then
+              export PATH="$HOME/.local/bin:$PATH"
+            fi
+            # Install/Update PHP dependencies (recreates vendor/ after clean)
+            composer require google/apiclient:^2.15 vlucas/phpdotenv
+            EOF
+
+        - name: Verify .env on server (redacted)
+          run: |
+            ssh -i ~/.ssh/afc afc@24.199.98.130 "\
+              grep -nE '^(GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|GOOGLE_REFRESH_TOKEN|GMAIL_FROM|RECAPTCHA_SECRET)=' \
+              /var/www/andyfitzgeraldconsulting.com/html/.env | sed 's/=.*/=<redacted>/' || true"
+  
+        - name: Verify vendor on server
+          run: |
+            ssh -i ~/.ssh/afc afc@24.199.98.130 "[ -f /var/www/andyfitzgeraldconsulting.com/html/vendor/autoload.php ] && echo 'vendor OK' || (echo 'vendor MISSING' && exit 1)"
