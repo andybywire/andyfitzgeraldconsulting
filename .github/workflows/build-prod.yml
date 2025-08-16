@@ -13,8 +13,7 @@ on:
       - singleton
   push:
     branches:
-      # - main
-      - dev
+      - main
 
 jobs:
   build-and-deploy:
