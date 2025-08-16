@@ -43,9 +43,9 @@ jobs:
       - name: Set Up SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "${{ secrets.AFC_CMS_DREAMHOST_SSH_KEY }}" > ~/.ssh/afc_cms
-          sudo chmod 600 ~/.ssh/afc_cms
-          ssh-keyscan -H "pdx1-shared-a1-18.dreamhost.com" > ~/.ssh/known_hosts
+          echo "${{ secrets.AFC_SSH_KEY }}" > ~/.ssh/afc
+          sudo chmod 600 ~/.ssh/afc
+          ssh-keyscan -H "24.199.98.130" > ~/.ssh/known_hosts
 
       - name: SFTP Upload
-        run: sftp -i ~/.ssh/afc_cms afc_cms@pdx1-shared-a1-18.dreamhost.com <<< $'cd cms.andyfitzgeraldconsulting.com \n put -r studio/dist/*'
+        run: sftp -i ~/.ssh/afc afc@24.199.98.130 <<< $'cd /var/www/cms.andyfitzgeraldconsulting.com/html \n put -r studio/dist/*'
