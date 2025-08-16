@@ -51,6 +51,11 @@ jobs:
           run: ls -la _site
           working-directory: web
 
+        - name: Copy .env into build output (and set perms locally)
+          run: |
+            cp web/.env web/_site/.env
+            chmod 640 web/_site/.env
+
         - name: Set Up SSH
           run: |
             mkdir -p ~/.ssh/
@@ -67,11 +72,11 @@ jobs:
             put -r .
             SFTP
 
-        - name: Fix .env permissions
-          run: |
-            ssh -i ~/.ssh/afc afc@24.199.98.130 \
-            "sudo chgrp www-data /var/www/andyfitzgeraldconsulting.com/html/.env || true; \
-             sudo chmod 640 /var/www/andyfitzgeraldconsulting.com/html/.env || true"
+        # - name: Fix .env permissions
+        #   run: |
+        #     ssh -i ~/.ssh/afc afc@24.199.98.130 \
+        #     "sudo chgrp www-data /var/www/andyfitzgeraldconsulting.com/html/.env || true; \
+        #      sudo chmod 640 /var/www/andyfitzgeraldconsulting.com/html/.env || true"
 
         - name: Install Composer & PHP deps on Server
           run: |
