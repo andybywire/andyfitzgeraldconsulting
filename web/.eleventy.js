@@ -13,7 +13,6 @@ import clientLogo from './_11ty/shortcodes/clientLogo.js';
 import pluginRss from "@11ty/eleventy-plugin-rss";
 
 export default function (eleventyConfig) {
-	eleventyConfig.addPassthroughCopy('.htaccess');
 	eleventyConfig.addPassthroughCopy('style');
 	eleventyConfig.addPassthroughCopy('assets');
 	eleventyConfig.addPassthroughCopy('serviceworker.js');
