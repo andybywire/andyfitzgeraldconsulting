@@ -51,7 +51,7 @@ jobs:
           run: ls -la _site
           working-directory: web
 
-        - name: Copy .env into build output (and set perms locally)
+        - name: Copy .env into build output and set permission
           run: |
             cp web/.env web/_site/.env
             chmod 640 web/_site/.env
