@@ -34,7 +34,7 @@ $to = 'andy@andyfitzgeraldconsulting.com';
 $host = $_SERVER['HTTP_HOST'] ?? '';
 if ($host === 'dev.andyfitzgeraldconsulting.com') {
     $adminEmail = 'inquiry@dev.andyfitzgeraldconsulting.com';
-} elseif ($host === 'www.andyfitzgeraldconsulting.com' || $host === 'andyfitzgeraldconsulting.com') {
+} elseif ($host === 'andyfitzgeraldconsulting.com' || $host === 'andyfitzgeraldconsulting.com') {
     $adminEmail = 'inquiry@andyfitzgeraldconsulting.com';
 } else {
     $adminEmail = 'local@andyfitzgeraldconsulting.com';

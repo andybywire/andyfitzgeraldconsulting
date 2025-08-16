@@ -7,9 +7,9 @@
           "inLanguage": "en-US",
           "description": "{{ metadata.description }}",
           "author": { 
-            "@id": "https://www.andyfitzgeraldconsulting.com/#person"
+            "@id": "https://andyfitzgeraldconsulting.com/#person"
           },
           "publisher": {
-            "id": "https://www.andyfitzgeraldconsulting.com/#organization"
+            "id": "https://andyfitzgeraldconsulting.com/#organization"
           }
         }

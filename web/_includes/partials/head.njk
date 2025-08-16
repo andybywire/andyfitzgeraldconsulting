@@ -53,21 +53,21 @@
   <link rel="canonical" {% if resource.canonical -%}
                           href="{{ resource.canonical }}"
                         {%- elif "/contact/" in page.url -%}
-                          href="https://www.andyfitzgeraldconsulting.com/contact"
+                          href="https://andyfitzgeraldconsulting.com/contact"
                         {%- else -%}
-                          href="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
+                          href="https://andyfitzgeraldconsulting.com{{ page.url }}"
                         {%- endif -%}>
 
   <meta property="og:title" content="{{ resource.title if resource.title else metadata.siteTitle }}" />
   <meta property="og:description" content="{{ resource.shortDescription if resource.shortDescription else metadata.description }}" />
 
 
-  <meta property='og:image' content="{{ resource.heroUrl if resource.heroUrl else "https://www.andyfitzgeraldconsulting.com/icons/icon_x512.png" }}" />
+  <meta property='og:image' content="{{ resource.heroUrl if resource.heroUrl else "https://andyfitzgeraldconsulting.com/icons/icon_x512.png" }}" />
   <meta property='og:image:alt' content="{{ resource.heroImage.altText if resource.heroImage.altText else "Andy Fitzgerald Consulting" }}" />
   <meta property='og:url' {% if resource.canonical -%}
                             content="{{ resource.canonical }}"
                           {%- else -%}
-                            content="https://www.andyfitzgeraldconsulting.com{{ page.url }}"
+                            content="https://andyfitzgeraldconsulting.com{{ page.url }}"
                           {%- endif -%} />
   
     <script type="application/ld+json">

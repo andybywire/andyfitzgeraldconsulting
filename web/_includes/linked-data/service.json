@@ -5,7 +5,7 @@
           "description": "{{ resource.shortDescription }}",
           "provider": {
             "@type": "Organization",
-            "@id": "https://www.andyfitzgeraldconsulting.com/#organization"
+            "@id": "https://andyfitzgeraldconsulting.com/#organization"
           },
           "mainEntityOfPage": {
              "@type": "WebPage",
