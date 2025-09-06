@@ -60,6 +60,7 @@ async function getArticles() {
     "topicTags":topic[]->prefLabel,
     "categoryTag":category->prefLabel,
     canonical,
+    "tagCount": length(topic[]),
     "relatedResources": *[
       (_type=='caseStudy' || _type =='article')
       && array::intersects(topic[]._ref, ^.topic[]._ref)
@@ -74,12 +75,34 @@ async function getArticles() {
         "topics": topic[]->prefLabel,
         slug,
         pubDate,
+        topic,
         _type,
         _type == 'service' => {"tag": "Service", "path":"services"},
         _type == 'study' => {"tag": "Case Study", "path":"case-studies"},
         _type == 'article' => {"tag": "Article", "path":"writing"}
-      } | order(sharedTags desc, pubDate desc) [0..3]
-    }`;
+      } 
+      // | order(sharedTags desc, pubDate desc) [0..3]
+    }
+    { 
+      ...,
+      "relatedResources": relatedResources[]{
+        ...,
+        "relatedness": round((sharedTags * 2) / (length(topic[]) + ^.tagCount), 2)
+      } 
+    }
+    {
+      ...,
+      "relatedResources": relatedResources[]{
+        ...,
+        "relatednessAdj": select(
+            insightType == "Interview" => round(relatedness - 0.1, 2),
+            insightType == "Case Study" => round(relatedness + 0.2, 2),
+            // could max this at 1
+            relatedness
+        )
+      } | order(relatednessAdj desc) [0..3]
+    } | order(_createdAt desc)
+    `;
 	const order = `| order(pubDate desc)`;
 	const query = [filter, projection, order].join(' ');
 	const docs = await client.fetch(query).catch((err) => console.error(err));
