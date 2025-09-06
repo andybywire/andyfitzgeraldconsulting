@@ -74,11 +74,11 @@ export default {
           type: 'reference',
           to: [{type: 'skosConcept'}],
           options: {
-            filter: () => schemeFilter({schemeId: '0e0d68'}),
+            filter: schemeFilter({schemeId: '2e73674'}),
           },
-          components: { field: ArrayHierarchyInput },
         },
       ],
+      components: { field: ArrayHierarchyInput },
     },
     {
       name: 'client',
