@@ -41,7 +41,6 @@ export default defineConfig({
     codeInput(),
   ],
   schema: {
-    // @ts-expect-error — schema type deprecated does include a reason; this error appears over-ambitious
     types: schemaTypes,
   },
   document: {
