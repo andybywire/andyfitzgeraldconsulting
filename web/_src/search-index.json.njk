@@ -1,0 +1,10 @@
+[
+  {% for article in articles %}
+  {
+    "title": "{{ article.title | safe }}",
+    "description": "{{ article.metaDescription | safe }}",
+    "slug": "{{ article.slug | safe }}",
+    "type": "article"
+  }{% if not loop.last %},{% endif %}
+  {% endfor %},
+]
