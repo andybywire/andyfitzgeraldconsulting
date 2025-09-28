@@ -5,7 +5,7 @@
   {% for article in articles %}
   {
     "title": "{{ article.title | safe }}",
-    {# "description": "{{ article.metaDescription | safe }}", #}
+    "description": "{{ article.metaDescription | safe | replace('"', '&quot;') }}",
     "slug": "{{ article.slug | safe }}",
     "type": "article"
   }{% if not loop.last %},{% endif %}
