@@ -1,4 +1,20 @@
 <nav class="sidebar">
+  {# Insights Search #}
+  <section id="insight-search" class="search" aria-label="Insights search">
+    <h2>Search Insights</h2>
+    <form autoComplete="off">
+      <input type="search"
+            id="search-box"
+            name="search"
+            aria-expanded="false"
+            aria-controls="search-results"
+            aria-describedby="search-description"/>
+      {# <label for="search-box">Search for a method by name, goal, or outcome.</label> #}
+      {# <span id="search-description" class="visually-hidden">
+        As you type, search results will appear below
+      </span> #}
+    </form>
+  </section>
   <h2>Browse by Type</h2>
   <ul>
     {%- for label in taxonomy -%}

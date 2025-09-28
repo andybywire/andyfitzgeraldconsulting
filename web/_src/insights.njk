@@ -16,6 +16,11 @@ permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNu
         <div class="hero-copy">
           {{ resource.heroCopy | safe }}
         </div>
+        <div id="search-result-list" class="copy">
+          <h2 id="results-count"></h2>
+          <ul id="result-details" role="listbox" aria-label="Search results"></ul>
+        </div>
+
         {% include '../_includes/partials/articleSidebar.njk' %}
 
         {%- for resource in pagination.items %}
@@ -32,8 +37,11 @@ permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNu
           {% endif %}
         </nav>
 
-
       </section>
     </main>
   {% endif %}
 {% endfor %}
+
+<script>
+  {% include 'partials/searchScript.js' %}
+</script>

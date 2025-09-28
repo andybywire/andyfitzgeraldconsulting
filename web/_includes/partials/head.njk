@@ -18,7 +18,12 @@
   <link rel="preload" href="/assets/fonts/Lato-Bold.woff2" as="font" type="font/woff2" crossorigin>
 
   <link rel="stylesheet" type="text/css" href="/style/style.css"/>
-  
+
+  <!-- Insight search script -->
+  {% if page.url == "/insights/" %}
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.basic.js" async></script>
+  {% endif %}
+
   <!-- For browsers -->
   <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png">
@@ -29,7 +34,7 @@
   <!-- For Google and Android -->
   <link rel="icon" type="image/png" sizes="48x48" href="/icons/maskable_icon_x48.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icons/maskable_icon_x192.png">
-  
+
   <title>
     {% if '/services' in page.url %}
       Services | {{ metadata.siteTitle }}
