@@ -1,3 +1,11 @@
+// Script Notes
+// - [ ] add a "no matches" message if 3 chars are entered and there's no match (test with 'ooo')
+// - [ ] sort out search bar at top of page on mobile (+ add browse categories at bottom)
+
+// Import the preview macro — js ignores as a comment, 
+// but njk doesn't:
+// {% from "partials/articlePreview.njk" import preview as preview %}
+
 document.addEventListener('DOMContentLoaded', function () {
   fetch('/insight-search.json')
     .then(response => response.json())
@@ -19,6 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       const fuse = new Fuse(items, options);
 
+      const insightHeroCopy = document.getElementById('insight-hero-copy');
       const searchInput = document.getElementById('search-box');
       const searchResults = document.getElementById('search-result-list');
       const resultsCount = document.getElementById('results-count');
@@ -30,25 +39,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (results.length > 0 ) {
           searchInput.setAttribute('aria-expanded','true');
-          searchResults.style.display = 'block';
+          searchResults.classList.add('show');
+          insightHeroCopy.classList.remove('show');
           resultsCount.style.display = 'block';
           resultsCount.innerHTML = `${results.length} results found for \<em>${query}\</em>`;
         } else {
           searchInput.setAttribute('aria-expanded','false');
-          searchResults.style.display = 'none';
+          insightHeroCopy.classList.add('show');
+          searchResults.classList.remove('show');
           resultsCount.style.display = 'none';
           resultsCount.innerHTML = ''
         }
 
         resultDetails.innerHTML = '';
         results.forEach(result => {
-          const li = document.createElement('li');
-          li.innerHTML = `<h3>
-                            <a href="${result.item.type}/${result.item.slug}" tabindex="0">${result.item.title}</a>
-                            <span>${result.item.type}</span>
-                          </h3>
-                          <span>${result.item.description}</span>`;
-          resultDetails.appendChild(li);
+          const searchResult = document.createElement('div');
+          searchResult.innerHTML = `{{ preview() }}`
+          resultDetails.appendChild(searchResult);
         });
       });
     });

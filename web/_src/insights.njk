@@ -6,25 +6,27 @@ pagination:
   size: 10
   addAllPagesToCollections: true
 eleventyExcludeFromCollections: true
-permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNumber + 1 }}/{% endif %}/index.html
+permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNumber + 1 }}/{% endif %}/index.html 
 ---
+{% from "partials/articlePreview.njk" import preview with context %}
 {% for resource in singletons %}
   {% if resource.title == "Insights" %}
     <main>
       <section class="grid singleton insights">
         <h1>{{ resource.title }}</h1>
-        <div class="hero-copy">
+        <div id="insight-hero-copy" class="hero-copy show">
           {{ resource.heroCopy | safe }}
         </div>
-        <div id="search-result-list" class="copy">
-          <h2 id="results-count"></h2>
-          <ul id="result-details" role="listbox" aria-label="Search results"></ul>
+        <div id="search-result-list" class="search-results hero-copy">
+          <p id="results-count"></p>
+          
+          <div id="result-details" aria-label="Search results"></div>
         </div>
 
         {% include '../_includes/partials/articleSidebar.njk' %}
 
         {%- for resource in pagination.items %}
-          {% include '../_includes/partials/articlePreview.njk' %}
+          {{ preview(isJs = false, resource) }}
         {% endfor %}
 
         <nav class="pagination" aria-label="Pagination links">
@@ -42,6 +44,7 @@ permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNu
   {% endif %}
 {% endfor %}
 
+
 <script>
-  {% include 'partials/searchScript.js' %}
+  {% include 'partials/searchScript.js.njk' %}
 </script>

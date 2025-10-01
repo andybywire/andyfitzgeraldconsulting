@@ -1,8 +1,16 @@
+{# 
+When resource data is available, pass it via the resource argument.
+If left empty, the macro will return template literal variables for 
+use in client-side search results returns.
+#}
+{% macro preview(resource) %}
 <article class="preview-listing">
-  <a href="/insights/{{ resource.slug.current | slug }}" class="teaser">
+  <a href="/insights/{{ resource.slug.current | slug if resource else "${result.item.slug}"}}" class="teaser">
     <time class="eyebrow" datetime="{{ resource.pubdate }}"> {{ resource.insightType | default("Insight", true) }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
-    <h2>{{ resource.title }}</h2>
-    {% articleHero resource.heroImage %}
+    <h2>{{ resource.title if resource else "${result.item.title}"}}</h2>
+    {% if resource %}
+      {% articleHero resource.heroImage %}
+    {% endif %}
     {{ resource.lede | safe }}
     {{ resource.atGlance | safe }}
   </a>
@@ -16,3 +24,4 @@
     </ul>
   </nav>
 </article>
+{% endmacro %}

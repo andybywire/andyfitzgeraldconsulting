@@ -3,7 +3,8 @@
 	padding-bottom: 4rem;
 	& h1,
 	.hero-copy,
-	.copy {
+	.copy,
+	.search-results {
 		grid-column: col 1 / span 12;
 		@media (min-width: 40rem) {
 			& {
@@ -14,6 +15,20 @@
 	.hero-copy p:first-of-type {
 		font-family: var(--headline);
 		font-size: 1.5rem;
+	}
+	.search {
+		margin-bottom: 2rem;
+		& input {
+			padding: .5rem;
+		}
+	}
+	#search-result-list,
+	#insight-hero-copy {
+		display: none;
+	}
+	#search-result-list.show,
+	#insight-hero-copy.show {
+		display: block;
 	}
 	@media (min-width: 40rem) {
 		& {
