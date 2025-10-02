@@ -18,12 +18,12 @@ permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNu
           {{ resource.heroCopy | safe }}
         </div>
         <div id="search-result-list" class="search-results hero-copy">
-          <p id="results-count"></p>
-          
+          <p id="results-count" class="search-result"></p>
           <div id="result-details" aria-label="Search results"></div>
         </div>
 
         {% include '../_includes/partials/articleSidebar.njk' %}
+          
 
         {%- for resource in pagination.items %}
           {{ preview(isJs = false, resource) }}
@@ -46,5 +46,5 @@ permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNu
 
 
 <script>
-  {% include 'partials/searchScript.js.njk' %}
+  {% include 'partials/searchScript.js' %}
 </script>

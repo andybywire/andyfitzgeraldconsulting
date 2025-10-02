@@ -12,7 +12,7 @@
 			}
 		}
 	}
-	.hero-copy p:first-of-type {
+	.hero-copy p:first-of-type :not(.search-result) {
 		font-family: var(--headline);
 		font-size: 1.5rem;
 	}
@@ -21,6 +21,9 @@
 		& input {
 			padding: .5rem;
 		}
+	}
+	.search-results H2 {
+		padding-bottom: 0;
 	}
 	#search-result-list,
 	#insight-hero-copy {

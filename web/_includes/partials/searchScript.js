@@ -10,15 +10,22 @@ document.addEventListener('DOMContentLoaded', function () {
   fetch('/insight-search.json')
     .then(response => response.json())
     .then(items => {
+      // only data that needs to be weighted needs to 
+      // be added to `keys`
       const options = {
         keys: [
           {
             name: 'title',
             weight: 0.7
-          }, {
+          }, 
+          {
             name: 'description',
             weight: 0.3
-          }
+          },
+          {
+            name: 'lede',
+            weight: 0.3
+          },
         ],
         threshold: 0.5,
         distance: 80,

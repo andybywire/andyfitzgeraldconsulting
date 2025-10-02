@@ -6,14 +6,17 @@ use in client-side search results returns.
 {% macro preview(resource) %}
 <article class="preview-listing">
   <a href="/insights/{{ resource.slug.current | slug if resource else "${result.item.slug}"}}" class="teaser">
-    <time class="eyebrow" datetime="{{ resource.pubdate }}"> {{ resource.insightType | default("Insight", true) }} | {{ resource.pubDate | date("MMMM D, YYYY") }}</time>
+    <time class="eyebrow" datetime="{{ resource.pubdate if resource else "${result.item.pubDate}" }}"> {{ resource.insightType | default("Insight", true) if resource else "${result.item.insightType}" }} | {{ resource.pubDate | date("MMMM D, YYYY") if resource else "${result.item.pubDate}" }}</time>
     <h2>{{ resource.title if resource else "${result.item.title}"}}</h2>
     {% if resource %}
       {% articleHero resource.heroImage %}
+      {# Skipping image for client rendered results.
+         This is well beyond adaptation of the static build. #}
     {% endif %}
-    {{ resource.lede | safe }}
+    {{ resource.lede | safe if resource else "${result.item.description}" }}
     {{ resource.atGlance | safe }}
   </a>
+  {% if resource %}
   <nav class="related">
     <h3>Topics</h3>
     <ul class="unpad-list">
@@ -23,5 +26,6 @@ use in client-side search results returns.
       {%- endfor -%}
     </ul>
   </nav>
+  {% endif %}
 </article>
 {% endmacro %}

@@ -6,8 +6,11 @@
   {
     "title": "{{ article.title | safe }}",
     "description": "{{ article.metaDescription | safe | replace('"', '&quot;') }}",
-    "slug": "{{ article.slug | safe }}",
-    "type": "article"
+    "lede": "{{ article.lede | safe | replace('"', '&quot;') }}",
+    "slug": "{{ article.slug.current | safe | replace('"', '&quot;') }}",
+    "type": "article",
+    "pubDate": "{{ article.pubDate | date("MMMM D, YYYY") }}",
+    "insightType": "{{ article.insightType}}"
   }{% if not loop.last %},{% endif %}
   {% endfor %}
 ]

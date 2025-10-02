@@ -41,7 +41,7 @@ export default function (eleventyConfig) {
 	});
 
 	return {
-		htmlTemplateEngine: 'njk',
+		htmlTemplateEngine: 'njk, js',
 		dir: {
 			data: '../_data',
 			input: '_src',
