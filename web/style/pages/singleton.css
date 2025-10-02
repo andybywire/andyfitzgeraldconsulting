@@ -17,13 +17,16 @@
 		font-size: 1.5rem;
 	}
 	.search {
-		margin-bottom: 2rem;
+		margin-bottom: 3rem;
 		& input {
 			padding: .5rem;
 		}
 	}
 	.search-results H2 {
 		padding-bottom: 0;
+	}
+	.preview-listing {
+		padding-bottom: 1rem;
 	}
 	#search-result-list,
 	#insight-hero-copy {
