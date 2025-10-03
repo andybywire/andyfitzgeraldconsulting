@@ -7,6 +7,7 @@ pagination:
   addAllPagesToCollections: true
 permalink: /insights/tag/{{ tag.prefLabel | slug }}/index.html
 ---
+{% from "partials/articlePreview.njk" import preview with context %}
     <main>
       <section class="grid singleton insights">
 
@@ -22,7 +23,7 @@ permalink: /insights/tag/{{ tag.prefLabel | slug }}/index.html
 
         {% for resource in articles %}
           {% if pagination.items[0].prefLabel in resource.topicTags or pagination.items[0].prefLabel == resource.insightType  %}      
-            {% include '../_includes/partials/articlePreview.njk' %}
+            {{ preview(isJs = false, resource) }}
           {% endif %}
         {% endfor %}
 

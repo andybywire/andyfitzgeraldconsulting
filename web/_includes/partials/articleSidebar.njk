@@ -1,5 +1,6 @@
 <nav class="sidebar">
   {# Insights Search #}
+  {% if page.url == "/insights/" %}
   <section id="insight-search" class="search" aria-label="Insights search">
     <h2>Search Insights</h2>
     <form autoComplete="off">
@@ -15,6 +16,7 @@
       </span> #}
     </form>
   </section>
+  {% endif %}
   <h2>Browse by Type</h2>
   <ul>
     {%- for label in taxonomy -%}
