@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ],
         threshold: 0.3, // At what point does the match algorithm give up: 0 is a perfect match, 1 matches everything
         ignoreLocation: true, // Match can appear anywhere in the provided text
-        minMatchCharLength: 4
+        minMatchCharLength: 3
       };
 
       const fuse = new Fuse(items, options);
@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const pagination = document.querySelector('.pagination');
       
       searchInput.addEventListener('input', function () {
-        const query = searchInput.value;
+        const query = searchInput.value.trim();
         const results = fuse.search(query);
         
         if (query.length > 0) {
