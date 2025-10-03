@@ -16,20 +16,24 @@ document.addEventListener('DOMContentLoaded', function () {
         keys: [
           {
             name: 'title',
-            weight: 0.7
+            weight: 1
           }, 
           {
+            name: 'tags',
+            weight: 0.9
+          },
+          {
             name: 'description',
-            weight: 0.3
+            weight: 0.8
           },
           {
             name: 'lede',
-            weight: 0.3
+            weight: 0.5
           },
         ],
-        threshold: 0.5,
-        distance: 80,
-        minMatchCharLength: 3
+        threshold: 0.3, // At what point does the match algorithm give up: 0 is a perfect match, 1 matches everything
+        ignoreLocation: true, // Match can appear anywhere in the provided text
+        minMatchCharLength: 4
       };
 
       const fuse = new Fuse(items, options);
@@ -39,23 +43,39 @@ document.addEventListener('DOMContentLoaded', function () {
       const searchResults = document.getElementById('search-result-list');
       const resultsCount = document.getElementById('results-count');
       const resultDetails = document.getElementById('result-details');
-
+      const previewListings = document.querySelectorAll('.preview-listing:not(#result-details .preview-listing)');
+      const pagination = document.querySelector('.pagination');
+      
       searchInput.addEventListener('input', function () {
         const query = searchInput.value;
         const results = fuse.search(query);
-
-        if (results.length > 0 ) {
+        
+        if (query.length > 0) {
           searchInput.setAttribute('aria-expanded','true');
           searchResults.classList.add('show');
           insightHeroCopy.classList.remove('show');
           resultsCount.style.display = 'block';
-          resultsCount.innerHTML = `${results.length} results found for \<em>${query}\</em>`;
+          previewListings.forEach(element => {
+            element.classList.add('hide');
+          });
+          pagination.classList.add('hide')
+          if (results.length > 0) {
+            resultsCount.innerHTML = `${results.length} results found for \<em>${query}\</em>`;
+          } else if (query.length < 3) {
+            resultsCount.innerHTML = 'Searching Insights ...';
+          } else {
+            resultsCount.innerHTML = `No results found for \<em>${query}\</em>. Please try another search term.`
+          }
         } else {
           searchInput.setAttribute('aria-expanded','false');
           insightHeroCopy.classList.add('show');
           searchResults.classList.remove('show');
           resultsCount.style.display = 'none';
           resultsCount.innerHTML = ''
+          previewListings.forEach(element => {
+            element.classList.remove('hide');
+          });
+          pagination.classList.remove('hide')
         }
 
         resultDetails.innerHTML = '';

@@ -23,8 +23,7 @@ permalink: /insights/{% if pagination.pageNumber > 0 %}page-{{ pagination.pageNu
         </div>
 
         {% include '../_includes/partials/articleSidebar.njk' %}
-          
-
+  
         {%- for resource in pagination.items %}
           {{ preview(isJs = false, resource) }}
         {% endfor %}

@@ -6,11 +6,12 @@
   {
     "title": "{{ article.title | safe }}",
     "description": "{{ article.metaDescription | safe | replace('"', '&quot;') }}",
-    "lede": "{{ article.lede | safe | replace('"', '&quot;') }}",
-    "slug": "{{ article.slug.current | safe | replace('"', '&quot;') }}",
+    "lede": "{{ article.lede | striptags }}",
+    "slug": "{{ article.slug.current | safe}}",
     "type": "article",
     "pubDate": "{{ article.pubDate | date("MMMM D, YYYY") }}",
-    "insightType": "{{ article.insightType}}"
+    "insightType": "{{ article.insightType}}",
+    "tags": "{{ article.topicTags | join(", ") }}"
   }{% if not loop.last %},{% endif %}
   {% endfor %}
 ]

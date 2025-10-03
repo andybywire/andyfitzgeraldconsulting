@@ -27,6 +27,7 @@ async function getArticles() {
     _type,
     title,
     bodyText,
+    "plaintextBody": pt::text(bodyText),
     podcastId,
     lede,
     "metaDescription": description,
