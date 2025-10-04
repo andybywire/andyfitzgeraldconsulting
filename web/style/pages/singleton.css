@@ -72,12 +72,10 @@
 	}
 }
 .sidebar {
-	/* display: none; */
 	order: 0;
 	grid-column: col 1 / span 12;
 	@media (min-width: 40rem) {
 		& {
-			/* display: block; */
 			order: unset;
 			grid-column: col 10 / span 3;
 			grid-row: span 2;
