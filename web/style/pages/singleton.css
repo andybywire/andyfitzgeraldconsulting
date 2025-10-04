@@ -19,7 +19,11 @@
 	.search {
 		margin-bottom: 3rem;
 		& input {
-			padding: .5rem;
+			padding: 0.5rem;
+			width: 100%;
+			border: 1px solid var(--eyebrow-gray);
+			background-color: var(--white);
+			border-radius: 3px;
 		}
 	}
 	.search-results H2 {
@@ -35,6 +39,14 @@
 	#search-result-list.show,
 	#insight-hero-copy.show {
 		display: block;
+	}
+	#search-result-list.show {
+		order: 1;
+		@media (min-width: 40rem) {
+			& {
+				order: unset;
+			}
+		}
 	}
 	@media (min-width: 40rem) {
 		& {
@@ -60,15 +72,19 @@
 	}
 }
 .sidebar {
-	display: none;
-	grid-column: col 10 / span 3;
-	grid-row: span 2;
+	/* display: none; */
+	order: 0;
+	grid-column: col 1 / span 12;
 	@media (min-width: 40rem) {
 		& {
-			display: block;
+			/* display: block; */
+			order: unset;
+			grid-column: col 10 / span 3;
+			grid-row: span 2;
 		}
 	}
 	& h2 {
+		display: none;
 		font-size: 1.5rem;
 		line-height: 1.25;
 		padding-bottom: 0.5rem;
@@ -76,10 +92,24 @@
 			margin-top: 0;
 			padding-top: 0;
 		}
+		&.search-header {
+			display: block;
+		}
+		@media (min-width: 40rem) {
+			& {
+				display: block;
+			}
+		}
 	}
 	& ul {
+		display: none;
 		list-style: none;
 		padding-inline-start: 0;
+		@media (min-width: 40rem) {
+			& {
+				display: block;
+			}
+		}
 	}
 	& a {
 		font-family: var(--header);
