@@ -12,7 +12,7 @@
 			}
 		}
 	}
-	.hero-copy p:first-of-type :not(.search-result) :not(.search-result em) {
+	.hero-copy p:first-of-type:not(.search-result):not(.search-result em) {
 		font-family: var(--headline);
 		font-size: 1.5rem;
 	}
