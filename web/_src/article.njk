@@ -71,7 +71,7 @@ permalink: /insights/{{ resource.slug.current | slug }}/index.html
               {{ resource.condensedReviewBody | safe }}
             </div>
             <cite>
-              <a href="#">
+              <a href="/reviews#{{ resource.review.reviewSlug }}">
                 {{ resource.review.author }}, {{ resource.review.title }}
               </br>
               {{ resource.review.employer }}</a>
