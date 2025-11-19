@@ -42,7 +42,7 @@ async function getArticles() {
     review->{
       author,
       title,
-      slug,
+      "slug": slug.current,
       excerpt, 
       body,
       condensedBody,
