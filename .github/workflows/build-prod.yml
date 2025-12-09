@@ -77,6 +77,8 @@ jobs:
             ssh -i ~/.ssh/afc afc@164.92.65.133 <<'EOF'
             set -e
             cd /var/www/afc/html
+            # Ensure local bin dir exists for afc
+            mkdir -p "$HOME/.local/bin"
             # Install Composer if missing
             if ! command -v composer >/dev/null 2>&1; then
               php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
