@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -9,9 +10,13 @@ use Google\Service\Gmail as GoogleGmail;
 // --------------------
 // Load environment (.env beside this file)
 // --------------------
+$env = [];
 if (class_exists(Dotenv::class)) {
     $dotenv = Dotenv::createImmutable(__DIR__);
-    $dotenv->safeLoad();
+    $loaded = $dotenv->safeLoad();
+    if (is_array($loaded)) {
+        $env = $loaded;
+    }
 }
 
 // --------------------
@@ -61,22 +66,15 @@ if (preg_match($pattern, $name) || preg_match($pattern, $email) || preg_match($p
 // --------------------
 // reCAPTCHA v2 verify
 // --------------------
-// Be robust: check $_ENV first, then getenv(), then $_SERVER
-$recaptchaSecret =
-    ($_ENV['RECAPTCHA_SECRET'] ?? null)
-    ?: getenv('RECAPTCHA_SECRET')
-    ?: ($_SERVER['RECAPTCHA_SECRET'] ?? '');
+$recaptchaSecret = $env['RECAPTCHA_SECRET'] ?? ($_ENV['RECAPTCHA_SECRET'] ?? '');
+$token = $_POST['g-recaptcha-response'] ?? '';
+$remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
 
-$recaptchaSecret = $recaptchaSecret !== null ? trim($recaptchaSecret) : '';
-
-// TEMP DEBUG – log what we see in the web request (remove after test)
+// Debug logging for reCAPTCHA
 error_log(
     'mailhandler RECAPTCHA debug: len=' . strlen($recaptchaSecret) .
-    ' hasToken=' . (isset($_POST['g-recaptcha-response']) && $_POST['g-recaptcha-response'] !== '' ? 'yes' : 'no')
+    ' hasToken=' . ($token !== '' ? 'yes' : 'no')
 );
-
-$token    = $_POST['g-recaptcha-response'] ?? '';
-$remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
 
 $recaptchaErrors = [];
 if ($recaptchaSecret === '') {
@@ -170,7 +168,7 @@ function base64url_encode(string $data): string {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
 
-$fromEmail = $_ENV['GMAIL_FROM'] ?? $adminEmail;
+$fromEmail = $env['GMAIL_FROM'] ?? ($_ENV['GMAIL_FROM'] ?? $adminEmail);
 $toEmail   = $to;
 $encodedSubject = mb_encode_mimeheader($subject, 'UTF-8');
 $alt = strip_tags(str_replace('<br />', "\n", $body));
@@ -200,13 +198,13 @@ $rawMessage =
 
 // Google client using refresh token from .env
 $client = new GoogleClient();
-$client->setClientId($_ENV['GOOGLE_CLIENT_ID'] ?? '');
-$client->setClientSecret($_ENV['GOOGLE_CLIENT_SECRET'] ?? '');
+$client->setClientId($env['GOOGLE_CLIENT_ID'] ?? ($_ENV['GOOGLE_CLIENT_ID'] ?? ''));
+$client->setClientSecret($env['GOOGLE_CLIENT_SECRET'] ?? ($_ENV['GOOGLE_CLIENT_SECRET'] ?? ''));
 $client->setAccessType('offline');
 $client->setScopes(['https://www.googleapis.com/auth/gmail.send']);
 
 // Exchange refresh token for access token
-$refreshToken = $_ENV['GOOGLE_REFRESH_TOKEN'] ?? '';
+$refreshToken = $env['GOOGLE_REFRESH_TOKEN'] ?? ($_ENV['GOOGLE_REFRESH_TOKEN'] ?? '');
 $client->fetchAccessTokenWithRefreshToken($refreshToken);
 $accessToken = $client->getAccessToken();
 if (!$accessToken || empty($accessToken['access_token'])) {
