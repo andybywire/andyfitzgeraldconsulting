@@ -28,17 +28,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      # - name: Make envfile
-      #   uses: SpicyPizza/create-envfile@v2.0
-      #   with:
-      #     envkey_GOOGLE_CLIENT_ID: {{ secrets.GOOGLE_CLIENT_ID }}
-      #     envkey_GOOGLE_CLIENT_SECRET: {{ secrets.GOOGLE_CLIENT_SECRET }}
-      #     envkey_GOOGLE_REFRESH_TOKEN: {{ secrets.GOOGLE_REFRESH_TOKEN }}
-      #     envkey_GMAIL_FROM: {{ secrets.GMAIL_FROM }}
-      #     envkey_RECAPTCHA_SECRET: {{ secrets.RECAPTCHA_SECRET }}
-      #     envkey_ELEVENTY_ENVIRONMENT: production
-      #     directory: web
       
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -60,15 +49,9 @@ jobs:
       
       - name: Verify 11ty build
         run: ls -la web/_site
-        # working-directory: web
 
       - name: Copy mailhandler.php into _site
         run: cp web/mailhandler.php web/_site/
-
-      # - name: Copy .env into build output and set permission
-      #   run: |
-      #     cp web/.env web/_site/.env
-      #     chmod 640 web/_site/.env
 
       - name: Setup PHP with Composer
         uses: shivammathur/setup-php@v2
@@ -173,61 +156,3 @@ jobs:
             ls -1t | tail -n +6 | xargs -r rm -rf
 
             echo ">>> Deployment complete."
-
-
-        # - name: Set Up SSH
-        #   run: |
-        #     mkdir -p ~/.ssh/
-        #     echo "{{ secrets.AFC_SSH_KEY }}" > ~/.ssh/afc
-        #     sudo chmod 600 ~/.ssh/afc
-        #     ssh-keyscan -H "164.92.65.133" > ~/.ssh/known_hosts
-            
-        # - name: Clean & SFTP Upload
-        #   run: |
-        #     ssh -i ~/.ssh/afc afc@164.92.65.133 "rm -rf /var/www/afc/html/*"
-        #     sftp -i ~/.ssh/afc afc@164.92.65.133 <<'SFTP'
-        #     cd /var/www/afc/html
-        #     lcd web/_site
-        #     put -r .
-        #     SFTP
-
-        # - name: Install Composer & PHP deps on Server
-        #   run: |
-        #     ssh -i ~/.ssh/afc afc@164.92.65.133 <<'EOF'
-        #     set -e
-        #     cd /var/www/afc/html
-        #     # Ensure local bin dir exists for afc
-        #     mkdir -p "$HOME/.local/bin"
-        #     # Install Composer if missing
-        #     if ! command -v composer >/dev/null 2>&1; then
-        #       php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-        #       php composer-setup.php --install-dir=$HOME/.local/bin --filename=composer
-        #       rm -f composer-setup.php
-        #       export PATH="$HOME/.local/bin:$PATH"
-        #     fi
-        #     # Ensure PATH includes composer location for this session
-        #     if [ -f "$HOME/.local/bin/composer" ]; then
-        #       export PATH="$HOME/.local/bin:$PATH"
-        #     fi
-        #     # Install/Update PHP dependencies (recreates vendor/ after clean)
-        #     composer require google/apiclient:^2.15 vlucas/phpdotenv
-        #     EOF
-
-        # - name: Post-upload fix perms (no sudo)
-        #   run: |
-        #     ssh -i ~/.ssh/afc afc@164.92.65.133 <<'EOF'
-        #     cd /var/www/afc/html
-        #     # ensure .env is readable by www-data
-        #     chgrp www-data .env || true
-        #     chmod 640 .env || true
-        #     EOF
-
-        # - name: Verify .env on server (redacted)
-        #   run: |
-        #     ssh -i ~/.ssh/afc afc@164.92.65.133 "\
-        #       grep -nE '^(GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|GOOGLE_REFRESH_TOKEN|GMAIL_FROM|RECAPTCHA_SECRET)=' \
-        #       /var/www/afc/html/.env | sed 's/=.*/=<redacted>/' || true"
-  
-        # - name: Verify vendor on server
-        #   run: |
-        #     ssh -i ~/.ssh/afc afc@164.92.65.133 "[ -f /var/www/afc/html/vendor/autoload.php ] && echo 'vendor OK' || (echo 'vendor MISSING' && exit 1)"
