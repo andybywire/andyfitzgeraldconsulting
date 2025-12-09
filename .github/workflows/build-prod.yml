@@ -163,7 +163,7 @@ jobs:
             } >> "$NEW_RELEASE/.env"
 
             # Permissions so PHP-FPM (www-data) can read .env
-            chmod 640 "$NEW_RELEASE/.env"
+            chmod 644 "$NEW_RELEASE/.env"
 
             echo ">>> Updating html symlink..."
             ln -sfn "$NEW_RELEASE" "$CURRENT"
