@@ -61,8 +61,15 @@ if (preg_match($pattern, $name) || preg_match($pattern, $email) || preg_match($p
 // --------------------
 // reCAPTCHA v2 verify
 // --------------------
-$recaptchaSecret = $_ENV['RECAPTCHA_SECRET'] ?? '';
-$token = $_POST['g-recaptcha-response'] ?? '';
+// Be robust: check $_ENV first, then getenv(), then $_SERVER
+$recaptchaSecret =
+    ($_ENV['RECAPTCHA_SECRET'] ?? null)
+    ?: getenv('RECAPTCHA_SECRET')
+    ?: ($_SERVER['RECAPTCHA_SECRET'] ?? '');
+
+$recaptchaSecret = $recaptchaSecret !== null ? trim($recaptchaSecret) : '';
+
+$token    = $_POST['g-recaptcha-response'] ?? '';
 $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
 
 $recaptchaErrors = [];
