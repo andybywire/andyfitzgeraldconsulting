@@ -1,0 +1,10 @@
+{
+  "name": "andy/afc-site",
+  "description": "Andy Fitzgerald Consulting 11ty + PHP contact form",
+  "require": {
+    "google/apiclient": "^2.15",
+    "vlucas/phpdotenv": "^5.5"
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
