@@ -1,23 +1,79 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
-use Dotenv\Dotenv;
+// use Dotenv\Dotenv;
 use Google\Client as GoogleClient;
 use Google\Service\Gmail as GoogleGmail;
+
+/**
+ * Simple .env parser.
+ * - Reads KEY=VALUE pairs
+ * - Ignores blank lines and lines starting with '#'
+ * - Strips surrounding single/double quotes from values
+ */
+function loadEnvFile(string $path): array
+{
+    $result = [];
+
+    if (!is_readable($path)) {
+        error_log("mailhandler env: .env file not readable at {$path}");
+        return $result;
+    }
+
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        error_log("mailhandler env: failed to read .env file at {$path}");
+        return $result;
+    }
+
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '' || str_starts_with($line, '#')) {
+            continue;
+        }
+
+        $pos = strpos($line, '=');
+        if ($pos === false) {
+            continue;
+        }
+
+        $key = trim(substr($line, 0, $pos));
+        $value = trim(substr($line, $pos + 1));
+
+        // Strip surrounding quotes if present
+        if (
+            (str_starts_with($value, '"') && str_ends_with($value, '"')) ||
+            (str_starts_with($value, "'") && str_ends_with($value, "'"))
+        ) {
+            $value = substr($value, 1, -1);
+        }
+
+        $result[$key] = $value;
+    }
+
+    error_log(
+        'mailhandler env: loaded keys = ' .
+        implode(',', array_keys($result))
+    );
+
+    return $result;
+}
+
+// --------------------
+// Load environment from .env beside this file
+// --------------------
+$envPath = __DIR__ . '/.env';
+$env = loadEnvFile($envPath);
+
 
 // --------------------
 // Load environment (.env beside this file)
 // --------------------
-$env = [];
-if (class_exists(Dotenv::class)) {
-    $dotenv = Dotenv::createImmutable(__DIR__);
-    $loaded = $dotenv->safeLoad();
-    if (is_array($loaded)) {
-        $env = $loaded;
-    }
-}
+// if (class_exists(Dotenv::class)) {
+//     $dotenv = Dotenv::createImmutable(__DIR__);
+//     $dotenv->safeLoad();
+// }
 
 // --------------------
 // Only allow POST
@@ -66,7 +122,7 @@ if (preg_match($pattern, $name) || preg_match($pattern, $email) || preg_match($p
 // --------------------
 // reCAPTCHA v2 verify
 // --------------------
-$recaptchaSecret = $env['RECAPTCHA_SECRET'] ?? ($_ENV['RECAPTCHA_SECRET'] ?? '');
+$recaptchaSecret = $_ENV['RECAPTCHA_SECRET'] ?? '';
 $token = $_POST['g-recaptcha-response'] ?? '';
 $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
 
@@ -168,7 +224,7 @@ function base64url_encode(string $data): string {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
 
-$fromEmail = $env['GMAIL_FROM'] ?? ($_ENV['GMAIL_FROM'] ?? $adminEmail);
+$fromEmail = $_ENV['GMAIL_FROM'] ?? $adminEmail;
 $toEmail   = $to;
 $encodedSubject = mb_encode_mimeheader($subject, 'UTF-8');
 $alt = strip_tags(str_replace('<br />', "\n", $body));
@@ -198,13 +254,13 @@ $rawMessage =
 
 // Google client using refresh token from .env
 $client = new GoogleClient();
-$client->setClientId($env['GOOGLE_CLIENT_ID'] ?? ($_ENV['GOOGLE_CLIENT_ID'] ?? ''));
-$client->setClientSecret($env['GOOGLE_CLIENT_SECRET'] ?? ($_ENV['GOOGLE_CLIENT_SECRET'] ?? ''));
+$client->setClientId($_ENV['GOOGLE_CLIENT_ID'] ?? '');
+$client->setClientSecret($_ENV['GOOGLE_CLIENT_SECRET'] ?? '');
 $client->setAccessType('offline');
 $client->setScopes(['https://www.googleapis.com/auth/gmail.send']);
 
 // Exchange refresh token for access token
-$refreshToken = $env['GOOGLE_REFRESH_TOKEN'] ?? ($_ENV['GOOGLE_REFRESH_TOKEN'] ?? '');
+$refreshToken = $_ENV['GOOGLE_REFRESH_TOKEN'] ?? '';
 $client->fetchAccessTokenWithRefreshToken($refreshToken);
 $accessToken = $client->getAccessToken();
 if (!$accessToken || empty($accessToken['access_token'])) {
