@@ -1,5 +1,4 @@
-<?php
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
@@ -10,28 +9,9 @@ use Google\Service\Gmail as GoogleGmail;
 // --------------------
 // Load environment (.env beside this file)
 // --------------------
-$loaded = [];
 if (class_exists(Dotenv::class)) {
     $dotenv = Dotenv::createImmutable(__DIR__);
-    $loaded = $dotenv->safeLoad() ?? [];
-
-    // Debug: what did Dotenv actually load?
-    $keys = implode(',', array_keys($loaded));
-    $lenLoaded = strlen($loaded['RECAPTCHA_SECRET'] ?? '');
-    $lenEnv    = strlen($_ENV['RECAPTCHA_SECRET'] ?? '');
-    error_log("mailhandler env debug: keys={$keys}; RECAPTCHA loadedLen={$lenLoaded} envLen={$lenEnv}");
-}
-
-// Helper to read env with preference for Dotenv-loaded array
-function envValue(array $loaded, string $key, string $default = ''): string
-{
-    if (array_key_exists($key, $loaded) && $loaded[$key] !== '') {
-        return (string)$loaded[$key];
-    }
-    if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
-        return (string)$_ENV[$key];
-    }
-    return $default;
+    $dotenv->safeLoad();
 }
 
 // --------------------
@@ -84,12 +64,6 @@ if (preg_match($pattern, $name) || preg_match($pattern, $email) || preg_match($p
 $recaptchaSecret = $env['RECAPTCHA_SECRET'] ?? ($_ENV['RECAPTCHA_SECRET'] ?? '');
 $token = $_POST['g-recaptcha-response'] ?? '';
 $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
-
-// Debug logging for reCAPTCHA
-error_log(
-    'mailhandler RECAPTCHA debug: len=' . strlen($recaptchaSecret) .
-    ' hasToken=' . ($token !== '' ? 'yes' : 'no')
-);
 
 $recaptchaErrors = [];
 if ($recaptchaSecret === '') {
