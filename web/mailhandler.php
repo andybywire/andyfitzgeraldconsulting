@@ -69,6 +69,12 @@ $recaptchaSecret =
 
 $recaptchaSecret = $recaptchaSecret !== null ? trim($recaptchaSecret) : '';
 
+// TEMP DEBUG – log what we see in the web request (remove after test)
+error_log(
+    'mailhandler RECAPTCHA debug: len=' . strlen($recaptchaSecret) .
+    ' hasToken=' . (isset($_POST['g-recaptcha-response']) && $_POST['g-recaptcha-response'] !== '' ? 'yes' : 'no')
+);
+
 $token    = $_POST['g-recaptcha-response'] ?? '';
 $remoteIp = $_SERVER['REMOTE_ADDR'] ?? null;
 
