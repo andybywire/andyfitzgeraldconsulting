@@ -153,6 +153,6 @@ jobs:
 
             echo ">>> Cleaning up old releases (keep 5 most recent)..."
             cd "$RELEASES"
-            ls -1t | tail -n +6 | xargs -r rm -rf
+            ls -1t | tail -n +4 | xargs -r rm -rf
 
             echo ">>> Deployment complete."
