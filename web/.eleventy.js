@@ -18,6 +18,7 @@ export default function (eleventyConfig) {
 	eleventyConfig.addPassthroughCopy('serviceworker.js');
 	eleventyConfig.addPassthroughCopy({ 'assets/js': 'js' });
 	eleventyConfig.addPassthroughCopy({ 'assets/icons': 'icons' });
+	eleventyConfig.addPassthroughCopy({ 'assets/img': 'img' });
 	eleventyConfig.addPassthroughCopy('manifest.json');
 	// eleventyConfig.addPassthroughCopy('robots.txt');
 
