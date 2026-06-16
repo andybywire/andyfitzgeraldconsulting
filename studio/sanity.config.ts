@@ -5,6 +5,7 @@ import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemas'
 import {codeInput} from '@sanity/code-input'
 import {RiSettings4Line} from 'react-icons/ri'
+import { mermaidContentModel } from 'sanity-plugin-mermaid-content-model'
 
 const hiddenDocTypes = (listItem: any) =>
   !['media.tag','settings','skosConcept','skosConceptScheme','service','collection'].includes(listItem.getId())
@@ -39,6 +40,7 @@ export default defineConfig({
     }),
     visionTool(),
     codeInput(),
+    mermaidContentModel(),
   ],
   schema: {
     types: schemaTypes,
