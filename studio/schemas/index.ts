@@ -7,6 +7,7 @@ import settings from './documents/settings'
 import singleton from './documents/singleton'
 
 import figure from './objects/figure'
+import table from './objects/table'
 
 export const schemaTypes = [
   article,
@@ -17,4 +18,5 @@ export const schemaTypes = [
   singleton,
   settings,
   figure,
+  table
 ]

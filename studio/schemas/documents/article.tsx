@@ -152,7 +152,23 @@ export default {
           title: 'Pre',
           type: 'code',
         },
+        {type: 'table'},
       ],
+      components: {
+        portableText: {
+          plugins: (props: any) => {
+            return props.renderDefault({
+              ...props,
+              plugins: {
+                ...props.plugins,
+                table: {
+                  enabled: true
+                }
+              }
+            })
+          }
+        }
+      }
     },
     {
       name: 'canonical',
