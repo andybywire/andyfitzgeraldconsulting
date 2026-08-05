@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en" data-base="18" data-sizing="fluid" data-layout="full" data-heading="lato" data-h4="weight">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prose container + measure + sidebar — specimen</title>
+<style>
+/* ───────────────────────────── FONTS ───────────────────────────── */
+@font-face {
+  font-family:'Noto Serif'; font-style:normal; font-weight:100 900; font-display:swap;
+  src:url('../assets/fonts/NotoSerif-VariableFont_wdth,wght.woff2') format('woff2') tech(variations),
+      url('../assets/fonts/NotoSerif-VariableFont_wdth,wght.woff2') format('woff2-variations');
+}
+@font-face {
+  font-family:'Noto Serif'; font-style:italic; font-weight:100 900; font-display:swap;
+  src:url('../assets/fonts/NotoSerif-Italic-VariableFont_wdth,wght.woff2') format('woff2') tech(variations),
+      url('../assets/fonts/NotoSerif-Italic-VariableFont_wdth,wght.woff2') format('woff2-variations');
+}
+@font-face { font-family:'Lato'; font-style:normal; font-weight:400; font-display:swap;
+  src:url('../assets/fonts/Lato-Regular.woff2') format('woff2'); }
+@font-face { font-family:'Lato'; font-style:normal; font-weight:700; font-display:swap;
+  src:url('../assets/fonts/Lato-Bold.woff2') format('woff2'); }
+
+/* ──────────── LAYER 1 — PRIMITIVES (Figma variables) ──────────── */
+:root {
+  --font-body:'Noto Serif', Georgia, serif;
+  --font-ui:'Lato', Roboto, Arial, sans-serif;
+  --font-display:var(--font-ui);   /* chrome, eyebrow, metadata — ALWAYS Lato */
+  --font-heading:var(--font-ui);   /* h1–h4 only — this is what the toggle swaps */
+  --tracking-display:-0.015em;     /* tuned for Lato; serifs usually want less */
+
+  --leading-prose-1:1.5; --leading-prose-2:1.6; --leading-prose-3:1.45;
+  --leading-head-2:1.3; --leading-head-3:1.3; --leading-head-4:1.25;
+  --leading-head-5:1.2; --leading-head-6:1.1;
+
+  --tracking-label:0.02em;   /* display tracking is --tracking-display, set above */
+  --weight-regular:400; --weight-bold:700;
+
+  --blue:#4e9dbc; --dark-blue:#1f4351; --eyebrow-gray:#777676;
+  --medium-gray:#646464; --light-gray:rgba(43,40,40,.1);
+  --black:#051319; --white:#fefefe;
+
+  /* LAYOUT tokens */
+  --max-width: 1200px;
+  --measure-prose: 66ch;
+  --breakout: 7rem;
+  --page-gutter: 1rem;
+}
+/* ── 20px base — mobile floors 18/21/25/30/32 ── */
+[data-base='20'][data-sizing='fixed'] {
+  --font-size-1:1rem; --font-size-2:1.25rem; --font-size-3:1.5625rem;
+  --font-size-4:1.953125rem; --font-size-5:2.44140625rem; --font-size-6:3.0517578125rem;
+}
+[data-base='20'][data-sizing='fluid'] {
+  --font-size-1:1rem;
+  --font-size-2:clamp(1.125rem,  1.0682rem + 0.2424vw, 1.25rem);
+  --font-size-3:clamp(1.3125rem, 1.1989rem + 0.4848vw, 1.5625rem);
+  --font-size-4:clamp(1.5625rem, 1.3849rem + 0.7576vw, 1.953125rem);
+  --font-size-5:clamp(1.875rem,  1.6175rem + 1.0985vw, 2.44140625rem);
+  --font-size-6:clamp(2rem,      1.5219rem + 2.0398vw, 3.0517578125rem);
+}
+
+/* ── 18px base — step 1 clamped at the 16px floor, mobile body floor 17.
+      Reading steps (2, 3) are now nearly flat; only display stays fluid. ── */
+[data-base='18'][data-sizing='fixed'] {
+  --font-size-1:1rem; --font-size-2:1.125rem; --font-size-3:1.40625rem;
+  --font-size-4:1.7578125rem; --font-size-5:2.197265625rem; --font-size-6:2.746582031rem;
+}
+[data-base='18'][data-sizing='fluid'] {
+  --font-size-1:1rem;
+  --font-size-2:clamp(1.0625rem, 1.0341rem + 0.1212vw, 1.125rem);
+  --font-size-3:clamp(1.3125rem, 1.2699rem + 0.1818vw, 1.40625rem);
+  --font-size-4:clamp(1.5625rem, 1.4737rem + 0.3788vw, 1.7578125rem);
+  --font-size-5:clamp(1.875rem,  1.7285rem + 0.625vw,  2.197265625rem);
+  --font-size-6:clamp(2rem,      1.6606rem + 1.4479vw, 2.746582031rem);
+}
+:root {
+  --role-h1-size:var(--font-size-6); --role-h1-leading:var(--leading-head-6);
+  --role-h2-size:var(--font-size-4); --role-h2-leading:var(--leading-head-4);
+  --role-h3-size:var(--font-size-3); --role-h3-leading:var(--leading-head-3);
+}
+
+/* ──────────── LAYER 2 — ROLES (Figma text styles) ──────────── */
+*,*::before,*::after { box-sizing:border-box; }
+body {
+  margin:0; background:var(--white); color:var(--black);
+  font-family:var(--font-body); font-size:var(--font-size-2);
+  line-height:var(--leading-prose-2); font-weight:var(--weight-regular);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+h1,h2,h3,h4 { font-family:var(--font-heading); }
+
+/* ── heading-face toggle. Metadata roles deliberately stay Lato either way. ── */
+[data-heading='serif'] { --font-heading:var(--font-body); }
+
+/* ── h4 treatments. h4 has no size step left, so it must differentiate some
+      other way. With Lato headings it gets family + weight + tracking free;
+      with serif headings the family signal disappears and it needs help.  ── */
+[data-h4='caps'] h4 {
+  font-size:var(--font-size-1); text-transform:uppercase;
+  letter-spacing:0.06em; line-height:var(--leading-prose-1);
+}
+[data-h4='rule'] h4 {
+  border-top:2px solid var(--blue); padding-top:.5rem; margin-top:2.25rem;
+}
+
+/* h4-vs-body adjacency test */
+.h4-test { border:1px solid var(--color-border, #d2d5d6); border-radius:4px;
+  padding:1rem 1.25rem 1.25rem; margin:2.5rem 0; background:#fbfcfc; }
+.h4-test h4 { margin-top:.25rem; }
+.h4-test p:last-child { margin-bottom:0; }
+.h4-test-label { font-family:var(--font-ui); font-size:12.5px; line-height:1.5;
+  color:var(--medium-gray); margin:0 0 .5rem; letter-spacing:0; }
+.h4-test-label b { color:#0e3d52; }
+h1 { font-size:var(--role-h1-size); line-height:var(--role-h1-leading);
+     letter-spacing:var(--tracking-display); font-weight:var(--weight-bold); margin:0 0 .75rem; }
+h2 { font-size:var(--role-h2-size); line-height:var(--role-h2-leading);
+     letter-spacing:var(--tracking-display); font-weight:var(--weight-bold); margin:2.75rem 0 .75rem; }
+h3 { font-size:var(--role-h3-size); line-height:var(--role-h3-leading);
+     font-weight:var(--weight-bold); margin:2rem 0 .5rem; }
+h4 { font-size:var(--font-size-2); line-height:var(--leading-head-2);
+     font-weight:var(--weight-bold); letter-spacing:var(--tracking-label); margin:1.75rem 0 .25rem; }
+p { margin:0 0 1.35rem; }
+.lead { font-size:var(--font-size-3); line-height:var(--leading-prose-3);
+        color:var(--dark-blue); margin-bottom:1.75rem; }
+.eyebrow { font-family:var(--font-display); font-size:var(--font-size-1);
+           line-height:var(--leading-prose-1); letter-spacing:var(--tracking-label);
+           text-transform:uppercase; color:var(--eyebrow-gray); margin:0 0 .5rem; }
+figcaption,.small { font-size:var(--font-size-1); line-height:var(--leading-prose-1);
+                    color:var(--medium-gray); font-style:italic; }
+blockquote { margin:0 0 1.35rem; padding-left:1.25rem;
+             border-left:3px solid var(--light-gray); color:var(--dark-blue); }
+blockquote p:last-child { margin-bottom:0; }
+
+/* ═════════════ PAGE GRID — places regions only ═════════════
+   Mirrors the existing site .grid. Full-bleed lives HERE. */
+.page {
+  display:grid;
+  grid-template-columns:
+    minmax(var(--page-gutter), calc(50vw - var(--max-width) / 2))
+    [col] repeat(12, 1fr [col])
+    minmax(var(--page-gutter), calc(50vw - var(--max-width) / 2));
+  column-gap: clamp(0.5rem, 1.5vw, 1.5rem);
+}
+.banner { grid-column: 1 / span 14; grid-row: 1; margin:0 0 1.5rem; }
+.banner .ph { border-radius:0; aspect-ratio:32/9; }
+
+/* full-width layout: prose spans the whole page grid, gutters included,
+   so .full can genuinely reach the viewport edge */
+[data-layout='full'] .prose   { grid-column: 1 / span 14; grid-row: 2; }
+[data-layout='full'] .sidebar { display:none; }
+
+/* sidebar layout: prose is confined to the content region */
+[data-layout='aside'] .prose   { grid-column: col 1 / span 12; grid-row: 2; }
+[data-layout='aside'] .sidebar { display:none; }
+@media (min-width: 60rem) {
+  [data-layout='aside'] .prose   { grid-column: col 1 / span 8; }
+  [data-layout='aside'] .sidebar {
+    display:block; grid-column: col 10 / span 3; grid-row: 2;   /* was: 4 / span 2 */
+  }
+}
+
+/* ═════════════ PROSE CONTAINER — measure + breakout ═════════════ */
+.prose {
+  display:grid;
+  grid-template-columns:
+    [full-start]                          minmax(var(--page-gutter), 1fr)
+    [wide-start]                          minmax(0, var(--breakout))
+    [measure-start] min(var(--measure-prose), calc(100% - var(--page-gutter) * 2)) [measure-end]
+                                          minmax(0, var(--breakout))
+    [wide-end]                            minmax(var(--page-gutter), 1fr)
+    [full-end];
+  position:relative;
+}
+/* In a sidebar region the measure is LEFT-aligned, not centred — otherwise
+   prose sits inset from the region edge and lines up with nothing. */
+[data-layout='aside'] .prose {
+  grid-template-columns:
+    [full-start wide-start measure-start] min(var(--measure-prose), 100%) [measure-end]
+                                          minmax(0, var(--breakout))
+    [wide-end]                            minmax(0, 1fr)
+    [full-end];
+}
+.prose > *     { grid-column: measure; }
+.prose > .wide { grid-column: wide; }
+.prose > .full { grid-column: full; }
+
+.prose > .full-panel {
+  grid-column: full; display:grid; grid-template-columns: subgrid;
+  background:var(--light-gray); padding:2.5rem 0; margin:2.5rem 0;
+}
+.prose > .full-panel > * { grid-column: measure; }
+
+figure { margin:2.5rem 0; position:relative; }
+figure.wide, figure.full { margin:3rem 0; }
+figcaption { margin-top:.5rem; }
+figure.full figcaption, figure.wide figcaption { padding:0 var(--page-gutter); }
+.ph { background:repeating-linear-gradient(135deg,#eef2f4 0 12px,#e5ebee 12px 24px);
+      border-radius:3px; aspect-ratio:16/9; }
+figure.full .ph { border-radius:0; }
+.tier { position:absolute; top:.5rem; left:.5rem; font-family:var(--font-display);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  background:rgba(18,36,44,.82); color:#fff; padding:3px 7px; border-radius:2px; z-index:2; }
+
+/* ───────────────────────── SIDEBAR ───────────────────────── */
+.sidebar { grid-row:2; align-self:start; }
+.sidebar h2 { font-size:var(--font-size-3); line-height:var(--leading-head-3);
+  margin:0 0 .5rem; letter-spacing:normal; }
+.sidebar ul { list-style:none; padding:0; margin:0; }
+.sidebar li { margin-bottom:.35rem; }
+.sidebar a { font-family:var(--font-display); font-size:var(--font-size-1);
+  line-height:var(--leading-prose-1); color:var(--dark-blue); text-decoration:none; }
+.sidebar a:hover { color:var(--blue); text-decoration:underline; }
+.sidebar .note { font-family:var(--font-display); font-size:12px; color:var(--eyebrow-gray);
+  margin-top:1rem; line-height:1.45; }
+
+/* ──────── measure guides (JS-positioned, so mode-agnostic) ──────── */
+.measure-guide, .wide-guide { display:none; position:absolute; top:0; bottom:0;
+  pointer-events:none; z-index:3; }
+.guides .measure-guide { display:block;
+  border-left:1px dashed var(--blue); border-right:1px dashed var(--blue);
+  background:rgba(78,157,188,.045); }
+.guides .wide-guide { display:block;
+  border-left:1px dotted #c98b2f; border-right:1px dotted #c98b2f; }
+
+/* ─────────────────── chrome (px, so stable) ─────────────────── */
+.toolbar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:12px;
+  align-items:center; padding:11px 18px; background:#12242c; color:#e8eef0;
+  font-family:var(--font-display); font-size:13.5px; line-height:1.4; }
+.toolbar strong { font-weight:700; letter-spacing:.02em; }
+.toolbar button { font-family:inherit; font-size:13.5px; font-weight:700; cursor:pointer;
+  background:transparent; color:#e8eef0; border:1px solid rgba(232,238,240,.35);
+  border-radius:3px; padding:5px 12px; }
+.toolbar button[aria-pressed='true'] { background:var(--blue); border-color:var(--blue); color:#08191f; }
+.toolbar label { display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
+.toolbar .sep { width:1px; height:20px; background:rgba(232,238,240,.25); }
+.toolbar .readout { margin-left:auto; font-variant-numeric:tabular-nums; }
+.toolbar .readout b { color:#9fd8ec; }
+.toolbar .readout .gov { color:#ffd28a; }
+
+.scale { border-bottom:1px solid var(--light-gray); margin:32px 0 40px; padding-bottom:20px; }
+.scale h2 { font-family:var(--font-display); font-size:13px; line-height:1.4; font-weight:700;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--eyebrow-gray); margin:0 0 12px; }
+.step { display:flex; align-items:baseline; gap:14px; margin-bottom:5px; }
+.step .sample { font-family:var(--font-display); font-weight:700; line-height:1.1; white-space:nowrap; }
+.step .meta { font-family:var(--font-display); font-size:13px; color:var(--medium-gray);
+  font-variant-numeric:tabular-nums; white-space:nowrap; }
+.step .meta em { font-style:normal; color:var(--blue); font-weight:700; }
+.step .meta .now { color:var(--black); font-weight:700; }
+.step[data-unused] { opacity:.38; }
+.s1 .sample{font-size:var(--font-size-1)} .s2 .sample{font-size:var(--font-size-2)}
+.s3 .sample{font-size:var(--font-size-3)} .s4 .sample{font-size:var(--font-size-4)}
+.s5 .sample{font-size:var(--font-size-5)} .s6 .sample{font-size:var(--font-size-6)}
+
+.labels [data-role] { position:relative; }
+.labels [data-role]::after { content:attr(data-role); position:absolute; left:calc(100% + 18px);
+  top:.35em; font-family:var(--font-display); font-weight:700; font-size:12px; line-height:1.2;
+  letter-spacing:.04em; text-transform:uppercase; color:var(--blue);
+  white-space:nowrap; pointer-events:none; }
+@media (max-width:1250px){ .labels [data-role]::after{ display:none; } }
+footer.pad { height:96px; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <strong>Layout</strong>
+  <button id="btnFull" aria-pressed="true">Full width</button>
+  <button id="btnAside" aria-pressed="false">With sidebar</button>
+  <span class="sep"></span>
+  <strong>Base</strong>
+  <button id="b20" aria-pressed="false">20</button>
+  <button id="b18" aria-pressed="true">18</button>
+  <span class="sep"></span>
+  <strong>Sizing</strong>
+  <button id="btnFixed" aria-pressed="false">Fixed</button>
+  <button id="btnFluid" aria-pressed="true">Fluid</button>
+  <span class="sep"></span>
+  <strong>Headings</strong>
+  <button id="btnLato" aria-pressed="true">Lato</button>
+  <button id="btnSerif" aria-pressed="false">Noto Serif</button>
+  <label style="gap:4px">tracking
+    <input type="range" id="trk" min="-4" max="1" step="0.25" value="-1.5" style="width:74px">
+    <b id="trkVal" style="min-width:38px;display:inline-block">-1.5%</b>
+  </label>
+  <span class="sep"></span>
+  <strong>h4</strong>
+  <button id="h4w" aria-pressed="true">weight</button>
+  <button id="h4c" aria-pressed="false">caps</button>
+  <button id="h4r" aria-pressed="false">rule</button>
+  <span class="sep"></span>
+  <label><input type="checkbox" id="gd"> Guides</label>
+  <label><input type="checkbox" id="lbl"> Roles</label>
+  <span class="readout">
+    <b id="vw">–</b> · body <b id="bodyPx">–</b>px ·
+    measure <b id="mChars">–</b> ch / <b id="mPx">–</b>px ·
+    region <b id="rPx">–</b>px · governed by <b class="gov" id="gov">–</b>
+  </span>
+</div>
+
+<div class="page" id="page">
+
+  <figure class="banner">
+    <span class="tier">page grid · 1 / span 14 · always edge-to-edge</span>
+    <div class="ph"></div>
+  </figure>
+
+  <div class="prose" id="prose">
+    <div class="measure-guide" aria-hidden="true"></div>
+    <div class="wide-guide" aria-hidden="true"></div>
+
+    <section class="scale">
+      <h2>Six steps — <span id="baseLabel">20</span>px base, ratio 1.25 · <span id="modeLabel">fluid</span></h2>
+      <div class="step s1"><span class="sample">Aa</span><span class="meta">now <span class="now" id="c1">–</span> · <em>small / caption</em></span></div>
+      <div class="step s2"><span class="sample">Aa</span><span class="meta">now <span class="now" id="c2">–</span> · <em>body</em></span></div>
+      <div class="step s3"><span class="sample">Aa</span><span class="meta">now <span class="now" id="c3">–</span> · <em>lead + h3</em></span></div>
+      <div class="step s4"><span class="sample">Aa</span><span class="meta">now <span class="now" id="c4">–</span> · <em>h2</em></span></div>
+      <div class="step s5" data-unused><span class="sample">Aa</span><span class="meta">now <span class="now" id="c5">–</span> · <em>spare</em></span></div>
+      <div class="step s6"><span class="sample">Aa</span><span class="meta">now <span class="now" id="c6">–</span> · <em>h1 / display</em></span></div>
+    </section>
+
+    <p class="eyebrow" data-role="eyebrow">Perspective · March 2026</p>
+    <h1 data-role="h1">Content models are arguments about meaning</h1>
+
+    <p class="lead" data-role="lead">Every content model encodes a claim about what matters and
+    what can be told apart. The trouble is that these claims are usually made by accident, in a
+    hurry, by whoever set up the fields.</p>
+
+    <p data-role="body">A content model looks like plumbing. It gets discussed as plumbing — field
+    types, validation rules, reference cardinality — and it gets handed to whoever is closest to
+    the CMS. But the moment you decide that a case study has a client and an article does not, you
+    have made an argument about the shape of the world your organisation operates in. That argument
+    will outlive the person who made it, and it will quietly constrain what anyone can say for
+    years afterward.</p>
+
+    <figure>
+      <span class="tier">default · measure</span>
+      <div class="ph"></div>
+      <figcaption>An image at the measure. Its edges should sit exactly on the prose edges in
+      both layouts.</figcaption>
+    </figure>
+
+    <p>This is the part that makes modelling difficult, and it is not a technical difficulty.
+    Deciding whether two things are the same kind of thing requires knowing what you intend to do
+    with them, and most organisations do not know that yet when the fields get created.</p>
+
+    <h2 data-role="h2">Structure precedes vocabulary</h2>
+
+    <p>There is a persistent temptation to start with the words. Someone proposes a tagging scheme,
+    everyone argues productively about terms for a week, and the resulting vocabulary gets bolted
+    onto a structure that cannot support the distinctions it makes. The terms are fine. The
+    structure cannot hold them.</p>
+
+    <figure class="wide">
+      <span class="tier" id="tierWide">.wide</span>
+      <div class="ph"></div>
+      <figcaption>A diagram needing more room than the measure allows — an opt-in, not an
+      accident of column spans.</figcaption>
+    </figure>
+
+    <p>Structure comes first because structure determines which distinctions are even
+    <em>available</em>. If notes and essays share one type, no vocabulary can reliably separate
+    them at query time — you can only annotate the difference and hope every author annotates
+    consistently, which they will not.</p>
+
+    <div class="full-panel">
+      <blockquote>
+        <p>A taxonomy applied to the wrong structure does not fail loudly. It degrades, slowly,
+        into a set of labels nobody trusts.</p>
+      </blockquote>
+    </div>
+
+    <p>The panel above is full-bleed within its container, but its text returns to the measure via
+    <code>subgrid</code> — the <code>.study-quote</code> pattern, without a second container.</p>
+
+    <h3 data-role="h3">Where types earn their keep</h3>
+
+    <p>A separate type is justified when the thing behaves differently — different lifecycle,
+    different required fields, different rendering, different place in a feed. It is not justified
+    merely because the thing feels different. Feelings about content are a poor basis for schema,
+    because they are not stable across a team and they change faster than the content does.</p>
+
+    <h4 data-role="h4">A note on granularity</h4>
+
+    <p>Granularity failures are asymmetric. Splitting a type that should have stayed whole is
+    recoverable — you merge, you migrate, you write a script and an apology. Merging types that
+    should have stayed distinct destroys information you never captured, and no migration can
+    recover a distinction that was never recorded.</p>
+
+    <div class="h4-test">
+      <p class="h4-test-label">h4 against body text at the same step. Measured difference right now:
+        <b id="h4Signal">–</b></p>
+      <h4>A subheading at step 2</h4>
+      <p>And body text immediately beneath it, at exactly the same size. Switch the heading face to
+      Noto Serif and the family signal disappears, leaving only weight — which is thin. That is what
+      the h4 treatment buttons are for.</p>
+    </div>
+
+    <figure class="full">
+      <span class="tier" id="tierFull">.full</span>
+      <div class="ph"></div>
+      <figcaption>In full-width layout this reaches the viewport edge. Inside a sidebar region it
+      can only reach the region edge — which is why full-bleed belongs to the page grid.</figcaption>
+    </figure>
+
+    <h2 data-role="h2">What the reader actually experiences</h2>
+
+    <p>None of this is visible to a reader, and that is exactly why it gets deferred. What the
+    reader sees is whether the site can tell them what kind of thing they are looking at, whether
+    related material is genuinely related, and whether a topic page gathers everything it should.</p>
+
+    <p>Which returns the whole problem to where it started. Deciding what kinds of things you
+    publish is not preparation for the design work. It <em>is</em> the design work, conducted in a
+    medium that happens to be schema rather than type.</p>
+
+    <p class="small">Filed under content modelling, semantics, information architecture.</p>
+    <footer class="pad"></footer>
+  </div>
+
+  <nav class="sidebar" id="sidebar">
+    <h2>Insight Topics</h2>
+    <ul>
+      <li><a href="#">Content modelling</a></li>
+      <li><a href="#">Information architecture</a></li>
+      <li><a href="#">Semantics</a></li>
+      <li><a href="#">Taxonomy design</a></li>
+      <li><a href="#">Structured content</a></li>
+      <li><a href="#">Knowledge graphs</a></li>
+    </ul>
+    <p class="note">Appears at ≥60rem only, at <code>col 10 / span 3</code>,
+    <code>grid-row: 2</code> — replacing the old <code>4 / span 2</code>.</p>
+  </nav>
+</div>
+
+<script>
+const html = document.documentElement;
+const $ = id => document.getElementById(id);
+const fpx = el => parseFloat(getComputedStyle(el).fontSize);
+
+function setLayout(l){
+  html.dataset.layout = l;
+  $('btnFull').setAttribute('aria-pressed', l === 'full');
+  $('btnAside').setAttribute('aria-pressed', l === 'aside');
+  update();
+}
+function setMode(m){
+  html.dataset.sizing = m;
+  $('btnFixed').setAttribute('aria-pressed', m === 'fixed');
+  $('btnFluid').setAttribute('aria-pressed', m === 'fluid');
+  $('modeLabel').textContent = m;
+  update();
+}
+/* ── base toggle: 20px vs 18px body ──────────────────────────
+   18-base clamps step 1 at the 16px legibility floor rather than following
+   the ratio down to 14.4, and drops the mobile body floor to 17. Consequence
+   worth watching: steps 2 and 3 become nearly flat, so reading sizes are
+   effectively constant and only display type stays meaningfully fluid. */
+function setBase(b){
+  html.dataset.base = b;
+  $('b20').setAttribute('aria-pressed', b === '20');
+  $('b18').setAttribute('aria-pressed', b === '18');
+  update();
+}
+$('b20').onclick = () => setBase('20');
+$('b18').onclick = () => setBase('18');
+
+$('btnFull').onclick  = () => setLayout('full');
+$('btnAside').onclick = () => setLayout('aside');
+$('btnFixed').onclick = () => setMode('fixed');
+$('btnFluid').onclick = () => setMode('fluid');
+
+/* ── heading face ─────────────────────────────────────────
+   Swaps h1–h4 only. Eyebrow, nav, buttons and chrome stay Lato in both
+   modes, because that is the actual proposal — not "all Lato vs all serif". */
+function setHeading(face){
+  html.dataset.heading = face;
+  $('btnLato').setAttribute('aria-pressed', face === 'lato');
+  $('btnSerif').setAttribute('aria-pressed', face === 'serif');
+  // -1.5% is tuned for Lato; a serif at display size usually wants less
+  const t = face === 'serif' ? -0.5 : -1.5;
+  $('trk').value = t;
+  setTracking(t);
+}
+function setTracking(pct){
+  html.style.setProperty('--tracking-display', (pct / 100) + 'em');
+  $('trkVal').textContent = pct + '%';
+  update();
+}
+$('btnLato').onclick  = () => setHeading('lato');
+$('btnSerif').onclick = () => setHeading('serif');
+$('trk').oninput = e => setTracking(parseFloat(e.target.value));
+
+/* ── h4 treatment ── */
+function setH4(kind){
+  html.dataset.h4 = kind;
+  $('h4w').setAttribute('aria-pressed', kind === 'weight');
+  $('h4c').setAttribute('aria-pressed', kind === 'caps');
+  $('h4r').setAttribute('aria-pressed', kind === 'rule');
+  update();
+}
+$('h4w').onclick = () => setH4('weight');
+$('h4c').onclick = () => setH4('caps');
+$('h4r').onclick = () => setH4('rule');
+
+/* Describe, from computed styles, what actually separates h4 from body. */
+function h4Signal(){
+  const box = document.querySelector('.h4-test');
+  if (!box) return;
+  const h = box.querySelector('h4');
+  const p = box.querySelector('p:not(.h4-test-label)');
+  if (!h || !p) return;
+  const hs = getComputedStyle(h), ps = getComputedStyle(p);
+  const fam = s => s.fontFamily.split(',')[0].replace(/["']/g, '');
+  const out = [];
+  if (fam(hs) !== fam(ps)) out.push(`family (${fam(hs)} vs ${fam(ps)})`);
+  if (hs.fontWeight !== ps.fontWeight) out.push(`weight ${hs.fontWeight}/${ps.fontWeight}`);
+  const dz = parseFloat(hs.fontSize) - parseFloat(ps.fontSize);
+  if (Math.abs(dz) > 0.5) out.push(`size ${parseFloat(hs.fontSize).toFixed(1)}/${parseFloat(ps.fontSize).toFixed(1)}`);
+  if (hs.textTransform !== ps.textTransform && hs.textTransform !== 'none') out.push(`case ${hs.textTransform}`);
+  if (hs.letterSpacing !== ps.letterSpacing) out.push(`tracking ${hs.letterSpacing}`);
+  if (parseFloat(hs.borderTopWidth) > 0) out.push('a rule above');
+  $('h4Signal').textContent = out.length ? out.join('  ·  ') : 'nothing at all';
+}
+$('gd').onchange  = e => $('prose').classList.toggle('guides', e.target.checked);
+$('lbl').onchange = e => $('prose').classList.toggle('labels', e.target.checked);
+
+function update(){
+  for (let i=1;i<=6;i++)
+    $('c'+i).textContent = fpx(document.querySelector('.s'+i+' .sample')).toFixed(2)+'px';
+
+  const prose = $('prose');
+  const p = document.querySelector('.prose > p[data-role="body"]');
+  const s = getComputedStyle(p);
+  const c = document.createElement('canvas').getContext('2d');
+  c.font = `${s.fontWeight} ${s.fontSize} ${s.fontFamily}`;
+  const avg = c.measureText('abcdefghijklmnopqrstuvwxyz').width/26;
+
+  const pr = prose.getBoundingClientRect();
+  const rr = p.getBoundingClientRect();
+  const wideEl = document.querySelector('figure.wide');
+  const wr = wideEl.getBoundingClientRect();
+
+  $('vw').textContent   = innerWidth + 'px';
+  $('bodyPx').textContent = parseFloat(s.fontSize).toFixed(2);
+  $('mPx').textContent  = Math.round(rr.width);
+  $('mChars').textContent = Math.round(rr.width/avg);
+  $('rPx').textContent  = Math.round(pr.width);
+  // if the prose container is wider than the text, the measure cap is binding
+  $('gov').textContent  = (pr.width - rr.width > 2) ? 'measure' : 'region';
+
+  // badges reflect what the tiers actually do in this layout
+  const aside = html.dataset.layout === 'aside';
+  $('tierWide').textContent = '.wide · ' + Math.round(wr.width) + 'px';
+  $('tierFull').textContent = aside ? '.full · region edge only' : '.full · viewport edge';
+
+  // guides: positioned from real geometry, so they work in either layout
+  const mg = document.querySelector('.measure-guide');
+  const wg = document.querySelector('.wide-guide');
+  mg.style.left  = (rr.left - pr.left) + 'px';  mg.style.width  = rr.width + 'px';
+  wg.style.left  = (wr.left - pr.left) + 'px';  wg.style.width  = wr.width + 'px';
+
+  $('baseLabel').textContent = html.dataset.base;
+  h4Signal();
+}
+
+let queued = false;
+function scheduleUpdate(){
+  if (document.hidden) { update(); return; }   // rAF is suspended while hidden
+  if (queued) return;
+  queued = true;
+  requestAnimationFrame(() => { queued = false; update(); });
+}
+addEventListener('resize', scheduleUpdate);
+new ResizeObserver(scheduleUpdate).observe(document.documentElement);
+setInterval(scheduleUpdate, 300);
+document.fonts.ready.then(update);
+update();
+</script>
+</body>
+</html>

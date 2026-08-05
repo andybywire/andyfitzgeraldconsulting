@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" data-hue="a" data-link="700">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Colour specimen — two brand blues</title>
+<style>
+@font-face { font-family:'Noto Serif'; font-style:normal; font-weight:100 900; font-display:swap;
+  src:url('../assets/fonts/NotoSerif-VariableFont_wdth,wght.woff2') format('woff2') tech(variations); }
+@font-face { font-family:'Noto Serif'; font-style:italic; font-weight:100 900; font-display:swap;
+  src:url('../assets/fonts/NotoSerif-Italic-VariableFont_wdth,wght.woff2') format('woff2') tech(variations); }
+@font-face { font-family:'Lato'; font-style:normal; font-weight:400; font-display:swap;
+  src:url('../assets/fonts/Lato-Regular.woff2') format('woff2'); }
+@font-face { font-family:'Lato'; font-style:normal; font-weight:700; font-display:swap;
+  src:url('../assets/fonts/Lato-Bold.woff2') format('woff2'); }
+
+:root {
+  --font-body:'Noto Serif', Georgia, serif;
+  --font-display:'Lato', Roboto, Arial, sans-serif;
+  --font-size-1:1rem; --font-size-2:1.25rem; --font-size-3:1.5625rem;
+  --font-size-4:1.953125rem; --font-size-6:3.0517578125rem;
+  --leading-prose-1:1.5; --leading-prose-2:1.6; --leading-prose-3:1.45;
+  --leading-head-3:1.3; --leading-head-4:1.25; --leading-head-6:1.1;
+  --tracking-tight:-0.015em; --tracking-label:0.02em;
+  --measure-prose:66ch;
+  /* blue-500…900 and neutral-100…900 are injected by JS */
+  --white:#fefefe;
+}
+/* ── semantic roles — the only layer the page actually uses ── */
+:root {
+  --color-text:        var(--neutral-900);
+  --color-text-muted:  var(--neutral-700);
+  --color-accent:      var(--blue-500);
+  --color-link:        var(--blue-700);
+  --color-link-strong: var(--blue-900);
+  --color-border:      var(--neutral-300);
+  --color-surface:     var(--neutral-100);
+  --color-cta:         var(--blue-900);
+}
+[data-link='500'] :root, html[data-link='500'] { --color-link: var(--blue-500); }
+
+*,*::before,*::after { box-sizing:border-box; }
+body { margin:0; background:var(--white); color:var(--color-text);
+  font-family:var(--font-body); font-size:var(--font-size-2); line-height:var(--leading-prose-2);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+
+h1,h2,h3,h4 { font-family:var(--font-display); font-weight:700; }
+h1 { font-size:var(--font-size-6); line-height:var(--leading-head-6);
+     letter-spacing:var(--tracking-tight); margin:0 0 .75rem; }
+h2 { font-size:var(--font-size-4); line-height:var(--leading-head-4);
+     letter-spacing:var(--tracking-tight); margin:2.5rem 0 .75rem; }
+h3 { font-size:var(--font-size-3); line-height:var(--leading-head-3); margin:2rem 0 .5rem; }
+p { margin:0 0 1.35rem; max-width:var(--measure-prose); }
+a { color:var(--color-link); text-underline-offset:2px; text-decoration-thickness:1px; }
+a:hover { color:var(--color-link-strong); }
+.eyebrow { font-family:var(--font-display); font-size:var(--font-size-1);
+  line-height:var(--leading-prose-1); letter-spacing:var(--tracking-label);
+  text-transform:uppercase; color:var(--color-text-muted); margin:0 0 .5rem; }
+.lead { font-size:var(--font-size-3); line-height:var(--leading-prose-3);
+  color:var(--color-link-strong); margin-bottom:1.75rem; }
+blockquote { margin:2rem 0; padding-left:1.25rem; border-left:3px solid var(--color-accent);
+  color:var(--color-link-strong); max-width:var(--measure-prose); }
+figcaption { font-size:var(--font-size-1); line-height:var(--leading-prose-1);
+  color:var(--color-text-muted); font-style:italic; max-width:var(--measure-prose); }
+
+/* ── chrome ── */
+.toolbar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:12px;
+  align-items:center; padding:11px 18px; background:#12242c; color:#e8eef0;
+  font-family:var(--font-display); font-size:13.5px; }
+.toolbar strong { font-weight:700; letter-spacing:.02em; }
+.toolbar button { font-family:inherit; font-size:13.5px; font-weight:700; cursor:pointer;
+  background:transparent; color:#e8eef0; border:1px solid rgba(232,238,240,.35);
+  border-radius:3px; padding:5px 12px; }
+.toolbar button[aria-pressed='true'] { background:#9fd8ec; border-color:#9fd8ec; color:#08191f; }
+.toolbar .sep { width:1px; height:20px; background:rgba(232,238,240,.25); }
+.toolbar label { display:inline-flex; align-items:center; gap:5px; cursor:pointer; }
+
+.wrap { max-width:1080px; margin:0 auto; padding:36px 20px 96px; }
+section { margin-bottom:56px; }
+h2.sec { font-family:var(--font-display); font-size:13px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--color-text-muted); margin:0 0 14px; padding:0; }
+
+table.t { border-collapse:collapse; width:100%; font-family:var(--font-display); font-size:13.5px; }
+table.t th, table.t td { text-align:left; padding:8px 10px; border-bottom:1px solid #e3e8ea; vertical-align:middle; }
+table.t th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:#8a9296; }
+table.t code { font-family:ui-monospace,Menlo,monospace; font-size:12px; }
+.sw { width:56px; height:28px; border-radius:3px; border:1px solid rgba(0,0,0,.12); display:block; }
+.num { font-variant-numeric:tabular-nums; font-weight:700; }
+.v { font-weight:700; font-size:12px; letter-spacing:.04em; }
+.v.pass { color:#20714a; } .v.large { color:#8a5a12; } .v.fail { color:#a8341c; }
+
+.cc { display:inline-block; font-family:var(--font-display); font-size:11px; font-weight:700;
+  letter-spacing:.04em; padding:2px 6px; border-radius:2px; margin-left:8px; vertical-align:middle;
+  background:#eef2f4; color:#3b474c; white-space:nowrap; }
+.cc.pass { background:#dff0e6; color:#17603d; }
+.cc.large{ background:#fdf0d8; color:#7a4e0a; }
+.cc.fail { background:#fbe2dc; color:#8f2a13; }
+[hidden-badges] .cc { display:none; }
+
+/* applied demo pieces */
+.navbar { background:var(--color-accent); padding:14px 18px; border-radius:4px;
+  display:flex; gap:18px; align-items:center; flex-wrap:wrap;
+  font-family:var(--font-display); font-size:var(--font-size-1); }
+.navbar a { text-decoration:none; font-weight:700; }
+.navbar.on-white a { color:var(--white); }
+.navbar.on-dark  a { color:var(--neutral-900); }
+.btn { display:inline-block; font-family:var(--font-display); font-size:var(--font-size-1);
+  font-weight:700; color:var(--white); background:var(--color-cta); padding:.7rem 1.2rem;
+  border-radius:3px; text-decoration:none; }
+.btn.hover-500 { background:var(--blue-500); }
+.btn.hover-700 { background:var(--blue-700); }
+.tags { display:flex; gap:8px; flex-wrap:wrap; padding:0; margin:0 0 1rem; list-style:none; }
+.tags a { font-family:var(--font-display); font-size:13.5px; font-weight:700; text-decoration:none;
+  background:var(--color-surface); color:var(--color-link); padding:4px 10px; border-radius:99px;
+  border:1px solid var(--color-border); }
+.alert { padding:14px 16px; border-radius:3px; font-family:var(--font-display);
+  font-size:var(--font-size-1); margin-bottom:10px; }
+.alert.now { background:#f7e4e1; color:#cc4b37; }
+.alert.fixed { background:#f7e4e1; color:#9c2f1d; }
+.panel { background:var(--color-surface); border:1px solid var(--color-border);
+  border-radius:4px; padding:20px 22px; }
+.rule { height:3px; background:var(--color-accent); border:0; margin:2rem 0; max-width:6rem; }
+.grid2 { display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <strong>Brand hue</strong>
+  <button id="hA" aria-pressed="true">A · #4e9dbc</button>
+  <button id="hB" aria-pressed="false">B · #479FD5</button>
+  <span class="sep"></span>
+  <strong>Link colour</strong>
+  <button id="l500" aria-pressed="false">500 (current)</button>
+  <button id="l700" aria-pressed="true">700 (AA)</button>
+  <span class="sep"></span>
+  <label><input type="checkbox" id="bg" checked> Contrast badges</label>
+  <span style="margin-left:auto;font-variant-numeric:tabular-nums">
+    hue <b id="hInfo">–</b>
+  </span>
+</div>
+
+<div class="wrap" id="wrap">
+
+  <section>
+    <h2 class="sec">Blue ramp — one hue, stepped by lightness</h2>
+    <table class="t"><thead><tr>
+      <th>Token</th><th>Swatch</th><th>Hex</th><th>Lightness</th>
+      <th>On white</th><th>Body text 4.5</th><th>Large text 3.0</th><th>Role</th>
+    </tr></thead><tbody id="blueRamp"></tbody></table>
+    <p style="font-family:var(--font-display);font-size:13px;color:#5c686d;max-width:74ch;margin:12px 0 0">
+      Your existing <code>--dark-blue</code> <code>#1f4351</code> is <em>already</em> hue A at 22%
+      lightness — same hue, same saturation as <code>#4e9dbc</code>. The ramp formalises a
+      relationship your palette already has rather than inventing one.
+    </p>
+  </section>
+
+  <section>
+    <h2 class="sec">Neutral ramp — derived from <code>--black</code>, keeps its cool cast</h2>
+    <table class="t"><thead><tr>
+      <th>Token</th><th>Swatch</th><th>Hex</th><th>On white</th>
+      <th>Body text 4.5</th><th>Large text 3.0</th><th>Role</th>
+    </tr></thead><tbody id="neutralRamp"></tbody></table>
+  </section>
+
+  <section>
+    <h2 class="sec">Every pairing this design actually uses</h2>
+    <table class="t"><thead><tr>
+      <th>Usage</th><th>Foreground</th><th>Background</th><th>Ratio</th><th>Needs</th><th>Verdict</th>
+    </tr></thead><tbody id="pairs"></tbody></table>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2 class="sec">Applied — navigation</h2>
+    <div class="grid2">
+      <div>
+        <p style="font-family:var(--font-display);font-size:13px;color:#5c686d;margin-bottom:8px">
+          White on accent <span class="cc" data-pair="white|blue-500|4.5"></span></p>
+        <nav class="navbar on-white">
+          <a href="#">about</a><a href="#">insights</a><a href="#">services</a><a href="#">contact</a>
+        </nav>
+      </div>
+      <div>
+        <p style="font-family:var(--font-display);font-size:13px;color:#5c686d;margin-bottom:8px">
+          Dark text on accent <span class="cc" data-pair="neutral-900|blue-500|4.5"></span></p>
+        <nav class="navbar on-dark">
+          <a href="#">about</a><a href="#">insights</a><a href="#">services</a><a href="#">contact</a>
+        </nav>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="sec">Applied — article surface</h2>
+    <p class="eyebrow">Perspective · March 2026
+      <span class="cc" data-pair="neutral-700|white|4.5"></span></p>
+    <h1>Content models are arguments about meaning</h1>
+    <p class="lead">Every content model encodes a claim about what matters and what can be told
+      apart. <span class="cc" data-pair="blue-900|white|3"></span></p>
+
+    <p>A content model looks like plumbing — field types, validation rules, reference cardinality —
+      and it gets handed to whoever is closest to the CMS. But the moment you decide that
+      <a href="#">a case study has a client</a> and an article does not, you have made an argument
+      about the shape of the world your organisation operates in. Compare that against
+      <a href="#">the taxonomy you inherited</a>, and the mismatch is usually where the trouble
+      started. <span class="cc" id="linkBadge"></span></p>
+
+    <h2>Structure precedes vocabulary</h2>
+    <p>Structure comes first because structure determines which distinctions are even available.
+      If notes and essays share one type, no vocabulary can reliably separate them at query time.</p>
+
+    <blockquote>
+      <p>A taxonomy applied to the wrong structure does not fail loudly. It degrades, slowly, into
+      a set of labels nobody trusts.</p>
+    </blockquote>
+
+    <figcaption>A caption in muted neutral, italic serif — apparatus, not prose.
+      <span class="cc" data-pair="neutral-700|white|4.5"></span></figcaption>
+  </section>
+
+  <section>
+    <h2 class="sec">Applied — metadata, tags, calls to action</h2>
+    <ul class="tags">
+      <li><a href="#">content modelling</a></li><li><a href="#">semantics</a></li>
+      <li><a href="#">taxonomy design</a></li><li><a href="#">structured content</a></li>
+    </ul>
+    <p><span class="cc" data-pair="blue-700|neutral-100|4.5"></span></p>
+    <p style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+      <a class="btn" href="#">Get in touch</a>
+      <span class="cc" data-pair="white|blue-900|4.5"></span>
+      <a class="btn hover-500" href="#">Hover · 500</a>
+      <span class="cc" data-pair="white|blue-500|4.5"></span>
+      <a class="btn hover-700" href="#">Hover · 700</a>
+      <span class="cc" data-pair="white|blue-700|4.5"></span>
+    </p>
+  </section>
+
+  <section>
+    <h2 class="sec">Applied — alert (the other failing pair)</h2>
+    <div class="alert now">Current: <code>#cc4b37</code> on <code>#f7e4e1</code>
+      <span class="cc" data-pair="lit:#cc4b37|lit:#f7e4e1|4.5"></span></div>
+    <div class="alert fixed">Darkened: <code>#9c2f1d</code> on <code>#f7e4e1</code>
+      <span class="cc" data-pair="lit:#9c2f1d|lit:#f7e4e1|4.5"></span></div>
+  </section>
+
+  <section>
+    <h2 class="sec">Applied — panel / surface</h2>
+    <div class="panel">
+      <h3 style="margin-top:0">Insight topics</h3>
+      <p style="margin-bottom:0">Surface <code>neutral-100</code> with border
+        <code>neutral-300</code>, body text on it
+        <span class="cc" data-pair="neutral-900|neutral-100|4.5"></span></p>
+    </div>
+  </section>
+</div>
+
+<script>
+const html=document.documentElement, $=id=>document.getElementById(id);
+const h2r=h=>h.replace('#','').match(/../g).map(v=>parseInt(v,16));
+const r2h=a=>'#'+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,'0')).join('');
+const lin=c=>{c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4);};
+const Lum=rgb=>{const[r,g,b]=rgb.map(lin);return 0.2126*r+0.7152*g+0.0722*b;};
+const ratio=(a,b)=>{const l1=Lum(a),l2=Lum(b);const[hi,lo]=l1>l2?[l1,l2]:[l2,l1];return (hi+0.05)/(lo+0.05);};
+function fromHSL(h,s,l){h/=360;s/=100;l/=100;
+  const f=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;
+    if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+  if(!s)return[l*255,l*255,l*255];
+  const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;
+  return[f(p,q,h+1/3)*255,f(p,q,h)*255,f(p,q,h-1/3)*255];}
+
+const HUES={ a:{label:'#4e9dbc', h:197, s:45, base:52}, b:{label:'#479FD5', h:203, s:63, base:56} };
+const BLUE_ROLE={500:'brand accent · headings, rules',600:'—',700:'link / text-safe',
+                 800:'strong text',900:'CTA background, lead text'};
+const NEUTRAL=[['900',0,'primary text'],['800',.14,'—'],['700',.30,'muted text, captions, eyebrow'],
+  ['600',.46,'large text only'],['500',.58,'non-text'],['300',.82,'borders'],
+  ['200',.91,'subtle fills'],['100',.96,'surfaces']];
+const WHITE=h2r('#fefefe'), BLACKBASE=h2r('#051319');
+let P={};
+
+function buildPalette(){
+  const cfg=HUES[html.dataset.hue];
+  const lights={500:cfg.base,600:44,700:36,800:28,900:22};
+  P={};
+  for(const [step,l] of Object.entries(lights)){
+    const hex=r2h(fromHSL(cfg.h,cfg.s,l));
+    P['blue-'+step]=hex; html.style.setProperty('--blue-'+step,hex);
+  }
+  for(const [name,mix] of NEUTRAL){
+    const hex=r2h(BLACKBASE.map((c,i)=>c+(WHITE[i]-c)*mix));
+    P['neutral-'+name]=hex; html.style.setProperty('--neutral-'+name,hex);
+  }
+  P['white']='#fefefe';
+  $('hInfo').textContent=`${cfg.label} · ${cfg.h}° / ${cfg.s}% / ${cfg.base}%`;
+}
+const verdict=(r,need)=>r>=Math.max(need,4.5)?['PASS','pass']:r>=need?['PASS','pass']:r>=3?['LARGE ONLY','large']:['FAIL','fail'];
+/* Report both thresholds independently — a single "verdict" column made a
+   higher-contrast step look worse than a lower one, which is just confusing. */
+const mark=(r,need)=>r>=need?`<span class="v pass">PASS</span>`:`<span class="v fail">FAIL</span>`;
+
+function renderRamps(){
+  const lights={500:HUES[html.dataset.hue].base,600:44,700:36,800:28,900:22};
+  $('blueRamp').innerHTML=Object.keys(lights).map(step=>{
+    const hex=P['blue-'+step], r=ratio(h2r(hex),WHITE);
+    return `<tr><td><code>--blue-${step}</code></td>
+      <td><span class="sw" style="background:${hex}"></span></td>
+      <td><code>${hex}</code></td><td class="num">${lights[step]}%</td>
+      <td class="num">${r.toFixed(2)}</td>
+      <td>${mark(r,4.5)}</td><td>${mark(r,3)}</td>
+      <td>${BLUE_ROLE[step]}</td></tr>`;}).join('');
+  $('neutralRamp').innerHTML=NEUTRAL.map(([name,,role])=>{
+    const hex=P['neutral-'+name], r=ratio(h2r(hex),WHITE);
+    return `<tr><td><code>--neutral-${name}</code></td>
+      <td><span class="sw" style="background:${hex}"></span></td>
+      <td><code>${hex}</code></td><td class="num">${r.toFixed(2)}</td>
+      <td>${mark(r,4.5)}</td><td>${mark(r,3)}</td><td>${role}</td></tr>`;}).join('');
+}
+
+const PAIRS=[
+  ['Body text','neutral-900','white',4.5],
+  ['Muted text / caption / eyebrow','neutral-700','white',4.5],
+  ['Link in prose','__LINK__','white',4.5],
+  ['Heading accent (large)','blue-500','white',3],
+  ['Lead paragraph','blue-900','white',4.5],
+  ['Nav — white on accent','white','blue-500',4.5],
+  ['Nav — dark on accent','neutral-900','blue-500',4.5],
+  ['CTA button','white','blue-900',4.5],
+  ['CTA hover at 500','white','blue-500',4.5],
+  ['CTA hover at 700','white','blue-700',4.5],
+  ['Tag on surface','blue-700','neutral-100',4.5],
+  ['Body on surface','neutral-900','neutral-100',4.5],
+];
+function renderPairs(){
+  const linkTok='blue-'+html.dataset.link;
+  $('pairs').innerHTML=PAIRS.map(([label,fg,bg,need])=>{
+    const f=fg==='__LINK__'?linkTok:fg;
+    const r=ratio(h2r(P[f]),h2r(P[bg])); const [vt,vc]=verdict(r,need);
+    return `<tr><td>${label}</td><td><code>${f}</code> ${P[f]}</td>
+      <td><code>${bg}</code> ${P[bg]}</td><td class="num">${r.toFixed(2)}</td>
+      <td class="num">${need}</td><td><span class="v ${vc}">${vt}</span></td></tr>`;}).join('');
+}
+function renderBadges(){
+  document.querySelectorAll('.cc[data-pair]').forEach(el=>{
+    const [fg,bg,need]=el.dataset.pair.split('|');
+    const gv=t=>t.startsWith('lit:')?t.slice(4):P[t];
+    const r=ratio(h2r(gv(fg)),h2r(gv(bg))); const [vt,vc]=verdict(r,+need);
+    el.className='cc '+vc; el.textContent=`${r.toFixed(2)}:1 · need ${need} · ${vt}`;
+  });
+  const lt='blue-'+html.dataset.link;
+  const r=ratio(h2r(P[lt]),WHITE); const [vt,vc]=verdict(r,4.5);
+  const lb=$('linkBadge'); lb.className='cc '+vc;
+  lb.textContent=`links: ${lt} ${P[lt]} — ${r.toFixed(2)}:1 · need 4.5 · ${vt}`;
+}
+function renderAll(){ buildPalette(); renderRamps(); renderPairs(); renderBadges(); }
+
+function setHue(k){ html.dataset.hue=k; $('hA').setAttribute('aria-pressed',k==='a');
+  $('hB').setAttribute('aria-pressed',k==='b'); renderAll(); }
+function setLink(k){ html.dataset.link=k; $('l500').setAttribute('aria-pressed',k==='500');
+  $('l700').setAttribute('aria-pressed',k==='700');
+  html.style.setProperty('--color-link','var(--blue-'+k+')'); renderAll(); }
+$('hA').onclick=()=>setHue('a'); $('hB').onclick=()=>setHue('b');
+$('l500').onclick=()=>setLink('500'); $('l700').onclick=()=>setLink('700');
+$('bg').onchange=e=>$('wrap').toggleAttribute('hidden-badges',!e.target.checked);
+renderAll(); setLink('700');
+</script>
+</body>
+</html>
