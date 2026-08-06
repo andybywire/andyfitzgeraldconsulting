@@ -234,11 +234,24 @@ descriptor dropped to step 2, but 18px under a 28px name reads as too much contr
   match wrongly gave "Ideas" and "Insights" the `Nav` style; corrected the same day. If applying styles
   by text content again, match case-sensitively.
 
-**Outstanding for the CSS: the hero needs its own measure.** `--measure-prose: 66ch` resolves to
-~1297px at 35.16px — wider than the page, so it would not cap anything. In Figma the hero is
-container-constrained to 959px, which is fine for a mock but not a rule. To reproduce the current
-~44 characters per line, `--measure-statement: 43ch` (≈843px at 35.16px). Decide by eye once it's in
-CSS; the point is that it must be capped by something deliberate.
+**Resolved 2026-08-06: the hero needs no measure token, and `--measure-statement` is retired.**
+
+An earlier version of this file proposed `--measure-statement: 43ch` (~845px) to reproduce "the
+current ~44 characters per line." Measurement killed it. The hero statement now fills the content
+column — `grid/margin` on the band, `FILL` on the statement — which gives **996px, about 52
+characters** at 35.16px. `--leading-statement: 1.4` was derived for *"roughly 50 characters."*
+**They already agree.** Capping at 43ch would pull the measure to ~44, moving it *away* from the point
+its own leading was designed around, and would likely add a fourth line.
+
+The 43ch figure came from an older mock constrained to 959px and was never re-derived against the
+settled grid. **In CSS the statement takes no cap at all** — the grid supplies its measure. Note also
+that `--measure-prose: 66ch` resolves to ~1297px at 35.16px, wider than the page, so applying it
+would cap nothing. The absence of a cap here is a decision, not an oversight.
+
+**The Hero band uses `rhythm/band` (64), not `rhythm/section`.** Both were tried; 96 read as too much
+air above a three-line statement. Worth recording because the Hero is a coloured, self-contained
+region like Topics and Connect, which *do* take `section` — so the band/section split is decided by
+how the band reads, not by a structural rule alone.
 
 ## Fluid sizing — per-step `clamp()`, 375px → 1200px
 
@@ -408,6 +421,64 @@ mode moves the overlay with it.
 binding `offset` moves only the *guide*. Content is positioned by `paddingLeft`/`paddingRight`, so a
 frame whose overlay is bound and whose padding is raw will, on a mode switch, move its pink columns
 and leave the text where it was. Found the hard way on Insight Detail 2026-08-06.
+
+## Outdenting — when a box must bleed past its column
+
+Settled 2026-08-06 on the Home Notes column. The situation recurs wherever an **unboxed** element
+grows a box on hover.
+
+Note cards sit unboxed at rest, so their *text* must align with the "Notes" heading and description
+above them. But a card has 16px of padding, so if its box sits on the column line its text is inset
+16px and misaligns with everything else in the column. On hover the box appears — and it should bleed
+*outward*, past the column, rather than the text sitting inset all the time to make room for it.
+
+### The rule: outdent the card, never the column
+
+**Widening the column looks like the same fix and is not.** The first attempt widened the Notes column
+to 346 so the cards could be full-width inside it. Because the band centred its children rather than
+using padding, the extra 30px was split across both columns and **the Articles column drifted from 222
+to 207** — 15px off col 1, while every other band on the page started at 222. The outdent leaked into
+a sibling that had nothing to do with it.
+
+Confine it to the card and nothing else moves.
+
+### CSS — one declaration
+
+```css
+@media (min-width: 60rem) {
+  .home .notes > .note {
+    margin-inline: calc(var(--card-pad) * -1);
+  }
+}
+```
+
+The card keeps its padding at all times, so the hover box has its inset; the negative margin pulls the
+*box* outward so the *text* lands on the column line. At rest there is no fill and no stroke, so the
+outdent is invisible. The value is **derived from `--card-pad`**, so the two can never drift.
+
+Scope it deliberately. This is a Home-desktop treatment: on mobile the cards go full width with no
+room to bleed, and on the Ideas index an unboxed card's hover state should match the boxed cards
+beside it, not exceed them. The media query that creates the two-column layout is the same one that
+bounds the outdent, so it costs nothing extra.
+
+### Figma — a wider `FIXED` child in a `CENTER`-aligned parent
+
+Auto-layout has no negative margin, but it does overflow symmetrically:
+
+| Node | Setting | Result |
+|---|---|---|
+| Notes column | `FIXED` → `grid/span-4` | 316, at col 9 — **unmoved** |
+| cards frame | `FILL`, `counterAxisAlignItems: CENTER` | 316 |
+| note card | **`FIXED` 348** | 886 → 1234, overflowing 16 each side |
+| card text | — | **902 → 1218**, exactly the column |
+
+Verified 2026-08-06: the parent stays 316 at 902 and the overflow is symmetric. Every grid-bearing
+frame stays on the grid; only the card breaks out, which is exactly what the CSS does.
+
+**348 is the one number Figma cannot derive.** It is `grid/span-4 + 2 × card/pad`, and there is no
+`calc()` in a Figma width. Rather than mint a token whose name restates the arithmetic, the frame is
+named `Note list — 348 outdent (span-4 + 2x card/pad)`. **If `card/pad` ever changes, the CSS follows
+automatically and Figma does not** — that frame name is the tripwire.
 
 **Open: a fixed margin does not survive intermediate widths.** In CSS the margin is
 `minmax(1rem, calc(50vw - 498px))` — it *shrinks* as the viewport narrows and floors at 16px. The real
@@ -623,13 +694,32 @@ inconsistency that gets applied wrong late at night.
 
 Settled 2026-07-28. Specimen with live contrast computation: `web/__design-specimens/color-specimen.html`.
 
-> ## ⚠ TODO — this section is behind the Figma file
+> ## ⚠ TODO — colour is being deferred to a holistic pass
 >
-> A **full palette audit is pending** (flagged 2026-08-06, to be done as its own pass). The ramps
-> below still match Figma primitive-for-primitive — every blue, neutral and error hex verified
-> 2026-08-06 — but the **semantic layer has moved and this section has not caught up.** Read the
-> `Dark Accent` note immediately below before trusting any `color/*` value here. Nothing else in this
-> section should be treated as authoritative until the audit runs.
+> **A full palette audit is pending**, flagged 2026-08-06 and deliberately held back to be done as one
+> piece rather than patched incrementally. The **primitives are sound** — every blue, neutral and error
+> hex verified against Figma 2026-08-06, so the ramps below are accurate. The **semantic layer has
+> moved and this section has not caught up**, so treat any `color/*` claim below as unverified.
+>
+> ### The agenda, as found so far
+>
+> 1. **`Dark Accent` is the `Semantic` collection's *default* mode**, so a new frame inherits it and
+>    `color/accent` resolves to `blue-700`, not the brand blue. Documented below. **Decide whether
+>    `Value` should be the default** — a mode named for a variant, set as the default, is confusing.
+> 2. **In `Dark Accent`, `color/link-hover` resolves to `blue-500`, which fails 3:1 on the tinted
+>    ground (2.82).** That mode offers a link-hover colour that cannot legally be used on a link.
+> 3. **The `button` component's hover variant is `blue-500` with white text — 3.09, fails AA.** This is
+>    the exact failure the list at the end of this section records against the *live site* ("button
+>    hover, white on `--blue`, 3.03"), carried forward into the mockup rather than fixed. `blue-700` at
+>    rest with `blue-600` or `blue-800` on hover would resolve it.
+> 4. **There is no `color/text-inverse`.** White text now sits on three coloured bands — Hero, Topics
+>    and Footer — every one bound to the raw `white` primitive. Three uses earns a semantic name.
+> 5. **The "Known colour problems" list at the end of this section measures the live site, not the
+>    mockups.** Three of its items are already resolved in Figma by moving those surfaces to
+>    `blue-700`. Confirm and strike them rather than re-solving them.
+>
+> Nothing here is urgent — none of it blocks layout work — but all of it should be settled together,
+> because items 1–4 are the same decision seen from four directions.
 
 ## `Semantic` has two modes, and the non-obvious one is the default
 
@@ -976,6 +1066,9 @@ The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
 | Text styles | **13**, viewport-agnostic — 9 content roles (`H1`, `H2`, `H3`, `H4`, `Lead`, `Body`, `Body Compact`, `Small`, `Eyebrow`) plus 4 chrome roles (`Display`, `Masthead/Name`, `Masthead/Role`, `Nav`). Leading and tracking as percentages; `fontSize` bound to `size/N`, so a base change propagates to every style without editing any of them |
 | Leading synced | 2026-08-06. `Body` 160% → **180%**, `Lead` 145% → **160%**, closing the gap that made Figma internally inconsistent — the `Spacing` collection's 32px unit is `18 × 1.8` rounded, and had been sitting against a 28.8px line box. Converted boards reflowed: Insight Detail +174, Singleton +132, Ideas +63, Home +39. The four absolutely-positioned boards reported **zero** change, which means their text grew inside fixed-height frames — see Outstanding. |
 | `Body Compact` | Created 2026-08-06. 18px / 150%, bound to `size/2`. Applied to the description text in both card component sets — 8 nodes, propagating to all 36 instances. |
+| `note card` wired | 2026-08-06. Padding 12/16 → `card/pad`, inner stack gap 4 → `card/gap` (8) across all four variants, descriptions onto `Body Compact`, inert outer gap zeroed. Card 139 → 155. The **only** remaining raw value is the clipping variant's 2px link-row nudge, kept as a documented optical exception. Choosing 8 for the inner stack settled the 4px question — see *Still open*. |
+| Home Insights wired | 2026-08-06. Band off `primaryAxisAlignItems: CENTER` onto `grid/margin` + `MIN` — it had **no horizontal padding** and centred its children, so with a 346 Notes column the content summed to 1026 and both columns sat 15px off-grid. Now 7 + `skip-1` + 4 = 996 exactly, Articles `FILL` at 222→793, Notes pinned to `grid/span-4` at 902→1218. All six gaps bound; the Notes heading→description gap was **5**. Note card padding 12/16 → `card/pad`. Cards outdented to 348 — see Grid → Outdenting. Band 902 → 960. |
+| Home Hero wired | 2026-08-06. `rhythm/band` + `grid/margin` (it had **no horizontal padding** — its 996 came from a `FIXED` child, the third distinct mechanism found for establishing the content column). Stack and statement to `FILL`, statement gap to `space/4`, statement fill to `white`. The `button` component set: padding 8/12 → `space/1`/`space/2`, inert gap zeroed, label off an unstyled 20px onto `Nav`. Band 339 → 350. The stack's `counterAxisAlignItems: MAX` — which right-aligns the button — is deliberate. |
 | Audit 2026-07-28 | All 12 styles verified against this file: fonts, bound variables, resolved sizes, leading and tracking all match. Only divergence found was `Display` tracking, which Andy relaxed −0.5% → 0%; this file now records 0% as correct. |
 | Migrations completed | 23 nodes off the remote `font-size/body`; 33 nodes off remote `blue-500` / remote `white-100` / legacy `bg/primary` / `card/hover border`; 4 nodes off the remote `Heading/1` and `Heading/2` styles onto local `H2`/`H3`; 17 style-less nodes onto mode-aware `size/2`. Every pass verified at zero remaining references. |
 | `Spacing` collection | Built 2026-08-06. **23** `FLOAT` variables — 7 `space/1–7` primitives plus 10 `rhythm/*`, 3 `card/*` and 3 `chrome/*` roles **aliased** to them. All scoped `GAP`, all carrying a `--css-name` and a description. Modes `Desktop` (default) / `Mobile`; only `rhythm/band` (64/32), `rhythm/section` (96/64) and `chrome/inset` (48/16) differ. |
@@ -1008,9 +1101,11 @@ constraint structural — Figma will not offer the brand blue in a text-colour p
    with no text style applied, so they keep their own font and leading. Applying `Body` would change
    their appearance — the toggles in particular are Lato UI labels, not prose. Leave them until the
    design phase decides what those roles are.
-5. **Note cards are still unbound**, deliberately. `article card` is fully wired; the note card set
-   still carries raw `pad 12/16/12/16` and inner gaps of 4. Binding `card/gap` (8) grows each card
-   ~8px — that is the 4px question in *Still open*, and the note cards are where it gets answered.
+5. **`rhythm/list` (32) between unboxed note cards may be too tight.** Their hover boxes bleed 16px
+   each side, so two adjacent hover targets sit only 32 apart with 16px of box between them. Not
+   wrong, and not worth changing on argument alone — but the first thing to look at if the Notes
+   column reads as crowded on hover. *(The note card set is otherwise fully bound as of 2026-08-06;
+   the only raw value left is the clipping link row's 2px optical nudge, which is deliberate.)*
 6. **Two *detached* frames named "article card"** on Web Clipping Detail and Book Note Detail. They are
    hand-built copies, not instances, still at the old raw 25 / 0, and they inherit nothing. To be
    replaced with real instances when those pages are worked.
@@ -1072,12 +1167,13 @@ misleading and worth changing.
 - **Masonry on the Ideas index** — deferred 2026-08-06. Andy is evaluating a plugin and a CSS
   approach; the three Figma column frames are column-major stacks, which is not what a row-major DOM
   order would produce.
-- **The 4px question.** The scale bottoms out at 8 (`space/1`). The one genuine sub-8 candidate is the
-  note card's title/meta/description stack, currently 4 — the three other sub-8 values in the file are
-  optical nudges and deliberately excluded. Binding `card/gap` at 8 grows those cards ~8px; if that
-  reads too airy, add a ⅛-line step and renumber `space/1`–`space/8`. Renumbering is cheap — Figma
-  variables bind by ID, so a rename breaks no bindings and no aliases; only the `--space-N`
-  code-syntax strings need updating in the same pass.
+- ~~**The 4px question.**~~ **Resolved 2026-08-06 — the scale stays at seven steps, no ⅛ rung.** The
+  only genuine sub-8 candidate was the note card's title / meta / description stack at 4. Bound to
+  `card/gap` (8) and judged by eye: the card grows ~8px and reads better for it, which is unsurprising
+  given the stack was tightened to compensate for the old 1.6 leading. The three remaining sub-8
+  values in the file are optical nudges — the masthead name→role at 2, the card image's 6px top pad,
+  the clipping link row at 2 — and stay deliberately untokenized. **`space/1`–`space/7` is final**
+  unless a second genuine spacing case appears below 8.
 - **Nothing is in the CSS yet.** The whole system — type, colour, rhythm, grid — exists in DESIGN.md
   and Figma only. `web/style/` is still the old 20px/Open Sans system, so every value in this file is
   currently a specification rather than a description.
