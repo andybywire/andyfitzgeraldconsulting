@@ -39,8 +39,8 @@ Settled 2026-07-27. Comparison specimen: `web/__design-specimens/type-scale-spec
 
 **Open Sans is dropped** — it was the previous body face, and removing it saves ~577 KB.
 
-Undecided: whether `figcaption` stays italic serif (prose-adjacent) or moves to Lato (reads as
-apparatus). Decide in the page mockups, not by default.
+**Resolved 2026-08-06: `figcaption` is italic serif.** Decided from the Case Study mockup rather than
+in the abstract — see the `Caption` style below.
 
 ## Scale — 18px base, ratio 1.25 (major third)
 
@@ -164,6 +164,32 @@ and a size-driven one does not.
 Notes column and anything else at roughly 30 characters. **Never for running prose** — at the full
 measure it is too tight, which is the whole reason `Body` sits at 1.8.
 
+## `Caption` — and the italic Figma cannot draw
+
+Added 2026-08-06, resolving the open `figcaption` question. **Noto Serif Italic, `size/1` (16px),
+150%, 0% tracking, paired with `color/text-muted`.** The fourteenth text style.
+
+**Italic serif, not Lato.** A caption under a figure reads as part of the reading matter, not as
+apparatus around it. The italic and the muted colour do the subordinating that the size step can no
+longer do on its own — body:small compresses to 1.125 on this scale, so 16px alone barely reads as
+subordinate to 18px body.
+
+**In Figma the style is roman, and that is a tooling limit, not a decision.** Figma's `Noto Serif`
+offers **72 styles — every weight, every width, plus the Display optical size — and not one italic**,
+and there is no separate `Noto Serif Italic` family. For contrast, Figma's `Noto Sans` carries 144
+styles *including* italics, so this is specific to the serif. The site is unaffected:
+`NotoSerif-Italic-VariableFont_wdth,wght.woff2` already ships and `style/base/fonts.css` declares it
+at `font-style: italic`, so CSS renders the intended face. To close the gap in Figma, install Noto
+Serif Italic as a **system font** — the repo's `.woff2` cannot be installed, so it needs the TTF from
+Google Fonts — after which the style's `fontName` is a one-line change and every caption follows.
+
+The Figma style's description carries this caveat, so a future reader does not mistake the roman for
+an intention.
+
+**A caption is not automatic.** Case Study's screenshots are documentary and earn one; Singleton's
+photograph of Andy working is illustrative and does not. The figure structure is the same either way
+— see Vertical rhythm → *Figures and captions*.
+
 ## Tracking — a Lato-only adjustment
 
 Verified against Figma 2026-07-28. The pattern that emerged is worth stating as a rule, because it
@@ -216,9 +242,9 @@ wordmark-adjacent, so a dedicated style is legitimate. What is not legitimate is
 | `Masthead/Role` | 3 | 22.5 / 21 | **Lato** Regular | 130% | "Information Architect" |
 | `Nav` | 2 | 18 / 17 | Lato Regular | 150% | nav, buttons, UI labels |
 
-**Thirteen styles total** — nine content roles (the eight above plus `Body Compact`) and four chrome
-roles. Deliberately *not* collapsed for tidiness: `Masthead/Role` and `Nav` could merge if the
-descriptor dropped to step 2, but 18px under a 28px name reads as too much contrast in a lockup.
+**Fourteen styles total** — ten content roles (the eight above plus `Body Compact` and `Caption`) and
+four chrome roles. Deliberately *not* collapsed for tidiness: `Masthead/Role` and `Nav` could merge if
+the descriptor dropped to step 2, but 18px under a 28px name reads as too much contrast in a lockup.
 
 - **`Display` is the only place the serif carries display duty.** Confined to one hero statement it
   works without disturbing the Lato headings.
@@ -398,12 +424,116 @@ gives better behaviour, because the wide column is the one holding prose and sho
 intermediate widths. Consequence: only the *narrow* widths ever need tokens, which is why `span-3`
 and `span-4` exist and `span-7` and `span-8` do not.
 
+**The rule only protects you if the narrow column is actually pinned — a `HUG` rail inverts it.**
+Found on Singleton 2026-08-06. Its rail was `HUG`, so its width came from its widest child: a
+photograph cropped to **233px**. Two pixels off `grid/span-3`, and because prose `FILL`s, the error
+propagated — prose resolved to **654 instead of 656** and the rail sat at 985, two pixels left of
+col 10. A photo crop was setting the measure. **If a rail is `HUG`, the grid is downstream of its
+contents rather than upstream**, which is exactly backwards. Pin it.
+
+**Typed 656 is accepted, and `grid/span-8` was declined (2026-08-06).** Six places want an 8-column
+width the grid cannot derive: the title block on all five detail boards, plus any heading block that
+sits above a two-column split. Minting `grid/span-8` was considered and rejected in favour of typing
+656, on the grounds that the derived cases — every prose column — already work. The tripwire is the
+frame name: these are named `title block — 656 (8 col)` and `heading block — 656 (8 col)` so the
+derivation is legible, the same device as `Note list — 348 outdent`.
+
 **In CSS this is one change** — `--max-width: 1200px` → `996px`. The existing
 `column-gap: clamp(0.5rem, 1.5vw, 1.5rem)` already tops out at exactly the 24px gutter. It also moves
 the header and footer, which reference the same token.
 
 **Typography did not drive this.** Measure is satisfiable at more than one width — 996 with 8-column
 prose, or 1200 with 7-column prose — so it constrained the *column span*, not the grid.
+
+## The detail-page skeleton
+
+Proven across all six boards 2026-08-06 — the five detail templates plus the Singleton page shape.
+Bands stack at gap 0 and the board **hugs its height**,
+which is what stops a page developing the stale-height problem that left three Footers hanging 83px off
+the bottom of their own boards.
+
+```
+board                    VERTICAL, gap 0, HUG height
+├─ Top Bar
+├─ Hero                  optional — FIXED height, the one frame that clips
+├─ article band          pad rhythm/band + grid/margin, layout grid bound
+│  └─ wrapper            FILL → 996, gap rhythm/heading-close
+│     ├─ title block     FIXED 656 — eyebrow + H1 at rhythm/tight
+│     └─ prose row       HORIZONTAL, gap grid/skip-1
+│        ├─ Prose        FILL → 656, gap rhythm/heading-major
+│        │  ├─ Body Group    gap rhythm/paragraph — or rhythm/block if a figure interrupts
+│        │  └─ Section       gap rhythm/heading-close — H2 over a Body Group
+│        └─ rail         FIXED grid/span-3 (231)
+├─ Related band          pad rhythm/section + grid/margin, gap rhythm/block
+│  ├─ H2
+│  └─ card row           HORIZONTAL WRAP, gap grid/gutter, rowGap rhythm/list, cards grid/span-4
+└─ Footer
+```
+
+**Two rules decide most of it.** *Grid owns horizontal, rhythm owns vertical* — every column gap comes
+from `grid/*`, every stack gap from `rhythm/*`. And *pin the narrow column, let the wide one `FILL`* —
+the rail carries the only width, so 656 is arithmetic rather than a typed number.
+
+The variations the six boards actually needed all fit inside this shape:
+
+- **No eyebrow** (Singleton) — the H1 sits directly in the wrapper at FIXED 656. A single-child title
+  block would be structurally inert.
+- **No rail content** (Note Detail) — the rail is *reserved*, not removed, so prose still derives 656.
+- **A figure aligned to the body** (Case Study) — the *section* becomes the two-column unit rather than
+  the band. See below.
+- **A second band** (Case Study) — a full-bleed testimonial band splits the article in two. Each band
+  keeps its own padding and they meet at gap 0.
+- **A block wider than the prose column** (Case Study's 996 screenshot) — it sits in the wrapper below
+  the prose row at `rhythm/block`, not inside Prose.
+- **The last band before the Footer** takes `rhythm/section` on its bottom edge. See Vertical rhythm.
+
+## Two rail relationships — the gap is the message
+
+Settled 2026-08-06 across the five detail boards. Both are legal 12-column splits closing on 996;
+they differ in what the gap *says*.
+
+| Split | Arithmetic | Gap token | Reads as |
+|---|---|---|---|
+| 8 + 3 | 656 + **109** + 231 | `grid/skip-1` | a **sidebar** — set apart from the prose |
+| 8 + 4 | 656 + **24** + 316 | `grid/gutter` | a **figure belonging to** the paragraph beside it |
+
+**Case Study carries both, deliberately.** The client logo beside the summary sits at span-3 a
+skipped column away; the captioned screenshots sit at span-4 one gutter away. A documentary figure
+belongs *to* its paragraph and should sit against it; a logo is an identifier and does not. If the
+two ever need to agree, it is the logo that should move.
+
+Note this makes `grid/span-4` do double duty — the card width in a three-up row *and* the figure
+width in an 8+4 split. That is fine: it is the same number of columns either way, which is what the
+token names.
+
+## Aligning a figure with the body, not with the heading
+
+Settled 2026-08-06 on Case Study. **A rail that spans a whole prose column aligns its figure with the
+top of that column — which is the heading, not the paragraph.** If the figure should start level with
+the body text, the heading has to sit *outside* the horizontal row, which makes the section itself the
+two-column unit rather than the band:
+
+```
+Section              VERTICAL, gap rhythm/heading-close
+├─ heading block     FIXED 656 — eyebrow + H2 at rhythm/tight
+└─ body row          HORIZONTAL, gap grid/gutter
+   ├─ Body Group     FILL → 656
+   └─ rail           FIXED grid/span-4 (316)
+```
+
+**A band-level rail cannot do this**, because one frame has one cross-axis alignment and the heading
+and body are the same child. Nor can it be faked with a top padding on the rail: that number is the
+heading's height, so it breaks the moment the heading wraps to a different number of lines.
+
+**Sections without a figure keep a *reserved* rail.** An empty 316 column looks like dead weight and
+is not: it is what makes the body column **derive** 656 from `996 − 316 − 24` rather than type it, and
+a later figure drops into a slot that is already correct. This is the same move as Note Detail's
+reserved span-3 rail, which exists so that page's prose can `FILL`.
+
+**Distinguish this from a structurally inert wrapper.** A reserved rail is *contingently* empty — a
+correctly configured column whose content happens to be nothing today. The single-child wrappers this
+conversion deleted were *structurally* inert: they could never hold anything else. The test is whether
+the frame would still be correct with a second child in it.
 
 ## Layout grids use `STRETCH`, not `CENTER`
 
@@ -598,6 +728,43 @@ The collisions are deliberate — roles that agree today and can diverge later. 
 **indistinguishable by value in Figma's picker**, and that has already produced one wrong binding
 (the flattened vertical card variants picked up `rhythm/tight` where `card/gap` belonged). **Pick by
 prefix first, then by name; never by value.** If you are inside a card, the answer is under `card/`.
+
+This bit again on Singleton 2026-08-06: the gap above an h3 subsection was bound to `rhythm/block`
+where `rhythm/heading-minor` belonged. Both are 48, so nothing looked wrong and nothing would have,
+until the day the two roles diverge and only one of them should have moved.
+
+### What the board conversion settled
+
+Four boards were converted to auto-layout on 2026-08-06 and Singleton corrected. Four rhythm questions
+came up that the role table alone did not answer.
+
+**The last band before the Footer takes `rhythm/section` on its bottom edge — whatever kind of band it
+is.** Every board ending on a Related band already did this, because `rhythm/section` is that band's
+padding on both edges. Singleton was the only board whose last band was an *article* band, so it ended
+at `rhythm/band` (64) — which is exactly `rhythm/heading-major`, the internal section break. The Footer
+read as no more separated than a heading. At 96 it is 1.5× an internal break, and all five boards now
+end identically.
+
+Consequence worth naming: that band's padding is then **asymmetric** — 64 at the top against the Top
+Bar, 96 at the bottom against the Footer. Correct rather than sloppy. The Top Bar is a light band
+carrying its own `chrome/pad-header`, so there is no hard edge above; the Footer is a dark fill whose
+top edge lands as a line.
+
+**A Body Group's gap goes to `rhythm/block` when a figure, list or quote interrupts it** — not only
+before the interruption but after it too. This mirrors the CSS exactly, where `* + :is(…)` and
+`:is(…) + *` both fire. Web Clipping's lead-in / blockquote / paragraph group is the case: 48 above the
+quote and 48 below it, out of one `itemSpacing`.
+
+**A blockquote's indent is `space/5` (48), applied as `paddingLeft` on a wrapper frame.** A text node
+cannot carry padding, so the quote needs a frame around it; the text then `FILL`s to `656 − 48 = 608`.
+The primitive is bound directly rather than a `rhythm/*` role, because this is a horizontal inset and
+`rhythm/*` names vertical page flow — the same reasoning that puts `chrome/inset` where it is. It
+replaced a hand-set 39.
+
+**Figures and captions.** A caption sits `rhythm/tight` (8) below its image inside a `figure` frame:
+the caption is a label to the image's value, which is what `tight` is for. Where a figure sits above
+another block in a rail — Book Note's cover above its source card, Singleton's photograph above *On
+this page* — the gap is `rhythm/block` (48), the same value that figure would earn in running prose.
 
 **`band` and `section` are two values of one property, not two properties.** Both are a band's
 vertical padding; `section` is the heavier choice for a band opening a new page region. Bands stack at
@@ -1049,6 +1216,53 @@ Stretch is not a property of the row; it is what happens when a *child* is set t
 axis. So to make a row of cards equal-height, set the children to Fill, not the parent to Stretch.
 The parent's alignment control is the one people reach for and it is the wrong one.
 
+**`figma.createAutoLayout()` inherits `createFrame()`'s `clipsContent: true`.** Every frame created
+programmatically clips unless told otherwise, and clipping is invisible until something needs to
+overflow. It produced a false bug report on 2026-08-06: the `source card` hover adds a drop shadow at
+offset 2/2 with zero radius and zero spread, so the only visible part of it is 2px on the right and
+bottom — exactly the 2px the rail clipped. The interaction was firing correctly the whole time and
+read as doing nothing. For scale, the hand-built Insight Detail has **1 clipping frame out of 23**
+(`Hero`, correctly); the converted boards had 8 of 11 and 9 of 12 before the sweep. **Set
+`clipsContent = false` on creation and keep it true only where a frame genuinely crops** — a hero band
+holding an oversized image, or a masked photograph.
+
+**Verify an effect by render bounds, never by reading the effect back.** `absoluteRenderBounds` minus
+`absoluteBoundingBox` is the overflow an effect actually paints: the hover variant measures +2 right
+and +2 bottom, the rest variant 0. That distinguishes *the shadow exists* from *the shadow is visible*,
+which reading `node.effects` cannot.
+
+**A variant "Change to" interaction defaults to no transition.** `transition: null` swaps instantly.
+Clone an existing transition object rather than hand-writing one — the same trick keeps the hover
+*effect* identical across all three card sets.
+
+**`addComponentProperty` with `INSTANCE_SWAP` takes a node id as its default and component *keys* in
+`preferredValues`.** Passing a key as the default fails with *"Property value is incompatible with
+component property type."* The file's own `article card` shows the answer: `defaultValue: "43:843"`
+with a key in `preferredValues`. Setting `preferredValues` is worth the line — it restricts the picker
+to the five `card images/*` components instead of every component in the file.
+
+**`componentPropertyDefinitions` throws on a variant** — *"Can only get component property definitions
+of a component set or non-variant component."* Guard any sweep with
+`n.parent.type !== 'COMPONENT_SET'`.
+
+**Binding a layer to a component property overwrites that layer's text with the property default.**
+Not a merge; the default wins. On 2026-08-06 this silently destroyed a hand-edited layer and flattened
+one variant's placeholders into another's. **Consequence for variant sets: a property shared across two
+shapes forces one default onto both**, so where the shapes differ semantically the property must be
+split. `source card` ended with a shared `Title` and separate `Source` / `Author` / `Publisher` for
+exactly this reason. **Bind on rest *and* hover variants alike** — bind only rest and every text
+override snaps back to the placeholder the moment the user hovers.
+
+**A mask GROUP cannot participate in auto-layout.** Its bounds are the union of its children, it cannot
+be set to `FILL`, and it lands as `FIXED/FIXED`. Convert it to a frame with `clipsContent = true` and
+the image repositioned at the old offset — Case Study's hero (−31) and Singleton's photograph
+(−301, −2) were both converted this way with the crop preserved to the pixel.
+
+**An emptied frame keeps a stale height.** Delete a `HUG` frame's only child and Figma cannot hug
+nothing, so the old number stays — Note Detail's rail held 201px after its contents were removed. Same
+species as the stale-fixed-height trap above, and just as invisible. Set the frame to `FILL` on that
+axis so its size is derived.
+
 **Figma cannot express `clamp()`.** Its two modes hold the endpoints; the interpolation lives in CSS.
 `size/N` in `Desktop` mode is the 1200px end, in `Mobile` mode the 375px floor, and one fluid
 `--font-size-N` token spans them.
@@ -1063,7 +1277,7 @@ The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
 | `Primitives` collection | 18 colour variables (`blue/500–900`, `neutral/100–900`, `error/100·500·600`, `white`), scoped `ALL_FILLS` + `STROKE_COLOR`, each carrying its CSS name via `setVariableCodeSyntax('WEB', …)` |
 | `Semantic` collection | 11 colour variables **aliased** to primitives, scoped per role |
 | `Type Scale` collection | 6 `FLOAT` variables `size/1–6`, scoped `FONT_SIZE`, modes `Desktop` (default) / `Mobile`. Holds the **18px base** as settled: desktop 16 / 18 / 22.5 / 28.125 / 35.15625 / 43.9453125, mobile 16 / 17 / 21 / 25 / 30 / 32. Exact fractional values preserved. |
-| Text styles | **13**, viewport-agnostic — 9 content roles (`H1`, `H2`, `H3`, `H4`, `Lead`, `Body`, `Body Compact`, `Small`, `Eyebrow`) plus 4 chrome roles (`Display`, `Masthead/Name`, `Masthead/Role`, `Nav`). Leading and tracking as percentages; `fontSize` bound to `size/N`, so a base change propagates to every style without editing any of them |
+| Text styles | **14**, viewport-agnostic — 10 content roles (`H1`, `H2`, `H3`, `H4`, `Lead`, `Body`, `Body Compact`, `Small`, `Caption`, `Eyebrow`) plus 4 chrome roles (`Display`, `Masthead/Name`, `Masthead/Role`, `Nav`). Leading and tracking as percentages; `fontSize` bound to `size/N`, so a base change propagates to every style without editing any of them |
 | Leading synced | 2026-08-06. `Body` 160% → **180%**, `Lead` 145% → **160%**, closing the gap that made Figma internally inconsistent — the `Spacing` collection's 32px unit is `18 × 1.8` rounded, and had been sitting against a 28.8px line box. Converted boards reflowed: Insight Detail +174, Singleton +132, Ideas +63, Home +39. The four absolutely-positioned boards reported **zero** change, which means their text grew inside fixed-height frames — see Outstanding. |
 | `Body Compact` | Created 2026-08-06. 18px / 150%, bound to `size/2`. Applied to the description text in both card component sets — 8 nodes, propagating to all 36 instances. |
 | `note card` wired | 2026-08-06. Padding 12/16 → `card/pad`, inner stack gap 4 → `card/gap` (8) across all four variants, descriptions onto `Body Compact`, inert outer gap zeroed. Card 139 → 155. The **only** remaining raw value is the clipping variant's 2px link-row nudge, kept as a documented optical exception. Choosing 8 for the inner stack settled the 4px question — see *Still open*. |
@@ -1077,6 +1291,12 @@ The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
 | Components wired | 2026-08-06. **`article card`** — all four variants on `card/pad` (squared the drifted 14/20/16/20 to 16), `card/gap`, `card/media`; the eyebrow→body gap was `0` and is now 8. **`Top Bar`** — `chrome/pad-header` + `chrome/inset`, masthead lockup on `space/2`, nav row on `space/3`. **`Topics`** — `rhythm/section`, `grid/margin` (fixing a 223 drift), 7 + `skip-1` + 4 with Genres pinned to `grid/span-4`, lists restyled from an unstyled 20/175% to `Nav` and split into per-item text nodes. **`Connect`** — `rhythm/section`, `grid/margin`, 5 + `skip-2` + 5. **`Footer`** — `chrome/pad-footer`, `grid/margin` (it had none; width came from a hardcoded 996 child), `rhythm/block`, social icons on `space/5`, link grid on `gridRowGap`/`gridColumnGap`. |
 | Remote library cut loose | 2026-08-06. The nav row (`Property 1=Frame 89`, from remote set `Component 1`) and two nested `search` components were **read-only remotes used in every Top Bar** — 30 instances across 9 boards. Detaching them inside the local `Global Nav` fixed all 9 at once. **A full sweep of 1216 nodes now finds zero remote components, variables or text styles**, so the library can be unsubscribed. |
 | Audit 2026-08-06 | Full inventory verified against this file: 5 collections, all modes, every variable's resolved value in every mode, all 12 text styles. Colour primitives match hex-for-hex. Two divergences found — see Outstanding 1 and 2. |
+| Five detail boards converted | 2026-08-06. **Note Detail**, **Web Clipping Detail**, **Book Note Detail** and **Case Study** taken off `layoutMode: NONE`; **Singleton** corrected. All five now `VERTICAL` gap 0 hugging height, so a footer can no longer hang off the board bottom — three of them were overflowing by exactly 83px. Every board verified by measured geometry against the grid and rhythm values: 19 / 24 / 30 / 48 / 23 checks. Heights 1331→1394, 1581→1703, 2089→2136, 4931→4951, 2669→2689. |
+| Board fixes worth naming | The `Frame 427318204` (83) → `Frame 427318199` (20) double wrapper around every Top Bar, deleted on all four. A stale `COLUMNS 1 / 1024 / gutter 30 / CENTER` grid alongside the bound 12-col one, deleted from three boards. Related rows off 1027 / gap 32 / cards 321 onto 996 / `grid/gutter` / `grid/span-4`. Left edges drifting 222 / 223 / 225 / 226 and widths 647 / 648 / 655 / 656 / 659, all resolved by `FILL`. Book Note's summary was `textAutoResize: NONE` — a fixed box that clipped silently. Case Study's testimonial columns 471.5 / 48 / 471.5 → 486 / `grid/gutter` / 486, its attribution gap **−3 → 0**, and its hero mask group → a clipping `Hero` frame. |
+| `source card` | Built 2026-08-06. One set, two shapes × rest/hover, matching how `article card` and the note card set are built: `Type = Link \| Book`, `State = Rest \| Hover`. **Link** = title ↗ / thumbnail / source; **Book** = author / title ↗ / publisher + year. Properties `Title`, `Source`, `Publisher`, `Thumbnail` (`INSTANCE_SWAP`, `preferredValues` restricted to `card images/*`), plus `Author`. Bound to `card/pad`, `card/gap`, `color/surface`, `color/border`, `color/text-muted`. Hover effect and transition cloned from the existing sets. Replaced the two detached "article card" frames on Web Clipping and Book Note. |
+| `card images/Arango` | Created 2026-08-06. The Web Clipping thumbnail existed only as an image fill layered on top of the WHO placeholder, so it was not swappable. Promoted to a real component alongside Garmin / WHO / Map / SC. |
+| `Caption` | Created 2026-08-06. `size/1`, 150%, paired with `color/text-muted`. **Roman in Figma, italic on the site** — see Typography → `Caption`. |
+| Clipping swept | 2026-08-06. 17 programmatically-created frames had inherited `clipsContent: true` and were cleared. `Hero` on Case Study and the cropped photograph on Singleton are the only frames across the five boards that clip, both correctly. |
 | Removed | legacy `Variable collection` and its 4 orphans; `body/default`; the 8 `Mobile/*` text styles (verified unused); the 12 `size/desktop/*` + `size/mobile/*` variables superseded by modes; the `rhythm/*-mobile` twins (built and deleted 2026-08-06 — see Vertical rhythm) |
 
 **`color/accent` is deliberately NOT scoped to `TEXT_FILL`.** That makes the "never text" contrast
@@ -1084,13 +1304,15 @@ constraint structural — Figma will not offer the brand blue in a text-colour p
 
 ### Outstanding
 
-1. **The four absolutely-positioned boards have text overflowing their frames.** Web Clipping Detail,
-   Book Note Detail, Note Detail and Case Study reported **zero** height change when the leading was
-   synced — not because they were unaffected, but because they have `layout: NONE` and fixed-height
-   frames. Their text nodes grew ~12.5% while nothing reflowed, so on Case Study in particular the
-   long body blocks have almost certainly grown into whatever sits below them. The sync revealed this
-   rather than caused it: those boards would break on any type change at all. They need the same
-   auto-layout conversion Insight Detail got.
+1. ~~**The four absolutely-positioned boards have text overflowing their frames.**~~ **Resolved
+   2026-08-06** — all four converted, plus Singleton. Worth recording what the damage actually was,
+   because the prediction was half right. There was **no hard overlap**: the failure was crowding to
+   the edge of collision. Book Note's Key Concepts list ended **3px** above the `Impressions` heading
+   where 64 belongs; Web Clipping's blockquote ran **6px** into the paragraph below where 48 belongs;
+   Case Study's approach body sat **15px** from `Project Outcome`. Each body block had grown 4px per
+   line (28 → 32px line box) and eaten the air beneath it. The prediction missed a second failure
+   entirely: **three of the four boards had their Footer hanging 83px off the bottom of the board**,
+   because the board frames were stale heights from before the Footer component was wired.
 2. **`Semantic`'s `Dark Accent` mode is the collection default.** Now documented in the Colour section,
    but the decision stands: should `Value` be the default instead, and is a `link-hover` of `blue-500`
    safe in a mode where it is offered as a text colour? Folds into the palette audit.
@@ -1106,19 +1328,50 @@ constraint structural — Figma will not offer the brand blue in a text-colour p
    wrong, and not worth changing on argument alone — but the first thing to look at if the Notes
    column reads as crowded on hover. *(The note card set is otherwise fully bound as of 2026-08-06;
    the only raw value left is the clipping link row's 2px optical nudge, which is deliberate.)*
-6. **Two *detached* frames named "article card"** on Web Clipping Detail and Book Note Detail. They are
-   hand-built copies, not instances, still at the old raw 25 / 0, and they inherit nothing. To be
-   replaced with real instances when those pages are worked.
+6. ~~**Two *detached* frames named "article card"**~~ **Resolved 2026-08-06**, but not as planned. They
+   were not article cards and could not become instances of that set: Web Clipping's carried title /
+   thumbnail / **author**, Book Note's carried **author / title / publisher + year**, and the
+   `article card` set offers title / image / **date** / description. They were a *citation of the
+   source work* — a component that did not exist. Hence the new `source card` set. The lesson
+   generalises: **a detached frame that resists re-instancing is usually evidence of a missing
+   component, not of a lazy copy.**
 7. **Insight Detail's title block (`Frame 427318263`) is `FIXED` vertically**, so a three-line H1 will
    clip. The prose column itself was flipped to `FILL` with the rail pinned to `grid/span-3`
    2026-08-06, so this is the last sizing problem on that board.
-8. **Remaining structurally inert gaps**, on boards not yet converted: Insight Detail's
-   `Frame 427318268` (96) and `Hero` (10); Ideas' `427318258` (7); Singleton throughout; the four
-   unconverted detail boards' `427318204` (83) and `427318199` (20); and inside components, the four
-   `card images/*` (10), `filter` (10) and `button` (4).
+8. **Remaining structurally inert gaps.** The four detail boards' `427318204` (83) / `427318199` (20)
+   and Singleton's are **resolved 2026-08-06** — those wrappers are deleted, not just zeroed. Still
+   outstanding: Insight Detail's `Frame 427318268` (96) and `Hero` (10); Ideas' `427318258` (7); and
+   inside components, the four `card images/*` (10), `filter` (10) and `button` (4).
    **Distinguish two kinds.** *Structurally* inert — a wrapper that will only ever hold one child —
    is noise and should be zeroed. *Contingently* inert — a correctly configured container whose
-   content happens to be one item today — is right and should be left alone.
+   content happens to be one item today — is right and should be left alone. The conversion added a
+   third case worth naming: a **reserved rail** is an empty frame that is nonetheless load-bearing,
+   because the prose column derives its width from it. See Grid → *Aligning a figure with the body*.
+
+9. **Insight Detail is now the least current of the six boards.** It was the exemplar every other board
+   was matched to, and the others have since overtaken it: its title block is still `FIXED` vertically
+   (item 7), it still carries the inert 96 and 10 gaps (item 8), and its rail is `span-3` + `skip-1`
+   where a captioned figure would now want `span-4` + `gutter`. Nothing is broken; it is simply no
+   longer the reference.
+
+10. **Two hover transition conventions coexist.** The note card set dissolves at 0.15s; `article card`
+    and `source card` smart-animate at 0.3s. Defensible — the note card is unboxed at rest and gains a
+    whole box, while the other two only gain a shadow — but if one hover feel is wanted across all
+    cards it is a two-line change.
+
+11. **Card titles are `neutral/800` in Figma and `--neutral-900` in this file.** All three card sets
+    use 800. The new `source card` matches them rather than this document, deliberately, so that one
+    set is not the odd one out. Fold into the palette audit and settle it in one direction.
+
+12. **Raw colour values found during the conversion**, all left alone because colour is deferred:
+    `#646464` for meta text in the note card set (where `color/text-muted` belongs), `#f3f3f3` on Case
+    Study's testimonial band, raw `#000000` on several body text fills, and the hover variants binding
+    their fill to the `white` primitive where rest uses `color/surface`. Add to the palette audit.
+
+13. **Multi-paragraph body copy sits in single Figma text nodes.** Visible on Case Study and Singleton,
+    where paragraphs run together with no `rhythm/paragraph` between them. This is a mockup artefact
+    rather than a design decision — Portable Text emits separate `<p>` elements and the CSS rules put
+    24px between them — but it makes those blocks read tighter in Figma than they will on the site.
 
 ### The remote library — resolved 2026-08-06
 
@@ -1147,14 +1400,28 @@ misleading and worth changing.
 # Still open
 
 - **The full palette audit** — the largest open item. See the TODO banner in Colour.
-- Whether `figcaption` stays italic serif or moves to Lato.
+- ~~Whether `figcaption` stays italic serif or moves to Lato.~~ **Resolved 2026-08-06 — italic serif**,
+  as the `Caption` style. What remains is not a decision but a tooling gap: **Noto Serif Italic needs
+  installing as a system font before Figma can draw it.** Until then the Figma style is roman while the
+  site renders italic.
+- **Case Study's testimonial columns are 6 + 6 at a 24px gutter.** The split is the faithful conversion
+  of a hand-built 471.5 / 48 / 471.5, and it is on-grid — but the Grid section's own table calls 6 + 6
+  *"gap too tight, the eye jumps columns."* The alternative is `grid/skip-2` (401 / 194 / 401), which is
+  one binding away. Left as-is pending an eyeball, since the content is two authored paragraphs rather
+  than one run of prose.
+- **128px now separates Case Study's testimonial band from the article bands either side** — 64 from
+  each band's padding, meeting at gap 0. That is the band-stacking rule working exactly as specified,
+  but it is the first place on the site where two bands of *different* kinds meet, so it is worth
+  looking at rather than assuming.
 - ~~Nav and footer treatments on the blue background~~ — **effectively resolved.** Those surfaces moved
   to `blue-700`, where white text measures 5.67 and passes AA. Confirm formally in the palette audit.
 - Whether card titles get an underline. Andy is experimenting; not required (see Links).
 - Custom form-validation messaging, needed before the error state can actually be used, since native
   validation bubbles can't be styled.
-- Page templates and layout — still open, and still discussed against the whole page inventory. The
-  **grid** itself is settled and now has its own section above.
+- Page templates and layout — **the five detail templates are now settled** (Insight, Note, Web
+  Clipping, Book Note, Case Study, plus the Singleton page shape), all on the same skeleton and all
+  verified against the grid. Home and the Ideas index are still open, and still discussed against the
+  whole page inventory. The **grid** itself is settled and has its own section above.
 - **The margin at intermediate widths.** `grid/margin` is a fixed 222 in `Desktop` mode, but the CSS
   rule is "cap content at 996, margins absorb the remainder, floor 16." Those agree at 1440 and at 360
   and disagree everywhere between — see the Grid section. Currently latent: the 1206-wide Home variant
