@@ -255,11 +255,9 @@ Andy's read is that the site is **already typography-driven and lightly styled**
 digital garden or blog than a corporate site. So the reframe is carried mostly by content and IA
 plus tightening, not a visual overhaul. Don't propose a redesign.
 
-Colour is settled and specified in [DESIGN.md](DESIGN.md). The brand blue `#4e9dbc` is **retained**
-— Andy has tuned it over years, and changing it is explicitly a separate future project, not part of
-this work. Two consequences to remember: `--blue-500` can never carry body-size text nor sit behind
-white text (3.06 against a 4.5 requirement), and the footer and mobile nav currently violate that.
-Alternatives for those two surfaces are Andy's to explore in Figma.
+**Colour lives entirely in [DESIGN.md](DESIGN.md)** — ramps, semantic tokens, measured contrast
+figures, interaction states and what is already true for dark mode. Don't restate values here. The
+palette has been rebuilt once already, and a second copy is just something to get wrong.
 
 **The grid must stay simple and flexible** (stated 2026-07-28). Andy wants to keep iterating and
 exploring layout ideas over time, so the grid should not become intricate or highly constrained.
@@ -292,7 +290,10 @@ Documented from a measured audit on 2026-07-27 (`web/style/`, verified in-browse
   inner `*/` closes the outer comment early — currently inert, but fragile.
 - Several size comments are numerically wrong (`2rem /* 28 px */`, `1.375rem /* 23 px */`) or use
   `pt` where the unit is `px`.
-- **Colour contrast failures on the live site** (computed 2026-07-28, WCAG 2 AA). `--blue`
+- **Colour contrast failures on the live site** (computed 2026-07-28, WCAG 2 AA). These describe the
+  **shipped stylesheet**, not the design system — DESIGN.md's palette replaces `--blue` outright and
+  resolves every one of them, so this entry is a description of what the CSS migration has to fix.
+  Don't confuse live `--blue` with the new `--blue-500`; they are different colours. `--blue`
   (`#4e9dbc`) is the central problem — it reaches only **3.03:1** on white, so it fails the 4.5:1
   body-text threshold both as a foreground and as a background:
   - link colour and link hover (`--blue` on white) — 3.03, needs 4.5

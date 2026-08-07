@@ -13,7 +13,7 @@ The structure mirrors Figma exactly:
 
 | Figma | CSS | Names |
 |---|---|---|
-| **Variables** | custom properties in `style/utilities/variables.css` | **values** (`--blue-700`, `--font-size-4`) |
+| **Variables** | custom properties in `style/utilities/variables.css` | **values** (`--blue-500`, `--font-size-4`) |
 | **Text / colour styles** | CSS rules in `style/base/typography.css` | **uses** (`--color-link`, `h2 { … }`) |
 
 Two consequences that are easy to get wrong:
@@ -286,19 +286,12 @@ the descriptor dropped to step 2, but 18px under a 28px name reads as too much c
   match wrongly gave "Ideas" and "Insights" the `Nav` style; corrected the same day. If applying styles
   by text content again, match case-sensitively.
 
-**Resolved 2026-08-06: the hero needs no measure token, and `--measure-statement` is retired.**
-
-An earlier version of this file proposed `--measure-statement: 43ch` (~845px) to reproduce "the
-current ~44 characters per line." Measurement killed it. The hero statement now fills the content
-column — `grid/margin` on the band, `FILL` on the statement — which gives **996px, about 52
-characters** at 35.16px. `--leading-statement: 1.4` was derived for *"roughly 50 characters."*
-**They already agree.** Capping at 43ch would pull the measure to ~44, moving it *away* from the point
-its own leading was designed around, and would likely add a fourth line.
-
-The 43ch figure came from an older mock constrained to 959px and was never re-derived against the
-settled grid. **In CSS the statement takes no cap at all** — the grid supplies its measure. Note also
-that `--measure-prose: 66ch` resolves to ~1297px at 35.16px, wider than the page, so applying it
-would cap nothing. The absence of a cap here is a decision, not an oversight.
+**The hero statement takes no measure cap at all, and that is deliberate.** It fills the content column
+— `grid/margin` on the band, `FILL` on the statement — giving **996px, about 52 characters** at
+35.16px, which is already what `--leading-statement: 1.4` was derived for (*"roughly 50 characters"*).
+A cap would move it *away* from the point its own leading was designed around. Note also that
+`--measure-prose: 66ch` resolves to ~1297px at 35.16px, wider than the page, so applying it would cap
+nothing.
 
 **The Hero band uses `rhythm/band` (64), not `rhythm/section`.** Both were tried; 96 read as too much
 air above a three-line statement. Worth recording because the Hero is a coloured, self-contained
@@ -373,9 +366,6 @@ article.detail :where(p, ul, ol, blockquote, figure) { max-width: var(--measure-
 On the 996px grid the measure is delivered by the **column span, not the cap**: 8 of 12 columns is
 **656px ≈ 67 characters**, inside the target. The `max-width` rule above is therefore a safety net
 for any context wider than 8 columns, not the primary mechanism.
-
-*(A second set of reference widths — 738px / 699px — lived here until 2026-08-06. Those were the
-20px-base numbers and contradicted the 664px figure above. Removed.)*
 
 ---
 
@@ -549,9 +539,10 @@ Insights band — narrow side pinned, wide side filling.
 already gaps 24 across and 32 down.
 
 **The masonry is faked, and stays faked** — three column-major stacks. Doing it properly in Figma is
-fussy for no gain, because the front end will do it for real. The consequence is in *Still open*: the
-Figma card order is column-major and a row-major DOM will not reproduce it, so that order is not a
-specification.
+fussy for no gain, because the front end will do it for real. The consequence — see *What comes next →
+More page layouts* — is that the Figma card order is column-major and a row-major DOM will not
+reproduce it, so **that order is not a specification**; only the column width, gutter and card rhythm
+are.
 
 ## `Page Header` — one component, and why the Lead cannot move into it
 
@@ -949,10 +940,8 @@ value in both modes.
 Derived over 375 → 1200 with the same arithmetic as the type clamps, so they re-derive trivially if
 the mobile floor moves to 360. CSS carries one interpolating value and needs no breakpoint.
 
-**In Figma these are modes, not separate variables.** An earlier version of this file specified
-`rhythm/band-mobile` / `rhythm/section-mobile` twins, on the belief that the file was on a single-mode
-plan. It is not — `Type Scale` has had `Desktop`/`Mobile` since 2026-07-28. The twins were built on
-2026-08-06 and deleted the same day once the mistake surfaced.
+**In Figma these are modes, not separate variables.** Never mint `*-mobile` twins — the viewport is a
+mode, and a token whose name encodes a viewport cannot participate in a mode switch.
 
 **One viewport axis across three collections.** `Type Scale`, `Spacing` and `Grid` all use
 `Desktop` / `Mobile`, so "set this frame to Mobile" is a single consistent action. A mode in one
@@ -963,285 +952,287 @@ inconsistency that gets applied wrong late at night.
 
 # Colour
 
-Settled 2026-07-28. Specimen with live contrast computation: `web/__design-specimens/color-specimen.html`.
+Rebuilt 2026-08-07 around a new accent. **The previous palette is not recorded here.** It was a clean
+break, and the old values would only mislead — every ratio below is measured against what exists now.
 
-> ## ⚠ TODO — colour is being deferred to a holistic pass
->
-> **A full palette audit is pending**, flagged 2026-08-06 and deliberately held back to be done as one
-> piece rather than patched incrementally. The **primitives are sound** — every blue, neutral and error
-> hex verified against Figma 2026-08-06, so the ramps below are accurate. The **semantic layer has
-> moved and this section has not caught up**, so treat any `color/*` claim below as unverified.
->
-> ### The agenda, as found so far
->
-> 1. **`Dark Accent` is the `Semantic` collection's *default* mode**, so a new frame inherits it and
->    `color/accent` resolves to `blue-700`, not the brand blue. Documented below. **Decide whether
->    `Value` should be the default** — a mode named for a variant, set as the default, is confusing.
-> 2. **In `Dark Accent`, `color/link-hover` resolves to `blue-500`, which fails 3:1 on the tinted
->    ground (2.82).** That mode offers a link-hover colour that cannot legally be used on a link.
-> 3. **The `button` component's hover variant is `blue-500` with white text — 3.09, fails AA.** This is
->    the exact failure the list at the end of this section records against the *live site* ("button
->    hover, white on `--blue`, 3.03"), carried forward into the mockup rather than fixed. `blue-700` at
->    rest with `blue-600` or `blue-800` on hover would resolve it.
-> 4. **There is no `color/text-inverse`.** White text now sits on three coloured bands — Hero, Topics
->    and Footer — every one bound to the raw `white` primitive. Three uses earns a semantic name.
-> 5. **The "Known colour problems" list at the end of this section measures the live site, not the
->    mockups.** Three of its items are already resolved in Figma by moving those surfaces to
->    `blue-700`. Confirm and strike them rather than re-solving them.
->
-> Nothing here is urgent — none of it blocks layout work — but all of it should be settled together,
-> because items 1–4 are the same decision seen from four directions.
+**The accent is `#326e85`, and it is `blue/500`.** It began life as the 700 step of a ramp built around
+the old brand blue `#4e9dbc`, and was adopted as the accent for one reason: it is the lightest step in
+this hue that carries white text at AA (**5.67**), which the old brand blue never could (3.09). Almost
+everything below follows from that single choice.
 
-## `Semantic` has two modes, and the non-obvious one is the default
+## The blue ramp
 
-Added in Figma outside this file's record; documented here 2026-08-06.
+**Hue 197° / saturation 45%**, stepped by lightness. Eight steps.
 
-| Token | `Value` mode | **`Dark Accent` mode (default)** |
-|---|---|---|
-| `color/accent` | `blue-500` `#4e9dbc` | **`blue-700` `#326e85`** |
-| `color/link-hover` | `blue-700` `#326e85` | **`blue-500` `#4e9dbc`** |
-| all nine others | unchanged | unchanged |
-
-**`Dark Accent` is the collection's default mode**, so a new frame inherits it and `color/accent`
-resolves to **`blue-700`**, not the brand blue. The two modes swap `accent` and `link-hover` between
-the 500 and 700 steps; nothing else differs.
-
-**This is the change that resolves the nav and footer contrast problem.** White on `blue-500` is
-**3.09** and fails; white on `blue-700` is **5.67** and passes AA for body text. The mockups' hero,
-Topics band and Footer all measure `#326e85` for exactly this reason. What was listed below as an
-unresolved failure has in practice been fixed by moving those surfaces off 500.
-
-Two things to settle in the palette audit: whether `Value` should be the default instead (a mode named
-for a variant, set as the default, is confusing), and whether `link-hover` at `blue-500` in that mode
-is safe — **it is not, as text**: `blue-500` fails 3:1 on the tinted ground (2.82), so a
-`Dark Accent` frame offers a link-hover colour that cannot legally be used on a link.
-
-## Guardrails — the four rules that prevent every failure found so far
-
-Every contrast failure measured in this project reduces to one of these. Hold these and the
-detailed tables below become reference rather than something to check:
-
-1. **The brand blue is never text.** `blue-500` is for rules, fills and brand surfaces only. It fails
-   even 3:1 on the tinted ground (2.82). Enforced structurally in Figma: `color/accent` is not scoped
-   to `TEXT_FILL`. Note this is a rule about the **primitive** — `color/accent` resolves to `blue-700`
-   in the default `Dark Accent` mode, which *is* a legal text colour.
-2. **White text never sits on `blue-500`.** 3.09 against a 4.5 requirement. White text is safe on
-   `blue-700` (5.67), `blue-800` and `blue-900`. Every white-on-blue surface in the mockups uses
-   `blue-700`.
-3. **Never `neutral-600` for text.** It looks like a reasonable muted grey and fails AA on both
-   surfaces (4.03 / 3.68). Muted text is always `neutral-700` (`color/text-muted`).
-4. **Anything at 700 or darker passes on both surfaces.** `blue-700/800/900` and
-   `neutral-700/800/900` all clear 4.5:1 on white cards *and* on the tinted ground, so they need no
-   checking.
-
-A novel pairing — one not in the tables below — is the only case that warrants actually measuring.
-An in-canvas contrast plugin (Stark, Able) is the convenient way to do that while designing.
-
-## Brand ramp — one hue, stepped by lightness
-
-**Hue 197° / saturation 45%.** `#4e9dbc` is retained as the base: Andy has tuned it over years, and
-any change to it is a separate future project.
-
-The ramp formalises a relationship the palette already had — the existing `--dark-blue` `#1f4351`
-is *generated exactly* by this hue at 22% lightness.
-
-| Token | Hex | Lightness | vs card | vs ground | Role |
+| Token | Hex | HSL L | vs ground | white on it | Role |
 |---|---|---|---|---|---|
-| `--blue-500` | `#4e9dbc` | 52% | 3.09 large | **2.82 fail** | brand accent: rules, fills, brand surfaces |
-| `--blue-600` | `#3e86a3` | 44% | 4.08 large | 3.73 large | — |
-| `--blue-700` | `#326e85` | 36% | 5.67 AA | 5.18 AA | **link hover**, selected toggle fill |
-| `--blue-800` | `#275568` | 28% | 8.12 AA | 7.43 AA | strong text |
-| `--blue-900` | `#1f4351` | 22% | 10.61 AA | 9.70 AA | CTA background, lead paragraph |
+| `blue/50` | `#e1eff4` | 92% | 1.13 | — | whisper tint; **AA text on the accent band** (4.82) |
+| `blue/100` | `#c4dee9` | 84% | 1.34 | — | tint; 4.04 on the accent band |
+| `blue/200` | `#aed2e0` | 78% | 1.53 | — | chip hover fill; UI boundary on the accent (3.53) |
+| `blue/300` | `#4e9dbc` | 52% | 2.92 | 3.06 | the former brand blue; chip pressed fill |
+| `blue/400` | `#3e86a3` | 44% | 3.91 | 4.08 | large text on light only |
+| **`blue/500`** | **`#326e85`** | **36%** | **5.42** | **5.67** | **accent** — brand surfaces, buttons, link hover |
+| `blue/600` | `#275568` | 28% | 7.77 | 8.12 | hover on accent-filled controls |
+| `blue/700` | `#1f4351` | 22% | 10.15 | 10.61 | pressed; CTA background; lead paragraph |
 
-**Hard constraint, tightened 2026-07-28: on the tinted ground, `--blue-500` is not a text colour at
-all.** It fails even the 3:1 large-text threshold there (2.82). It scrapes past on a white card
-(3.09), but since article pages have no cards, treat it as **never text** — rules, fills and brand
-surfaces only. White text can never sit on it either (3.09 against 4.5).
+**The step numbers no longer track lightness, and that is the trade.** Most ramps put 500 near L 52%;
+this one puts it at 36% so that the *accent* is the 500 step — the number a person reaches for first
+should be the primary. Consequence: **do not infer lightness from the step number in this system.**
+Renumbering was cheap because Figma binds by variable ID, not by name, and no CSS existed yet.
 
-This is why card titles are `--neutral-900`, not blue, and why a selected filter toggle uses
-`--blue-700` as its fill (white on it = 5.67) rather than `--blue-500` (3.09).
+**The gap between `200` (L 78%) and `300` (L 52%) is deliberate.** Nothing needs a value there. The
+ramp is dense at the dark end, where every step is a legal text or surface colour, and sparse in the
+middle, where a step would have no use. Same principle as the type scale's clamped step 1: a documented
+irregularity beats a value that exists only for symmetry.
 
-`#479FD5` was evaluated as an alternative base and rejected — at 2.89 on white it fails *even* the
-3:1 large-text threshold, so it could never be coloured text at any size. Its darker steps are
-marginally better than hue A's (700 = 5.90 vs 5.62), so it remains a viable hue if revisited, but it
-would also require replacing `--dark-blue`.
+**Steps 300 and 400 have almost no legal use on light** — 300 fails even 3:1 on the ground (2.92) so it
+is never text, and 400 is large-text-only. Both are kept because they complete the ramp arithmetically
+and because **dark mode will want mid-tones**, where their contrast inverts and they become useful.
 
-## Two surfaces
+**Nothing blue works *on* the accent band.** Every step measures ≤ 1.87 against `#326e85`. Content on
+the Hero, Topics, Footer and RSS CTA bands is therefore white or a near-white neutral. This constraint
+is what shapes the ghost button — see *Interaction states*.
 
-Decided 2026-07-28. **The page ground is a tinted off-white; raised elements are pure white.** This
-lets cards and toggles read as raised *without drop shadows*, which suit a typography-driven page
-badly, and a tinted ground is easier on the eye than pure white for long reading.
+## The neutral ramp
 
-| Role | Token | Hex | |
-|---|---|---|---|
-| page ground | `--color-bg` → `--neutral-100` | `#f9fafb` | |
-| raised surface — cards, toggles, panels | `--color-surface` | `#ffffff` | separation **1.045** |
-| hairline border | `--color-border` → `--neutral-300` | `#d2d5d6` | **1.41** on bg, 1.48 on card |
-
-**The border carries the card boundary, not the fill difference.** Revised 2026-07-28. The ground
-moved from `#f3f5f6` to `#f9fafb`, halving the card/ground separation from 1.094 to **1.045** — two
-lightness points, at the edge of perceptibility. That is acceptable *because cards have borders*, and
-`--color-border` measures 1.41 against the ground, slightly better than before. An earlier version of
-this file argued the fill separation was load-bearing; it isn't, given the borders. The caveat: a
-**borderless** card would not be distinguishable on its own, so borders are not optional decoration.
-Unboxed notes sit directly on the ground by design and need no boundary.
-
-All text contrast improved slightly with the lighter ground: text 18.04, muted 6.78, link-hover 5.42,
-error-text 5.48 — all pass. `--blue-500` went 2.79 → 2.92, still failing 3:1, so the never-text rule
-is unchanged.
-
-### Why the ground's hue is nominal
-
-`#f9fafb` measures 210°, not the brand's 197°, and **that distinction is not representable.** At 98%
-lightness the colour spans 2 units of 255 per channel (249/250/251); 197° and 210° quantize to the
-identical hex. Verified 2026-07-28.
-
-Consequence for anyone tempted to "fix" it: **a perceptibly brand-tinted ground needs lightness at
-~95% or below**, where the channel span widens to 4–5 units and hue becomes encodable. At 92% you get
-8 units. Above ~97% the hue label is aspirational.
-
-This also corrects an earlier claim in this file: the neutral ramp's apparent hue "drift to 180° at
-the light end" was **quantization noise, not construction drift** — at 2–3 units of span the computed
-hue is meaningless. The ramp's light end was never faulty, and `off-white` never needed to exist as a
-separately hue-locked primitive. It has been folded back into `neutral/100` and deleted.
-
-This **inverts** the earlier arrangement, where white was the ground and `neutral-100` was a panel
-fill. The inversion is the more useful one and is what Andy's Figma explorations arrived at.
-
-**Everything must now be verified against both surfaces.** A colour can pass on a white card and
-fail on the ground — see the blue ramp above, where `blue-500` passes large text on a card (3.09)
-and fails it on the ground (2.82).
-
-**`--neutral-100` is set directly rather than taken from the mix**, but the reason is narrower than
-an earlier version of this file claimed. Mixing `#051319` toward white does desaturate as it
-lightens — that part is real. What is *not* real is the "hue drift": see "Why the ground's hue is
-nominal" above. At these lightnesses hue is not measurable, so the light end of the ramp was never
-broken. `--neutral-100` is simply the value Andy chose by eye (`#f9fafb`), recorded as the ground.
-
-**Semantic naming: `--color-surface`, not `--color-card`.** "Surface" names a *position in the
-layering* — the raised plane — rather than a component. One token then legitimately serves cards,
-filter toggles, panels and overlays, and it scales to `surface-raised` for a second elevation.
-`--color-card` would repeat the `--eyebrow-gray` error one layer up: naming a component where a role
-belongs. The filter toggles are the proof — raised, but not cards. (`--color-bg-raised` is the
-alternative if "surface" reads as jargon; it pairs more obviously with `--color-bg`.)
-
-## Neutral ramp — steps 200–900 derived from `--black`
-
-Replaces three unrelated hand-picked greys (`#777676`, `#646464`, `#2b2b2b`) and an orphan
-`rgba(43,40,40,.1)`. `--black` `#051319` sits at **198°** — essentially the brand hue already — which
-is why it was kept over Figma's `#121923` (215°). Mix target is pure `#ffffff`.
+Derived from `#051319`, which sits at **198°** — essentially the brand hue — mixed toward pure white.
 
 | Token | Hex | vs card | vs ground | Body 4.5 both | Role |
 |---|---|---|---|---|---|
-| `--neutral-900` | `#051319` | 18.86 | 17.24 | ✅ | primary text, card titles |
-| `--neutral-800` | `#283439` | 12.80 | 11.71 | ✅ | — |
-| `--neutral-700` | `#505a5e` | 7.08 | 6.48 | ✅ | muted text: captions, eyebrow, metadata |
-| `--neutral-600` | `#788083` | 4.03 | 3.68 | ❌ | large text only |
-| `--neutral-500` | `#969c9e` | 2.78 | 2.54 | ❌ | non-text only |
-| `--neutral-400` | `#b4b8ba` | 2.00 | 1.83 | ❌ | — |
-| `--neutral-300` | `#d2d5d6` | 1.48 | 1.35 | ❌ | borders |
-| `--neutral-200` | `#e9eaea` | 1.21 | 1.10 | ❌ | subtle fills |
-| `--neutral-100` | `#f9fafb` | 1.05 | — | ❌ | **page ground** (hue nominal — see above) |
+| `neutral/900` | `#051319` | 18.86 | 17.24 | ✅ | primary text |
+| `neutral/800` | `#283439` | 12.80 | 11.71 | ✅ | card titles |
+| `neutral/700` | `#505a5e` | 7.08 | 6.48 | ✅ | muted text: captions, labels, metadata |
+| `neutral/600` | `#788083` | 4.03 | 3.85 | ❌ | **control borders** (3:1 UI only) |
+| `neutral/500` | `#969c9e` | 2.78 | 2.66 | ❌ | disabled foreground |
+| `neutral/400` | `#b4b8ba` | 2.00 | 1.91 | ❌ | — |
+| `neutral/300` | `#d2d5d6` | 1.48 | 1.41 | ❌ | hairline borders on non-interactive surfaces |
+| `neutral/200` | `#e9eaea` | 1.21 | 1.15 | ❌ | disabled fills, pressed-on-dark |
+| `neutral/100` | `#f9fafb` | 1.05 | — | ❌ | **page ground** |
 
-**Use 700, not 600, for anything at body size or smaller.** 600 looks like a reasonable "muted text"
-value and fails AA on both surfaces — exactly the trap documented thresholds exist to catch.
+**Use 700, not 600, for text at any size.** 600 looks like a reasonable muted grey and fails AA on both
+surfaces. It has exactly one sanctioned job: the boundary of an interactive control, where the threshold
+is 3:1 rather than 4.5:1.
 
-## Error state
+## Two surfaces
 
-Added 2026-07-28. Derived from the existing `--alert-text` `#cc4b37`, which sits at **hue 8°**.
+**The page ground is a tinted off-white; raised elements are pure white.** This lets cards and toggles
+read as raised *without drop shadows*, which suit a typography-driven page badly, and a tinted ground
+is easier on the eye than pure white for long reading.
 
-Worth knowing: the old `--alert-bg` / `--alert-text` pair is **declared in `variables.css` and used
-nowhere** — not in any stylesheet or template. So this is not a colour being corrected; it is a state
-that was never designed. The contact form relies on native browser validation (`required`
-attributes) plus a `recaptchaError` callback, and native validation bubbles cannot be styled — so a
-designed error state also needs custom validation messaging, which is a design and JS decision, not
-just a token.
+| Role | Token | Hex | |
+|---|---|---|---|
+| page ground | `color/bg` → `neutral/100` | `#f9fafb` | |
+| raised surface | `color/surface` | `#ffffff` | separation **1.045** |
+| hairline border | `color/border` → `neutral/300` | `#d2d5d6` | **1.41** on the ground |
+
+**The border carries the card boundary, not the fill difference.** 1.045 is two lightness points, at
+the edge of perceptibility, so a **borderless card would not be distinguishable** — borders are not
+optional decoration here. Unboxed notes sit directly on the ground by design and need no boundary.
+
+**Everything must be verified against both surfaces.** A colour can pass on a white card and fail on
+the ground; `blue/300` is the standing example (3.06 vs 2.92).
+
+**`color/surface`, not `color/card`.** "Surface" names a position in the layering — the raised plane —
+rather than a component, so one token serves cards, toggles, panels and overlays, and it scales to a
+second elevation. Naming it for a component would repeat the error that `--eyebrow-gray` made one
+layer down: a role name in a slot that should hold a value.
+
+**The ground's hue is nominal.** `#f9fafb` computes to 210°, not 197°, and that distinction is not
+representable: at 98% lightness the colour spans 2 units of 255 per channel, so both hues quantize to
+the same hex. Practical consequence for anyone tempted to "fix" it — **a perceptibly brand-tinted
+ground needs lightness at ~95% or below**, where the channel span widens enough for hue to be encodable.
+
+## Error
+
+Hue **8°**, deliberately far from the brand's 197°.
 
 | Token | Hex | Role |
 |---|---|---|
-| `--error-100` | `#f9e9e7` | panel background |
-| `--error-500` | `#cc4c38` | border, filled state |
-| `--error-600` | `#b33f2e` | message text |
+| `error/100` | `#f9e9e7` | panel background |
+| `error/500` | `#cc4c38` | border, filled state |
+| `error/600` | `#b33f2e` | message text |
 
 | Pair | Ratio | Needs | |
 |---|---|---|---|
-| `error-600` text on `error-100` panel | 4.86 | 4.5 | ✅ |
-| `error-600` text on white card | 5.73 | 4.5 | ✅ |
-| `error-600` text on ground | 5.24 | 4.5 | ✅ |
-| `error-500` border on `error-100` | 3.83 | 3.0 | ✅ |
-| white on `error-500` | 4.51 | 4.5 | ✅ |
+| `error/600` on `error/100` | 4.86 | 4.5 | ✅ |
+| `error/600` on the ground | 5.48 | 4.5 | ✅ |
+| `error/500` border on `error/100` | 3.83 | 3.0 | ✅ |
+| white on `error/500` | 4.51 | 4.5 | ✅ |
+| **`error/500` or `600` on the accent band** | **1.26 / 1.01** | — | ❌ **invisible** |
 
-Note `error-500` itself is **not** a text colour on the ground (4.16) — use `error-600` for text.
-The old pair measured 3.70 and failed.
+**The error set does not survive a dark ground.** Both text values disappear against `#326e85`. This is
+latent while forms sit on the page ground, and it becomes blocking the moment a form appears on a
+coloured band — or when dark mode arrives. A light error variant will be needed then.
 
-**Success and warning tokens are deliberately omitted.** There is no designed use for them: the
-contact-success page is typographic (`.success` uses the serif at 2rem, no colour), and nothing
-warns. The old alert tokens sat unused for years — don't repeat that. Add them when a state is
-actually designed. Per WCAG 3.3.1, errors must be identified in **text**, never by colour alone.
+**Success and warning tokens are deliberately omitted.** There is no designed use for them, and the
+previous palette's alert pair sat declared-but-unused for years. Add them when a state is actually
+designed. Per WCAG 3.3.1 errors must be identified in **text**, never by colour alone — and the contact
+form still relies on native validation, whose bubbles cannot be styled, so a designed error state needs
+custom validation messaging before any of these tokens can be used.
 
-## Semantic roles
+## Semantic tokens
+
+Twenty-four roles, all aliasing primitives. The `Semantic` collection has a **single `Light` mode**,
+named in anticipation of a `Dark` sibling.
 
 ```css
 :root {
   /* surfaces */
-  --color-bg:          var(--neutral-100);   /* page ground, tinted */
-  --color-surface:     #ffffff;              /* raised: cards, toggles */
-  --color-border:      var(--neutral-300);
+  --color-bg:              var(--neutral-100);  /* page ground, tinted */
+  --color-surface:         #ffffff;             /* raised: cards, toggles, panels */
+  --color-surface-hover:   var(--neutral-100);  /* light control on a dark band, hover */
+  --color-surface-pressed: var(--neutral-200);  /* …pressed */
 
   /* text */
-  --color-text:        var(--neutral-900);   /* body, card titles */
-  --color-text-muted:  var(--neutral-700);   /* captions, eyebrow, dates */
+  --color-text:            var(--neutral-900);
+  --color-text-muted:      var(--neutral-700);  /* captions, labels, metadata */
+  --color-text-inverse:    #ffffff;             /* on accent bands and accent fills */
+
+  /* borders */
+  --color-border:          var(--neutral-300);  /* non-interactive: cards, panels */
+  --color-border-control:  var(--neutral-600);  /* interactive: chips, inputs — 3:1 */
+  --color-border-inverse:  #ffffff;             /* ghost button outline on a band */
 
   /* brand */
-  --color-accent:      var(--blue-500);      /* ⚠ Figma default mode resolves this to blue-700 */
-  --color-link-hover:  var(--blue-700);
-  --color-link-strong: var(--blue-900);      /* lead paragraph, CTA background */
+  --color-accent:          var(--blue-500);
+  --color-accent-hover:    var(--blue-600);
+  --color-accent-pressed:  var(--blue-700);
+  --color-link-hover:      var(--blue-500);
+  --color-link-strong:     var(--blue-700);     /* lead paragraph, CTA background */
+
+  /* control tints (unselected chips on light) */
+  --color-control-hover:   var(--blue-200);
+  --color-control-pressed: var(--blue-300);
+
+  /* state */
+  --color-focus-ring:      var(--blue-500);
+  --color-focus-offset:    #ffffff;
+  --color-disabled-surface: var(--neutral-200);
+  --color-disabled-text:   var(--neutral-500);
 
   /* error */
-  --color-error-bg:    var(--error-100);
-  --color-error-line:  var(--error-500);
-  --color-error-text:  var(--error-600);
+  --color-error-bg:        var(--error-100);
+  --color-error-line:      var(--error-500);
+  --color-error-text:      var(--error-600);
 }
 ```
 
-`--eyebrow-gray` dissolves into `--color-text-muted`, which is what it was always trying to be.
-The old `--white` `#fefefe` is retired in favour of pure `#ffffff` for the raised surface.
+**`color/accent` and `color/link-hover` hold the same value.** That is legitimate — two roles that agree
+today and can diverge later — and it is why link hover is now a legal text colour (5.42) where the
+previous palette's was not (2.92).
+
+**`color/accent` is not scoped to `TEXT_FILL` in Figma.** The scope survives from when the accent could
+not legally be text. It now can, so the guarantee comes from the value rather than the scope; the
+restriction is kept because it preserves the role distinction — reach for `link-hover` or `text` when
+you want text, and `accent` when you want a surface.
+
+## Guardrails
+
+Every contrast failure measured in this project reduces to one of these:
+
+1. **Nothing blue goes on the accent band.** Every step is ≤ 1.87 against it. Use white, `neutral/100`
+   or `neutral/200`, all of which clear 4.5.
+2. **`blue/300` and `blue/400` are not text on light.** 2.92 and 3.91. 300 fails even the large-text
+   threshold.
+3. **Never `neutral/600` for text.** 3.85 on the ground. It is a *border* colour.
+4. **Anything at `blue/500` or darker, and `neutral/700` or darker, passes on both surfaces** — no
+   checking needed.
+5. **Disabled is exempt** (WCAG 1.4.3, 1.4.11) and its low contrast is the signal. `disabled-text` is
+   `neutral/500` rather than 600 specifically so the exemption never becomes a precedent for body text.
+
+A novel pairing is the only case that warrants measuring. An in-canvas contrast plugin (Stark, Able) is
+the convenient way while designing.
+
+## Interaction states
+
+Specified and built 2026-08-07. Both control sets carry `State = Rest | Hover | Pressed | Focused |
+Disabled`.
+
+### Primary button — light ground
+
+| State | Fill | Label | Label/fill |
+|---|---|---|---|
+| rest | `accent` | `text-inverse` | 5.67 |
+| hover | `accent-hover` | `text-inverse` | 8.12 |
+| pressed | `accent-pressed` | `text-inverse` | 10.61 |
+| disabled | `disabled-surface` | `disabled-text` | 2.31 † |
+
+### Primary button — accent bands: a ghost, and why it must be
+
+On a coloured band the button **cannot lighten while keeping white text**. The window is empty: white
+text survives only to L 41%, where the fill sits 1.23 against the band and is invisible against it;
+separating from the band needs L ≥ 80%, where white text is at 1.53. So hover **inverts** instead.
+
+| State | Fill | Border | Label |
+|---|---|---|---|
+| rest | `accent` (reads as the band) | `border-inverse` | `text-inverse` |
+| hover | `surface` — solid white | — | `accent` |
+| pressed | `surface-pressed` | — | `accent-hover` |
+| disabled | `accent` | `disabled-text` | `disabled-text` |
+
+Outline → solid white → grey. The three states are maximally distinct, which the earlier
+white/`#f9fafb`/`#e9eaea` sequence was not.
+
+### Filter chip — light ground
+
+| State | Fill | Label | Border |
+|---|---|---|---|
+| rest | `surface` | `text` | **`border-control`** |
+| hover | `control-hover` `blue/200` | `text` | `border-control` |
+| pressed | `control-pressed` `blue/300` | `text` | `border-control` |
+| **selected** | `accent` | `text-inverse` | `accent` |
+| selected + hover | `accent-hover` | `text-inverse` | `accent-hover` |
+| disabled | `disabled-surface` | `disabled-text` | `border` |
+
+**The chip border is `neutral/600`, not the card hairline.** A card is not a control; a chip is, so its
+boundary falls under 1.4.11's 3:1 requirement — 3.85 rather than 1.41. Form inputs take the same token
+for the same reason.
+
+**Pressed stops at `blue/300`.** That is the firmest tint before an unselected chip starts reading as
+selected (1.86 against the accent), and it is acceptable only because pressed is transient.
+
+### Focus ring — a double ring, stated by relationship
+
+> **Inner ring contrasts with the control; outer ring contrasts with the surface.**
+
+The same two colours in both contexts, order swapped — 5.67 / 5.42 on light, 5.67 / 5.67 on the band.
+A fixed inner-white / outer-accent ring **fails on the accent band**, where the white inner merges with
+the white button and the accent outer merges with the band.
+
+In CSS this is `box-shadow: 0 0 0 2px <inner>, 0 0 0 4px <outer>`. **In Figma it has to be drawn as two
+absolutely-positioned rectangles** with stretch constraints — see Figma authoring conventions, where
+spread shadows are documented as unrenderable.
+
+† Ratios marked † are deliberately low; see guardrail 5.
 
 ## Links
 
-**Inline links in prose:** body text colour with a persistent underline; `--blue-700` on hover. The
-existing approach, deliberately kept — because the underline rather than colour carries the
-affordance, it satisfies WCAG 1.4.1 (Use of Colour), which a coloured-text link does not. Both states
-pass on both surfaces: 18.86 / 17.24 at rest, 5.67 / 5.18 on hover.
+**Inline links in prose:** body text colour with a persistent underline, `color/link-hover` on hover.
+Because the *underline* rather than colour carries the affordance, this satisfies WCAG 1.4.1 (Use of
+Colour), which a coloured-text link does not. Both states pass on both surfaces: 18.86 / 17.24 at rest,
+5.67 / 5.42 on hover.
 
-**Block-level link titles (card titles, list headings): `--neutral-900`, no underline required.**
-Decided 2026-07-28. WCAG 1.4.1 governs links being distinguishable *from surrounding text*, which is
-an inline problem; a title in its own block at heading size is identified as a link by position and
-context. So "underline in prose, none on card titles" is principled rather than a compromise. Andy's
-read was also that dark titles quiet the page down, which they do.
+**Block-level link titles — card titles, list headings — take `neutral/800`, no underline.** 1.4.1
+governs links being distinguishable *from surrounding text*, which is an inline problem; a title in its
+own block at heading size is identified as a link by position and context. Dark titles also quiet the
+page down, and they pass on both surfaces at any size, which coloured titles did not.
 
-This replaced blue card titles, which had a subtler problem than they appeared to: the same blue
-title **passes on a white card and fails on the ground**, so unboxed note titles failed while boxed
-article titles scraped by. Dark titles pass everywhere at any size.
+## Dark mode — what is already true
 
-## Known colour problems to resolve in the design phase
+Not designed yet, but three things are in place and one is known to be missing:
 
-**Measured against the *live site*, not the mockups.** The first three are effectively solved in
-Figma, where those surfaces now use `blue-700` (white on it = 5.67, passes AA). They remain listed
-because `web/style/` still ships the failing values. Confirm and strike them in the palette audit.
+- **The `Semantic` collection has a single mode named `Light`**, so adding `Dark` is a sibling rather
+  than a restructure. Every component binds semantic roles, not primitives, so a mode switch reaches
+  them all.
+- **The light end of the blue ramp exists** — `blue/50`–`200` were added partly for this. Against a dark
+  ground their contrast inverts and they become the text and accent colours.
+- **`blue/300` and `blue/400`, near-useless on light, are the mid-tones dark mode will want.** This is
+  why they were kept rather than dropped.
+- **The error set has no light variant and will need one.** `error/500` and `600` measure 1.26 and 1.01
+  against the accent — they vanish on any dark surface.
 
-- **Footer is white-on-`--blue` at every viewport** — 3.06 against a 4.5 requirement. The 16px
-  `.copyright` and its links are the clearest failure; `.description` (20px/500) and `.menu`
-  (20px/600) also fail. Social icons pass as non-text UI at 3.06 vs 3.0, barely.
-- **Mobile nav is white-on-`--blue`** below 60rem — same 3.06. Above 60rem the header is white with
-  dark text and is fine, so this one is mobile-only.
-- Dark text on `--blue-500` does pass (6.11), but Andy doesn't like the look. Alternatives to be
-  explored in Figma for both nav and footer.
-- ~~`--alert-text` on `--alert-bg` is 3.70~~ — **resolved** by the error set above. Both old tokens
-  were dead anyway (declared, never referenced), so they should be deleted rather than fixed.
-- `.social a:hover` sets `fill: var(--blue)` on a `var(--blue)` footer background, so the icon fill
-  goes to exactly background colour and only the white stroke remains. Confirm this outline effect
-  is intentional.
+The mode axis is deliberately separate from the `Desktop`/`Mobile` axis carried by `Type Scale`,
+`Spacing` and `Grid`, so a frame can be Mobile without being Dark.
 
 ---
 
@@ -1254,16 +1245,15 @@ collection). The mobile/desktop duplication that the Starter plan forced has bee
 
 | Collection | Contents | Modes |
 |---|---|---|
-| `Primitives` | 18 raw colours — `blue/*`, `neutral/*`, `error/*`, `white` | single (`Value`) |
-| `Semantic` | 11 colours that **alias** primitives — `color/bg`, `color/text`, … | **`Dark Accent` / `Value`** |
+| `Primitives` | **21** raw colours — `blue/50`–`700`, `neutral/100`–`900`, `error/*`, `white` | single (`Value`) |
+| `Semantic` | **24** colours that **alias** primitives — `color/bg`, `color/text`, … | single (**`Light`**) |
 | `Type Scale` | 6 font sizes `size/1`–`size/6` | **`Desktop` / `Mobile`** |
 | `Spacing` | **24** — 7 primitives `space/1`–`space/7` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` | **`Desktop` / `Mobile`** |
 | `Grid` | **7** — `margin`, `gutter`, `column`, `skip-1`, `skip-2`, `span-3`, `span-4` | **`Desktop` / `Mobile`** |
 
-**Two different mode axes are in play, and they are not the same axis.** `Type Scale`, `Spacing` and
-`Grid` carry **viewport** (`Desktop`/`Mobile`). `Semantic` carries a **theme** variant
-(`Dark Accent`/`Value`). Keeping them on separate collections is what lets a frame be Mobile without
-also being Dark Accent. Do not merge them.
+**Two mode axes are in play and they are not the same axis.** `Type Scale`, `Spacing` and `Grid` carry
+**viewport**; `Semantic` will carry **theme** once `Dark` joins `Light`. Keeping them on separate
+collections is what lets a frame be Mobile without also being Dark. Do not merge them.
 
 **Spacing keeps both layers in one collection, distinguished by prefix.** Colour splits its two
 layers across `Primitives` and `Semantic`; spacing does not, because 19 variables do not justify two
@@ -1361,10 +1351,32 @@ read as doing nothing. For scale, the hand-built Insight Detail has **1 clipping
 `clipsContent = false` on creation and keep it true only where a frame genuinely crops** — a hero band
 holding an oversized image, or a masked photograph.
 
-**Verify an effect by render bounds, never by reading the effect back.** `absoluteRenderBounds` minus
-`absoluteBoundingBox` is the overflow an effect actually paints: the hover variant measures +2 right
-and +2 bottom, the rest variant 0. That distinguishes *the shadow exists* from *the shadow is visible*,
-which reading `node.effects` cannot.
+**Verify an effect by render bounds rather than by reading the effect back** — `absoluteRenderBounds`
+minus `absoluteBoundingBox` is the overflow an effect claims. But see the next entry: **render bounds
+are not proof of rendering either.** The only conclusive check is sampling exported pixels.
+
+**Drop-shadow `spread` is stored, counted, and never rendered.** Found 2026-08-07 while building the
+focus ring, and it cost the most time of anything in this project. Figma accepts `spread`, reports it
+back from `node.effects`, and *grows `absoluteRenderBounds` by it* — then draws nothing. A controlled
+test isolated it: a shadow with `offset` rendered at exactly the node's own width with no expansion; a
+spread-only shadow rendered nothing at all, because with spread ignored it is the node's own silhouette
+hidden directly behind an opaque node. A blurred shadow shows only its blur bleeding out. **Anything
+needing a ring or halo must be drawn as real geometry** — the focus rings are two absolutely-positioned
+rectangles with `STRETCH` constraints so they track a control's width. CSS `box-shadow` handles spread
+correctly, so this is a Figma drawing limitation and not a design constraint.
+
+**`setBoundVariableForPaint` does not always bake the resolved colour into the paint.** It returns a
+correctly *bound* paint whose `color` field is still whatever you passed in — and Figma renders the
+baked field, so a paint bound to `color/accent` can render black. Build the paint with the variable's
+resolved RGB **first**, then bind:
+
+```js
+const c = resolveRGB(v)                                    // walk the alias chain to a real value
+let p = { type: 'SOLID', color: { r: c.r, g: c.g, b: c.b } }
+p = figma.variables.setBoundVariableForPaint(p, 'color', v)
+```
+
+Reading `fills[0].boundVariables` back will look perfect either way; only the rendered pixels differ.
 
 **A variant "Change to" interaction defaults to no transition.** `transition: null` swaps instantly.
 Clone an existing transition object rather than hand-writing one — the same trick keeps the hover
@@ -1404,186 +1416,105 @@ axis so its size is derived.
 
 ## Figma build state
 
-The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
-`pPZPGT6EpSaLkoUDK8HMMp`). What exists now:
+Figma file `pPZPGT6EpSaLkoUDK8HMMp`. **This is an inventory of what exists, not a changelog** — the
+history of how it got here has been removed as it stopped being useful.
 
-| Built | Detail |
+| | |
 |---|---|
-| `Primitives` collection | 18 colour variables (`blue/500–900`, `neutral/100–900`, `error/100·500·600`, `white`), scoped `ALL_FILLS` + `STROKE_COLOR`, each carrying its CSS name via `setVariableCodeSyntax('WEB', …)` |
-| `Semantic` collection | 11 colour variables **aliased** to primitives, scoped per role |
-| `Type Scale` collection | 6 `FLOAT` variables `size/1–6`, scoped `FONT_SIZE`, modes `Desktop` (default) / `Mobile`. Holds the **18px base** as settled: desktop 16 / 18 / 22.5 / 28.125 / 35.15625 / 43.9453125, mobile 16 / 17 / 21 / 25 / 30 / 32. Exact fractional values preserved. |
-| Text styles | **14**, viewport-agnostic — 10 content roles (`H1`, `H2`, `H3`, `H4`, `Lead`, `Body`, `Body Compact`, `Small`, `Caption`, `Label`) plus 4 chrome roles (`Display`, `Masthead/Name`, `Masthead/Role`, `Nav`). Leading and tracking as percentages; `fontSize` bound to `size/N`, so a base change propagates to every style without editing any of them |
-| Leading synced | 2026-08-06. `Body` 160% → **180%**, `Lead` 145% → **160%**, closing the gap that made Figma internally inconsistent — the `Spacing` collection's 32px unit is `18 × 1.8` rounded, and had been sitting against a 28.8px line box. Converted boards reflowed: Insight Detail +174, Singleton +132, Ideas +63, Home +39. The four absolutely-positioned boards reported **zero** change, which means their text grew inside fixed-height frames — see Outstanding. |
-| `Body Compact` | Created 2026-08-06. 18px / 150%, bound to `size/2`. Applied to the description text in both card component sets — 8 nodes, propagating to all 36 instances. |
-| `note card` wired | 2026-08-06. Padding 12/16 → `card/pad`, inner stack gap 4 → `card/gap` (8) across all four variants, descriptions onto `Body Compact`, inert outer gap zeroed. Card 139 → 155. The **only** remaining raw value is the clipping variant's 2px link-row nudge, kept as a documented optical exception. Choosing 8 for the inner stack settled the 4px question — see *Still open*. |
-| Home Insights wired | 2026-08-06. Band off `primaryAxisAlignItems: CENTER` onto `grid/margin` + `MIN` — it had **no horizontal padding** and centred its children, so with a 346 Notes column the content summed to 1026 and both columns sat 15px off-grid. Now 7 + `skip-1` + 4 = 996 exactly, Articles `FILL` at 222→793, Notes pinned to `grid/span-4` at 902→1218. All six gaps bound; the Notes heading→description gap was **5**. Note card padding 12/16 → `card/pad`. Cards outdented to 348 — see Grid → Outdenting. Band 902 → 960. |
-| Home Hero wired | 2026-08-06. `rhythm/band` + `grid/margin` (it had **no horizontal padding** — its 996 came from a `FIXED` child, the third distinct mechanism found for establishing the content column). Stack and statement to `FILL`, statement gap to `space/4`, statement fill to `white`. The `button` component set: padding 8/12 → `space/1`/`space/2`, inert gap zeroed, label off an unstyled 20px onto `Nav`. Band 339 → 350. The stack's `counterAxisAlignItems: MAX` — which right-aligns the button — is deliberate. |
-| Audit 2026-07-28 | All 12 styles verified against this file: fonts, bound variables, resolved sizes, leading and tracking all match. Only divergence found was `Display` tracking, which Andy relaxed −0.5% → 0%; this file now records 0% as correct. |
-| Migrations completed | 23 nodes off the remote `font-size/body`; 33 nodes off remote `blue-500` / remote `white-100` / legacy `bg/primary` / `card/hover border`; 4 nodes off the remote `Heading/1` and `Heading/2` styles onto local `H2`/`H3`; 17 style-less nodes onto mode-aware `size/2`. Every pass verified at zero remaining references. |
-| `Spacing` collection | Built 2026-08-06, extended 2026-08-07. **24** `FLOAT` variables — 7 `space/1–7` primitives plus 10 `rhythm/*`, 3 `card/*`, 3 `chrome/*` and 1 `field/*` role **aliased** to them. All scoped `GAP` except `field/height`, which is `WIDTH_HEIGHT`; all carrying a `--css-name` and a description. Modes `Desktop` (default) / `Mobile`; only `rhythm/band` (64/32), `rhythm/section` (96/64) and `chrome/inset` (48/16) differ. |
-| `Grid` collection | Built 2026-08-06. **7** `FLOAT` variables, modes `Desktop` / `Mobile`: `margin` 222/16, `gutter` 24/8, `column` 61/20, `skip-1` 109/36, `skip-2` 194/64, `span-3` 231/328, `span-4` 316/328. `column`, `span-3` and `span-4` are `WIDTH_HEIGHT`; the rest `GAP`. |
-| Layout grids bound | 2026-08-06. All 19 grid-bearing frames and components converted to `STRETCH` and bound — `offset` → `grid/margin`, `gutterSize` → `grid/gutter`. Four detail boards (Web Clipping, Book Note, Note, Case Study) were still `CENTER section=61`; converting them produced no visual change, since both resolve to 996 content and 222 margins at 1440. |
-| Components wired | 2026-08-06. **`article card`** — all four variants on `card/pad` (squared the drifted 14/20/16/20 to 16), `card/gap`, `card/media`; the eyebrow→body gap was `0` and is now 8. **`Top Bar`** — `chrome/pad-header` + `chrome/inset`, masthead lockup on `space/2`, nav row on `space/3`. **`Topics`** — `rhythm/section`, `grid/margin` (fixing a 223 drift), 7 + `skip-1` + 4 with Genres pinned to `grid/span-4`, lists restyled from an unstyled 20/175% to `Nav` and split into per-item text nodes. **`Connect`** — `rhythm/section`, `grid/margin`, 5 + `skip-2` + 5. **`Footer`** — `chrome/pad-footer`, `grid/margin` (it had none; width came from a hardcoded 996 child), `rhythm/block`, social icons on `space/5`, link grid on `gridRowGap`/`gridColumnGap`. |
-| Remote library cut loose | 2026-08-06. The nav row (`Property 1=Frame 89`, from remote set `Component 1`) and two nested `search` components were **read-only remotes used in every Top Bar** — 30 instances across 9 boards. Detaching them inside the local `Global Nav` fixed all 9 at once. **A full sweep of 1216 nodes now finds zero remote components, variables or text styles**, so the library can be unsubscribed. |
-| Audit 2026-08-06 | Full inventory verified against this file: 5 collections, all modes, every variable's resolved value in every mode, all 12 text styles. Colour primitives match hex-for-hex. Two divergences found — see Outstanding 1 and 2. |
-| Five detail boards converted | 2026-08-06. **Note Detail**, **Web Clipping Detail**, **Book Note Detail** and **Case Study** taken off `layoutMode: NONE`; **Singleton** corrected. All five now `VERTICAL` gap 0 hugging height, so a footer can no longer hang off the board bottom — three of them were overflowing by exactly 83px. Every board verified by measured geometry against the grid and rhythm values: 19 / 24 / 30 / 48 / 23 checks. Heights 1331→1394, 1581→1703, 2089→2136, 4931→4951, 2669→2689. |
-| Board fixes worth naming | The `Frame 427318204` (83) → `Frame 427318199` (20) double wrapper around every Top Bar, deleted on all four. A stale `COLUMNS 1 / 1024 / gutter 30 / CENTER` grid alongside the bound 12-col one, deleted from three boards. Related rows off 1027 / gap 32 / cards 321 onto 996 / `grid/gutter` / `grid/span-4`. Left edges drifting 222 / 223 / 225 / 226 and widths 647 / 648 / 655 / 656 / 659, all resolved by `FILL`. Book Note's summary was `textAutoResize: NONE` — a fixed box that clipped silently. Case Study's testimonial columns 471.5 / 48 / 471.5 → 486 / `grid/gutter` / 486, its attribution gap **−3 → 0**, and its hero mask group → a clipping `Hero` frame. |
-| `source card` | Built 2026-08-06. One set, two shapes × rest/hover, matching how `article card` and the note card set are built: `Type = Link \| Book`, `State = Rest \| Hover`. **Link** = title ↗ / thumbnail / source; **Book** = author / title ↗ / publisher + year. Properties `Title`, `Source`, `Publisher`, `Thumbnail` (`INSTANCE_SWAP`, `preferredValues` restricted to `card images/*`), plus `Author`. Bound to `card/pad`, `card/gap`, `color/surface`, `color/border`, `color/text-muted`. Hover effect and transition cloned from the existing sets. Replaced the two detached "article card" frames on Web Clipping and Book Note. |
-| `card images/Arango` | Created 2026-08-06. The Web Clipping thumbnail existed only as an image fill layered on top of the WHO placeholder, so it was not swappable. Promoted to a real component alongside Garmin / WHO / Map / SC. |
-| `Caption` | Created 2026-08-06. `size/1`, 150%, paired with `color/text-muted`. **Roman in Figma, italic on the site** — see Typography → `Caption`. |
-| Insights index audited | 2026-08-06. The board was auto-layout already but predated the grid and rhythm work. Masthead band 68 → `rhythm/band`; H1 → Lead **7** → `rhythm/heading-close`; the filter bar was **a band with no vertical padding**, now a row inside the index band on `grid/skip-1` (was 113) with 7 + skip-1 + 4 (was 567 / 319 at x 221 / 901); filter heading → chips 23 → `rhythm/heading-close`, chip gaps bound to `space/2`; masonry band 65 / 85 → `rhythm/band`, columns FIXED 315 → **FILL → 316**, cards 24 → `rhythm/list`. **All 14 cards were already live instances** on the renamed `article card` / `note card` sets — nothing detached. |
-| `Page Header` | Built 2026-08-06 from the Insights title block. 656, `H1` over `Lead` at `rhythm/heading-close`; properties `Title`, `Lead`, `Show Lead` (boolean). Instanced on Insights (Lead on) and Singleton (Lead off). |
-| `RSS CTA` | Added by Andy 2026-08-07, audited the same day. `rhythm/section` + `grid/margin`, `rhythm/heading-close` under the H2, inner row 656 + `grid/skip-1` + `grid/span-3`. Fixed: an inert `grid/skip-1` on the one-child component frame, and **no layout grid at all** — now bound. The CTA control was a `filter` instance and is now a `button`. Instanced on all five detail boards, between the article and Related bands. |
-| `Contact Section` / `Contact Insert` | Added by Andy 2026-08-07, audited the same day. Insert is 656 of `H2` + `Body` over a form; Section wraps it at `rhythm/section` + `grid/margin` with a reserved `grid/span-3` rail. Fixed: the Section's layout grid was **raw** where its padding was bound — the Insight Detail trap in reverse; a raw `10` gap on both frames (`0` on the Section, `rhythm/block` on the Insert); the Insert instance typed at 656 rather than deriving; the reserved rail `layoutMode: NONE` at a stale `231×10`; and **two FIXED-height frames** (147, 448) that fit only until the text changed. Form fields are 4 + 4 at `grid/gutter` inside the 8-col measure, so 316 derives. |
-| `Label` / `field/height` | 2026-08-07. `Eyebrow` renamed to `Label` and applied to the five form labels in place of `H4` — 73 existing uses carried over. `field/height` created in `Spacing`, aliased to `space/5`, **scoped `WIDTH_HEIGHT`** — the first such token outside `Grid` — and bound to the four single-line inputs. |
-| Overflow swept | 2026-08-06. Ten Insights card instances were `FIXED` vertically and 11–23px short; set to `HUG`. The `note card` Clipping variant's domain text was `FIXED` at 287 in a 284 row — fixed on the component in both variants, correcting 8 instances across four boards. All eight boards now return a single sweep hit, Insight Detail's deliberately-clipping `Hero`. |
-| Clipping swept | 2026-08-06. 17 programmatically-created frames had inherited `clipsContent: true` and were cleared. `Hero` on Case Study and the cropped photograph on Singleton are the only frames across the five boards that clip, both correctly. |
-| Removed | legacy `Variable collection` and its 4 orphans; `body/default`; the 8 `Mobile/*` text styles (verified unused); the 12 `size/desktop/*` + `size/mobile/*` variables superseded by modes; the `rhythm/*-mobile` twins (built and deleted 2026-08-06 — see Vertical rhythm) |
+| **Collections** | `Primitives` (21 colours), `Semantic` (24, single `Light` mode), `Type Scale` (6, Desktop/Mobile), `Spacing` (24, Desktop/Mobile), `Grid` (7, Desktop/Mobile). Every variable carries a `--css-name` and a description. |
+| **Text styles** | 14, viewport-agnostic. Each binds `fontSize` to `size/N`, so a base change propagates without editing any style. |
+| **Boards** | Home, Insights, and six page templates — Insight Detail, Note Detail, Web Clipping Detail, Book Note Detail, Case Study, Singleton. All auto-layout, `VERTICAL` gap 0, hugging height, verified by measured geometry against the grid and rhythm values. All 1440 wide; no mobile artboards exist. |
+| **Components** | `Top Bar`, `Global Nav`, `Masthead`, `Footer`, `Topics`, `Connect`, `RSS CTA`, `Contact Section` / `Contact Insert`, `Page Header`; card sets `article card`, `note card`, `source card`, five `card images/*`; controls `button` (Surface × State, 10 variants) and `filter` (Selected × State, 10 variants). |
+| **Prototype** | Hover and press chains on both control sets at `SMART_ANIMATE` 0.15; click toggles `Selected` on chips. `Focused` cannot be prototyped — Figma has no focus trigger, so those variants are documentation only. |
+| **Specimens** | `button — states specimen` and `filter — states specimen` show every state on its intended ground. The Accent button variants are invisible against the component set's white backing, so review them there. |
+| **No remote dependencies** | The file was once subscribed to a remote library; a full sweep now finds zero remote components, variables or styles. If unfamiliar tokens reappear, check library subscriptions first — remote nodes are read-only and fail with *"Cannot write to internal and read-only node."* |
 
-**`color/accent` is deliberately NOT scoped to `TEXT_FILL`.** That makes the "never text" contrast
-constraint structural — Figma will not offer the brand blue in a text-colour picker.
+---
 
-### Outstanding
+# Open questions
 
-1. ~~**The four absolutely-positioned boards have text overflowing their frames.**~~ **Resolved
-   2026-08-06** — all four converted, plus Singleton. Worth recording what the damage actually was,
-   because the prediction was half right. There was **no hard overlap**: the failure was crowding to
-   the edge of collision. Book Note's Key Concepts list ended **3px** above the `Impressions` heading
-   where 64 belongs; Web Clipping's blockquote ran **6px** into the paragraph below where 48 belongs;
-   Case Study's approach body sat **15px** from `Project Outcome`. Each body block had grown 4px per
-   line (28 → 32px line box) and eaten the air beneath it. The prediction missed a second failure
-   entirely: **three of the four boards had their Footer hanging 83px off the bottom of the board**,
-   because the board frames were stale heights from before the Footer component was wired.
-2. **`Semantic`'s `Dark Accent` mode is the collection default.** Now documented in the Colour section,
-   but the decision stands: should `Value` be the default instead, and is a `link-hover` of `blue-500`
-   safe in a mode where it is offered as a text colour? Folds into the palette audit.
-3. **The full palette audit** — requested 2026-08-06, to run as its own pass. The Colour section
-   carries a TODO banner; primitives are verified but the semantic layer and the contrast tables have
-   not been re-checked since `Dark Accent` appeared.
-4. **The filter-toggle labels and note-card descriptions** (17 nodes) carry a direct `size/2` binding
-   with no text style applied, so they keep their own font and leading. Applying `Body` would change
-   their appearance — the toggles in particular are Lato UI labels, not prose. Leave them until the
-   design phase decides what those roles are.
-5. **`rhythm/list` (32) between unboxed note cards may be too tight.** Their hover boxes bleed 16px
-   each side, so two adjacent hover targets sit only 32 apart with 16px of box between them. Not
-   wrong, and not worth changing on argument alone — but the first thing to look at if the Notes
-   column reads as crowded on hover. *(The note card set is otherwise fully bound as of 2026-08-06;
-   the only raw value left is the clipping link row's 2px optical nudge, which is deliberate.)*
-6. ~~**Two *detached* frames named "article card"**~~ **Resolved 2026-08-06**, but not as planned. They
-   were not article cards and could not become instances of that set: Web Clipping's carried title /
-   thumbnail / **author**, Book Note's carried **author / title / publisher + year**, and the
-   `article card` set offers title / image / **date** / description. They were a *citation of the
-   source work* — a component that did not exist. Hence the new `source card` set. The lesson
-   generalises: **a detached frame that resists re-instancing is usually evidence of a missing
-   component, not of a lazy copy.**
-7. **Insight Detail's title block (`Frame 427318263`) is `FIXED` vertically**, so a three-line H1 will
-   clip. The prose column itself was flipped to `FILL` with the rail pinned to `grid/span-3`
-   2026-08-06, so this is the last sizing problem on that board.
-8. **Remaining structurally inert gaps.** The four detail boards' `427318204` (83) / `427318199` (20)
-   and Singleton's are **resolved 2026-08-06** — those wrappers are deleted, not just zeroed. Still
-   outstanding: Insight Detail's `Frame 427318268` (96) and `Hero` (10); Ideas' `427318258` (7); and
-   inside components, the four `card images/*` (10), `filter` (10) and `button` (4).
-   **Distinguish two kinds.** *Structurally* inert — a wrapper that will only ever hold one child —
-   is noise and should be zeroed. *Contingently* inert — a correctly configured container whose
-   content happens to be one item today — is right and should be left alone. The conversion added a
-   third case worth naming: a **reserved rail** is an empty frame that is nonetheless load-bearing,
-   because the prose column derives its width from it. See Grid → *Aligning a figure with the body*.
+Small decisions, none blocking.
 
-9. **Insight Detail is now the least current of the six boards.** It was the exemplar every other board
-   was matched to, and the others have since overtaken it: its title block is still `FIXED` vertically
-   (item 7), it still carries the inert 96 and 10 gaps (item 8), and its rail is `span-3` + `skip-1`
-   where a captioned figure would now want `span-4` + `gutter`. Nothing is broken; it is simply no
-   longer the reference.
+- **Noto Serif Italic is not installed in Figma**, so the `Caption` style is roman there while the site
+  renders italic. Installing the TTF and repointing the style's `fontName` closes it.
+- **Case Study's testimonial columns are 6 + 6 at a 24px gutter** — on-grid, and the faithful conversion
+  of a hand-built layout, but the Grid section's own table calls 6 + 6 *"gap too tight, the eye jumps
+  columns."* `grid/skip-2` (401 / 194 / 401) is one binding away.
+- **128px separates Case Study's testimonial band from the article bands either side** — the
+  band-stacking rule working as specified, but the first place two bands of *different* kinds meet.
+- **`rhythm/list` (32) between unboxed note cards may be too tight.** Their hover boxes bleed 16px each
+  side, so two adjacent hover targets sit 32 apart with 16px of box between them. The first thing to
+  look at if the Home Notes column reads as crowded on hover.
+- **Hover transition conventions have not converged.** Controls are `SMART_ANIMATE` 0.15; `article card`
+  and `source card` are `SMART_ANIMATE` 0.3; `note card` is `DISSOLVE` 0.15. The defensible rule is
+  **0.15 for controls, 0.3 for cards** — a control should feel immediate, a card can be languid — which
+  leaves only the note card out of step.
+- **Whether card titles get an underline.** Not required; see Links.
+- **Custom form-validation messaging.** Native validation bubbles cannot be styled, so the error tokens
+  cannot actually be used until this is designed. It is the real blocker on the error state, not the
+  colours.
+- **Insight Detail is the least current board.** It was the exemplar everything else was matched to and
+  has since been overtaken: its title block is still `FIXED` vertically so a three-line H1 would clip,
+  and its rail is `span-3` + `skip-1` where a captioned figure would now want `span-4` + `gutter`.
 
-10. **Two hover transition conventions coexist.** The note card set dissolves at 0.15s; `article card`
-    and `source card` smart-animate at 0.3s. Defensible — the note card is unboxed at rest and gains a
-    whole box, while the other two only gain a shadow — but if one hover feel is wanted across all
-    cards it is a two-line change.
+# Cleanup backlog
 
-11. **Card titles are `neutral/800` in Figma and `--neutral-900` in this file.** All three card sets
-    use 800. The new `source card` matches them rather than this document, deliberately, so that one
-    set is not the odd one out. Fold into the palette audit and settle it in one direction.
+Known, bounded, and safe to leave until the relevant surface is worked.
 
-12. **Raw colour values found during the conversion**, all left alone because colour is deferred:
-    `#646464` for meta text in the note card set (where `color/text-muted` belongs), `#f3f3f3` on Case
-    Study's testimonial band, raw `#000000` on several body text fills, and the hover variants binding
-    their fill to the `white` primitive where rest uses `color/surface`. Add to the palette audit.
+- **~320 raw colour paints remain unbound** — `#ffffff` ×137, `#000000` ×100, `#646464` ×51, `#2b383d`
+  ×27, plus a scatter of one-offs. Mostly body text and headings on the boards, predating the semantic
+  layer. Binding them to `color/text`, `color/text-muted` and `color/text-inverse` is mechanical.
+- **23 text nodes carry no text style**, mostly note-card descriptions and the `AF` monogram — the
+  monogram deliberately, since it is a glyph in a fixed circle rather than type.
+- **Structurally inert gaps** on components that will only ever hold one child: the five `card images/*`
+  (10) and all ten `filter` variants (10), plus the archived `Card Alt` set. *Contingently* inert gaps —
+  a `Body Group` holding one paragraph today, a reserved rail — are correct and should be left alone.
+- **Multi-paragraph body copy sits in single text nodes** on Case Study and Singleton, so paragraphs run
+  together with no `rhythm/paragraph` between them. A mockup artefact: Portable Text emits separate
+  `<p>` elements and the CSS puts 24px between them.
 
-13. **Multi-paragraph body copy sits in single Figma text nodes.** Visible on Case Study and Singleton,
-    where paragraphs run together with no `rhythm/paragraph` between them. This is a mockup artefact
-    rather than a design decision — Portable Text emits separate `<p>` elements and the CSS rules put
-    24px between them — but it makes those blocks read tighter in Figma than they will on the site.
+---
 
-### The remote library — resolved 2026-08-06
+# What comes next
 
-The file was subscribed to a remote library ("Collection 1"). Three variables came from it —
-`font-size/body`, `blue-500`, and a *second* `white-100` distinct from the local one — plus, which
-went unnoticed until 2026-08-06, **the nav row and search icon in every Top Bar**.
+## More page layouts
 
-**Remote things cannot be edited from this file.** That is a hard wall, not an inconvenience: the nav
-row's 24px gap could not be bound to a token while it was remote, and the attempt failed with
-*"Cannot write to internal and read-only node."* That error is the reliable way to discover a remote
-dependency you did not know about.
+The six detail templates are settled and share one skeleton — see Grid → *The detail-page skeleton*.
+**Home and the Insights index are the open ones**, and layout decisions are discussed against the whole
+page inventory rather than derived from a single page.
 
-**Remote things also only disappear once nothing references them**, which is why every migration
-re-pointed bindings rather than overwriting values. The last references were the three components,
-detached inside the local `Global Nav` so that one operation covered all nine boards. **A 1216-node
-sweep now finds zero remote references of any kind**, so the subscription can be dropped.
+Two patterns are available and worth reaching for before inventing a third: the **index-page shape**
+(header, filters, masonry) and the **per-section two-column unit** that lets a figure align with body
+text rather than with a heading.
 
-If new remote tokens ever reappear, check the file's library subscriptions first.
+**The masonry is faked in Figma and gets built for real on the front end.** The three column frames are
+column-major stacks; a row-major DOM will not reproduce that order, so **the card order on the board is
+not a specification** — only the column width, gutter and card rhythm are.
 
-For the record: with Figma's previous `#479fd5`, `blue-500` failed even the 3:1 large-text threshold
-(2.80), so headings designed in that blue could not have shipped.
+## Responsive
 
-The Figma file is currently named "AndyFitzgerald.net"; the domain change is off, so the name is
-misleading and worth changing.
+The plumbing is complete and unused. `Type Scale`, `Spacing` and `Grid` all carry `Desktop`/`Mobile`, so
+one switch drives type, spacing and grid together — but **every board is 1440 and no narrow layout has
+been drawn**, so no collapse decision has actually been made.
 
-# Still open
+- **The floor should be 360, not the 375 the clamps are derived over.** Below 375 each `clamp()` returns
+  its minimum, so the type system is already correct at 360 without re-derivation.
+- **Span tokens collapse to full width on Mobile** — a span token is really a semantic width wearing
+  grid clothing. See Grid → *Span tokens name the desktop span*.
+- **The margin does not survive intermediate widths.** `grid/margin` is a fixed 222 in `Desktop` mode,
+  but the CSS rule is "cap content at 996, margins absorb the remainder, floor 16." Those agree at 1440
+  and at 360 and disagree everywhere between — 105 at 1206. The first real tablet frame will need either
+  its own mode or hand-set margins. This is the one known hole in the responsive plan.
 
-- **The full palette audit** — the largest open item. See the TODO banner in Colour.
-- ~~Whether `figcaption` stays italic serif or moves to Lato.~~ **Resolved 2026-08-06 — italic serif**,
-  as the `Caption` style. What remains is not a decision but a tooling gap: **Noto Serif Italic needs
-  installing as a system font before Figma can draw it.** Until then the Figma style is roman while the
-  site renders italic.
-- **Case Study's testimonial columns are 6 + 6 at a 24px gutter.** The split is the faithful conversion
-  of a hand-built 471.5 / 48 / 471.5, and it is on-grid — but the Grid section's own table calls 6 + 6
-  *"gap too tight, the eye jumps columns."* The alternative is `grid/skip-2` (401 / 194 / 401), which is
-  one binding away. Left as-is pending an eyeball, since the content is two authored paragraphs rather
-  than one run of prose.
-- **128px now separates Case Study's testimonial band from the article bands either side** — 64 from
-  each band's padding, meeting at gap 0. That is the band-stacking rule working exactly as specified,
-  but it is the first place on the site where two bands of *different* kinds meet, so it is worth
-  looking at rather than assuming.
-- ~~Nav and footer treatments on the blue background~~ — **effectively resolved.** Those surfaces moved
-  to `blue-700`, where white text measures 5.67 and passes AA. Confirm formally in the palette audit.
-- Whether card titles get an underline. Andy is experimenting; not required (see Links).
-- Custom form-validation messaging, needed before the error state can actually be used, since native
-  validation bubbles can't be styled.
-- Page templates and layout — **the five detail templates are now settled** (Insight, Note, Web
-  Clipping, Book Note, Case Study, plus the Singleton page shape), all on the same skeleton and all
-  verified against the grid. Home and the Ideas index are still open, and still discussed against the
-  whole page inventory. The **grid** itself is settled and has its own section above.
-- **The margin at intermediate widths.** `grid/margin` is a fixed 222 in `Desktop` mode, but the CSS
-  rule is "cap content at 996, margins absorb the remainder, floor 16." Those agree at 1440 and at 360
-  and disagree everywhere between — see the Grid section. Currently latent: the 1206-wide Home variant
-  that demonstrated it has been deleted. It returns with the first real tablet frame.
-- **Mobile artboards do not exist yet.** Every board is 1440. The mode plumbing is complete — one
-  `Desktop`/`Mobile` switch drives type, spacing and grid together — but nothing has been laid out at
-  a narrow width, so no collapse decision has actually been made. The floor should be **360**, not the
-  375 the clamps are derived over; below 375 each `clamp()` simply returns its minimum, so the type
-  system is already correct at 360 without re-derivation.
-- **Masonry on the Insights index** — **decided 2026-08-06: fake it in Figma, build it for real on the
-  front end.** Getting true masonry behaviour out of Figma is fussy for no design gain. What remains open
-  is the front-end approach (CSS `masonry` / grid / a JS layout). The standing caveat: the three Figma
-  column frames are **column-major** stacks and a row-major DOM will not reproduce that order, so **the
-  card order on the board is not a specification** — only the column width, gutter and card rhythm are.
-- ~~**The 4px question.**~~ **Resolved 2026-08-06 — the scale stays at seven steps, no ⅛ rung.** The
-  only genuine sub-8 candidate was the note card's title / meta / description stack at 4. Bound to
-  `card/gap` (8) and judged by eye: the card grows ~8px and reads better for it, which is unsurprising
-  given the stack was tightened to compensate for the old 1.6 leading. The three remaining sub-8
-  values in the file are optical nudges — the masthead name→role at 2, the card image's 6px top pad,
-  the clipping link row at 2 — and stay deliberately untokenized. **`space/1`–`space/7` is final**
-  unless a second genuine spacing case appears below 8.
-- **Nothing is in the CSS yet.** The whole system — type, colour, rhythm, grid — exists in DESIGN.md
-  and Figma only. `web/style/` is still the old 20px/Open Sans system, so every value in this file is
-  currently a specification rather than a description.
+## Dark mode
+
+See Colour → *Dark mode — what is already true*. In short: the mode axis is ready, the light end of the
+blue ramp exists for it, the mid-tones were kept for it, and the error set will need a light variant.
+
+## CSS
+
+**Nothing in this file is in the stylesheet yet.** `web/style/` is still the old 20px / Open Sans
+system, so every value here is a specification rather than a description. Three things port
+mechanically when that work starts — the `:root` custom properties, the semantic role rules, and the
+`clamp()` declarations — and two do not: Figma's nested-auto-layout rhythm becomes sibling margins (see
+Vertical rhythm → *Mechanism*), and the focus ring becomes a real `box-shadow` with working spread.
