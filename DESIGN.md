@@ -190,6 +190,32 @@ an intention.
 photograph of Andy working is illustrative and does not. The figure structure is the same either way
 — see Vertical rhythm → *Figures and captions*.
 
+## `Label` — renamed from `Eyebrow`, 2026-08-07
+
+**Lato Bold, `size/1` (16px), 150%, +2% tracking.** Unchanged in every value; only the name moved.
+
+The rename came from the contact form. Form labels had been set in `H4`, and the question was whether
+the system needed a new size for them. It did not — and could not: **step 1 is a clamped floor at 16px**
+(see Scale), so there is no smaller step and there will never be one. What was missing was a *role*, and
+the role already existed under a name that described where it sat rather than what it was.
+
+**"Eyebrow" named a position; the style's job is a quality.** This is the same correction as
+`rhythm/pair` → `rhythm/tight` — that name broke the moment the value was wanted for a list of eight
+tags, and this one broke the moment the same treatment was wanted below an input instead of above a
+title. One style now serves both: the kicker over a page title, and a form field label.
+
+**Why not `H4`, which the form was using.** `H4` is a *content heading* role that exists only because no
+size step remains below h3 (see *h4 — no size step left*), and it already appears in published article
+prose. A UI label borrowing it would conflate document structure with chrome, and the two would diverge
+the first time h4 is tuned for reading. There is also a plain typographic argument: at 18px the label
+competes with the value the reader types into the field. 16 sits it below.
+
+**Why not a second style at the same values.** A `Label` alongside an unchanged `Eyebrow` would be two
+styles indistinguishable in the picker — precisely the collision that has already produced one wrong
+binding in the spacing roles. Identical values mean one style.
+
+The rename carried 73 existing uses automatically, since renaming a style edits no nodes.
+
 ## Tracking — a Lato-only adjustment
 
 Verified against Figma 2026-07-28. The pattern that emerged is worth stating as a rule, because it
@@ -198,7 +224,7 @@ is simpler than per-style values:
 | Applied to | Tracking | Styles |
 |---|---|---|
 | Lato at display sizes (28px+) | **−1.5%** | `H1`, `H2` |
-| Lato as a small label | **+2%** | `H4`, `Eyebrow` |
+| Lato as a small label | **+2%** | `H4`, `Label` |
 | Lato, everything else | 0% | `H3`, `Masthead/Role`, `Nav` |
 | **Noto Serif, every size** | **0%** | `Display`, `Lead`, `Body`, `Small`, `Masthead/Name` |
 
@@ -363,8 +389,12 @@ The rule that decides most spacing questions. A gap between columns is a *grid* 
 rhythm value, and tokenizing it in both places lets the two drift. Consequences:
 
 - Column gaps, page margins and the one-column skip all come from `grid/*`.
-- `grid/column` is the **only** `WIDTH_HEIGHT` token in the system. Widths are the grid's business;
-  rhythm has none.
+- **Horizontal *extents* are the grid's business; rhythm has none.** The `WIDTH_HEIGHT`-scoped tokens
+  are `grid/column`, `grid/span-3`, `grid/span-4` — and, since 2026-08-07, `field/height`. *(An earlier
+  version of this line claimed `grid/column` was the only one, which was never true of the span tokens.)*
+  The rule is about horizontal extents, not about the `WIDTH_HEIGHT` scope as such: **a component's own
+  intrinsic height is a component internal**, like `card/pad`, and has nothing to do with the grid. See
+  `field/*` under Vertical rhythm → Roles.
 - Every `space/*` and `rhythm/*` variable is scoped `GAP` only, which makes the rule structural —
   Figma will not offer a rhythm token where a width belongs.
 - A wrapped column's *row* gap is vertical, so it is rhythm, not grid: use `rhythm/heading-major`,
@@ -737,6 +767,17 @@ anything.
 | `chrome/pad-header` | `space/4` | 32 | Vertical padding in the Top Bar. Tighter than `rhythm/band` on purpose: at 64 the header would be 208px tall |
 | `chrome/pad-footer` | `space/5` | 48 | Vertical padding in the Footer |
 | `chrome/inset` | `space/5` | 48 | Horizontal inset for full-width chrome. Mobile 16. The Top Bar deliberately spans wider than the 996 column, so it does **not** use `grid/margin` |
+| `field/height` | `space/5` | 48 | Height of a single-line form control. **The one role scoped `WIDTH_HEIGHT` rather than `GAP`** |
+
+**`field/*` is the fourth component-internals prefix**, added 2026-08-07 with the contact form, and the
+first to need `WIDTH_HEIGHT`. A control's height is not a gap and not a grid width — it is the component's
+own intrinsic size, which is why it takes a prefix of its own rather than borrowing `space/5` directly.
+It aliases `space/5` all the same, so it moves with the scale.
+
+The form's textarea is **left raw at 144**. It is exactly `3 × field/height`, but Figma has no `calc()`
+and it is a single use — below the bar that earns a name. Revisit when the error state forces real input
+design, which it will (see Colour → Error state: the state was never designed, and native validation
+bubbles cannot be styled).
 
 **`rhythm/tight` was `rhythm/pair` until 2026-08-06.** "Pair" named a cardinality — two things — and
 broke the moment it was wanted for a list of eight tags. The value's job is a quality, not a count.
@@ -751,6 +792,13 @@ vertical padding; `section` is the heavier choice for a band opening a new page 
 `gap: 0`, so band-to-band space is simply two paddings — Topics and Connect at `section` give 192px
 between them. This replaced an earlier `rhythm/page`, which only looked page-level because Insight
 Detail has a single content band. Home has six, and the role is per-band.
+
+**Which of the two a band takes is decided by how it reads, not by a rule.** Two data points now sit on
+either side. The **Hero** takes `band` (64) although it is a coloured, self-contained region like Topics
+and Connect, which take `section` — 96 read as too much air above a three-line statement. The **RSS CTA**
+takes `section` (96) although it is only a 115px strip, which makes it 192px from the Related band that
+follows; confirmed as intended 2026-08-07 after being queried. Neither follows from structure. Expect to
+try both and look.
 
 **`card/*` and `chrome/*` are separate prefixes on purpose.** "Rhythm" implies vertical page flow, and
 component padding is not that. The prefixes are also extensible — `filter/*` will want the same.
@@ -832,16 +880,6 @@ the caption is a label to the image's value, which is what `tight` is for. Where
 another block in a rail — Book Note's cover above its source card, Singleton's photograph above *On
 this page* — the gap is `rhythm/block` (48), the same value that figure would earn in running prose.
 
-**`band` and `section` are two values of one property, not two properties.** Both are a band's
-vertical padding; `section` is the heavier choice for a band opening a new page region. Bands stack at
-`gap: 0`, so band-to-band space is simply two paddings. This replaced an earlier `rhythm/page`, which
-only looked page-level because Insight Detail has a single content band. Home has six, and the role is
-per-band.
-
-**`card/*` is a separate prefix on purpose.** "Rhythm" implies vertical page flow, and card padding is
-not that. The prefix is also extensible — `filter/*` and `nav/*` will want the same treatment. Leaving
-these untokenized is exactly why the two card families drifted to `14/20/16/20` and `12/16/12/16`.
-
 **Check ratios in apparent space, not in token values.** Every line box contributes half-leading, so
 the white above an h2 measures ~81px and below it ~33px — about 2.5:1, not the 4:1 the raw numbers
 suggest. The same calculation puts h3 at ~64px above and ~32px below, almost exactly 2:1.
@@ -899,7 +937,7 @@ The useful division is *what creates the space*:
 - **Page-derived spacing does.** `band`, `section` and `chrome/inset` exist because of the viewport,
   and three lines of dead air between regions is wrong on a short screen.
 
-Three of twenty-three spacing variables vary — `rhythm/band`, `rhythm/section` and `chrome/inset`
+Three of twenty-four spacing variables vary — `rhythm/band`, `rhythm/section` and `chrome/inset`
 (48 → 16, since a 48px inset on a 360px screen would eat a quarter of it). The rest hold the same
 value in both modes.
 
@@ -1219,7 +1257,7 @@ collection). The mobile/desktop duplication that the Starter plan forced has bee
 | `Primitives` | 18 raw colours — `blue/*`, `neutral/*`, `error/*`, `white` | single (`Value`) |
 | `Semantic` | 11 colours that **alias** primitives — `color/bg`, `color/text`, … | **`Dark Accent` / `Value`** |
 | `Type Scale` | 6 font sizes `size/1`–`size/6` | **`Desktop` / `Mobile`** |
-| `Spacing` | **23** — 7 primitives `space/1`–`space/7` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` | **`Desktop` / `Mobile`** |
+| `Spacing` | **24** — 7 primitives `space/1`–`space/7` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` | **`Desktop` / `Mobile`** |
 | `Grid` | **7** — `margin`, `gutter`, `column`, `skip-1`, `skip-2`, `span-3`, `span-4` | **`Desktop` / `Mobile`** |
 
 **Two different mode axes are in play, and they are not the same axis.** `Type Scale`, `Spacing` and
@@ -1233,8 +1271,10 @@ more collections and the `space/` ÷ `rhythm/` ÷ `card/` prefixes already make 
 picker. If that inconsistency grates, splitting later is a rename, not a rebuild.
 
 **Scope `space/*` and `rhythm/*` to `GAP` only** — never `WIDTH_HEIGHT`. That is "grid owns
-horizontal" made structural: Figma will not offer a rhythm token where a width belongs. `grid/column`
-is the single `WIDTH_HEIGHT` token in the system.
+horizontal" made structural: Figma will not offer a rhythm token where a width belongs. The scoping
+earned its keep on 2026-08-07 — the contact form's 48px input height *is* `space/5`, and because Figma
+refused to offer it as a height, the gap surfaced as **a missing role** (`field/height`) instead of being
+quietly bound to a spacing token that means something else.
 
 **Sizes live in their own collection on purpose.** Modes are per-collection, so putting a Mobile
 mode on `Primitives` would give all 18 colours a meaningless second mode. More importantly viewport
@@ -1247,7 +1287,7 @@ default mode, so a new frame gets desktop sizes unless told otherwise — worth 
 starting a 375px artboard.
 
 **One set of text styles, viewport-agnostic:** `Display`, `H1`–`H4`, `Lead`, `Body`, `Body Compact`,
-`Small`, `Eyebrow`, plus the three `Masthead/*` and `Nav` chrome roles. No `Desktop/` or `Mobile/`
+`Small`, `Label`, plus the three `Masthead/*` and `Nav` chrome roles. No `Desktop/` or `Mobile/`
 prefix — the viewport is a mode, not a style. Each binds `fontSize` to its `size/N` variable.
 
 **`Body` and `Body Compact` share `size/2` and differ only in leading.** That is legitimate and
@@ -1372,7 +1412,7 @@ The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
 | `Primitives` collection | 18 colour variables (`blue/500–900`, `neutral/100–900`, `error/100·500·600`, `white`), scoped `ALL_FILLS` + `STROKE_COLOR`, each carrying its CSS name via `setVariableCodeSyntax('WEB', …)` |
 | `Semantic` collection | 11 colour variables **aliased** to primitives, scoped per role |
 | `Type Scale` collection | 6 `FLOAT` variables `size/1–6`, scoped `FONT_SIZE`, modes `Desktop` (default) / `Mobile`. Holds the **18px base** as settled: desktop 16 / 18 / 22.5 / 28.125 / 35.15625 / 43.9453125, mobile 16 / 17 / 21 / 25 / 30 / 32. Exact fractional values preserved. |
-| Text styles | **14**, viewport-agnostic — 10 content roles (`H1`, `H2`, `H3`, `H4`, `Lead`, `Body`, `Body Compact`, `Small`, `Caption`, `Eyebrow`) plus 4 chrome roles (`Display`, `Masthead/Name`, `Masthead/Role`, `Nav`). Leading and tracking as percentages; `fontSize` bound to `size/N`, so a base change propagates to every style without editing any of them |
+| Text styles | **14**, viewport-agnostic — 10 content roles (`H1`, `H2`, `H3`, `H4`, `Lead`, `Body`, `Body Compact`, `Small`, `Caption`, `Label`) plus 4 chrome roles (`Display`, `Masthead/Name`, `Masthead/Role`, `Nav`). Leading and tracking as percentages; `fontSize` bound to `size/N`, so a base change propagates to every style without editing any of them |
 | Leading synced | 2026-08-06. `Body` 160% → **180%**, `Lead` 145% → **160%**, closing the gap that made Figma internally inconsistent — the `Spacing` collection's 32px unit is `18 × 1.8` rounded, and had been sitting against a 28.8px line box. Converted boards reflowed: Insight Detail +174, Singleton +132, Ideas +63, Home +39. The four absolutely-positioned boards reported **zero** change, which means their text grew inside fixed-height frames — see Outstanding. |
 | `Body Compact` | Created 2026-08-06. 18px / 150%, bound to `size/2`. Applied to the description text in both card component sets — 8 nodes, propagating to all 36 instances. |
 | `note card` wired | 2026-08-06. Padding 12/16 → `card/pad`, inner stack gap 4 → `card/gap` (8) across all four variants, descriptions onto `Body Compact`, inert outer gap zeroed. Card 139 → 155. The **only** remaining raw value is the clipping variant's 2px link-row nudge, kept as a documented optical exception. Choosing 8 for the inner stack settled the 4px question — see *Still open*. |
@@ -1380,7 +1420,7 @@ The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
 | Home Hero wired | 2026-08-06. `rhythm/band` + `grid/margin` (it had **no horizontal padding** — its 996 came from a `FIXED` child, the third distinct mechanism found for establishing the content column). Stack and statement to `FILL`, statement gap to `space/4`, statement fill to `white`. The `button` component set: padding 8/12 → `space/1`/`space/2`, inert gap zeroed, label off an unstyled 20px onto `Nav`. Band 339 → 350. The stack's `counterAxisAlignItems: MAX` — which right-aligns the button — is deliberate. |
 | Audit 2026-07-28 | All 12 styles verified against this file: fonts, bound variables, resolved sizes, leading and tracking all match. Only divergence found was `Display` tracking, which Andy relaxed −0.5% → 0%; this file now records 0% as correct. |
 | Migrations completed | 23 nodes off the remote `font-size/body`; 33 nodes off remote `blue-500` / remote `white-100` / legacy `bg/primary` / `card/hover border`; 4 nodes off the remote `Heading/1` and `Heading/2` styles onto local `H2`/`H3`; 17 style-less nodes onto mode-aware `size/2`. Every pass verified at zero remaining references. |
-| `Spacing` collection | Built 2026-08-06. **23** `FLOAT` variables — 7 `space/1–7` primitives plus 10 `rhythm/*`, 3 `card/*` and 3 `chrome/*` roles **aliased** to them. All scoped `GAP`, all carrying a `--css-name` and a description. Modes `Desktop` (default) / `Mobile`; only `rhythm/band` (64/32), `rhythm/section` (96/64) and `chrome/inset` (48/16) differ. |
+| `Spacing` collection | Built 2026-08-06, extended 2026-08-07. **24** `FLOAT` variables — 7 `space/1–7` primitives plus 10 `rhythm/*`, 3 `card/*`, 3 `chrome/*` and 1 `field/*` role **aliased** to them. All scoped `GAP` except `field/height`, which is `WIDTH_HEIGHT`; all carrying a `--css-name` and a description. Modes `Desktop` (default) / `Mobile`; only `rhythm/band` (64/32), `rhythm/section` (96/64) and `chrome/inset` (48/16) differ. |
 | `Grid` collection | Built 2026-08-06. **7** `FLOAT` variables, modes `Desktop` / `Mobile`: `margin` 222/16, `gutter` 24/8, `column` 61/20, `skip-1` 109/36, `skip-2` 194/64, `span-3` 231/328, `span-4` 316/328. `column`, `span-3` and `span-4` are `WIDTH_HEIGHT`; the rest `GAP`. |
 | Layout grids bound | 2026-08-06. All 19 grid-bearing frames and components converted to `STRETCH` and bound — `offset` → `grid/margin`, `gutterSize` → `grid/gutter`. Four detail boards (Web Clipping, Book Note, Note, Case Study) were still `CENTER section=61`; converting them produced no visual change, since both resolve to 996 content and 222 margins at 1440. |
 | Components wired | 2026-08-06. **`article card`** — all four variants on `card/pad` (squared the drifted 14/20/16/20 to 16), `card/gap`, `card/media`; the eyebrow→body gap was `0` and is now 8. **`Top Bar`** — `chrome/pad-header` + `chrome/inset`, masthead lockup on `space/2`, nav row on `space/3`. **`Topics`** — `rhythm/section`, `grid/margin` (fixing a 223 drift), 7 + `skip-1` + 4 with Genres pinned to `grid/span-4`, lists restyled from an unstyled 20/175% to `Nav` and split into per-item text nodes. **`Connect`** — `rhythm/section`, `grid/margin`, 5 + `skip-2` + 5. **`Footer`** — `chrome/pad-footer`, `grid/margin` (it had none; width came from a hardcoded 996 child), `rhythm/block`, social icons on `space/5`, link grid on `gridRowGap`/`gridColumnGap`. |
@@ -1393,6 +1433,9 @@ The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
 | `Caption` | Created 2026-08-06. `size/1`, 150%, paired with `color/text-muted`. **Roman in Figma, italic on the site** — see Typography → `Caption`. |
 | Insights index audited | 2026-08-06. The board was auto-layout already but predated the grid and rhythm work. Masthead band 68 → `rhythm/band`; H1 → Lead **7** → `rhythm/heading-close`; the filter bar was **a band with no vertical padding**, now a row inside the index band on `grid/skip-1` (was 113) with 7 + skip-1 + 4 (was 567 / 319 at x 221 / 901); filter heading → chips 23 → `rhythm/heading-close`, chip gaps bound to `space/2`; masonry band 65 / 85 → `rhythm/band`, columns FIXED 315 → **FILL → 316**, cards 24 → `rhythm/list`. **All 14 cards were already live instances** on the renamed `article card` / `note card` sets — nothing detached. |
 | `Page Header` | Built 2026-08-06 from the Insights title block. 656, `H1` over `Lead` at `rhythm/heading-close`; properties `Title`, `Lead`, `Show Lead` (boolean). Instanced on Insights (Lead on) and Singleton (Lead off). |
+| `RSS CTA` | Added by Andy 2026-08-07, audited the same day. `rhythm/section` + `grid/margin`, `rhythm/heading-close` under the H2, inner row 656 + `grid/skip-1` + `grid/span-3`. Fixed: an inert `grid/skip-1` on the one-child component frame, and **no layout grid at all** — now bound. The CTA control was a `filter` instance and is now a `button`. Instanced on all five detail boards, between the article and Related bands. |
+| `Contact Section` / `Contact Insert` | Added by Andy 2026-08-07, audited the same day. Insert is 656 of `H2` + `Body` over a form; Section wraps it at `rhythm/section` + `grid/margin` with a reserved `grid/span-3` rail. Fixed: the Section's layout grid was **raw** where its padding was bound — the Insight Detail trap in reverse; a raw `10` gap on both frames (`0` on the Section, `rhythm/block` on the Insert); the Insert instance typed at 656 rather than deriving; the reserved rail `layoutMode: NONE` at a stale `231×10`; and **two FIXED-height frames** (147, 448) that fit only until the text changed. Form fields are 4 + 4 at `grid/gutter` inside the 8-col measure, so 316 derives. |
+| `Label` / `field/height` | 2026-08-07. `Eyebrow` renamed to `Label` and applied to the five form labels in place of `H4` — 73 existing uses carried over. `field/height` created in `Spacing`, aliased to `space/5`, **scoped `WIDTH_HEIGHT`** — the first such token outside `Grid` — and bound to the four single-line inputs. |
 | Overflow swept | 2026-08-06. Ten Insights card instances were `FIXED` vertically and 11–23px short; set to `HUG`. The `note card` Clipping variant's domain text was `FIXED` at 287 in a 284 row — fixed on the component in both variants, correcting 8 instances across four boards. All eight boards now return a single sweep hit, Insight Detail's deliberately-clipping `Hero`. |
 | Clipping swept | 2026-08-06. 17 programmatically-created frames had inherited `clipsContent: true` and were cleared. `Hero` on Case Study and the cropped photograph on Singleton are the only frames across the five boards that clip, both correctly. |
 | Removed | legacy `Variable collection` and its 4 orphans; `body/default`; the 8 `Mobile/*` text styles (verified unused); the 12 `size/desktop/*` + `size/mobile/*` variables superseded by modes; the `rhythm/*-mobile` twins (built and deleted 2026-08-06 — see Vertical rhythm) |
