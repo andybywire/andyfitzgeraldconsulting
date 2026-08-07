@@ -487,6 +487,58 @@ The variations the six boards actually needed all fit inside this shape:
   the prose row at `rhythm/block`, not inside Prose.
 - **The last band before the Footer** takes `rhythm/section` on its bottom edge. See Vertical rhythm.
 
+## The index-page shape
+
+Settled 2026-08-06 on the Insights board, which was assembled as auto-layout but before most of these
+conventions existed.
+
+```
+board
+├─ Top Bar
+├─ index band        pad rhythm/band + grid/margin, gap rhythm/heading-major
+│  ├─ Page Header    component instance, FIXED 656 (8 col)
+│  ├─ filters        HORIZONTAL, gap grid/skip-1 — 7 + skip-1 + 4
+│  │  ├─ Topic Filter   FILL → 571
+│  │  └─ Genre Filter   FIXED grid/span-4 (316)
+│  └─ Masonry        HORIZONTAL, gap grid/gutter
+│     └─ column ×3   FILL → 316, cards at rhythm/list
+├─ Topics / Connect
+└─ Footer
+```
+
+**The three masonry columns `FILL`, so `grid/span-4` is never typed.** Three equal children in a 996 row
+at `grid/gutter` resolve to `(996 − 48) ÷ 3 = 316` exactly. The board previously carried FIXED **315**
+columns whose right edge missed the margin by a pixel; a derived width cannot make that mistake.
+
+**The filter bar reuses the 7 + `skip-1` + 4 split** already used by the `Topics` component and the Home
+Insights band — narrow side pinned, wide side filling.
+
+**Vertical gaps inside a masonry are rhythm; horizontal gaps are grid.** Cards stack at `rhythm/list`
+(32) within a column while the columns sit `grid/gutter` (24) apart. Deliberately unequal, following
+*grid owns horizontal, rhythm owns vertical*, and matching Insight Detail's related-cards row, which
+already gaps 24 across and 32 down.
+
+**The masonry is faked, and stays faked** — three column-major stacks. Doing it properly in Figma is
+fussy for no gain, because the front end will do it for real. The consequence is in *Still open*: the
+Figma card order is column-major and a row-major DOM will not reproduce it, so that order is not a
+specification.
+
+## `Page Header` — one component, and why the Lead cannot move into it
+
+Built 2026-08-06. A 656 (8 col) block of `H1` over `Lead` at `rhythm/heading-close`, carrying `Title`
+and `Lead` text properties plus a **`Show Lead` boolean**. Instanced on Insights with the Lead on and on
+Singleton with it off.
+
+**The boolean is required by the rail, not offered as flexibility.** On Singleton the rail image aligns
+to the top of the **Lead**, not the H1 — the same rule Case Study settled in *Aligning a figure with the
+body*. Pulling the Lead up into the header would realign the image to the paragraph below it and drop it
+by the Lead's full height. So on Singleton the Lead stays in the prose column and the header renders as
+the H1 alone.
+
+**The gap *after* the header belongs to the parent band, not the component.** A component cannot carry
+the space that follows it, so the two pages differ and should: `rhythm/heading-close` (16) on Singleton,
+where the prose row comes next, and `rhythm/heading-major` (64) on Insights, where the filter bar does.
+
 ## Two rail relationships — the gap is the message
 
 Settled 2026-08-06 across the five detail boards. Both are legal 12-column splits closing on 996;
@@ -760,6 +812,20 @@ cannot carry padding, so the quote needs a frame around it; the text then `FILL`
 The primitive is bound directly rather than a `rhythm/*` role, because this is a horizontal inset and
 `rhythm/*` names vertical page flow — the same reasoning that puts `chrome/inset` where it is. It
 replaced a hand-set 39.
+
+**A filter bar takes `rhythm/heading-major` (64) above *and* below — and the second use borrows the
+name.** Settled on Insights 2026-08-06, after trying 24 and finding it far too tight. Above the bar the
+role is exact: the filter columns open with h2s, and `heading-major` *is* "2 lines above h2". Below it,
+**nothing in the set fits past 48.** `rhythm/block` (48) is correctly named but reads tight under a
+control strip; `rhythm/section` (96) is a band's *padding*, and pressing it into service as an
+`itemSpacing` would break the padding-versus-gap distinction the role names exist to encode. Minting a
+`rhythm/region` role was considered and rejected: it would have been a **third** token at 64 alongside
+`heading-major` and `band`, in a system that already records value collisions as a live source of wrong
+bindings.
+
+So `heading-major` now serves three situations — above an h2, the row gap of a collapsed wrapped column,
+and either side of a filter bar. **Prefer stretching one name over minting a colliding token, but record
+the stretch**, which is what this paragraph is for.
 
 **Figures and captions.** A caption sits `rhythm/tight` (8) below its image inside a `figure` frame:
 the caption is a label to the image's value, which is what `tight` is for. Where a figure sits above
@@ -1211,6 +1277,35 @@ against content needing 403, showing 4px of bottom padding where 16 was set. **T
 sizing, never padding** — set the frame to `HUG` or `FILL`. Any board still carrying hand-set heights
 will show this symptom after a type change.
 
+**The same trap runs horizontally, and there it is invisible.** Hit twice more on 2026-08-06. Ten
+Insights card instances were `FIXED` vertically and 11–23px short of their content — the familiar
+collapsed-padding symptom, and the one that was actually noticed. But the note card's *Clipping* variant
+also held a domain text node `FIXED` at **287px inside a 284px row** that already carried a 25px icon
+and a 2px gap, needing 314. A fixed *height* announces itself as collapsed padding; a fixed *width*
+announces nothing at all until the string is long enough, and this one had been shipping on four boards.
+**`FIXED` on either axis is where overflow hides.**
+
+**So sweep for it rather than looking for it.** For every auto-layout frame, compare the extent the
+content requires against the box it has:
+
+```js
+const kids = n.children.filter(c => c.visible !== false && c.layoutPositioning !== 'ABSOLUTE')
+const vertical = n.layoutMode === 'VERTICAL'
+const need = kids.reduce((a, c) => a + (vertical ? c.height : c.width), 0)
+           + n.itemSpacing * (kids.length - 1)
+           + (vertical ? n.paddingTop + n.paddingBottom : n.paddingLeft + n.paddingRight)
+// need > (vertical ? n.height : n.width)  →  the content does not fit
+```
+
+Skip `WRAP` and `GRID` frames, whose extent is not a simple sum. Run it after any type change, component
+edit or column-width change — it is cheap and it catches both axes. Across all eight boards it now
+returns exactly one hit: Insight Detail's `Hero`, "overflowing" by 400px because it deliberately clips a
+720px image into a 320px band. **A clipping frame is the one legitimate overflow**, so check
+`clipsContent` before treating a hit as a defect.
+
+**Fix overflow on the component, not the instance.** The clipping-card text was one edit in two variants
+and it corrected eight instances across four boards.
+
 **`counterAxisAlignItems` has no `STRETCH` value** — the enum is `MIN | MAX | CENTER | BASELINE`.
 Stretch is not a property of the row; it is what happens when a *child* is set to `FILL` on the cross
 axis. So to make a row of cards equal-height, set the children to Fill, not the parent to Stretch.
@@ -1296,6 +1391,9 @@ The tokens in this file were written into Figma over the MCP on 2026-07-28 (file
 | `source card` | Built 2026-08-06. One set, two shapes × rest/hover, matching how `article card` and the note card set are built: `Type = Link \| Book`, `State = Rest \| Hover`. **Link** = title ↗ / thumbnail / source; **Book** = author / title ↗ / publisher + year. Properties `Title`, `Source`, `Publisher`, `Thumbnail` (`INSTANCE_SWAP`, `preferredValues` restricted to `card images/*`), plus `Author`. Bound to `card/pad`, `card/gap`, `color/surface`, `color/border`, `color/text-muted`. Hover effect and transition cloned from the existing sets. Replaced the two detached "article card" frames on Web Clipping and Book Note. |
 | `card images/Arango` | Created 2026-08-06. The Web Clipping thumbnail existed only as an image fill layered on top of the WHO placeholder, so it was not swappable. Promoted to a real component alongside Garmin / WHO / Map / SC. |
 | `Caption` | Created 2026-08-06. `size/1`, 150%, paired with `color/text-muted`. **Roman in Figma, italic on the site** — see Typography → `Caption`. |
+| Insights index audited | 2026-08-06. The board was auto-layout already but predated the grid and rhythm work. Masthead band 68 → `rhythm/band`; H1 → Lead **7** → `rhythm/heading-close`; the filter bar was **a band with no vertical padding**, now a row inside the index band on `grid/skip-1` (was 113) with 7 + skip-1 + 4 (was 567 / 319 at x 221 / 901); filter heading → chips 23 → `rhythm/heading-close`, chip gaps bound to `space/2`; masonry band 65 / 85 → `rhythm/band`, columns FIXED 315 → **FILL → 316**, cards 24 → `rhythm/list`. **All 14 cards were already live instances** on the renamed `article card` / `note card` sets — nothing detached. |
+| `Page Header` | Built 2026-08-06 from the Insights title block. 656, `H1` over `Lead` at `rhythm/heading-close`; properties `Title`, `Lead`, `Show Lead` (boolean). Instanced on Insights (Lead on) and Singleton (Lead off). |
+| Overflow swept | 2026-08-06. Ten Insights card instances were `FIXED` vertically and 11–23px short; set to `HUG`. The `note card` Clipping variant's domain text was `FIXED` at 287 in a 284 row — fixed on the component in both variants, correcting 8 instances across four boards. All eight boards now return a single sweep hit, Insight Detail's deliberately-clipping `Hero`. |
 | Clipping swept | 2026-08-06. 17 programmatically-created frames had inherited `clipsContent: true` and were cleared. `Hero` on Case Study and the cropped photograph on Singleton are the only frames across the five boards that clip, both correctly. |
 | Removed | legacy `Variable collection` and its 4 orphans; `body/default`; the 8 `Mobile/*` text styles (verified unused); the 12 `size/desktop/*` + `size/mobile/*` variables superseded by modes; the `rhythm/*-mobile` twins (built and deleted 2026-08-06 — see Vertical rhythm) |
 
@@ -1431,9 +1529,11 @@ misleading and worth changing.
   a narrow width, so no collapse decision has actually been made. The floor should be **360**, not the
   375 the clamps are derived over; below 375 each `clamp()` simply returns its minimum, so the type
   system is already correct at 360 without re-derivation.
-- **Masonry on the Ideas index** — deferred 2026-08-06. Andy is evaluating a plugin and a CSS
-  approach; the three Figma column frames are column-major stacks, which is not what a row-major DOM
-  order would produce.
+- **Masonry on the Insights index** — **decided 2026-08-06: fake it in Figma, build it for real on the
+  front end.** Getting true masonry behaviour out of Figma is fussy for no design gain. What remains open
+  is the front-end approach (CSS `masonry` / grid / a JS layout). The standing caveat: the three Figma
+  column frames are **column-major** stacks and a row-major DOM will not reproduce that order, so **the
+  card order on the board is not a specification** — only the column width, gutter and card rhythm are.
 - ~~**The 4px question.**~~ **Resolved 2026-08-06 — the scale stays at seven steps, no ⅛ rung.** The
   only genuine sub-8 candidate was the note card's title / meta / description stack at 4. Bound to
   `card/gap` (8) and judged by eye: the card grows ~8px and reads better for it, which is unsurprising
