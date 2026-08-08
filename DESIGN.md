@@ -22,7 +22,9 @@ Two consequences that are easy to get wrong:
   while sitting in the primitive layer. It becomes `--color-text-muted` referencing a neutral step.
 - **Don't make the semantic layer custom properties where it should be rules.** A Figma text style
   is a *bundle of applied properties*, so its CSS equivalent is a rule (`h2 { … }`), not a variable.
-  Semantic *colour* tokens are the exception — a colour style really is a single value.
+  Semantic *colour* tokens are the exception — a colour style really is a single value. **Semantic
+  *size* tokens are the same exception**, which is what `role/*` is: a size step is one value, so a
+  role that names which step it occupies is legitimately a variable. See Typography → `role/*`.
 
 ---
 
@@ -287,11 +289,28 @@ the descriptor dropped to step 2, but 18px under a 28px name reads as too much c
   by text content again, match case-sensitively.
 
 **The hero statement takes no measure cap at all, and that is deliberate.** It fills the content column
-— `grid/margin` on the band, `FILL` on the statement — giving **996px, about 52 characters** at
-35.16px, which is already what `--leading-statement: 1.4` was derived for (*"roughly 50 characters"*).
+— `grid/margin` on the band, `FILL` on the statement — giving **996px, measured at 43 characters** at
+35.16px, close enough to what `--leading-statement: 1.4` was derived for (*"roughly 50 characters"*).
 A cap would move it *away* from the point its own leading was designed around. Note also that
 `--measure-prose: 66ch` resolves to ~1297px at 35.16px, wider than the page, so applying it would cap
 nothing.
+
+**Corrected 2026-08-08: 43 characters, not the ~52 previously claimed here.** Measured from the
+rendered node — 130 characters over 3 lines. The value is still inside the 1.35–1.5 zone so nothing
+breaks, but 52 was the number the whole justification rested on.
+
+**On mobile the hero takes 125%, not 140%.** The same statement in the 328 column at 30px measures
+**19 characters over 7 lines** — 44% of the desktop measure, and shorter than the 29-character case
+that produced `Body Compact`. By *leading pairs with the measure*, 1.4 is too loose there; the
+defensible zone is 1.2–1.3 and 1.25 is the chosen value, giving a 37.5px line box against a face whose
+ascender-to-descender is about 32px at that size. Not 1.2 — that is `--leading-head-5`, and borrowing
+it would merge the statement register into the heading ramp, which the *prose and headings need
+separate ramps* rule forbids. A seven-line statement is prose in register whatever its size.
+
+**This correction costs the text style.** Leading cannot be mode-aware — a `lineHeight` variable is
+pixels-only, and overriding a style property severs the style link along with its `fontSize` binding.
+So the mobile hero carries no text style, and its `fontSize` is bound directly to `size/5` on the node.
+Acceptable for one node; see *Open questions* for why it may not be for body prose.
 
 **The Hero band uses `rhythm/band` (64), not `rhythm/section`.** Both were tried; 96 read as too much
 air above a three-line statement. Worth recording because the Hero is a coloured, self-contained
@@ -336,6 +355,71 @@ is acceptable for an h1 but never for reading text.
 **Per-step clamps, not one fluid base × the ratio** — base 18px × 1.25⁴ would put a 44px h1 in a
 343px column. Consequence: the ratio deliberately *compresses* on small screens (≈1.17–1.28 at
 800px against a clean 1.25 at desktop). Intended, not drift.
+
+## `role/*` — when a role changes step by viewport
+
+Added 2026-08-08. **The type system had one layer where colour has two**, and this is the missing one.
+
+There are exactly two levers on any size, and most fighting-the-system comes from reaching for the
+wrong one:
+
+| Lever | What it changes | Scope of the change |
+|---|---|---|
+| a step's value in a mode — `size/4` Mobile = 25 | the **scale** | every role at that step |
+| which step a style binds — `Masthead/Name` → `size/4` | the **role** | one role, at **both** viewports |
+
+Neither can say *"step 4 on desktop, step 5 on mobile"*, because a text style binds one variable. That
+is what `role/*` adds: a variable that **aliases a different step per mode**.
+
+```
+role/masthead-name    Desktop → size/4    Mobile → size/5
+```
+
+This is exactly how `Semantic` aliases `Primitives`, and it is legitimate for the same reason DESIGN.md
+already carves out for colour — *a colour style really is a single value*, and so is a size step. A
+text **style** stays a rule; only the size within it becomes a role.
+
+**It adds no new size.** It states which existing step a role occupies at each viewport. No scale
+drift, nothing hand-typed, and no viewport-prefixed styles — which remain forbidden.
+
+**It lives in `Type Scale`, not a new collection.** Modes are per-collection and `Type Scale` already
+carries the Desktop/Mobile axis; a separate collection would duplicate that axis, which is precisely
+the trap the *one viewport axis across three collections* rule exists to avoid. The `role/` prefix
+keeps the layer legible in the picker, following the Spacing precedent.
+
+### The rule that governs when to use it
+
+> **Jump steps only where the layout jumps.**
+
+The steps are `clamp()`, so they are continuously fluid; a role that changes step introduces a
+**discontinuity** — around 640px the masthead name jumps from ~26px to ~31.7px. That is acceptable
+only because the element's *job* changes at the same breakpoint: the masthead goes from a left lockup
+beside the nav to a centred standalone wordmark. It would never be acceptable for body text, which
+does the same job at every width.
+
+The decision procedure, in order:
+
+1. **Check the step's other occupants.** Wrong together → it is the scale; change `size/N` in that
+   mode. Fine → it is the role.
+2. **Ask whether the role's job changed at that viewport.** Same job → rebind the style to a different
+   `size/N`, moving both viewports. Different job → mint a `role/*` alias.
+3. Never hand-type a size, never mint a viewport-prefixed style, and never override the size on a node
+   — that breaks the style link and takes its variable bindings with it (see Figma authoring
+   conventions).
+
+**First and so far only use: `role/masthead-name`.** Desktop 28.125 (step 4), Mobile 30 (step 5). The
+name at step 4's mobile value of 25 read small once the masthead was centred on its own band. Moving
+the *step* instead would have dragged every mobile `H2` with it, since `H2` shares step 4.
+
+In CSS this is one reassignment, and `var()` indirection *is* aliasing:
+
+```css
+:root { --role-masthead-name: var(--font-size-4); }
+@media (max-width: 40rem) { :root { --role-masthead-name: var(--font-size-5); } }
+```
+
+**What `role/*` cannot do is change leading**, because a `lineHeight` variable is pixels-only. See
+*Figma authoring conventions*.
 
 ## Measure
 
@@ -399,6 +483,7 @@ the right rail is `col 10 / span 3`, one skipped column away.
 |---|---|---|---|
 | `grid/margin` | 222 | 16 | `GAP` |
 | `grid/gutter` | 24 | 8 | `GAP` |
+| `grid/gutter-content` | 24 | **32** | `GAP` |
 | `grid/column` | 61 | 20 | `WIDTH_HEIGHT` |
 | `grid/skip-1` | 109 | 36 | `GAP` |
 | `grid/skip-2` | 194 | 64 | `GAP` |
@@ -408,12 +493,39 @@ the right rail is `col 10 / span 3`, one skipped column away.
 Both ends close exactly: `2×222 + (12×61 + 11×24) = 1440`, and `2×16 + (12×20 + 11×8) = 360`.
 `count` is 12 in both modes and needs no token.
 
+### `grid/gutter-content` — the gutter that isn't the grid's gutter
+
+Added 2026-08-08, and the **only token in the set whose mobile value is larger than its desktop one**.
+
+`grid/gutter` exists to make the column arithmetic close. Its mobile value of 8 is a consequence of
+`2×16 + 12×20 + 11×8 = 360` — and since *at 360px nothing sits in a fraction of 12 columns*, **8 is
+never a gap you actually want between two columns of content.** Two 160px lists of links 8px apart do
+not read as two lists.
+
+This is the same problem the span tokens already have, and it takes the same answer: the
+arithmetically honest mobile value is not the useful one. `grid/gutter` stays the pure grid-definition
+value — it is what the layout-grid overlays bind, so changing it would make every overlay lie — and
+`grid/gutter-content` carries the real gap between adjacent content columns.
+
+Bound by the Topics list pair, the Genres list pair and the Footer link grid. Before it existed those
+three disagreed: Topics had been hand-set to a `space/4` primitive (32) while the Footer grid sat at
+`grid/gutter` (8), for what is structurally the same thing.
+
+**A horizontal gap must come from `grid/*`, and the scoping will not enforce it.** `space/*` and
+`rhythm/*` are scoped `GAP`, and a horizontal `itemSpacing` *is* a gap, so Figma offers them happily.
+*Grid owns horizontal* is enforced structurally for **widths** only. For gaps it is a rule you have
+to keep yourself.
+
 ### The skip family — gaps that jump columns
 
 | | Formula | Desktop | Splits it serves |
 |---|---|---|---|
 | `grid/skip-1` | column + 2 × gutter | 109 | **asymmetric**: 8+3 (Insight Detail), 7+4 (Home, Topics) |
-| `grid/skip-2` | 2 × column + 3 × gutter | 194 | **symmetric**: 5+5 (Connect), and 6+4 (Footer) |
+| `grid/skip-2` | 2 × column + 3 × gutter | 194 | **6+4** — Connect *and* Footer |
+
+**Corrected 2026-08-08: Connect is 6+4, not 5+5.** This table claimed Connect used the symmetric
+5+2+5 split. Measured, it is `486 + 194 + 316` — identical to the Footer. The symmetric 5+5 split
+below is real arithmetic but **nothing in the file uses it**; `skip-2` serves two 6+4 layouts only.
 
 **A 12-column grid offers only three symmetric two-column layouts**, because the gap must be a whole
 number of columns and gutters:
@@ -728,10 +840,10 @@ nothing.
 
 ## Roles
 
-Sixteen, in two registers. `rhythm/*` governs vertical page flow. `card/*` and `chrome/*` govern
-component internals, which have a different origin — component compactness rather than the body line
-box. Several share a primitive today; they stay separate because they can diverge without renaming
-anything.
+Eighteen, in two registers. `rhythm/*` governs vertical page flow. `card/*`, `chrome/*`, `field/*` and
+`radius/*` govern component internals, which have a different origin — component compactness rather
+than the body line box. Several share a primitive today; they stay separate because they can diverge
+without renaming anything.
 
 **Page flow**
 
@@ -759,6 +871,36 @@ anything.
 | `chrome/pad-footer` | `space/5` | 48 | Vertical padding in the Footer |
 | `chrome/inset` | `space/5` | 48 | Horizontal inset for full-width chrome. Mobile 16. The Top Bar deliberately spans wider than the 996 column, so it does **not** use `grid/margin` |
 | `field/height` | `space/5` | 48 | Height of a single-line form control. **The one role scoped `WIDTH_HEIGHT` rather than `GAP`** |
+| `radius/1` | — | 3 | Small corner radius. The button, and content images taking the tighter corner |
+| `radius/2` | — | 6 | Standard corner radius, exactly 2 × `radius/1`. Every card surface, the filter chip, card images and photographs |
+
+**`radius/*` is the fifth component-internals prefix**, added 2026-08-08, and the first scoped
+`CORNER_RADIUS`. It aliases nothing — 3 and 6 are their own values, because no `space/N` step sits at
+3 and a radius has no relationship to the body line box the spacing scale is derived from. Same value
+in both modes: a radius is component geometry, not a viewport concern.
+
+**It unified a 5/6 split that had no reason behind it.** Note cards and filter chips sat at 5 while
+article and source cards sat at 6. Everything real is now 6. Before tokenizing, **179 nodes carried a
+radius and not one was bound.**
+
+**Three things at radius 5 were *not* converted, and the distinction matters:**
+
+- **Component-set wrapper frames** — Figma's own purple container around a variant set. Canvas
+  furniture with no design meaning. Nine of them, still at 5, correctly ignored.
+- **Focus rings**, which are *derived* from the control they wrap: inner at `radius + 2`, outer at
+  `radius + 4`. The button's inner ring is 5 **because the button is 3**, not because it belongs to the
+  5-family. Blanket-converting it would have silently broken the concentricity.
+- Two canvas `SECTION`s at radius 2.
+
+**The focus rings stay raw, with the derivation in the layer name** — `focus ring outer — 6+4`. Figma
+has no `calc()`, so binding them to a token would freeze the arithmetic and hide the dependency; the
+name is the tripwire, the same device as `Note list — 348 outdent`. Moving the chip from 5 to 6
+required its rings to move 7 → 8 and 9 → 10 to stay concentric, and **nothing but that name will tell
+the next person.** In CSS this is a real `calc(var(--radius-2) + 2px)` and the problem disappears.
+
+**The collection name is now a stretch.** `Spacing` holds gaps, one height (`field/height`) and two
+radii — it has become "the numeric component values that are neither type nor grid." As already noted
+for the `space/` ÷ `rhythm/` ÷ `card/` layers, splitting later is a rename, not a rebuild.
 
 **`field/*` is the fourth component-internals prefix**, added 2026-08-07 with the contact form, and the
 first to need `WIDTH_HEIGHT`. A control's height is not a gap and not a grid width — it is the component's
@@ -775,8 +917,19 @@ broke the moment it was wanted for a list of eight tags. The value's job is a qu
 
 **`rhythm/item` vs `rhythm/tight` is decided by wrap risk.** At `Nav` 18/150% the line box is 27px, so
 `tight` (8) puts item-to-item at only **1.30×** the line-to-line distance and a wrapped item reads as
-two items. `item` (16) gives **1.59×**. Use `tight` where the column is wide enough that nothing wraps
-(the Topics lists at 274px), `item` where it is tight (the Footer link grid at 146px).
+two items. `item` (16) gives **1.59×**. Use `tight` where the column is wide enough that nothing wraps,
+`item` where it is tight (the Footer link grid at 146px).
+
+**Corrected 2026-08-08: the Topics lists bind `rhythm/item`, not `tight`.** This paragraph cited them
+at 274px as the example of a column wide enough to use `tight`. The board has always had `item` there.
+The board is right and the doc was wrong — at 274px "Accessibility Evaluation" does not wrap, but the
+list reads better at 16 regardless.
+
+**The wrap-risk rule is viewport-dependent, and the roles are not.** `tight` is 8 and `item` is 16 in
+*both* modes, because both are type-derived (see Mobile below). So when a column narrows enough to
+create wrap risk, the fix is not a mode — it is *choosing a different role on that board*. There is no
+mechanism that does this automatically, which means the choice has to be re-made per viewport by hand
+and is easy to forget. Mobile Topics at 160px is the live case.
 
 **`band` and `section` are two values of one property, not two properties.** Both are a band's
 vertical padding; `section` is the heavier choice for a band opening a new page region. Bands stack at
@@ -947,6 +1100,127 @@ mode, and a token whose name encodes a viewport cannot participate in a mode swi
 `Desktop` / `Mobile`, so "set this frame to Mobile" is a single consistent action. A mode in one
 collection and a differently-named variable in another is the trap this avoids — it is the kind of
 inconsistency that gets applied wrong late at night.
+
+### The gap a two-column band opens up when it collapses
+
+Settled 2026-08-08 building the mobile Home board. When a `WRAP` band folds its two columns into a
+stack, the gap that appears between them is its `counterAxisSpacing` — a **row** gap, therefore
+rhythm, not grid, even though the same frame's `itemSpacing` is a `grid/*` token. **Bind it to
+`rhythm/heading-major` (64)**, because what lands below is always the start of a new column and every
+one of them opens with an h2: Notes, Genres, RSS Feeds, the Footer link grid.
+
+Four bands now carry it — Insights, Topics, Connect, Footer. Before it was set, the Insights band
+carried a raw **36**, which is not a value in the scale at all.
+
+**A wrapped chrome row is the exception, because nothing below it is a heading.** The mobile nav strip
+stacks its six links into two rows at `rhythm/item` (16), on wrap risk exactly as the Footer link grid
+does. Its own vertical padding is **`space/2` (16) bound directly** — a one-off, following *a token
+earns a name only when more than one thing uses it*, alongside the masthead lockup at 16 and the social
+icons at 48. Deliberately **not** `chrome/pad-header` (32): that role is the desktop Top Bar's padding,
+and the mobile nav is a compact strip whose height was chosen at 16.
+
+---
+
+# Mobile — the 360 collapse
+
+Settled 2026-08-08 on `Home — Mobile`, the first narrow layout in the file. **360 wide**, not the 375
+the clamps are derived over — below 375 every `clamp()` returns its minimum, so the type system is
+already correct at 360 without re-derivation.
+
+This section is about *layout*. For which spacing variables change value at 360 and why, see Vertical
+rhythm → *Mobile — split by cause, not by size*.
+
+## What the mode switch settles on its own
+
+Setting a board's `Type Scale`, `Spacing` and `Grid` modes to `Mobile` decides more than expected,
+because the boards are thoroughly variable-bound:
+
+- Content goes **996 → 328** (margin 222 → 16, gutter 24 → 8), and **every span token collapses to
+  328**, so all four two-column splits stack with no intervention.
+- `rhythm/band` 64 → 32, `rhythm/section` 96 → 64, `chrome/inset` 48 → 16.
+- The Home Notes **outdent disappears**, already specified as a desktop-only treatment.
+
+**One documented distinction dissolves at 360.** `chrome/inset` and `grid/margin` are both 16 on
+Mobile, so the Top Bar no longer *"deliberately spans wider than the 996 column"* — the chrome inset
+and the content column coincide. The roles still differ and must still be bound correctly, because
+they diverge again at 48 vs 222 the moment the frame is seen at desktop. This is a value collision of
+exactly the kind the spacing roles already warn about, and it hid a pair of swapped bindings on the
+mobile nav until they were audited.
+
+## What it does not settle
+
+| Band | Collapse |
+|---|---|
+| **Top Bar** | Masthead stacks — monogram over name and role, centred — and the nav drops below it onto a full-bleed **accent** strip, links wrapping 3 × 2 |
+| **Hero** | Moves off the accent onto the page ground, centred, statement at 125% leading |
+| **Insights** | Article cards swap to the `Vertical` variant; Notes stack below at `rhythm/heading-major`, full width, **outlined** |
+| **Topics** | Stacks; Selected Topics *and* Genres both run two columns at `grid/gutter-content` |
+| **Connect** | Stacks |
+| **Footer** | Restacked blurb → links → social → copyright |
+
+**The article cards must swap variant, not merely narrow.** The `Horizontal` variant at 328 leaves its
+description about 15 characters wide. `Vertical` is built at 316 — exactly `grid/span-4` — so it lands
+at 328 on Mobile with no rework.
+
+**The nav strip on the accent closes a shipped contrast failure.** The live site's mobile nav is white
+on `--blue` at **3.03**, recorded under Known debt. White on `blue/500` is **5.67**.
+
+## `Viewport` variants — and why a mode cannot do this
+
+**Four component sets now carry `Viewport = Desktop | Mobile`:** `Top Bar`, `Topics`, `Footer` and
+`note card`.
+
+This is not a preference. **`layoutMode` cannot be overridden on an instance — it silently no-ops —
+and `minWidth`/`maxWidth` throw outright.** So any band whose mobile form changes layout *direction* or
+*nesting* cannot be expressed by a mode switch, however well bound it is. It needs a variant. The
+precedent already in the file is `article card`'s `Type = Horizontal | Vertical`.
+
+What each variant actually differs by:
+
+- **Top Bar** — direction, nav layout (`HORIZONTAL` → 3 × 2 `GRID`), background, alignment, and two
+  label swaps ("Work with me" → "Consulting", the search icon → "Search").
+- **Topics** — Genres alone: one column at desktop, two at mobile. `GRID` column count is a plain
+  integer and is not mode-bindable, so even that one difference forces a variant.
+- **Footer** — the social block changes parent, which no property can express.
+
+**The label split needed no machinery.** Neither component had text properties defined, so the labels
+are plain text inside each variant and the *shared property forces one default onto both* collision
+never arises. It would arise the moment text properties are added — worth knowing before someone does.
+
+## The note card is outlined on mobile, and has no hover
+
+Settled 2026-08-08. On desktop a note card is **unboxed at rest** and grows a white box with a hairline
+border on hover, bleeding outward via the 348 outdent. On mobile it carries that box **at rest**, and
+there is no hover state at all.
+
+The reasoning is that the outdent has nowhere to go at full width, and the box does the spacing work
+that hover-on-hover-target separation did on desktop. Small cards never sit beside large ones on
+mobile, so nothing is being matched against.
+
+**The variant set is deliberately sparse — six variants, not eight.** `Note` and `Clipping` each carry
+`Rest, Desktop` (unboxed), `Hover, Desktop` (boxed) and `Rest, Mobile` (boxed). **There is no
+`Hover, Mobile`**, because touch devices have no hover and inventing the variant would encode a state
+that cannot occur.
+
+**The trap this walked into first:** the mobile cards were originally built as `State=Hover,
+Viewport=Mobile` — visually right, semantically a permanently-hovered card, which is what a reader of
+the spec would have built. A viewport that removes an interaction needs the *state* renamed, not
+reused.
+
+## In CSS none of this is architecture
+
+**The variant sets are a drawing device for the spec.** Astro still gets one `<Header>`, one
+`<Topics>`, one `<Footer>` — direction, background, alignment, column count and the card outline are
+all media queries. Nothing in the Figma structure implies a second component.
+
+Two things *are* real build concerns:
+
+- **The label swap** is the only genuine content difference. Duplicate spans toggled with
+  `display: none` works and removes cleanly from the accessibility tree; using one label at every
+  breakpoint would remove the problem entirely.
+- **The Footer stack order should drive the markup.** Author the DOM in the mobile order — blurb,
+  links, social, copyright — and produce the desktop arrangement with grid placement. Source order then
+  equals reading order at both sizes, with no `order` property fighting the accessibility tree.
 
 ---
 
@@ -1247,9 +1521,9 @@ collection). The mobile/desktop duplication that the Starter plan forced has bee
 |---|---|---|
 | `Primitives` | **21** raw colours — `blue/50`–`700`, `neutral/100`–`900`, `error/*`, `white` | single (`Value`) |
 | `Semantic` | **24** colours that **alias** primitives — `color/bg`, `color/text`, … | single (**`Light`**) |
-| `Type Scale` | 6 font sizes `size/1`–`size/6` | **`Desktop` / `Mobile`** |
-| `Spacing` | **24** — 7 primitives `space/1`–`space/7` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` | **`Desktop` / `Mobile`** |
-| `Grid` | **7** — `margin`, `gutter`, `column`, `skip-1`, `skip-2`, `span-3`, `span-4` | **`Desktop` / `Mobile`** |
+| `Type Scale` | **7** — 6 font sizes `size/1`–`size/6` + `role/masthead-name` | **`Desktop` / `Mobile`** |
+| `Spacing` | **26** — 7 primitives `space/1`–`space/7` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` + 2 `radius/*` | **`Desktop` / `Mobile`** |
+| `Grid` | **8** — `margin`, `gutter`, `gutter-content`, `column`, `skip-1`, `skip-2`, `span-3`, `span-4` | **`Desktop` / `Mobile`** |
 
 **Two mode axes are in play and they are not the same axis.** `Type Scale`, `Spacing` and `Grid` carry
 **viewport**; `Semantic` will carry **theme** once `Dark` joins `Light`. Keeping them on separate
@@ -1278,7 +1552,9 @@ starting a 375px artboard.
 
 **One set of text styles, viewport-agnostic:** `Display`, `H1`–`H4`, `Lead`, `Body`, `Body Compact`,
 `Small`, `Label`, plus the three `Masthead/*` and `Nav` chrome roles. No `Desktop/` or `Mobile/`
-prefix — the viewport is a mode, not a style. Each binds `fontSize` to its `size/N` variable.
+prefix — the viewport is a mode, not a style. Each binds `fontSize` to its `size/N` variable, **or to
+a `role/*` alias where the role occupies a different step per viewport** — `Masthead/Name` is the one
+case. Either way the style itself stays viewport-agnostic; the variable carries the difference.
 
 **`Body` and `Body Compact` share `size/2` and differ only in leading.** That is legitimate and
 deliberate: leading is a function of measure, and one size step can appear at two column widths. Do
@@ -1414,6 +1690,58 @@ axis so its size is derived.
 `size/N` in `Desktop` mode is the 1200px end, in `Mobile` mode the 375px floor, and one fluid
 `--font-size-N` token spans them.
 
+**An instance child rejects layout and sizing overrides — sometimes loudly, mostly in silence.** All
+found 2026-08-08 building the mobile board, and between them they cost more time than anything since
+the drop-shadow spread.
+
+| Property on an instance child | Behaviour |
+|---|---|
+| `layoutMode` | assignment **silently no-ops**; reads back unchanged |
+| `minWidth` / `maxWidth` | throws *"This property cannot be overridden in an instance"* |
+| `resize()` / `layoutSizingHorizontal` | applies, then gets overridden by the main component's constraints |
+
+The practical consequence is the one that shapes the whole responsive plan: **a component whose mobile
+form changes layout direction cannot be handled by a mode. It needs a variant.** The silent failure is
+the dangerous half — the loud one at least tells you.
+
+**A stray `minWidth` will defeat every other sizing fix, invisibly.** The Connect column carried
+`minWidth: 360` and would not shrink into a 328 box. `FILL` resolved to 360, `resize(328)` reverted, a
+bound `width` did nothing, and each failure looked like a different bug. It is worth checking
+`minWidth`/`maxWidth` *first* whenever a frame refuses a width, because it is the only sizing property
+with no visible affordance in the layer panel. A sweep of the file found exactly one instance of it.
+
+**A `FILL` child never triggers a wrap; it just shrinks.** In a `WRAP` row, a `FILL` child takes
+whatever is left on the line — 11px if that is what remains — rather than moving to the next row. And a
+`FIXED` child gets *clamped* into the leftover space rather than wrapping. To force a break, the
+preceding child must itself fill the line. Figma has no "break before".
+
+**A `lineHeight` variable is always pixels.** Bind a variable holding `1.25` and Figma renders a
+**1.25px** line box; `125` renders 125px. There is no way to hold leading as a ratio in a variable,
+which means **leading cannot be made mode-aware** the way `fontSize` is. Alongside `clamp()`, this is
+the second thing the type system needs that Figma cannot represent.
+
+**Overriding any text-style property severs the style link and takes its variable bindings with it.**
+Applying `Display` to a node restores its `fontSize` → `size/5` binding; setting `lineHeight` on the
+next line silently drops that binding again. If a node needs a property the style does not carry, its
+`fontSize` binding has to be re-set **directly on the node** afterwards. Consequence: a per-viewport
+leading correction costs the style link, which is affordable for one hero and questionable for prose.
+
+**The `GRID` `itemSpacing` trap caught us a second time.** The mobile nav had `itemSpacing` bound to a
+spacing token and rendering nothing, while the gaps that actually rendered — `gridRowGap` and
+`gridColumnGap` — were raw unbound numbers. The binding you can see in the panel is the inert one. On
+any `GRID` frame, **read `gridRowGap`/`gridColumnGap` and ignore `itemSpacing` entirely.**
+
+**`codeSyntax` is read-only.** `variable.codeSyntax = {...}` throws *"no setter for property"*; use
+`variable.setVariableCodeSyntax('WEB', '--name')`.
+
+**A `COMPONENT_SET` frame carries its own fill, stroke and radius, and it is canvas furniture.** Nine
+of them hold `cornerRadius: 5` — Figma's purple wrapper, nothing to do with the design. Any sweep over
+a visual property must exclude `COMPONENT_SET` and `SECTION`, or it will report furniture as findings
+and, worse, "fix" it. The radius sweep would have rebound all nine.
+
+**`boundVariables.fontSize` on a TEXT node is an array, not a single alias** — one entry per styled
+segment. Reading it like the other fields throws *"Property 'id' failed validation"*.
+
 ## Figma build state
 
 Figma file `pPZPGT6EpSaLkoUDK8HMMp`. **This is an inventory of what exists, not a changelog** — the
@@ -1421,10 +1749,10 @@ history of how it got here has been removed as it stopped being useful.
 
 | | |
 |---|---|
-| **Collections** | `Primitives` (21 colours), `Semantic` (24, single `Light` mode), `Type Scale` (6, Desktop/Mobile), `Spacing` (24, Desktop/Mobile), `Grid` (7, Desktop/Mobile). Every variable carries a `--css-name` and a description. |
-| **Text styles** | 14, viewport-agnostic. Each binds `fontSize` to `size/N`, so a base change propagates without editing any style. |
-| **Boards** | Home, Insights, and six page templates — Insight Detail, Note Detail, Web Clipping Detail, Book Note Detail, Case Study, Singleton. All auto-layout, `VERTICAL` gap 0, hugging height, verified by measured geometry against the grid and rhythm values. All 1440 wide; no mobile artboards exist. |
-| **Components** | `Top Bar`, `Global Nav`, `Masthead`, `Footer`, `Topics`, `Connect`, `RSS CTA`, `Contact Section` / `Contact Insert`, `Page Header`; card sets `article card`, `note card`, `source card`, five `card images/*`; controls `button` (Surface × State, 10 variants) and `filter` (Selected × State, 10 variants). |
+| **Collections** | `Primitives` (21 colours), `Semantic` (24, single `Light` mode), `Type Scale` (**7** — 6 sizes + `role/masthead-name`, Desktop/Mobile), `Spacing` (**26** — 7 `space/*` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` + 2 `radius/*`, Desktop/Mobile), `Grid` (**8**, Desktop/Mobile). Every variable carries a `--css-name` and a description. |
+| **Text styles** | 14, viewport-agnostic. Each binds `fontSize` to `size/N` — except `Masthead/Name`, which binds `role/masthead-name`. One node carries no style at all: the mobile hero, which needs 125% leading and therefore cannot keep `Display`. |
+| **Boards** | Home, Insights, six page templates — Insight Detail, Note Detail, Web Clipping Detail, Book Note Detail, Case Study, Singleton — and **`Home — Mobile` at 360**. All auto-layout, `VERTICAL` gap 0, hugging height, verified by measured geometry against the grid and rhythm values. The eight desktop boards are 1440. |
+| **Components** | `Global Nav`, `Masthead`, `Connect`, `RSS CTA`, `Contact Section` / `Contact Insert`, `Page Header`; **`Viewport = Desktop \| Mobile` sets** `Top Bar`, `Topics`, `Footer`; card sets `article card` (Type × State, 4), `note card` (Type × State × Viewport, **6 — sparse, no `Hover, Mobile`**), `source card`, five `card images/*`; controls `button` (Surface × State, 10) and `filter` (Selected × State, 10). |
 | **Prototype** | Hover and press chains on both control sets at `SMART_ANIMATE` 0.15; click toggles `Selected` on chips. `Focused` cannot be prototyped — Figma has no focus trigger, so those variants are documentation only. |
 | **Specimens** | `button — states specimen` and `filter — states specimen` show every state on its intended ground. The Accent button variants are invisible against the component set's white backing, so review them there. |
 | **No remote dependencies** | The file was once subscribed to a remote library; a full sweep now finds zero remote components, variables or styles. If unfamiliar tokens reappear, check library subscriptions first — remote nodes are read-only and fail with *"Cannot write to internal and read-only node."* |
@@ -1433,7 +1761,34 @@ history of how it got here has been removed as it stopped being useful.
 
 # Open questions
 
+**Mobile prose leading is the one that is not small.** Measured 2026-08-08, every prose measure roughly
+halves at 360 while the type barely moves:
+
+| | desktop | mobile |
+|---|---|---|
+| Hero statement | 43 chars | 19 |
+| Insights description | 50 chars | 33 |
+| Connect paragraph | 46 chars | 31 |
+
+`--leading-prose-2: 1.8` was derived for **~67 characters**. At 31–33 it is squarely in
+`--leading-prose-1` territory (29–33 → 1.5) — which is precisely the `Body Compact` diagnosis,
+*"running it at less than half its intended measure reads as conspicuously airy,"* now applying to
+ordinary body text across the whole mobile page. The hero has been corrected; body has not.
+
+The reason it is not simply fixed: **leading cannot be made mode-aware** (a `lineHeight` variable is
+pixels-only), and **overriding leading on a node severs its text style along with its `fontSize`
+binding**. For the single hero node that was an acceptable price. Applied to body it would mean every
+prose node on every mobile board losing its style link and carrying two hand-set values. The likely
+answer is to leave Figma at 1.8 and express the correction only in CSS, where a media query on a
+custom property costs nothing — but that breaks the diffability the two systems are built for, so it
+deserves a decision rather than a drift.
+
 Small decisions, none blocking.
+
+- **`strokeWeight: 1` is untokenized everywhere.** Consistent, so nothing is wrong; it simply has no
+  name if it ever needs to change as a set.
+- **`image 44` on Case Study takes `radius/1` (3) while every other image takes `radius/2` (6).** It
+  was at 3 before tokenizing and was bound as found rather than changed. Probably wants to be 6.
 
 - **Noto Serif Italic is not installed in Figma**, so the `Caption` style is roman there while the site
   renders italic. Installing the TTF and repointing the style's `fontName` closes it.
@@ -1464,6 +1819,10 @@ Known, bounded, and safe to leave until the relevant surface is worked.
 - **~320 raw colour paints remain unbound** — `#ffffff` ×137, `#000000` ×100, `#646464` ×51, `#2b383d`
   ×27, plus a scatter of one-offs. Mostly body text and headings on the boards, predating the semantic
   layer. Binding them to `color/text`, `color/text-muted` and `color/text-inverse` is mechanical.
+- **Paints bound to the wrong *layer* are a separate and less visible problem.** All four boxed
+  `note card` variants bound their fill to the `white` **primitive** rather than `color/surface`
+  (corrected 2026-08-08). Same value, so nothing looked wrong, and a sweep for *unbound* paints will
+  never find it. Worth a pass for primitives used where a semantic role exists.
 - **23 text nodes carry no text style**, mostly note-card descriptions and the `AF` monogram — the
   monogram deliberately, since it is a glyph in a fixed circle rather than type.
 - **Structurally inert gaps** on components that will only ever hold one child: the five `card images/*`
@@ -1493,18 +1852,18 @@ not a specification** — only the column width, gutter and card rhythm are.
 
 ## Responsive
 
-The plumbing is complete and unused. `Type Scale`, `Spacing` and `Grid` all carry `Desktop`/`Mobile`, so
-one switch drives type, spacing and grid together — but **every board is 1440 and no narrow layout has
-been drawn**, so no collapse decision has actually been made.
+**Home is done — see the Mobile section.** The collapse decisions, the `Viewport` variant sets and the
+limits of what a mode switch can express are all recorded there. What remains:
 
-- **The floor should be 360, not the 375 the clamps are derived over.** Below 375 each `clamp()` returns
-  its minimum, so the type system is already correct at 360 without re-derivation.
-- **Span tokens collapse to full width on Mobile** — a span token is really a semantic width wearing
-  grid clothing. See Grid → *Span tokens name the desktop span*.
-- **The margin does not survive intermediate widths.** `grid/margin` is a fixed 222 in `Desktop` mode,
-  but the CSS rule is "cap content at 996, margins absorb the remainder, floor 16." Those agree at 1440
-  and at 360 and disagree everywhere between — 105 at 1206. The first real tablet frame will need either
-  its own mode or hand-set margins. This is the one known hole in the responsive plan.
+- **Seven boards still have no narrow layout.** Insights and the six detail templates. The detail
+  templates share one skeleton, so the first of them should settle the rest; Insights has the masonry,
+  which is the genuinely new problem.
+- **The margin still does not survive intermediate widths.** `grid/margin` is a fixed 222 in `Desktop`
+  mode, but the CSS rule is "cap content at 996, margins absorb the remainder, floor 16." Those agree
+  at 1440 and at 360 and disagree everywhere between — 105 at 1206. The first real tablet frame will
+  need either its own mode or hand-set margins. Still the one known hole.
+- **Mobile prose leading is unresolved.** See Open questions — the largest outstanding typographic
+  question in the system.
 
 ## Dark mode
 
