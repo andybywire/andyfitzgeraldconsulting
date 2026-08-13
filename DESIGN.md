@@ -873,6 +873,24 @@ without renaming anything.
 | `field/height` | `space/5` | 48 | Height of a single-line form control. **The one role scoped `WIDTH_HEIGHT` rather than `GAP`** |
 | `radius/1` | — | 3 | Small corner radius. The button, and content images taking the tighter corner |
 | `radius/2` | — | 6 | Standard corner radius, exactly 2 × `radius/1`. Every card surface, the filter chip, card images and photographs |
+| `border/hairline` | — | 1 | Hairline stroke. Cards, panels, chips, inputs — every boundary that is a *line* |
+| `border/quote` | — | **6 / 4** | The blockquote bar — a *mark* rather than a boundary. Paired with `color/border-quote`. The one `border/*` value that varies by mode |
+| `quote/indent` | `space/5` / `space/3` | **48 / 24** | Indent of a blockquote. Component-internals, like `card/pad` |
+
+**`border/*` is the sixth component-internals prefix**, added 2026-08-08 and scoped `STROKE_FLOAT` —
+exactly parallel to `radius/*` under `CORNER_RADIUS`. Same value in both modes; a stroke weight is
+component geometry, not a viewport concern.
+
+**It earned its name the moment a second weight existed.** A lone `strokeWeight: 1` was consistent
+everywhere and had nothing to move as a set, which is why it sat untokenized for so long. Adding the
+6px quote bar created the set.
+
+**Do not let the colour and the width collide in CSS.** The colour emits `--color-border-quote` and the
+width `--border-width-quote`. Naming the colour by its nearest siblings — `color/border-control` emits
+`var(--border-control)` — would have produced `--border-quote` for *both*. Worth settling separately:
+`color/border` emits `var(--color-border)` while `border-control` and `border-inverse` drop the prefix,
+and the colour roles wrap in `var(…)` where `radius/*` and `grid/*` emit a bare name. These strings are
+what a developer copies, so they should agree.
 
 **`radius/*` is the fifth component-internals prefix**, added 2026-08-08, and the first scoped
 `CORNER_RADIUS`. It aliases nothing — 3 and 6 are their own values, because no `space/N` step sits at
@@ -1005,6 +1023,57 @@ The primitive is bound directly rather than a `rhythm/*` role, because this is a
 `rhythm/*` names vertical page flow — the same reasoning that puts `chrome/inset` where it is. It
 replaced a hand-set 39.
 
+**It is now the `blockquote` component** (2026-08-08). Five hand-built quotes across Reviews and Web
+Clipping Detail had drifted on every property at once — border 6 or 7, indent 25 or 48, a stray 25 of
+*right* padding on two, `VERTICAL` or `HORIZONTAL` direction, inert gaps of 10 or 0, and two unbound
+text fills. Only the `Body` text style had held. One component fixed all of it:
+
+```
+blockquote            VERTICAL, FILL width, HUG height
+  paddingLeft         → quote/indent         (48 / 24)
+  strokeLeftWeight    → border/quote         (6 / 4)
+  strokes             → color/border-quote
+  strokeAlign          INSIDE
+  └─ quote text       FILL, Body, → color/text, bound to a `Quote` text property
+```
+
+**`strokeAlign` is `INSIDE`, so the bar eats into the indent** — the text sits **42** from the bar on
+desktop and **20** on mobile, not 48 and 24. That is the number to reason about when the indent looks
+wrong.
+
+### Why the indent varies by mode, and the bar with it
+
+Added 2026-08-08. The indent was `space/5` in both modes, which is the same 48 on a 656 column and a
+328 one — **7% of the desktop column against 15% of the mobile one.**
+
+**This is a proportion fix, not a measure fix.** Every candidate indent lands within three characters of
+the others (30 at 48, 33 at 16), so tightening buys almost no measure. What it buys is the proportion:
+**24 puts mobile back at exactly 7%**, matching desktop, which is why that value rather than a taste
+call.
+
+**The bar had to follow.** At 6px it was 12.5% of a 48 indent and would have been 25% of a 24 one — the
+bar doubling in visual weight precisely as the indent halved. 4 on mobile holds it near 17%.
+
+**`quote/*` is component-internals, so the horizontal rule does not bite.** An earlier note here said
+the indent binds a primitive directly "rather than a `rhythm/*` role, because this is a horizontal inset
+and `rhythm/*` names vertical page flow." That objection was to `rhythm/*` specifically, not to having a
+role at all — `quote/indent` sits with `card/pad` and `field/height`, which are component geometry and
+carry no axis meaning. It aliases `space/5` and `space/3` rather than holding raw numbers, as every
+component-internals token does; only `radius/*` and `border/*` hold raw values, because 1, 3, 4 and 6
+are not on the spacing scale.
+
+**Not "margin".** This is `padding-inline-start`. The bar sits at the box edge, so a margin would put
+the gap *outside* it and create nothing.
+
+**In CSS this is an element rule, not a component.** Portable Text emits `<blockquote>` and the
+stylesheet styles it; the Figma component is a drawing device, the same as the `Viewport` variants. Do
+not build a matching component in Astro. The Reviews testimonials are the open case — they come from
+review documents rather than Portable Text, so they take a class rather than the element selector while
+sharing the same custom properties. If they grow an attribution or a client logo they want a variant.
+
+**The indent has now drifted twice** — a hand-set 39, then a hand-set 25 — which is what finally earned
+the component. A value that gets re-typed is a value that will keep being re-typed.
+
 **A filter bar takes `rhythm/heading-major` (64) above *and* below — and the second use borrows the
 name.** Settled on Insights 2026-08-06, after trying 24 and finding it far too tight. Above the bar the
 role is exact: the filter columns open with h2s, and `heading-major` *is* "2 lines above h2". Below it,
@@ -1121,11 +1190,27 @@ and the mobile nav is a compact strip whose height was chosen at 16.
 
 ---
 
-# Mobile — the 360 collapse
+# Mobile — the collapse
 
-Settled 2026-08-08 on `Home — Mobile`, the first narrow layout in the file. **360 wide**, not the 375
-the clamps are derived over — below 375 every `clamp()` returns its minimum, so the type system is
-already correct at 360 without re-derivation.
+Settled 2026-08-08. **Figma boards are 375; the CSS floor stays 360.** Two different jobs:
+
+- **375 in Figma** because that is the device-frame width, and because the type clamps are derived over
+  375 → 1200 — at 375 every `clamp()` sits exactly at its minimum, which is what the `Mobile` mode
+  values *are*. A 375 board therefore shows precisely what the CSS produces at the floor.
+- **360 in CSS** because below 375 the clamps keep returning those same minimums, so the type system is
+  already correct there with no re-derivation.
+
+**Consequence: `grid/span-3` and `grid/span-4` are 343 on Mobile** (375 − 2 × 16), not 328. Their job is
+"the full content width," so they follow the board. **`grid/column` is deliberately stale at 20** —
+`(343 − 88) ÷ 12 = 21.25` is fractional, nothing binds it, and its only consumer is the layout-grid
+overlay.
+
+Getting there exposed the usual class of bug: six bands pinned at 360 inside 375 boards, two `index
+band` frames `FIXED` at 328, a `Contact` instance pinned at 328 that 25 descendants inherited, and a
+`title block — 656 (8 col)` still sitting on `Book Note Detail — Mobile` overflowing by 297px.
+
+**Changing a parent's `layoutMode` re-bakes its children's sizing to `FIXED`.** Set the direction
+first, then the children's `FILL`. This bit twice — the Home Top Bar and the Book Note title wrapper.
 
 This section is about *layout*. For which spacing variables change value at 360 and why, see Vertical
 rhythm → *Mobile — split by cause, not by size*.
@@ -1356,16 +1441,20 @@ named in anticipation of a `Dark` sibling.
   --color-surface:         #ffffff;             /* raised: cards, toggles, panels */
   --color-surface-hover:   var(--neutral-100);  /* light control on a dark band, hover */
   --color-surface-pressed: var(--neutral-200);  /* …pressed */
+  --color-surface-muted:   var(--neutral-200);  /* resting fill for a non-interactive marker */
 
   /* text */
   --color-text:            var(--neutral-900);
   --color-text-muted:      var(--neutral-700);  /* captions, labels, metadata */
-  --color-text-inverse:    #ffffff;             /* on accent bands and accent fills */
+  --color-text-inverse:       #ffffff;          /* on accent bands and accent fills */
+  --color-text-inverse-hover: #ffffff;          /* …hover; same value, can diverge */
 
   /* borders */
-  --color-border:          var(--neutral-300);  /* non-interactive: cards, panels */
-  --color-border-control:  var(--neutral-600);  /* interactive: chips, inputs — 3:1 */
-  --color-border-inverse:  #ffffff;             /* ghost button outline on a band */
+  --color-border:              var(--neutral-300);  /* non-interactive: cards, panels */
+  --color-border-control:      var(--neutral-400);  /* interactive: chips, inputs */
+  --color-border-control-hover: var(--blue-500);    /* …hover */
+  --color-border-inverse:      #ffffff;             /* ghost button outline on a band */
+  --color-border-quote:        var(--neutral-300);  /* the blockquote bar */
 
   /* brand */
   --color-accent:          var(--blue-500);
@@ -1375,8 +1464,8 @@ named in anticipation of a `Dark` sibling.
   --color-link-strong:     var(--blue-700);     /* lead paragraph, CTA background */
 
   /* control tints (unselected chips on light) */
-  --color-control-hover:   var(--blue-200);
-  --color-control-pressed: var(--blue-300);
+  --color-control-hover:   var(--blue-300);
+  --color-control-pressed: var(--blue-400);
 
   /* state */
   --color-focus-ring:      var(--blue-500);
@@ -1394,6 +1483,12 @@ named in anticipation of a `Dark` sibling.
 **`color/accent` and `color/link-hover` hold the same value.** That is legitimate — two roles that agree
 today and can diverge later — and it is why link hover is now a legal text colour (5.42) where the
 previous palette's was not (2.92).
+
+**`color/border-quote` and `color/border-control` are a second such pair**, both `neutral/600`. The quote
+bar sits in the 3:1 register deliberately: it is a *graphical boundary*, clearly present but subordinate
+to the 18.86 of body text. It carries **no contrast requirement** — the indent and the `<blockquote>`
+element carry the meaning, so the bar is decorative. It is a separate role from `color/border` because
+that one is a 1px hairline on cards, and a 6px mark and a 1px line should be free to diverge.
 
 **`color/accent` is not scoped to `TEXT_FILL` in Figma.** The scope survives from when the accent could
 not legally be text. It now can, so the guarantee comes from the value rather than the scope; the
@@ -1416,6 +1511,46 @@ Every contrast failure measured in this project reduces to one of these:
 
 A novel pairing is the only case that warrants measuring. An in-canvas contrast plugin (Stark, Able) is
 the convenient way while designing.
+
+**Guardrails 2 and 5 both run in reverse, and that is where the `tag` component went wrong** (caught
+2026-08-08). Guardrail 2 says `blue/400` is not *text* on light; the tag used it as a **fill** under
+white text, which measures **4.09** and fails the same 4.5 threshold from the other side. Guardrail 5
+says disabled is exempt because its low contrast is the signal; the tag used `neutral/500` — the
+`disabled-text` value — as its **resting** fill, putting white text at **2.78**, below even the 3.0
+large-text floor. A resting control wearing the disabled colour is exactly the precedent guardrail 5
+exists to prevent.
+
+Read both guardrails as being about the *pairing*, not about which side the colour sits on.
+
+## `tag` — a marker, deliberately not a control
+
+Settled 2026-08-08. A small filled pill on a card marking what accompanies it — the Presentations cards
+carry `transcript`, `audio`, `+1`. **Fill `color/surface-muted`, label `color/text-muted` (5.88),
+`Label` text style, `radius/1`, `space/1` horizontal padding.**
+
+**The accent was tried first and rejected for reading too pressable.** A filled accent pill with white
+text is structurally the *selected* filter chip, so on the Insights index a tag and a selected chip
+would have looked alike while meaning different things — one is metadata, the other a control you
+toggled. The neutral pill removes the collision.
+
+**The label pairing is the one to check, and the trap is that bold buys nothing.** 16px **Bold** is not
+large text: WCAG's large-scale threshold is 18pt (24px) or **14pt bold (18.66px)**, so at 16 the full
+4.5 applies and the 3:1 allowance never kicks in. `text-muted` on `surface-muted` measures **5.88**,
+clearing it properly rather than by exemption.
+
+**The pill itself is 1.21 against a white card, and that is not a failure.** 1.4.11 governs interactive
+components and graphics *required to understand the content*; a tag is neither, and its label carries
+the meaning. The pill is decorative reinforcement, the same standing as the blockquote bar. It is quiet,
+though — if the shape stops earning its keep, muted text with no pill is the honest simplification.
+
+**The hover variant was deleted rather than tokenized.** A marker has no hover, no pressed and no focus,
+so the states would have been documentation of behaviour that cannot occur — the same reasoning that
+makes the mobile `note card` set deliberately sparse. The component description carries the tripwire: if
+tags become links to a topic archive they need hover and focus, and a link needs them at 4.5.
+
+**Naming, for whenever a role is needed: `color/tag`, not `color/tag-rest`.** The base name *is* rest
+throughout this file — `color/accent` and `color/accent-hover`, `color/surface` and
+`color/surface-hover`, `color/control-hover` with no `control-rest`. Only deviations take a state suffix.
 
 ## Interaction states
 
@@ -1458,9 +1593,17 @@ white/`#f9fafb`/`#e9eaea` sequence was not.
 | selected + hover | `accent-hover` | `text-inverse` | `accent-hover` |
 | disabled | `disabled-surface` | `disabled-text` | `border` |
 
-**The chip border is `neutral/600`, not the card hairline.** A card is not a control; a chip is, so its
-boundary falls under 1.4.11's 3:1 requirement — 3.85 rather than 1.41. Form inputs take the same token
-for the same reason.
+**The chip border is its own role, not the card hairline.** A card is not a control; a chip is. Form
+inputs take the same token for the same reason.
+
+**Revised 2026-08-08, and it no longer clears 1.4.11.** `color/border-control` was specified at
+`neutral/600` (3.85) precisely to meet the 3:1 requirement for a control boundary. It now resolves to
+**`neutral/400` — 1.91 against the ground**, chosen for how the chips read. **The Figma file is the
+source of truth for colour roles**, so that is the value; this note records the consequence rather than
+disputing it. Two places surface it in the build: the unselected chip at rest, and every form input.
+`neutral/600` is the lightest step that would clear 3:1 if it is revisited.
+
+A companion role, **`color/border-control-hover` → `blue/500`** (5.42), carries the hover boundary.
 
 **Pressed stops at `blue/300`.** That is the firmest tint before an unselected chip starts reading as
 selected (1.86 against the accent), and it is acceptable only because pressed is transient.
@@ -1520,9 +1663,9 @@ collection). The mobile/desktop duplication that the Starter plan forced has bee
 | Collection | Contents | Modes |
 |---|---|---|
 | `Primitives` | **21** raw colours — `blue/50`–`700`, `neutral/100`–`900`, `error/*`, `white` | single (`Value`) |
-| `Semantic` | **24** colours that **alias** primitives — `color/bg`, `color/text`, … | single (**`Light`**) |
-| `Type Scale` | **7** — 6 font sizes `size/1`–`size/6` + `role/masthead-name` | **`Desktop` / `Mobile`** |
-| `Spacing` | **26** — 7 primitives `space/1`–`space/7` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` + 2 `radius/*` | **`Desktop` / `Mobile`** |
+| `Semantic` | **28** colours that **alias** primitives — `color/bg`, `color/text`, … | single (**`Light`**) |
+| `Type Scale` | **8** — 7 font sizes `size/0`–`size/6` + `role/masthead-name` | **`Desktop` / `Mobile`** |
+| `Spacing` | **29** — 7 primitives `space/1`–`space/7` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` + 2 `radius/*` + 2 `border/*` + 1 `quote/*` | **`Desktop` / `Mobile`** |
 | `Grid` | **8** — `margin`, `gutter`, `gutter-content`, `column`, `skip-1`, `skip-2`, `span-3`, `span-4` | **`Desktop` / `Mobile`** |
 
 **Two mode axes are in play and they are not the same axis.** `Type Scale`, `Spacing` and `Grid` carry
@@ -1550,11 +1693,16 @@ inside resizes, because the styles bind to `size/N` rather than to a fixed numbe
 default mode, so a new frame gets desktop sizes unless told otherwise — worth remembering when
 starting a 375px artboard.
 
-**One set of text styles, viewport-agnostic:** `Display`, `H1`–`H4`, `Lead`, `Body`, `Body Compact`,
-`Small`, `Label`, plus the three `Masthead/*` and `Nav` chrome roles. No `Desktop/` or `Mobile/`
-prefix — the viewport is a mode, not a style. Each binds `fontSize` to its `size/N` variable, **or to
-a `role/*` alias where the role occupies a different step per viewport** — `Masthead/Name` is the one
-case. Either way the style itself stays viewport-agnostic; the variable carries the difference.
+**One set of text styles, viewport-agnostic:** `Display`, `Header/H1`–`Header/H4`, `Lead`, `Body`,
+`Body Compact`, `Small`, `Label`, `Caption`, plus the two `Masthead/*` and `Nav` chrome roles. No
+`Desktop/` or `Mobile/` prefix — the viewport is a mode, not a style. Each binds `fontSize` to its
+`size/N` variable, **or to a `role/*` alias where the role occupies a different step per viewport** —
+`Masthead/Name` is the one case. Either way the style itself stays viewport-agnostic; the variable
+carries the difference.
+
+**The headings are grouped `Header/*`; nothing else is.** Grouping only earns its keep where a family
+has members that get picked as a set, which is true of H1–H4 and of `Masthead/*` and not of the rest.
+An earlier version of this line said "three `Masthead/*`" — there have only ever been two.
 
 **`Body` and `Body Compact` share `size/2` and differ only in leading.** That is legitimate and
 deliberate: leading is a function of measure, and one size step can appear at two column widths. Do
@@ -1739,6 +1887,18 @@ of them hold `cornerRadius: 5` — Figma's purple wrapper, nothing to do with th
 a visual property must exclude `COMPONENT_SET` and `SECTION`, or it will report furniture as findings
 and, worse, "fix" it. The radius sweep would have rebound all nine.
 
+**Dev Mode annotations are the channel for intent, and they are machine-readable.** `node.annotations`
+returns the full text through the plugin API, so a note attached to a frame reaches whoever reads the
+file next — including tooling. Fifteen are in place as of 2026-08-08, carrying things the geometry
+cannot say: that the Insights masonry is faked and needs a real CSS or Astro solution, that the Insight
+Detail sidebar is meant to scroll and is absent on mobile, that the mobile hero image sits between title
+and prose and will need the same band on desktop, and one standing TODO on `Connect/Work with me`.
+
+**Prefer an annotation to a layer name for anything conditional or behavioural.** Layer names are the
+right tripwire for a *derived number* — `Note list — 348 outdent`, `focus ring outer — 6+4` — because the
+name sits where the number would be edited. Annotations are the right home for intent that no property
+can express: scroll behaviour, what is deliberately absent at a viewport, what is a mockup artefact.
+
 **`boundVariables.fontSize` on a TEXT node is an array, not a single alias** — one entry per styled
 segment. Reading it like the other fields throws *"Property 'id' failed validation"*.
 
@@ -1749,11 +1909,14 @@ history of how it got here has been removed as it stopped being useful.
 
 | | |
 |---|---|
-| **Collections** | `Primitives` (21 colours), `Semantic` (24, single `Light` mode), `Type Scale` (**7** — 6 sizes + `role/masthead-name`, Desktop/Mobile), `Spacing` (**26** — 7 `space/*` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` + 2 `radius/*`, Desktop/Mobile), `Grid` (**8**, Desktop/Mobile). Every variable carries a `--css-name` and a description. |
-| **Text styles** | 14, viewport-agnostic. Each binds `fontSize` to `size/N` — except `Masthead/Name`, which binds `role/masthead-name`. One node carries no style at all: the mobile hero, which needs 125% leading and therefore cannot keep `Display`. |
-| **Boards** | Home, Insights, six page templates — Insight Detail, Note Detail, Web Clipping Detail, Book Note Detail, Case Study, Singleton — and **`Home — Mobile` at 360**. All auto-layout, `VERTICAL` gap 0, hugging height, verified by measured geometry against the grid and rhythm values. The eight desktop boards are 1440. |
-| **Components** | `Global Nav`, `Masthead`, `Connect`, `RSS CTA`, `Contact Section` / `Contact Insert`, `Page Header`; **`Viewport = Desktop \| Mobile` sets** `Top Bar`, `Topics`, `Footer`; card sets `article card` (Type × State, 4), `note card` (Type × State × Viewport, **6 — sparse, no `Hover, Mobile`**), `source card`, five `card images/*`; controls `button` (Surface × State, 10) and `filter` (Selected × State, 10). |
+| **Collections** | `Primitives` (21 colours), `Semantic` (**28**, single `Light` mode), `Type Scale` (**8** — 7 sizes `size/0`–`size/6` + `role/masthead-name`, Desktop/Mobile), `Spacing` (**29** — 7 `space/*` + 10 `rhythm/*` + 3 `card/*` + 3 `chrome/*` + 1 `field/*` + 2 `radius/*` + 2 `border/*` + 1 `quote/*`, Desktop/Mobile), `Grid` (**8**, Desktop/Mobile). Every variable carries a `--css-name` and a description. |
+| **Text styles** | **16**, viewport-agnostic. Headings grouped `Header/H1`–`Header/H4`; the rest flat — `Display`, `Lead`, `Body`, `Body Compact`, `Small`, `Label`, `Caption`, `Nav`, **`Chip Text`** (Lato Regular 14) and **`Tag Text`** (Lato Bold 14), plus two `Masthead/*`. Each binds `fontSize` to `size/N` — except `Masthead/Name`, which binds `role/masthead-name`. One node carries no style: the mobile hero, which needs 125% leading and cannot keep `Display`. |
+| **`size/0` = 14** | Added 2026-08-08 for UI chrome — chip and tag labels. **Flat across both modes**, like `size/1`, so `--font-size-0` is a static `0.875rem` and needs no `clamp()`. It sits below the 16px floor the Scale section defends, which is deliberate: that floor is about *reading* text, and this is chrome. 14px is still normal text for contrast purposes — bold buys no allowance below 18.66px — so 4.5 applies. |
+| **Boards** | **23.** Thirteen at 1440 — Home, Insights, Presentations, Projects, Services, Reviews, Insight Detail, Note Detail, Web Clipping Detail, Book Note Detail, Case Study and **two both named `Presentation Detail`**. Seven at 360 — `Home`, `Insights`, `Insight Detail`, `Web Clipping Detail`, `Book Note Detail`, `Services` and `Presentations`. Two specimens, plus one stray `Frame 427318289`. All auto-layout, `VERTICAL` gap 0, hugging height. **`Singleton` no longer exists — it became `Services`**, so historical references to it below describe that board. |
+| **Components** | **13 variant sets:** `Top Bar`, `Topics/Desktop`, `Footer`, `Page Header`, `Contact`, `Connect/Work with me` (all `Viewport = Desktop \| Mobile`); `article card` (Type × State, 4), `note card` (Type × State × Viewport, **6 — sparse, no `Hover, Mobile`**), `source card` (Type × State, 4), **`preso card`** (State × Type × Viewport, 5, plus `Location` / `Transcript` / `Audio` booleans); `button` (Surface × State, 10), `filter` (Selected × State, 10), `Masthead and Logo` (1). **17 standalone:** `Connect/Get in touch`, `RSS CTA`, `Global Nav`, `Masthead`, `Blockquote` (one `Quote` text property), `tag` (no variants — a marker, not a control), five `card images/*`, four `talk images/*`, two `icons/*`. |
+| **Pages** | Four — `💻 Desktop`, `📱 Mobile`, `⚒️ Components`, `📝 Notes`. |
 | **Prototype** | Hover and press chains on both control sets at `SMART_ANIMATE` 0.15; click toggles `Selected` on chips. `Focused` cannot be prototyped — Figma has no focus trigger, so those variants are documentation only. |
+| **Prototyping across pages** | **`CHANGE_TO` crosses pages; `NAVIGATE` does not.** A variant swap targets a *component*, and component references are file-wide — 193 interactions already reach from Desktop and Mobile into `⚒️ Components` without trouble. Prototype *navigation* targets a frame and flows are page-scoped, so a destination must sit on the same page as the source. **Consequence: components can live on their own page and nothing needs duplicating.** It works because **no navigation is baked into any component** — every interaction is an instance-level override, which is also what lets one nav component serve two prototype pages with different destinations. Outstanding: 18 `NAVIGATE` interactions on `📱 Mobile` still point at Desktop boards, and `Projects` / `Reviews` have no mobile board to point at. |
 | **Specimens** | `button — states specimen` and `filter — states specimen` show every state on its intended ground. The Accent button variants are invisible against the component set's white backing, so review them there. |
 | **No remote dependencies** | The file was once subscribed to a remote library; a full sweep now finds zero remote components, variables or styles. If unfamiliar tokens reappear, check library subscriptions first — remote nodes are read-only and fail with *"Cannot write to internal and read-only node."* |
 
@@ -1785,8 +1948,9 @@ deserves a decision rather than a drift.
 
 Small decisions, none blocking.
 
-- **`strokeWeight: 1` is untokenized everywhere.** Consistent, so nothing is wrong; it simply has no
-  name if it ever needs to change as a set.
+- **`border/hairline` exists but nothing is bound to it yet.** The ~150 nodes carrying a raw
+  `strokeWeight: 1` — cards, chips, inputs, buttons — are a mechanical sweep, the same shape as the
+  radius pass. Worth doing next time strokes are touched.
 - **`image 44` on Case Study takes `radius/1` (3) while every other image takes `radius/2` (6).** It
   was at 3 before tokenizing and was bound as found rather than changed. Probably wants to be 6.
 
@@ -1828,9 +1992,27 @@ Known, bounded, and safe to leave until the relevant surface is worked.
 - **Structurally inert gaps** on components that will only ever hold one child: the five `card images/*`
   (10) and all ten `filter` variants (10), plus the archived `Card Alt` set. *Contingently* inert gaps —
   a `Body Group` holding one paragraph today, a reserved rail — are correct and should be left alone.
-- **Multi-paragraph body copy sits in single text nodes** on Case Study and Singleton, so paragraphs run
+- **Multi-paragraph body copy sits in single text nodes** on Case Study and Services, so paragraphs run
   together with no `rhythm/paragraph` between them. A mockup artefact: Portable Text emits separate
   `<p>` elements and the CSS puts 24px between them.
+
+**Found by the 2026-08-08 inventory sweep**, all cheap and all the kind of thing that reads as
+intentional to the next person:
+
+- **`Footer` carries an orphaned `Quote` text property** (`Quote#854:31`, default "Quote text") with
+  **zero nodes bound to it**. It shows up in the Footer's properties panel and does nothing. Delete it —
+  and note this is the failure mode the component-property trap creates in reverse: binding a layer to a
+  property overwrites the layer, but adding a property and never binding it leaves silent dead weight.
+- **`Topics/Desktop` is a variant set containing both `Viewport=Desktop` and `Viewport=Mobile`.** The
+  `/Desktop` in the set name is now actively wrong. Rename to `Topics`.
+- **Two boards are both named `Presentation Detail`** (1440 × 2876 and 1440 × 1924, five children each).
+  Either two states that need distinguishing names, or one is stale.
+- **The mobile Presentations board is named `Presentations`, not `Presentations — Mobile`.** Every other
+  mobile board carries the suffix, so this one sorts and reads as a duplicate of the desktop board.
+- **`Frame 427318289`** (384 × 493) holds a single text node and sits loose on the canvas.
+- **`Blockquote` is capitalised** where every other non-grouped component is lowercase (`tag`, `button`,
+  `filter`, `article card`). Cosmetic, but the picker sorts on it.
+- **`Connect/Work with me` carries its own annotation: "Spacing needs to be bound."** Still true.
 
 ---
 
@@ -1855,9 +2037,10 @@ not a specification** — only the column width, gutter and card rhythm are.
 **Home is done — see the Mobile section.** The collapse decisions, the `Viewport` variant sets and the
 limits of what a mode switch can express are all recorded there. What remains:
 
-- **Seven boards still have no narrow layout.** Insights and the six detail templates. The detail
-  templates share one skeleton, so the first of them should settle the rest; Insights has the masonry,
-  which is the genuinely new problem.
+- **Five boards still have no narrow layout** (as of 2026-08-08): `Projects`, `Reviews`, `Note Detail`,
+  `Case Study` and `Presentation Detail`. Seven now do — Home, Insights, Insight Detail, Web Clipping
+  Detail, Book Note Detail, Services and Presentations. The detail templates share one skeleton, so the
+  remaining ones should follow the pattern Insight Detail set.
 - **The margin still does not survive intermediate widths.** `grid/margin` is a fixed 222 in `Desktop`
   mode, but the CSS rule is "cap content at 996, margins absorb the remainder, floor 16." Those agree
   at 1440 and at 360 and disagree everywhere between — 105 at 1206. The first real tablet frame will
