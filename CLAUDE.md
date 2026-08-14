@@ -100,29 +100,20 @@ Triggered by pushes touching `web/**` and by Sanity `repository_dispatch` webhoo
 
 ## Design system
 
-**All token values live in [DESIGN.md](DESIGN.md)** — typefaces, the modular scale, fluid
-`clamp()` declarations, leading ramps, measure, colour ramps, and semantic roles, each with its
-rationale and measured contrast figures. Read it before touching type or colour, and keep it in
-sync with Andy's Figma library; the two are meant to be diffable.
+**[DESIGN.md](DESIGN.md) is the single source for design direction** — every token value plus the
+rules and rationale behind them: the two-layer principle, the modular scale and its clamps, the
+leading ramp, measure, the grid, vertical rhythm, colour roles and measured contrast, components,
+and the standing do's and don'ts. **Read it before touching type, colour, spacing or layout, and do
+not restate its rules here** — a second copy is just something to get wrong and to fall out of
+sync. If a design rule seems to be missing, add it to DESIGN.md rather than to this file.
 
-What belongs here is only the set of rules that change how you work, rather than what the values
-are:
+The authority chain is **Figma → DESIGN.md → CLAUDE.md**: the Figma library is the source of truth
+for colour roles, DESIGN.md reflects it and is authoritative for everything else, and this file
+defers to DESIGN.md. Figma mechanics and the constraints they impose on the system live in
+[docs/figma-notes.md](docs/figma-notes.md).
 
-- **Two layers, mirroring Figma:** Figma *variables* → CSS custom properties (values only);
-  Figma *text styles* → CSS rules (bundles of applied properties). Do **not** turn the semantic
-  layer into custom properties where it should be rules. Semantic *colour* tokens are the
-  exception — a colour style genuinely is one value.
-- **Leading pairs with the size step, not the role.** Move a role to a different step and its
-  correct leading moves with it. Never hard-code leading per role.
-- **Measure is capped with `max-width` on the existing left-aligned grid items, never with a new
-  container.** `max-width` on a left-aligned grid item moves only its *right* edge, so measure can
-  be capped with no layout disruption and no template change.
-- **A `.prose` grid container was prototyped and rejected** (2026-07-28). It worked — pixel-exact
-  alignment, measure/wide/full tiers, `subgrid` full-bleed panels — but it re-centred the measure,
-  which *moved the left edge of text between page types*. That is a whole-site layout decision, and
-  it was being driven by one page's measure requirement. It also assumed case studies had no
-  right-column content, which is false (`.before-image` at `col 9 / span 4`, `.client-tile` at
-  `col 10 / span 3`). Do not revive it outside an explicit layout discussion.
+What belongs here is only the working protocol — where the tools are and how to conduct the work:
+
 - **Design specimens live in `web/__design-specimens/`** (the `__` prefix marks it reference-only,
   matching `__web_2022`). They **must be served over HTTP** — fonts will not load from `file://` in
   Chrome. Serve the `web/` directory and open `/__design-specimens/<file>`:
@@ -148,10 +139,13 @@ Consulting" team). Design file: `pPZPGT6EpSaLkoUDK8HMMp`.
 Andy upgraded to a **Professional** seat on 2026-07-28, which lifted the Starter plan's cap of 6 MCP
 calls per month and unlocked **variable modes** (up to 4 per collection). Calls are no longer scarce.
 
-Two habits from the scarce era are still worth keeping: **batch aggressively** — one `use_figma`
+One habit from the scarce era is still worth keeping: **batch aggressively** — one `use_figma`
 script can read and write in the same call, so prefer a single comprehensive script over several
-probes — and remember that **DESIGN.md, not Figma, is the source of truth.** The MCP keeps the two
-in sync; it does not replace the written spec.
+probes.
+
+On authority, see the chain under **Design system**: Figma is the source of truth for **colour
+roles**, and DESIGN.md is authoritative for everything else. The MCP keeps the two in sync; it does
+not replace the written spec, and reading Figma is how you check DESIGN.md rather than the reverse.
 
 **Never use Figma's design-to-code tooling** — `get_design_context`, `add_code_connect_map`,
 `get_code_connect_suggestions`, `send_code_connect_mappings`. Decided 2026-07-28. It is the Figma
@@ -255,16 +249,12 @@ Andy's read is that the site is **already typography-driven and lightly styled**
 digital garden or blog than a corporate site. So the reframe is carried mostly by content and IA
 plus tightening, not a visual overhaul. Don't propose a redesign.
 
-**Colour lives entirely in [DESIGN.md](DESIGN.md)** — ramps, semantic tokens, measured contrast
-figures, interaction states and what is already true for dark mode. Don't restate values here. The
-palette has been rebuilt once already, and a second copy is just something to get wrong.
+**Colour, type, grid and rhythm live in [DESIGN.md](DESIGN.md)** — values, rules and rationale
+alike. Don't restate them here.
 
-**The grid must stay simple and flexible** (stated 2026-07-28). Andy wants to keep iterating and
-exploring layout ideas over time, so the grid should not become intricate or highly constrained.
-This is a first-class requirement, not a preference. A corollary: **typography decisions must not
-drive grid decisions.** Cap measure within the existing layout rather than restructuring layout to
-serve measure. Layout and page-template changes get discussed against the whole page inventory —
-index, detail, singleton — not derived from one page type.
+**Layout and page-template changes get discussed against the whole page inventory** — index,
+detail, singleton — not derived from one page type. That is a rule about how the conversation goes,
+which is why it sits here; the layout constraints it protects are in DESIGN.md.
 
 ## Known debt
 
