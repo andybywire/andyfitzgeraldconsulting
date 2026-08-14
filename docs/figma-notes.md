@@ -208,23 +208,26 @@ Sweeps must exclude artwork, or they will bind it and read as thorough. Four kin
 
 ## Outstanding
 
-- **434 raw text paints are legacy colours** — `#000000` (238), `#646464` (114), `#2b383d` (68),
-  `#414141` (11), `#2b2b2b` (3). Each is a **visual change**, not a re-layering: `#000000` bound to
-  `color/text` renders `#051319`. They are the largest remaining dark-mode gap, since raw hex cannot
-  flip, and they want a decision per colour rather than a sweep. `#414141` appears on nodes named
-  `Lead`, where DESIGN.md assigns the lead paragraph `color/link-strong` — dark blue, not grey — so
-  that one is a design question, not a cleanup.
 - **~16 paints remain on primitives** — `neutral/900` on loose icon nodes not owned by a component,
   plus one `blue/500` fill where `color/accent` belongs. Small tail, same operation as the rest.
+- **One `#f3f3f3` fill on a Desktop board** was never identified. Not in the palette.
 - **`Search Box` is hand-built three times** (two Desktop, one Mobile) with no component behind it.
   Same shape as the `preso card` frames that were converted, and as the five hand-built blockquotes
   before that component existed. A value that gets re-built is a value that will keep drifting.
-- **The `Connect/Work with me` band is bound to `color/surface`** — a full-width 1440 × 527 white
-  band, which is not obviously the "raised plane" that role names. It preserves the render exactly
-  and is one line to change; the alternative reading is `color/bg`, which would be a visual change.
-  Worth an eyeball.
+- **No tonal hierarchy exists on accent bands.** Everything legible there is white or near-white, so
+  an attribution is separated from its quote by size alone. Accepted for now; `neutral-200` is the
+  only muted option clearing 4.5, and only just, at about 4.6.
 
 ## Resolved, for reference
+
+**All 434 legacy raw text paints are bound** — `#000000`, `#646464`, `#2b383d`, `#414141` and
+`#2b2b2b`, none of which were palette values. Each move was a real visual change rather than a
+re-layering, so they were run one colour at a time with the rendered result asserted per paint. Zero
+raw text paints remain on any page.
+
+**The `Connect/Work with me` band takes `color/surface`** — confirmed, and the reasoning is recorded
+in DESIGN.md under Elevation: a full-bleed band against the tinted ground is a raised plane in
+exactly the sense the role names, and needs no border because the viewport edges do the containing.
 
 The `preso card` frames that were hand-built rather than instanced have been converted, which closed
 a tax that was being paid on every sweep — sixteen nodes bound by hand for hairlines, then sixteen
