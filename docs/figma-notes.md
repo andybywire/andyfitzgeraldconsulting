@@ -168,10 +168,65 @@ rather than a card, panel, chip or input — and it takes `border/hairline` for 
 `color/border` for the stroke, like any other boundary. It is the only image on its page with a
 stroke at all, and it carries `cornerRadius: 0` where its neighbours take `radius/2`.
 
+## Paint bindings — bind the component, and know what escapes
+
+Every component and instance now resolves its colour through the **`Semantic`** collection rather
+than through a primitive or a raw hex. That is what a `Dark` mode switches on: a paint bound to
+`color/text` flips, a paint bound to the `neutral/900` **primitive does not** (primitives have a
+single `Value` mode), and a raw hex certainly does not. The mis-layered half is the dangerous one —
+it looks bound, and it is, just to a layer that cannot carry a theme.
+
+**Bind the main component, never the instance.** The leverage is large and consistent: 84 component
+edits moved 471 paints; 19 moved 118; 7 moved 230. An instance inherits its component's binding, so
+binding instances individually is both redundant and harmful — it converts inheritance into an
+override.
+
+> **A locally overridden property does not inherit a component's re-binding.**
+
+This is the load-bearing caveat, and it accounts for every straggler in every sweep. If a node's
+fill was ever set by hand, it keeps that binding when the component changes underneath it. The
+masthead name `Andy Fitzgerald` is the standing example — hand-overridden across 26 instances, so it
+stayed on `neutral/900` while its sibling `Information Architect` propagated from the same component.
+
+**`resetOverrides()` is the trap, not the fix.** It would clear the stale paint override — and the
+text override with it, taking every real card title back to `Card Title`. Rebind the fill directly
+instead, and assert `characters` before and after.
+
+**Converting a frame to an instance preserves its differences as overrides**, so a conversion carries
+old bindings across intact rather than adopting the component's current ones. Expect a tail after any
+such conversion.
+
+### What is not a design token
+
+Sweeps must exclude artwork, or they will bind it and read as thorough. Four kinds recur:
+
+- **`VECTOR` nodes** — social icons (`brand / github`, `brand / LinkedIn`)
+- **Page-loose frames** — client logos (`client/shoreline`, `client/moz`)
+- **`#c4c4c4` placeholder greys** on `Ellipse 1` / `Rectangle 4`
+- **Nodes named `fill` / `stroke` / `fill+stroke`** — imported icon geometry, and the same nodes that
+  carry the 1.2px strokes the hairline sweep skipped
+
 ## Outstanding
 
-- **Sixteen `preso card` frames are hand-built, not instances** — eight on Desktop, eight on Mobile,
-  sitting alongside a real five-variant `preso card` component whose instances are used elsewhere on
-  the same boards. They are bound now, but binding does not stop them drifting from the component.
-  This is the same failure the five hand-built blockquotes had before the component existed.
+- **434 raw text paints are legacy colours** — `#000000` (238), `#646464` (114), `#2b383d` (68),
+  `#414141` (11), `#2b2b2b` (3). Each is a **visual change**, not a re-layering: `#000000` bound to
+  `color/text` renders `#051319`. They are the largest remaining dark-mode gap, since raw hex cannot
+  flip, and they want a decision per colour rather than a sweep. `#414141` appears on nodes named
+  `Lead`, where DESIGN.md assigns the lead paragraph `color/link-strong` — dark blue, not grey — so
+  that one is a design question, not a cleanup.
+- **~16 paints remain on primitives** — `neutral/900` on loose icon nodes not owned by a component,
+  plus one `blue/500` fill where `color/accent` belongs. Small tail, same operation as the rest.
 - **`Search Box` is hand-built three times** (two Desktop, one Mobile) with no component behind it.
+  Same shape as the `preso card` frames that were converted, and as the five hand-built blockquotes
+  before that component existed. A value that gets re-built is a value that will keep drifting.
+- **The `Connect/Work with me` band is bound to `color/surface`** — a full-width 1440 × 527 white
+  band, which is not obviously the "raised plane" that role names. It preserves the render exactly
+  and is one line to change; the alternative reading is `color/bg`, which would be a visual change.
+  Worth an eyeball.
+
+## Resolved, for reference
+
+The `preso card` frames that were hand-built rather than instanced have been converted, which closed
+a tax that was being paid on every sweep — sixteen nodes bound by hand for hairlines, then sixteen
+again for card titles. **A detached copy of an existing component costs a fixed amount per sweep,
+forever**, which is the argument for converting early rather than when it becomes convenient.

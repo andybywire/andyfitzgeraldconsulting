@@ -50,8 +50,14 @@ colors:
 
   text: "{colors.neutral-900}"
   text-muted: "{colors.neutral-700}"
+  text-lead: "{colors.neutral-700}"
+  text-title: "{colors.neutral-800}"
+  text-heading: "{colors.neutral-800}"
   text-inverse: "{colors.white}"
   text-inverse-hover: "{colors.white}"
+
+  icon: "{colors.neutral-900}"
+  icon-inverse: "{colors.white}"
 
   border: "{colors.neutral-300}"
   border-control: "{colors.neutral-400}"
@@ -324,7 +330,7 @@ components:
     rounded: "{rounded.md}"
     padding: "{spacing.card-pad}"
   card-title:
-    textColor: "{colors.neutral-800}"
+    textColor: "{colors.text-title}"
   note-card:
     backgroundColor: transparent
     padding: "{spacing.card-pad}"
@@ -440,10 +446,75 @@ identified in **text**, never by colour alone.
 on hover. Because the *underline* rather than the colour carries the affordance, this satisfies
 WCAG 1.4.1 (Use of Colour), which a coloured-text link does not.
 
-**Block-level link titles — card titles, list headings — take `neutral-800` with no underline.**
+**Block-level link titles — card titles, list headings — take `text-title` with no underline.**
 1.4.1 governs links being distinguishable *from surrounding text*, which is an inline problem; a
 title in its own block at heading size is identified as a link by position. Dark titles also quiet
 the page down and pass on both surfaces at any size, which coloured titles did not.
+
+`text-title` is a role rather than a raw step for a specific reason: **it is one lightness step off
+`text`, and that difference has to survive a theme change.** Hard-coding `neutral-800` would freeze
+titles at a light-mode value while everything around them moved. It aliases `neutral-800` today, so
+it costs nothing to have named it.
+
+### Six text roles, three of which share a value
+
+| Role | Alias | Use |
+|---|---|---|
+| `text` | `neutral-900` | body prose, and anything with no reason to differ |
+| `text-heading` | `neutral-800` | **document headings, h1–h3** |
+| `text-title` | `neutral-800` | **block-level link titles** — card titles, list headings |
+| `text-muted` | `neutral-700` | captions, labels, metadata — apparatus around the content |
+| `text-lead` | `neutral-700` | **the lead paragraph** |
+| `text-inverse` | `white` | on accent bands and accent fills |
+
+**Two pairs share a value, and both are deliberate.** `text-heading` and `text-title` are both
+`neutral-800`; `text-muted` and `text-lead` are both `neutral-700`. They are separate roles because
+they answer to different things and will diverge: lighten captions and the lead should not follow;
+restyle card links and page headings should not follow. This is the same collision hazard the
+spacing roles carry, and it takes the same rule — **pick by name, never by value.**
+
+**Headings sit one step softer than body, not darker.** Hierarchy is already carried four ways in
+the type system — family, size, weight and tracking — so colour is not asked to differentiate as
+well. The lighter step keeps a page of headings from hammering.
+
+**`text-lead` is content, not apparatus, which is why it is not `text-muted`.** The lead is the most
+prominent prose on the page; a caption is furniture around it. They agree on a value today and must
+be free to stop agreeing. The trade worth knowing: the lead ends up **larger but lighter** than
+body, so size and colour point in opposite directions. Size wins, and this is a common editorial
+pattern, but it is a deliberate choice rather than a neutral one.
+
+**Naming names the quality, not the position.** `text-heading` was very nearly `text-page-title` —
+which would have been wrong the moment it landed on an h2, since 45 of its 68 nodes are section and
+subsection headings. This is the third time in this system a token has been named for where it sits
+rather than what it does; see `Eyebrow` → `Label` and `rhythm/pair` → `rhythm/tight`.
+
+### Icons take roles of their own
+
+`icon` aliases `neutral-900` and `icon-inverse` aliases `white`, mirroring `text` and `text-inverse`
+— so an icon beside a label reads as part of it. They are separate roles rather than reuses of the
+text ones because **an icon is a graphic, not type**, and the two can need different answers: optical
+weight at small sizes, and a value in dark mode that a glyph needs but a paragraph does not.
+
+**Third-party brand marks are deliberately not bound.** A client logo is not ours to theme, and a
+dark mode wants a *different asset* rather than a recoloured one. The same goes for placeholder
+greys and imported vector geometry — see the exclusion list in
+[docs/figma-notes.md](docs/figma-notes.md).
+
+### Accent bands carry white text, and the whole band has to move together
+
+Five bands sit on the accent: Hero, Topics, Connect, RSS CTA and Footer, plus the Case Study
+testimonial. **Changing a band's fill is never a one-property change** — the text on it has to move
+in the same breath, because the guardrail *nothing blue goes on the accent band* cuts both ways and
+dark text on a dark fill fails just as surely as blue on blue.
+
+The testimonial band is the worked example. It sat on `blue/400` with `text` body copy and a
+`link-strong` attribution: **4.62 and 2.60**, one marginal pass and one outright failure. Moving the
+band to `accent` alone would have made both worse (3.33 and 1.87). Moving the band *and* the text
+puts every line at **5.67**.
+
+Consequence worth stating: on an accent band there is currently **no tonal hierarchy available** —
+everything legible is white or near-white, so an attribution is distinguished from its quote by size
+alone. `neutral-200` is the only muted option that clears 4.5, and only just, at about 4.6.
 
 ### Dark mode — what is already true
 
@@ -835,6 +906,12 @@ ground by design and need no boundary.
 A tinted ground is also easier on the eye than pure white for long reading, which is the primary
 job.
 
+**A full-width band can be a surface.** `surface` names a position in the layering, not a component,
+so a band that sits pure white across the full viewport against the tinted ground is a raised plane
+in exactly the sense the token means — the `Connect` band is the standing case. It carries no radius
+and no border because at full bleed the viewport edges do the containing; the border rule above is
+about boxes that need an edge drawn, not about every use of `surface`.
+
 **The ground's hue is nominal.** `#f9fafb` computes to 210°, not the brand's 197°, and that
 distinction is not representable: at 98% lightness the colour spans 2 units of 255 per channel, so
 both hues quantize to the same hex. For anyone tempted to "fix" it — **a perceptibly brand-tinted
@@ -870,6 +947,11 @@ precisely as the indent halved.
 
 **Buttons.** On a light ground the primary button darkens through `accent` → `accent-hover` →
 `accent-pressed`, all carrying white text and all passing comfortably.
+
+**The light-ground button has no border**, and that is a specification rather than an omission. It
+carried a white 1px stroke for a while, which was invisible against the `#f9fafb` ground (1.05) and
+so went unnoticed — but a white outline on every primary button would have appeared the moment a
+dark ground existed. Only the accent-band ghost takes a border, and it takes `border-inverse`.
 
 **On an accent band the button cannot lighten while keeping white text, so it inverts instead.** The
 window is empty: white text survives only to L 41%, where the fill sits 1.23 against the band and is
