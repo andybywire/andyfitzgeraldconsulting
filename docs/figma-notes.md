@@ -111,12 +111,67 @@ where the number would be edited; annotations are the right home for what no pro
 scroll behaviour, what is deliberately absent at a viewport, what is a mockup artefact.
 `node.annotations` is readable through the plugin API, so they reach tooling too.
 
+## `codeSyntax` — what the tokens emit
+
+**Every one of the 94 variables emits `var(--name)`.** Two sweeps settled this: 16 semantic colours
+had dropped the `color-` prefix, and 39 tokens emitted a bare `--name` rather than the usage form.
+Dev Mode presents `codeSyntax` as *how to use* the token, so the wrapped form is the right one — and
+these strings are what gets copied into `variables.css`.
+
+| Layer | Emits |
+|---|---|
+| colour primitives | `var(--blue-500)`, `var(--neutral-100)`, `var(--white)` |
+| semantic colours | `var(--color-<name>)` — **always** the prefix |
+| type sizes | `var(--font-size-N)`, plus `var(--role-masthead-name)` |
+| spacing and grid | `var(--<prefix>-<name>)` — `var(--rhythm-band)`, `var(--grid-margin)` |
+
+**`white` is a full primitive** with its own custom property, rather than a value inlined by the
+four semantic roles that alias it.
+
+**Border widths emit `--border-width-*`, not `--border-*`.** That is deliberate: `color/border-quote`
+emits `var(--color-border-quote)` and `border/quote` emits `var(--border-width-quote)`, so the quote
+bar's colour and its width cannot collide. Naming the colour by its nearest siblings would have
+produced `--border-quote` for both.
+
+`codeSyntax` is read-only as a property — `variable.codeSyntax = {…}` throws *"no setter for
+property"*. Use `variable.setVariableCodeSyntax('WEB', '--name')`.
+
+## Stroke weights
+
+**`border/hairline` is bound on every UI boundary** — all 206 nodes carrying a 1px stroke. The
+leverage came from binding **components only, never instances**: 46 bindings on the Components page
+propagated to 186 nodes across the boards, because an instance inherits its main component's
+binding. The remaining 20 were non-instance frames bound directly.
+
+**`setBoundVariable('strokeWeight', v)` fans out to the four side keys.** It writes
+`strokeTopWeight`, `strokeRightWeight`, `strokeBottomWeight` and `strokeLeftWeight` — there is **no
+`boundVariables.strokeWeight`** to read back. Checking for that key reports a clean write as a total
+failure, which is exactly what it did here. Same species as `boundVariables.fontSize` being an
+array: the read shape does not match the write shape. Verify with:
+
+```js
+const SIDES = ['strokeTopWeight','strokeRightWeight','strokeBottomWeight','strokeLeftWeight']
+const ok = SIDES.every(s => n.boundVariables[s] && n.boundVariables[s].id === hairline.id)
+```
+
+**Three things at weight 1 were deliberately not swept**, and the distinction matters:
+
+- **Focus rings sit at weight 2**, and their radii are derived from the control — see above.
+- **The blockquote's other three sides are 0**; only `strokeLeftWeight` carries the bar, bound to
+  `border/quote`.
+- **~116 nodes at 1.2px named `stroke` / `fill+stroke`** are imported icon vector geometry, not UI
+  boundaries. A hairline token has nothing to say about them. If icon stroke weight ever needs
+  systematising it wants its own token, not this one.
+
+**An image outline counts as a hairline.** `image 51` was the one judgement call — a `RECTANGLE`
+rather than a card, panel, chip or input — and it takes `border/hairline` for the weight and
+`color/border` for the stroke, like any other boundary. It is the only image on its page with a
+stroke at all, and it carries `cornerRadius: 0` where its neighbours take `radius/2`.
+
 ## Outstanding
 
-- **`codeSyntax` names are inconsistent.** 12 semantic roles emit `--color-*`; the other 16 drop the
-  prefix (`--accent-hover`, `--border-control`, `--surface-hover`, `--text-inverse`). DESIGN.md
-  specifies the rule — **every semantic colour emits `--color-<name>`** — and Figma needs a
-  `setVariableCodeSyntax('WEB', …)` sweep to match. These strings are what gets copied into
-  `variables.css`, so they should agree.
-- **`border/hairline` exists but nothing is bound to it.** ~150 nodes carry a raw `strokeWeight: 1`.
-  Mechanical sweep, worth doing next time strokes are touched.
+- **Sixteen `preso card` frames are hand-built, not instances** — eight on Desktop, eight on Mobile,
+  sitting alongside a real five-variant `preso card` component whose instances are used elsewhere on
+  the same boards. They are bound now, but binding does not stop them drifting from the component.
+  This is the same failure the five hand-built blockquotes had before the component existed.
+- **`Search Box` is hand-built three times** (two Desktop, one Mobile) with no component behind it.
