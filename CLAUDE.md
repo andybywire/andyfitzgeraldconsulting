@@ -101,11 +101,21 @@ Triggered by pushes touching `web/**` and by Sanity `repository_dispatch` webhoo
 ## Design system
 
 **[DESIGN.md](DESIGN.md) is the single source for design direction** — every token value plus the
-rules and rationale behind them: the two-layer principle, the modular scale and its clamps, the
-leading ramp, measure, the grid, vertical rhythm, colour roles and measured contrast, components,
-and the standing do's and don'ts. **Read it before touching type, colour, spacing or layout, and do
-not restate its rules here** — a second copy is just something to get wrong and to fall out of
-sync. If a design rule seems to be missing, add it to DESIGN.md rather than to this file.
+rules that govern a build: the two-layer principle, the modular scale and its clamps, the leading
+ramp, measure, the grid, vertical rhythm, colour roles, components, and the standing do's and don'ts.
+**Read it before touching type, colour, spacing or layout, and do not restate its rules here** — a
+second copy is just something to get wrong and to fall out of sync. If a design rule seems to be
+missing, add it to DESIGN.md rather than to this file.
+
+**[docs/decisions/](docs/decisions/) holds the reasoning behind settled design decisions**, split by
+theme — colour, typography, layout, components. DESIGN.md links to them. **Read a record only when a
+decision it covers is being questioned, excepted, or changed** — not as background for ordinary work.
+If you find yourself re-deriving a value that has a record, read the record instead. **When a decision
+changes, supersede the record rather than editing rationale back into DESIGN.md** — that growth is
+what this split exists to prevent.
+
+**[docs/open-questions.md](docs/open-questions.md)** tracks what is *not* settled. Consult it when
+work approaches one of those areas; it is not general background either.
 
 The authority chain is **Figma → DESIGN.md → CLAUDE.md**: the Figma library is the source of truth
 for colour roles, DESIGN.md reflects it and is authoritative for everything else, and this file
