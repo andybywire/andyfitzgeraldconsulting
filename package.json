@@ -1,21 +1,16 @@
 {
-  "name": "af-consulting-25",
-  "version": "1.1.0",
+  "name": "af-consulting-26",
+  "version": "3.0.0",
   "description": "Andy Fitzgerald Consulting, LLC",
-  "main": "index.js",
+  "private": true,
   "type": "module",
-  "workspaces": [
-    "studio",
-    "web"
-  ],
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
-    "dev": "npm-run-all --parallel dev:*",
-    "dev:studio": "npm run dev --workspace=studio",
-    "dev:web": "npm run dev --workspace=web"
+    "dev": "pnpm -r --parallel dev"
   },
   "author": "Andy Fitzgerald",
-  "license": "ISC",
-  "devDependencies": {
-    "npm-run-all": "^4.1.5"
-  }
+  "license": "ISC"
 }

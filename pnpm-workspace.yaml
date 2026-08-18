@@ -1,0 +1,11 @@
+# The Astro rebuild only. `web/` and `studio/` are deliberately excluded: they are
+# frozen, they build from `main` with npm, and adding them here would mean debugging
+# their install under a package manager they were never tested with.
+packages:
+  - web-next
+  - studio-next
+# pnpm blocks dependency build scripts by default. esbuild's postinstall fetches its
+# platform binary, so Astro cannot build without it. Each entry here is an explicit
+# decision, not a blanket opt-in.
+allowBuilds:
+  esbuild: true
