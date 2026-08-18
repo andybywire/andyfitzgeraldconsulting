@@ -21,21 +21,38 @@ materials of the web** — HTML, CSS, JS, and Linked Data. That is a goal, not a
 
 ## How to work with Andy on this repo
 
-**Do not write code into this repo unless asked.** Default to suggesting code in chat that
-Andy copies or retypes himself. He is an information architect, not a professional web
-developer, and hands-on work is how he learns.
+**Revised 2026-08-17 for the build phase.** The earlier rule — never write code into the repo,
+suggest it in chat for Andy to retype — was right for the design work, which was learning-dense and
+where he wanted a hand on every decision. Building from a finished spec is a different shape: much
+of it is mechanical transcription, where chat round-trips add friction and no learning.
 
-The agreed protocol:
+**Write code into the repo now — but in reviewable increments.** He is an information architect,
+not a professional web developer, and hands-on work is still how he learns. What changed is *which*
+work is worth his hands.
 
-- **Learning-dense decisions** (type tokens and roles, measure, the cascade, content model,
-  URL design, semantics) — explain the reasoning and the underlying platform behavior, then
-  let Andy write it. He may delegate some of these once he has the concept, but **let him
-  offer**; don't assume and don't do it for him.
-- **Mechanical, low-learning work** (repetitive sweeps, boilerplate, stripping declarations
-  across many files) — take more liberty here, but say what you're doing before you do it.
-- **Reviewing what Andy writes is high value** and always welcome. Offer it.
-- **Prototype in the scratchpad, not the repo**, so he can see something working before it
-  lands in his codebase.
+| | |
+|---|---|
+| **You write** | tokens transcribed from DESIGN.md, boilerplate, config, repetitive sweeps, query modules — anything mechanical |
+| **Andy writes** | **layout mechanics, the cascade, component boundaries**, plus content model, URL design and semantics |
+
+For the second row: explain the reasoning and the underlying platform behaviour, then let him write
+it. He may delegate one of these once he has the concept, but **let him offer** — don't assume, and
+don't do it for him.
+
+### Cadence is the constraint, not volume
+
+> **Reviewable pieces at a reviewable cadence. Never write pages of code at once and ask him to
+> accept it.**
+
+- One coherent piece, then **stop and let him look.** When in doubt, smaller.
+- **Say what you're about to write before writing it**, so a wrong direction costs a message rather
+  than a file.
+- **If the pace is too slow he will say so.** Absent that, assume he wants to see the changes — err
+  toward pausing, never toward batching.
+- **Prototype in the scratchpad, not the repo**, when the point is to find out whether something
+  works.
+
+**Reviewing what Andy writes is high value** and always welcome. Offer it.
 
 Teach the *why*. Assume strong fluency in IA, semantics, structured content, and taxonomy
 (he works with SKOS professionally). Do not assume front-end idiom or performance intuition —
@@ -221,7 +238,7 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
 0. **Repo scaffolding.** `web-next/` (Astro) and `studio-next/` alongside the existing `web/` and
    `studio/`. pnpm workspace, one root lockfile, **Node 24 everywhere** — Node 20 is EOL as of April
    2026, so the current CI pin is on an unsupported runtime. Settle the two-workflow deploy shape
-   below and the Sanity fetching strategy (Content Layer vs direct client) before writing pages.
+   below and the data-fetching shape below before writing pages.
    *This must not reach `main`: `main` still runs `npm ci` against `web/package-lock.json`.*
 1. **Studio on `production-26`.** New studio, current schema as the starting point, TypeGen wired.
    Permalink design lands here — 301s are expected to be **minimal**, since `/insights/` is
@@ -278,6 +295,54 @@ pnpm and PM2 surviving reboots.
 
 **Rejected: local-only preview.** Requiring `pnpm dev` to edit content works against the goal of
 making publishing easier.
+
+### Data fetching — direct GROQ queries, not Astro Content Layer
+
+**Decided phase 0.** Content Layer is the obvious-looking choice and the wrong one here, so the
+reasoning is recorded rather than left to be rediscovered.
+
+Content Layer runs a **loader** once at build start, writes everything into a store that persists
+between builds, and pages read it with `getCollection()`. Four reasons against it:
+
+- **It would create two data paths.** The store is a snapshot of *published* content; the preview
+  environment needs *draft* content, live. That means `getCollection()` for static and `loadQuery()`
+  for preview — the same content reached two ways, free to drift. Closing that means writing and
+  maintaining a live loader too, since Sanity does not ship one.
+- **Its main benefit evaporates in CI.** The persistent store is what makes Content Layer worth it,
+  and GitHub Actions checks out fresh, so it is cold every run. Real win locally, near zero in
+  production. Same shape as the Astro image-cache problem.
+- **A Zod schema would duplicate TypeGen.** Content would be described twice — once in the Sanity
+  schema, which is the source of truth, once in Zod. TypeGen already derives types from the actual
+  GROQ projections, so the types match what was fetched rather than what was promised.
+- **It fights GROQ, which is the reason to use Sanity.** Content Layer's model is "load a collection,
+  filter in JS." This content is reference-heavy — clients, topics, taxonomy terms — and those joins
+  belong in the query. Store already-projected shapes instead and a "collection" is just one query's
+  result, at which point the abstraction buys nothing.
+
+**Sanity's own Astro documentation never mentions Content Layer**; it recommends `loadQuery`
+directly, with `export const prerender = false` on preview routes.
+
+**The structure that matters.** The failure mode of direct calls is queries scattered inline across
+forty page files — which is what people adopt Content Layer to escape. Prevent it structurally:
+
+- **One `loadQuery()` wrapper** owning the perspective switch, `useCdn`, token and stega. No page
+  constructs a client.
+- **Queries in their own module**, named and exported, built with `defineQuery` from `groq` so
+  TypeGen can see them. Shared **projection fragments** composed into queries, not repeated.
+- **TypeGen runs against those query files**, so results are typed from the real projections.
+
+**Reference: [`andybywire/ux-methods`](https://github.com/andybywire/ux-methods), `astro/src/sanity/`**
+— `lib/load-query.ts` and `sanity.queries.ts` are this pattern already working, including the
+projection-fragment composition. **Consult it for the data layer only; its `src/styles/` is the
+page-level-stylesheet structure this build is deliberately not repeating.** Two things to improve on
+rather than copy: split queries per document type or route instead of one file, since this site has
+far more types; and prefer `astro:env` for typed environment variables over reading
+`import.meta.env` and `process.env` by hand.
+
+**One simplification already proven there:** perspective is a **build-mode flag**, not a per-request
+cookie. The preview deploy builds with drafts on, production builds with them off. That sidesteps
+cookie-based draft mode and the `/api/draft-mode/enable` routes in Sanity's guide entirely, and it
+works precisely because the two builds are separate deploys.
 
 ### Images — Sanity URLs at runtime, not through the build
 
