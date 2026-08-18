@@ -3,7 +3,7 @@
 ## What this is
 
 The codebase behind **andyfitzgeraldconsulting.com**, Andy's professional home for ~8 years.
-An Eleventy static site with Sanity as CMS, deployed to a DigitalOcean droplet behind nginx.
+A static site with Sanity as CMS, deployed to a DigitalOcean droplet behind nginx.
 
 It is being **re-envisioned as a digital garden** — still publishing substantial articles and
 still describing consulting services, but reframed from "consultancy website" toward "engaged
@@ -46,27 +46,44 @@ a decision after you've raised a concern, that's his call — proceed with the f
 
 ## Stack and layout
 
-npm workspaces monorepo, `type: module` throughout.
+Workspace monorepo, `type: module` throughout. **Two generations coexist until the phase 6 cutover:**
+`web-next/` and `studio-next/` are the build; `web/` and `studio/` are the live site and are not
+modified. The root moves to **pnpm + Node 24** in phase 0; `main` stays on npm until cutover.
 
 | Path | What |
 |---|---|
-| `web/` | Eleventy 3.x static site |
+| `web-next/` | **Astro site — the build.** Static in production, SSR for the preview environment |
+| `studio-next/` | **Sanity Studio on the `production-26` dataset** — where the content model iterates |
+| `web/` | Eleventy 3.x static site — **live production, frozen** |
 | `web/_src/` | Page templates (Nunjucks) — Eleventy input dir |
 | `web/_includes/` | Layouts and partials (`base.njk`, `partials/head.njk`, `linked-data/*.json`) |
 | `web/_data/` | Build-time Sanity fetches (`articles.js`, `singletons.js`, …) |
-| `web/style/` | Hand-authored CSS — see conventions below |
+| `web/style/` | The old hand-authored CSS — **reference only; not a pattern to follow** |
 | `web/utils/` | `sanityClient.js`, `imageUrl.js`, `serializers.js` (Portable Text → HTML) |
 | `web/_11ty/shortcodes/` | Image and hero shortcodes |
 | `web/_site/` | Build output — gitignored, never edit |
 | `web/mailhandler.php` | Contact form handler; PHP runs on the droplet alongside the static build |
-| `studio/` | Sanity Studio (v6, React 19, TypeScript) |
+| `studio/` | Sanity Studio (v6, React 19, TypeScript) — live, on the `production` dataset |
 | `studio/schemas/` | Content model — `documents/`, `objects/` |
 | `web/__web_2022/`, `web/__source_docs/` | Archived prior iterations — reference only, not live |
 
-The codebase has passed through Jekyll and a Sass build before landing on Eleventy. Debt from
-those eras is still present (see Known debt).
+**`web/` is reference, not a source of patterns.** Read it to learn what the site *does* — the
+content model it consumes, the JSON-LD it emits, the Sanity queries it runs. Do not carry its CSS,
+its component boundaries or its template structure into `web-next/`; see Current direction.
+
+The codebase has passed through Jekyll and a Sass build before landing on Eleventy, so anything in
+`web/` may be older than it looks.
 
 ## Commands
+
+**The build** (pnpm, from phase 0):
+
+```bash
+pnpm --filter web-next dev        # Astro dev server
+pnpm --filter studio-next dev     # Sanity Studio on the production-26 dataset
+```
+
+**The live site** (npm, unchanged until cutover — don't run these to test new work):
 
 ```bash
 npm run dev          # runs studio + web in parallel (root)
@@ -74,27 +91,28 @@ npm run dev:web      # Eleventy watch + serve
 npm run dev:studio   # Sanity Studio on :3000
 ```
 
-Studio: `npm run build`, `npm run deploy`, `npm run lint`, `npm run typecheck` (from `studio/`).
-
 Deploy is `.github/workflows/build-prod.yml` — builds Eleventy, installs PHP deps via Composer,
 tars the output, scps to the droplet, and swaps an atomic release symlink at `/var/www/afc/html`.
-Triggered by pushes touching `web/**` and by Sanity `repository_dispatch` webhooks per document type.
+Triggered by pushes touching `web/**` and by Sanity `repository_dispatch` webhooks per document
+type. **It stays as-is and keeps deploying the live site**; the replacement pair is described under
+Current direction → Deploy shape, and is written in phase 6.
 
 ## Conventions and constraints
 
 - **Hand-authored CSS and hand-authored UI components. No Tailwind, no shadcn, no component
   libraries.** This is deliberate — staying close to the core languages is a project goal.
   Don't propose these as shortcuts.
-- Plain CSS with **native nesting** (`&`, nested `@media`) — no preprocessor, no build step.
-- CSS is organized loosely ITCSS/SMACSS: `utilities/` → `base/` → `layout/` → `pages/` →
-  `components/`, aggregated by `style/style.css`.
+- Plain CSS with **native nesting** (`&`, nested `@media`) — no preprocessor.
+- **Two tiers, and only two.** Global: primitive tokens, semantic role tokens, and the element-level
+  role styles (`h1`–`h4`, body prose, the rhythm mechanism). Everything else is a
+  **component-scoped style in the component that owns it.** There is no global `components/` layer,
+  no page-level stylesheets, and no import chain — that structure belonged to the 11ty build and is
+  deliberately not carried forward.
 - All font sizing in `rem`, never `px`.
-- Design tokens live as custom properties in `style/utilities/variables.css`.
-- Andy maintains a **parallel design system in Figma** (variables + text styles). CSS structure
-  should mirror that two-layer idea: **primitive tokens** and **semantic role styles** that
-  reference them.
-- Linked Data matters here. JSON-LD lives in `_includes/linked-data/`. Semantics and structured
-  markup are first-class concerns, not nice-to-haves.
+- Andy maintains a **parallel design system in Figma** (variables + text styles). CSS mirrors that
+  two-layer idea: **primitive tokens** and **semantic role styles** that reference them.
+- Linked Data matters here. Semantics and structured markup are first-class concerns, not
+  nice-to-haves — JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2.
 - Tabs for indentation in CSS; Prettier config in `studio/` uses no semicolons, single quotes,
   100 char width.
 
@@ -173,85 +191,169 @@ discussing it is fine; generating code from it is not. Do not propose it as a sh
 
 ## Current direction
 
-**Astro migration is confirmed** (decided 2026-07-27) — for DX simplification and consolidation
-with Andy's other Astro project. Real benefits: component-scoped styles (which structurally
-prevent the CSS leakage this codebase suffers from), built-in image optimization, and typed
-content via Content Layer + a Sanity loader.
+**Rebuilding the site in Astro against the finished design** (revised 2026-08-17). This supersedes
+the earlier "migrate the build tool, hold design constant" plan.
 
-It stages **mid-project, before the design phase** — not last. The governing principle is that
-**a migration should change exactly one thing: the build tool.** Design held constant means the
-output can be diffed against live production to prove the port is faithful. Anything built in
-Nunjucks *before* the migration gets built twice.
+That plan existed so the port could be **diffed against live production** to prove it was faithful.
+That is no longer the goal: the design system is complete, it includes elements the 11ty front end
+never had, and the content model is changing. Holding design constant would mean building the old
+site twice.
+
+**Do not carry CSS or componentization decisions over from `web/`.** They reflect older habits and
+are explicitly not the target. The clean slate is the point.
+
+**What this costs, and what replaces it.** There is no longer an automated way to prove the port is
+faithful, because it is not meant to be. Visual verification is against DESIGN.md and the Figma
+boards, by eye. **Content parity becomes the verification instrument instead** — every document of
+every type must render — because a changed model breaking a published document is the failure mode
+that actually bites.
+
+**Two datasets, deliberately not synchronised.** Model iteration happens on the duplicated
+`production-26` dataset while `production` serves the live site. Migration scripts were considered
+and **declined**: Andy is publishing little or nothing before cutover, and hand-migrating one or two
+articles is cheaper than maintaining and debugging a migration suite. At cutover, `production-26`
+becomes the live dataset.
 
 ### Phase sequence
 
-Do not run these in parallel, except where noted.
+Each phase is a branch off `next`, merged back once verified. Do not run them in parallel.
 
-1. **Type foundations + delivery fixes** *(current, on 11ty)* — tokens, modular scale, measure,
-   reading experience; plus font subsetting and eliminating the `@import` chain. Portable: `:root`
-   custom properties and global semantic role styles stay global under Astro. Body font becomes
-   **Noto Serif** (`--font-body`), **Lato** becomes `--font-display`, Open Sans is dropped. Target
-   body measure 60–75 characters, body leading ~1.55–1.6. Color primitives can be defined here too.
-2. **Content model, taxonomies, URL design** *(parallel with 1 — Sanity-side, SSG-independent)* —
-   the **`note` type** plus richer type differentiation; **two SKOS vocabularies** (a hierarchical
-   topic vocabulary for tag browsing and related content, and a **semantic type** vocabulary
-   distinguishing kinds that share one structural Sanity type — method vs. perspective vs.
-   conference note; `sanity-plugin-taxonomy-manager` is already installed); permalink design and
-   the 301 map. Design the model; don't build its front end yet.
-3. **Visual regression baseline** — snapshot the current site. This is not a deferred nice-to-have;
-   it is the instrument that makes the migration verifiable.
-4. **Astro migration** — design held constant, diffed against the phase 3 baseline. Note that the
-   *deploy* half of CI is unaffected: Astro still emits static HTML, so the tar → scp → atomic
-   symlink flow and `mailhandler.php` work unchanged, and `@portabletext/to-html` still runs, so
-   `utils/serializers.js` mostly ports. `style/components/*.css` is what dissolves into components.
-5. **Design phase, on Astro** — making notes read as notes rather than thin articles, tightening
-   the color palette, component-scoped styles, and the front end for the new content model.
-6. **Remaining quality gates + POSSE** — performance budgets, accessibility checks, link checking,
-   HTML validation; per-taxonomy RSS feeds; **POSSE** (https://indieweb.org/POSSE) syndication to
+0. **Repo scaffolding.** `web-next/` (Astro) and `studio-next/` alongside the existing `web/` and
+   `studio/`. pnpm workspace, one root lockfile, **Node 24 everywhere** — Node 20 is EOL as of April
+   2026, so the current CI pin is on an unsupported runtime. Settle the two-workflow deploy shape
+   below and the Sanity fetching strategy (Content Layer vs direct client) before writing pages.
+   *This must not reach `main`: `main` still runs `npm ci` against `web/package-lock.json`.*
+1. **Studio on `production-26`.** New studio, current schema as the starting point, TypeGen wired.
+   Permalink design lands here — 301s are expected to be **minimal**, since `/insights/` is
+   unchanged and most other addressable content is net new.
+2. **Design tokens.** `variables.css` from DESIGN.md's front matter and the dark-mode table; global
+   semantic role styles as **rules, not variables**. Font subsetting, preload, drop Open Sans, fix
+   the `@font-face` syntax. **Theme switching ships with a toggle**, defaulting to system — see
+   Theme switching below.
+3. **Core layout.** Base layout, the 12-column grid, masthead, footer, the band system, the
+   sibling-margin rhythm mechanism. The `<SanityImage>` component lands here (see Images).
+4. **Page types, in order of structural leverage** — not arbitrary order:
+   1. **Article / insight detail** — prose, measure, rhythm, blockquote, figure, rail. Where
+      DESIGN.md is most specific and where the type system either works or does not.
+   2. **Index pages** — cards, chips, pagination.
+   3. **Home** — mostly composition of bands that already exist by then.
+   4. The rest — services, projects, case study, reviews, presentations, search.
+
+   The content model is iterated alongside, driven by what each page needs. **The `note` type and
+   the two SKOS vocabularies** land here rather than up front — a hierarchical topic vocabulary for
+   tag browsing and related content, and a **semantic type** vocabulary distinguishing kinds that
+   share one structural Sanity type (method vs. perspective vs. conference note).
+   `sanity-plugin-taxonomy-manager` is already installed. Taxonomy design may deserve its own branch.
+5. **Content parity check.** Render every document of every type; catch dangling references and
+   fields that silently stopped rendering.
+6. **Cutover.** Rewrite CI for pnpm, Node 24 and the new build directory. **`mailhandler.php` must
+   survive** — it stays PHP on the droplet, but becomes a backend endpoint called from JS rather
+   than a form target with its own display pages, since mail forms now appear on several pages.
+   Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
+   `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
+7. **Quality gates + POSSE.** Performance budgets, accessibility checks, link checking, HTML
+   validation; per-taxonomy RSS feeds; **POSSE** (https://indieweb.org/POSSE) syndication to
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
 
-**Notes are deliberately deferred** (decided 2026-07-27). Andy is fine waiting months to publish
-notes — the priority is getting the site right first. So do *not* ship a stopgap note type on
-11ty; the note front end is built once, natively, in phase 5.
+### Deploy shape — static production, SSR preview, one droplet
+
+**Ported from `andybywire/ux-methods`, where this is already working.** One codebase, two build
+modes selected by environment:
+
+| | `ASTRO_OUTPUT` | Served by | Visual editing | Indexed |
+|---|---|---|---|---|
+| production | `static` | nginx, static files | off | yes |
+| preview | `server` | PM2 + Node on the same droplet | on | `noindex` |
+
+This is what makes visual editing possible **without giving up a static production site.** The
+official Astro visual-editing integration requires `output: "server"` because draft mode depends on
+per-request cookie checking — running that in front of the public site would trade the tar → scp →
+symlink deploy for a supervised Node process. Pointing Presentation at `preview.` instead keeps
+production static and bulletproof.
+
+Copy the workflow pair from `ux-methods` rather than reinventing it, but **fix three things**: both
+workflows pin Node 22 and the preview deploy script does `nvm use 20` — use 24 throughout; both
+trigger on identical paths so every push builds twice; and the droplet gains a dependency on Node,
+pnpm and PM2 surviving reboots.
+
+**Rejected: local-only preview.** Requiring `pnpm dev` to edit content works against the goal of
+making publishing easier.
+
+### Images — Sanity URLs at runtime, not through the build
+
+**Do not route Sanity images through Astro's asset pipeline.** Build-time optimization would
+download and process every image on every CI run against a cold cache, and inflate the deploy tar.
+Serving Sanity URLs at runtime means the build never fetches an image at all.
+
+The cost is that Astro no longer generates `srcset` — so **`<SanityImage>` is a real component we
+write**: takes an image ref, applies hotspot/crop via `@sanity/image-url`, emits `srcset`, `sizes`,
+`width` and `height`. `web/_11ty/shortcodes/clientLogo.js` has most of the logic already. Sanity's
+`auto=format` still negotiates AVIF/WebP.
+
+**Astro's `<Image>` still applies to repo assets** — logo, OG images, anything checked in. Two
+pipelines, each doing what it is good at.
+
+**To verify in phase 3: serving Sanity images from a Cloudflare-CNAMEd subdomain.** The intent is
+to let Cloudflare cache transforms and, more importantly, to put images on a domain where
+Cloudflare's free **Hotlink Protection** applies. Two things must be confirmed before committing:
+
+- **Host header** — a proxied CNAME sends `Host: images.andyfitzgeraldconsulting.com` to Sanity's
+  CDN, which routes on Host. It needs rewriting to `cdn.sanity.io` via an Origin Rule or a Worker.
+- **Origin SSL** — under Full (strict), Cloudflare validates the origin certificate against the
+  hostname it connects to, so the Host override must carry SNI.
+
+**This is an unsupported community workaround** — Sanity documents no custom-domain path, so it can
+break without notice. **If verification fails, fall back to `cdn.sanity.io` directly.** That is a
+one-line change in the URL-builder wrapper and nothing else in the build cares. Hotlinking has
+happened once in eight years; carrying that risk is an accepted trade.
+
+### Theme switching
+
+**Ships with a toggle**, defaulting to system preference. Three CSS blocks, not one: `:root` for
+light, `@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) }`, and
+`:root[data-theme="dark"]`, so an explicit choice wins in both directions. A **synchronous inline
+script in `<head>`** sets `data-theme` before first paint — anything deferred paints the wrong theme
+first. Set `color-scheme: light dark` on `:root` so form controls follow.
+
+The cost is not the ~60 lines of code; it is that every token now has three places it can be wrong,
+and the test matrix doubles.
 
 ### Branching and verification
 
-**`main` is the live production site and stays frozen** except for genuine hotfixes. Do **not**
-merge phase work to `main` before the cutover. CI deploys on any push to `main` touching `web/**`,
-and Andy does not want to be putting out fires on the old site while building the new one.
-
-The structure:
+**`main` is the live production site and is frozen and terminal.** CI deploys on any push to `main`
+touching `web/**`, so building in `web-next/` **cannot** trigger it — the deploy path stays inert
+until the phase 6 rename deliberately activates it.
 
 - **`main`** — current production. Hotfixes only.
 - **`next`** — integration branch where the new site accumulates. Never auto-deploys.
-- **Phase branches** (`type-foundations`, …) — branch from `next`, merge back into `next` once
-  verified. One branch per phase, so each is reviewable on its own.
+- **Phase branches** — branch from `next`, merge back once verified. One per phase, each reviewable
+  on its own.
 - **One deliberate cutover merge** `next` → `main` at the end.
 
-Periodically merge `main` → `next` so any production hotfixes propagate and the two don't drift.
+**Do not merge `main` → `next`.** The old rule existed so production hotfixes would propagate, but
+the two branches now share no front-end files — a fix to 11ty `web/` has nothing to propagate into
+Astro `web-next/`, and once `next` is on pnpm the merge only produces lockfile conflicts.
 
-**Andy does the visual verification himself** — he runs a branch locally and diffs it against the
-live production site. Get changes green and integration-verified, then hand him the specific
-eyeball steps rather than asking him to check things you could have checked.
+**Andy does the visual verification himself.** Get changes green and integration-verified, then hand
+him the specific eyeball steps rather than asking him to check things you could have checked.
 
-Consequence worth planning for: nothing on `next` is ever deployed, so **nginx config, 301
-redirects, and CI build behavior cannot be verified locally.** A staging deploy will be needed
-before cutover, particularly for the Astro migration and the redirect map. Raise this in phase 3–4
-rather than discovering it at cutover.
+Nothing on `next` is ever deployed, so **nginx config, 301 redirects and CI build behaviour cannot
+be verified locally.** The SSR preview environment closes part of this gap early; the rest needs a
+staging deploy before cutover.
 
 Branch names are plain kebab-case, no prefix (`type-foundations`, `add-php-mail-support`). Commit
 subjects use conventional-commit prefixes (`feat:`, `chore:`). **Commit and push only when asked.**
 `origin/dev` (Aug 2025) and `origin/staging` (Mar 2024) are abandoned — don't build on them.
 
-**Sequencing constraint from POSSE:** syndicated copies link to canonical permalinks permanently,
-so **URL design must land before notes go live** — which pulls the path-level 301 work earlier,
-closer to the content model than to the end. Microformats2 (`h-entry`/`h-card`) sits alongside the
-existing JSON-LD without conflict.
+**Sequencing constraint from POSSE:** syndicated copies link to canonical permalinks permanently, so
+**URL design must land before notes go live** — which is why permalink design sits in phase 1 rather
+than emerging page by page. Microformats2 (`h-entry`/`h-card`) sits alongside the existing JSON-LD
+without conflict.
 
-**Decided against:** the **domain change to andyfitzgerald.net is off** (2026-07-27). The IA changes
-Andy wants don't justify the cost and risk of a hostname migration on top of everything else. Work
-stays in **this** repo; no fork. Path-level 301s are still needed for IA-driven path changes, and
-Andy wants nginx guidance on doing those cleanly and scalably.
+**Decided against:** the **domain change to andyfitzgerald.net is off** (2026-07-27). Also **against
+a separate v3 repository** (2026-08-17) — same site, same domain, and a single history running
+Jekyll → 11ty → Astro is the more useful record. Splitting it would also mean re-establishing deploy
+keys, Actions secrets and Sanity webhooks at the worst possible moment.
 
 ## Look and feel
 
@@ -268,46 +370,41 @@ which is why it sits here; the layout constraints it protects are in DESIGN.md.
 
 ## Known debt
 
-Documented from a measured audit on 2026-07-27 (`web/style/`, verified in-browser):
+**Most of the old debt list has been deleted rather than carried forward.** It described
+`web/style/` — the import chain, uncontrolled measure, ten hand-picked font sizes, Sass-era dead
+comments, the ungoverned greys, the shipped contrast failures. None of it survives a build that
+starts from DESIGN.md, and keeping it would only invite someone to "migrate" the thing we are
+deliberately not migrating. **If you want to know how the old CSS worked, read the git history.**
 
-- **CSS ships as 20 render-blocking `@import` requests.** Eleventy only passthrough-copies
-  `style/`, so there is no bundling and no minification.
-- **2.7 MB of unsubset fonts.** All four variable files declare `font-stretch: 100%`, so the
-  `wdth` axis is paid for and unusable. `Lato-Medium.woff2` is 203 KB (7× Regular/Bold) and went
-  unused on article pages while being preloaded on every one. The body font was not preloaded.
-  `@font-face` uses the obsolete `format('woff2 supports variations')` syntax.
-- **Measure is uncontrolled** — no `max-width` on prose anywhere; it's a side effect of grid
-  column spans. ~73 characters at 1600px but **~96 at 959px**, where prose widens to 12 columns
-  while line-height *tightens* from 1.75 to 1.5. The 60rem breakpoint works backwards.
-- **`h4`/`h5` are author-selectable in Sanity but unstyled in CSS.** `h4` renders in the body font
-  at body size; `h5` renders *smaller* than body text. `h4` already appears in published content.
-- 10 hand-picked font sizes on no modular ratio; `h2` resolves to four different line-heights
-  depending on context. No `letter-spacing` anywhere in the codebase.
-- `grid-column` declared on the global `h2` in `base/typography.css` — layout concern in a base
-  type file.
-- Dead Sass-era commented blocks in `layout/wrap.css` and `base/typography.css`, referencing
-  `$white` and `@include segment`. The `blockquote` block has improperly nested comments where an
-  inner `*/` closes the outer comment early — currently inert, but fragile.
-- Several size comments are numerically wrong (`2rem /* 28 px */`, `1.375rem /* 23 px */`) or use
-  `pt` where the unit is `px`.
-- **Colour contrast failures on the live site** (computed 2026-07-28, WCAG 2 AA). These describe the
-  **shipped stylesheet**, not the design system — DESIGN.md's palette replaces `--blue` outright and
-  resolves every one of them, so this entry is a description of what the CSS migration has to fix.
-  Don't confuse live `--blue` with the new `--blue-500`; they are different colours. `--blue`
-  (`#4e9dbc`) is the central problem — it reaches only **3.03:1** on white, so it fails the 4.5:1
-  body-text threshold both as a foreground and as a background:
-  - link colour and link hover (`--blue` on white) — 3.03, needs 4.5
-  - mobile nav (white on `--blue`) — 3.03, needs 4.5
-  - button hover (white on `--blue`) — 3.03, needs 4.5
-  - `--alert-text` on `--alert-bg` — 3.70, needs 4.5
-  - `--eyebrow-gray` on white — 4.49, needs 4.5 (borderline miss)
-  It does pass 3:1 for large text, so it is usable for headings. Everything else passes:
-  body text 18.70, `--dark-blue` 10.52, `--medium-gray` 5.87.
-- Three greys (`#777676`, `#646464`, `#2b2b2b`) with no systematic relationship, and
-  `--light-gray` is an `rgba()` of `43,40,40` — a value that matches none of the named greys.
-- CI: the release-cleanup **comment** is stale — it says "keep 5 most recent" but commit `5e9fac8`
-  deliberately changed `tail -n +6` to `+4` to keep 3. The code is intentional; fix the comment.
-- CI: deploy writes `.env` containing the Google OAuth client secret and refresh token as
-  `chmod 644` — world-readable on the droplet. `640` owned by the web group would be tighter.
-- CI pins Node 20 while `studio/` declares `engines: node >= 22`, and `npm ci` runs against
-  `web/package-lock.json` rather than the workspace root lock, so the two can drift.
+What remains is infrastructure, content-model constraints, and one measured input.
+
+**Carries into the new CI (phase 6):**
+
+- **The deploy writes `.env` as `chmod 644`** — world-readable on the droplet, containing the Google
+  OAuth client secret and refresh token. `640` owned by the web group is tighter. **This is a live
+  security issue on the running site, not just a migration note**, and it should be fixed in the new
+  workflow rather than reproduced.
+- **The droplet keeps 3 releases, not 5.** Commit `5e9fac8` deliberately changed `tail -n +6` to
+  `+4`; only the comment still says five. Preserve the retention behaviour in the new workflow and
+  write the comment to match.
+- **`mailhandler.php` needs the Composer step.** PHP deps are installed in CI and shipped with the
+  tar. Easy to lose in a JavaScript migration — see phase 6.
+
+**Content-model constraints the new front end inherits:**
+
+- **`h5` is author-selectable in Sanity and does not exist in DESIGN.md.** The design system defines
+  `h1`–`h4` and stops there deliberately — below h3 size is no longer a usable signal. So either the
+  Portable Text schema drops `h5`, or the system needs a role for it. **`h4` already appears in
+  published content**, so it must render correctly from day one. Decide in phase 1, with the schema.
+- **Portable Text emits a flat sequence with no section wrappers**, which is why vertical rhythm is
+  sibling margins rather than `gap`. This is a constraint on the markup, not a preference — see
+  DESIGN.md and docs/decisions/layout.md.
+
+**Measured input for phase 2 (fonts):**
+
+- **2.7 MB of unsubset fonts, and the files carry over even though the CSS does not.** All four
+  variable files declare `font-stretch: 100%`, so the `wdth` axis is paid for and unusable.
+  `Lato-Medium.woff2` is 203 KB — 7× Regular or Bold — and went unused on article pages while being
+  preloaded on every one. The body font was not preloaded at all. `@font-face` used the obsolete
+  `format('woff2 supports variations')` syntax. Open Sans is dropped entirely, which alone saves
+  ~577 KB.
