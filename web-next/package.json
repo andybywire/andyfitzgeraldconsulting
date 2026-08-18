@@ -1,0 +1,43 @@
+{
+  "name": "web-next",
+  "version": "3.0.0",
+  "description": "Astro front end for Andy Fitzgerald Consulting, LLC",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "dev:preview": "PUBLIC_SITE_MODE=preview astro dev",
+    "build": "PUBLIC_SITE_MODE=production astro build",
+    "build:preview": "PUBLIC_SITE_MODE=preview astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "astro": "astro"
+  },
+  "author": "Andy Fitzgerald",
+  "license": "ISC",
+  "dependencies": {
+    "@astrojs/node": "^11.1.2",
+    "@astrojs/react": "^6.0.2",
+    "@sanity/astro": "^3.5.0",
+    "@sanity/client": "^7.26.2",
+    "@sanity/image-url": "^2.1.1",
+    "astro": "^7.2.2",
+    "groq": "^6.9.2",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-is": "^19.2.8",
+    "sanity": "^6.9.2",
+    "styled-components": "^6.5.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.2.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^6.0.3",
+    "vite": "^8.2.1"
+  }
+}
