@@ -12,11 +12,8 @@ import node from '@astrojs/node'
  * should never do this — it imports from `astro:env/client` or `astro:env/server`
  * instead, where the values are typed and validated.
  */
-const {PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET} = loadEnv(
-	process.env.NODE_ENV ?? 'development',
-	process.cwd(),
-	''
-)
+const fileEnv = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '')
+const {PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET} = fileEnv
 
 /**
  * One flag drives the whole deploy shape. CLAUDE.md's table has production/static/nginx/
@@ -25,6 +22,23 @@ const {PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET} = loadEnv(
  */
 const MODE = process.env.PUBLIC_SITE_MODE === 'preview' ? 'preview' : 'production'
 const isPreview = MODE === 'preview'
+
+/**
+ * Check the read token here as well as in load-query.ts, because the two catch different
+ * failures. A preview build renders on demand, so load-query.ts is bundled but never executed
+ * during the build — its check fires on the first request, which means a preview deploy would
+ * succeed and only then start returning 500s. This runs at config time, so it fails the build
+ * instead. The runtime check still earns its place: it catches the token going missing from a
+ * restarted process on the droplet, which is invisible at build time.
+ *
+ * `process.env` is checked first because CI supplies secrets that way; `loadEnv` covers a
+ * local `.env` file.
+ */
+if (isPreview && !(process.env.SANITY_API_READ_TOKEN || fileEnv.SANITY_API_READ_TOKEN)) {
+	throw new Error(
+		'SANITY_API_READ_TOKEN is required when PUBLIC_SITE_MODE=preview — drafts cannot be read anonymously.'
+	)
+}
 
 /**
  * Pinned, not an env var: the API version is a property of the queries we have written and
