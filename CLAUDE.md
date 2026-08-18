@@ -339,6 +339,10 @@ rather than copy: split queries per document type or route instead of one file, 
 far more types; and prefer `astro:env` for typed environment variables over reading
 `import.meta.env` and `process.env` by hand.
 
+Borrowing runs both ways. **Improvements found here that apply back to `ux-methods` are recorded in
+[docs/ux-methods-notes.md](docs/ux-methods-notes.md)** — add to it when one turns up, rather than
+letting it live only in a commit message.
+
 **One simplification already proven there:** perspective is a **build-mode flag**, not a per-request
 cookie. The preview deploy builds with drafts on, production builds with them off. That sidesteps
 cookie-based draft mode and the `/api/draft-mode/enable` routes in Sanity's guide entirely, and it

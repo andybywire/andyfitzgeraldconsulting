@@ -64,6 +64,13 @@ export default defineConfig({
 				values: ['production', 'preview'],
 				default: 'production',
 			}),
+			// Where the Studio lives, for stega's click-to-edit links. Optional because only
+			// the preview build encodes them, and it is not set until studio-next exists.
+			PUBLIC_SANITY_STUDIO_URL: envField.string({
+				context: 'client',
+				access: 'public',
+				optional: true,
+			}),
 			// Only the preview build reads drafts, so this is optional by design — a missing
 			// token must not fail a production build.
 			SANITY_API_READ_TOKEN: envField.string({
