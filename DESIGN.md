@@ -197,6 +197,7 @@ typography:
 rounded:
   sm: 3px
   md: 6px
+  full: 9999px
 
 spacing:
   # ── Primitives — one body line box (32.4px) rounded to 32, then quartered ──
@@ -301,7 +302,7 @@ components:
     textColor: "{colors.text}"
     borderColor: "{colors.border-control}"
     typography: "{typography.chip}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.full}"
   filter-chip-hover:
     backgroundColor: "{colors.control-hover}"
     textColor: "{colors.text}"
@@ -668,14 +669,17 @@ The shape language is quiet: small radii, hairline strokes, no ornament. Reasoni
 [docs/decisions/components.md](docs/decisions/components.md).
 
 - **`rounded.sm` (3px)** — the button, and content images taking the tighter corner.
-- **`rounded.md` (6px)** — exactly 2 × `sm`. Every card surface, the filter chip, card images and
-  photographs.
+- **`rounded.md` (6px)** — exactly 2 × `sm`. Every card surface, card images and photographs.
+- **`rounded.full` (9999px)** — the filter chip only, which is a capsule. Nothing else is fully
+  rounded, and the value is arbitrarily large because `border-radius` clamps to half the shorter
+  side; it is not a measurement.
 - **`border-hairline` (1px)** — cards, panels, chips, inputs; every boundary that is a *line*.
 - **`border-quote` (6px desktop / 4px mobile)** — the blockquote bar, a *mark* rather than a boundary,
   and the one stroke that varies by viewport.
 
 **Focus-ring radii derive from the control they wrap** — inner at `radius + 2`, outer at `radius + 4`.
-Write it as a real `calc()` so the dependency stays live.
+Write it as a real `calc()` so the dependency stays live. On the capsule chip the derivation
+degenerates harmlessly: the clamp means a ring around a capsule is a capsule.
 
 **The quote bar sits inside the indent**, so text sits 42px from the bar on desktop and 20 on mobile,
 not 48 and 24.
