@@ -48,6 +48,27 @@ button's inner ring is 5 *because the button is 3*, not because 5 is a value in 
 this is a real `calc()`, so the dependency stays live. In Figma it can't be, so the derivation lives in
 the layer name.
 
+**The capsule chip is the one place the derivation collapses.** `border-radius` clamps to half the
+shorter side, so a ring around a capsule is a capsule at any size — there is nothing left to derive,
+and both rings simply take `radius-full`. The `+2` / `+4` still hold, but as the rings' *offset* rather
+than as an addition to a radius, which is why the chip's ring layers are named for the offset alone.
+The rings stay **unbound** in Figma even so: binding them to `radius-full` would be correct only while
+the chip is a capsule, and a chip that later returned to a numeric radius would silently inherit that
+radius instead of `radius + 2` — the exact error leaving them raw prevents.
+
+**Radius tokens are ordinal, and only the terminal value is named** — `radius-1`, `radius-2`,
+`radius-full`. Two reasons. `radius` rather than `rounded` because it names what the value *is* rather
+than the effect it produces, which is also why `rounded-*` is a utility-class convention while every
+token system ships `radius` or `border-radius`. And ordinal rather than t-shirt sizes to match
+`space-1`…`space-7` and the type scale, which were already ordinal — t-shirt naming also forces a
+rename the moment an intermediate value appears, since today's `md` becomes tomorrow's `lg`.
+
+`full` is named rather than numbered because **it is not a point on the ramp.** 9999 is a sentinel
+meaning *clamp to half the shorter side*, so the rendered radius follows the element's height rather
+than the token; numbering it would invite interpolation where nothing meaningful sits between 6px and
+a capsule. Mixing one named terminal into an ordinal ramp signals exactly that difference, and leaves
+`radius-3` onward free.
+
 ---
 
 ## Chips and tags

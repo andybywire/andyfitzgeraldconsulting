@@ -194,9 +194,9 @@ typography:
     lineHeight: 1.5
     letterSpacing: 0em
 
-rounded:
-  sm: 3px
-  md: 6px
+radius:
+  1: 3px
+  2: 6px
   full: 9999px
 
 spacing:
@@ -267,7 +267,7 @@ components:
     backgroundColor: "{colors.accent}"
     textColor: "{colors.text-on-accent}"
     typography: "{typography.nav}"
-    rounded: "{rounded.sm}"
+    radius: "{radius.1}"
   button-primary-hover:
     backgroundColor: "{colors.accent-hover}"
     textColor: "{colors.text-on-accent}"
@@ -284,7 +284,7 @@ components:
     borderColor: "{colors.border-on-accent}"
     textColor: "{colors.text-on-accent}"
     typography: "{typography.nav}"
-    rounded: "{rounded.sm}"
+    radius: "{radius.1}"
   button-ghost-hover:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.accent}"
@@ -302,7 +302,7 @@ components:
     textColor: "{colors.text}"
     borderColor: "{colors.border-control}"
     typography: "{typography.chip}"
-    rounded: "{rounded.full}"
+    radius: "{radius.full}"
   filter-chip-hover:
     backgroundColor: "{colors.control-hover}"
     textColor: "{colors.text}"
@@ -329,14 +329,14 @@ components:
     backgroundColor: "{colors.surface-muted}"
     textColor: "{colors.text-muted}"
     typography: "{typography.tag}"
-    rounded: "{rounded.sm}"
+    radius: "{radius.1}"
     padding: "{spacing.space-1}"
 
   # ── Cards ─────────────────────────────────────────────────────────────────
   card:
     backgroundColor: "{colors.surface}"
     borderColor: "{colors.border}"
-    rounded: "{rounded.md}"
+    radius: "{radius.2}"
     padding: "{spacing.card-pad}"
   card-title:
     textColor: "{colors.text-title}"
@@ -346,7 +346,7 @@ components:
   note-card-hover:
     backgroundColor: "{colors.surface}"
     borderColor: "{colors.border}"
-    rounded: "{rounded.md}"
+    radius: "{radius.2}"
 
   # ── Input field ───────────────────────────────────────────────────────────
   input-field:
@@ -668,18 +668,22 @@ and no border — the viewport edges do the containing.
 The shape language is quiet: small radii, hairline strokes, no ornament. Reasoning in
 [docs/decisions/components.md](docs/decisions/components.md).
 
-- **`rounded.sm` (3px)** — the button, and content images taking the tighter corner.
-- **`rounded.md` (6px)** — exactly 2 × `sm`. Every card surface, card images and photographs.
-- **`rounded.full` (9999px)** — the filter chip only, which is a capsule. Nothing else is fully
+- **`radius-1` (3px)** — the button, and content images taking the tighter corner.
+- **`radius-2` (6px)** — exactly 2 × `radius-1`. Every card surface, card images and photographs.
+- **`radius-full` (9999px)** — the filter chip only, which is a capsule. Nothing else is fully
   rounded, and the value is arbitrarily large because `border-radius` clamps to half the shorter
   side; it is not a measurement.
 - **`border-hairline` (1px)** — cards, panels, chips, inputs; every boundary that is a *line*.
 - **`border-quote` (6px desktop / 4px mobile)** — the blockquote bar, a *mark* rather than a boundary,
   and the one stroke that varies by viewport.
 
+**These emit `--radius-1`, `--radius-2` and `--radius-full`**, matching the `codeSyntax` on the Figma
+variables. Reasoning in [docs/decisions/components.md](docs/decisions/components.md).
+
 **Focus-ring radii derive from the control they wrap** — inner at `radius + 2`, outer at `radius + 4`.
-Write it as a real `calc()` so the dependency stays live. On the capsule chip the derivation
-degenerates harmlessly: the clamp means a ring around a capsule is a capsule.
+Write it as a real `calc()` so the dependency stays live. **The capsule is the one exception: a ring
+around a capsule is a capsule**, so both rings take `radius-full` rather than a derived value, and
+`+2` / `+4` describe only their offset.
 
 **The quote bar sits inside the indent**, so text sits 42px from the bar on desktop and 20 on mobile,
 not 48 and 24.
