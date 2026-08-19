@@ -18,6 +18,8 @@ Alongside these:
 
 - **[../figma-notes.md](../figma-notes.md)** — Figma mechanics and the constraints they impose. Tooling,
   not design decisions.
+- **[../urls-and-filtering.md](../urls-and-filtering.md)** — the URL contract, redirects, and the
+  Insights facet browse. Addressing and browse behaviour, not design.
 - **[../open-questions.md](../open-questions.md)** — what is *not* settled.
 
 ## Conventions
