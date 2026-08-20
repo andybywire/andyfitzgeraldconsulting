@@ -130,8 +130,10 @@ Current direction → Deploy shape, and is written in phase 6.
   two-layer idea: **primitive tokens** and **semantic role styles** that reference them.
 - Linked Data matters here. Semantics and structured markup are first-class concerns, not
   nice-to-haves — JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2.
-- Tabs for indentation in CSS; Prettier config in `studio/` uses no semicolons, single quotes,
-  100 char width.
+- **Two-space indentation everywhere, CSS included.** One Prettier style repo-wide — no semicolons,
+  single quotes, 100 char width — configured at the root and mirrored in `web-next/` only to add the
+  Astro plugin. The old rule here said tabs in CSS; that described `web/style/`, which is reference
+  only. Don't reintroduce a per-language override.
 
 ## Design system
 
@@ -508,8 +510,14 @@ What remains is infrastructure, content-model constraints, and one measured inpu
 **Measured input for phase 2 (fonts):**
 
 - **2.7 MB of unsubset fonts, and the files carry over even though the CSS does not.** All four
-  variable files declare `font-stretch: 100%`, so the `wdth` axis is paid for and unusable.
-  `Lato-Medium.woff2` is 203 KB — 7× Regular or Bold — and went unused on article pages while being
-  preloaded on every one. The body font was not preloaded at all. `@font-face` used the obsolete
-  `format('woff2 supports variations')` syntax. Open Sans is dropped entirely, which alone saves
-  ~577 KB.
+  variable files declare `font-stretch: 100%`, so the `wdth` axis is paid for and unusable — subset
+  it out. The body font was not preloaded at all, and `@font-face` used the obsolete
+  `format('woff2 supports variations')` syntax.
+- **~780 KB of that is pure deletion, no tooling needed.** Open Sans (two files, 591 KB) is dropped
+  because DESIGN.md never mentions it. **`Lato-Medium.woff2` (208 KB) has no consumer at all** — not
+  merely an over-preload, which is how this entry read until phase 2 measured it. DESIGN.md's only
+  `fontWeight: 500` role is `display`, which is *Noto Serif* and covered by its variable axis; Lato
+  Medium appears in no Figma text style either. DESIGN.md uses Lato at 400 and 700 only.
+- **The actual subsetting job is the two Noto Serif files** — 1.99 MB of the 2.7 MB total, and where
+  the whole win is. Both stay: the italic carries `<em>` in prose. The Lato pair is 28 KB each,
+  already latin-subset from Google Fonts, and likely needs no work.

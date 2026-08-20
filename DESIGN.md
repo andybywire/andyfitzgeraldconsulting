@@ -169,6 +169,7 @@ typography:
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: 0em
+  # The one role that GROWS as the viewport narrows: 28.125 desktop, 30 mobile. See Typography.
   masthead-name:
     fontFamily: Noto Serif
     fontSize: 1.7578125rem
@@ -200,6 +201,13 @@ radius:
   full: 9999px
 
 spacing:
+  # Keys self-prefix into the emitted property — `space-1` → `--space-1`, `rhythm-band` →
+  # `--rhythm-band`, `card-pad` → `--card-pad`. TWO EXCEPTIONS, both deliberate:
+  #   border-hairline → --border-width-hairline
+  #   border-quote    → --border-width-quote
+  # so that a stroke's WIDTH cannot collide with its COLOUR — `color/border-quote` already emits
+  # `--color-border-quote`. Verified against Figma codeSyntax 2026-08-20. See docs/figma-notes.md.
+  #
   # ── Primitives — one body line box (32.4px) rounded to 32, then quartered ──
   space-1: 8px
   space-2: 16px
@@ -506,6 +514,17 @@ don't add a step below it for reading text. `size/0` (14px) is chrome only. The 
 | 4 | 25 | 28.125 | `clamp(1.5625rem, 1.4737rem + 0.3788vw, 1.7578125rem)` | 84% |
 | 5 | 30 | 35.15625 | `clamp(1.875rem, 1.7285rem + 0.625vw, 2.197265625rem)` | 79% |
 | 6 | 32 | 43.9453125 | `clamp(2rem, 1.6606rem + 1.4479vw, 2.746582031rem)` | 60% |
+
+**`masthead-name` does not ride this ramp — it is the one role that grows as the viewport narrows.**
+It takes step 4 on desktop and step 5 on mobile, so **28.125 → 30**, while every other role shrinks.
+That is deliberate: the wordmark holding roughly constant is what keeps it reading as the masthead
+once the header stacks. Figma models it as `role/masthead-name`, an alias to a *different step per
+mode* rather than a size of its own — the only token in the system shaped that way.
+
+**Its endpoints are inverted, which `clamp()` will punish.** `clamp()` orders its arguments by
+value, not by viewport, so 28.125 is still the first argument and 30 the third, and the `vw`
+coefficient is **negative**. Whether it wants that inverted clamp or a plain step change at the
+masthead's own breakpoint is a phase 3 call, since that is where the header restacks.
 
 ### Leading — indexed by measure, not by size step
 

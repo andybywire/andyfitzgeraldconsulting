@@ -12,19 +12,20 @@ Design file: `pPZPGT6EpSaLkoUDK8HMMp`.
 | Collection | Contents | Modes |
 |---|---|---|
 | `Primitives` | 24 raw colours | single (`Value`) |
-| `Semantic` | 34 colours aliasing primitives | `Light` / `Dark` / `Dark Alt` |
+| `Semantic` | 35 colours aliasing primitives | `Light` / `Dark` |
 | `Type Scale` | 7 sizes `size/0`–`size/6` + `role/masthead-name` | `Desktop` / `Mobile` |
-| `Spacing` | 29 — `space/*`, `rhythm/*`, `card/*`, `chrome/*`, `field/*`, `radius/*`, `border/*`, `quote/*` | `Desktop` / `Mobile` |
+| `Spacing` | 30 — `space/*`, `rhythm/*`, `card/*`, `chrome/*`, `field/*`, `radius/*`, `border/*`, `quote/*` | `Desktop` / `Mobile` |
 | `Grid` | 8 | `Desktop` / `Mobile` |
 
 **Two mode axes are in play and they are not the same axis.** `Type Scale`, `Spacing` and `Grid`
 carry **viewport**; `Semantic` carries **theme**. Keeping them on separate collections is what lets a
 frame be Mobile without also being Dark. Do not merge them.
 
-**`Semantic` has used three of its four mode slots.** The Professional plan caps a collection at four
-modes, and `Light` / `Dark` / `Dark Alt` leaves exactly one. `Dark Alt` is an experiment and one of
-the two dark themes is expected to be deleted once chosen — but until then, **a fourth theme cannot
-be added without first resolving that**, and no further axis can be folded into this collection.
+**`Semantic` carries two modes — `Light` and `Dark`.** The `Dark Alt` experiment was resolved and
+deleted; the phase 2 drift diff (2026-08-20) read two modes and 35 variables where this file had
+recorded three modes and 34. The Professional plan caps a collection at four modes, so **two slots
+are now free** and the earlier "no fourth theme until Dark Alt is resolved" constraint no longer
+applies. Mentions of `Dark Alt` further down are historical.
 
 **One viewport axis across three collections** — all three use the same `Desktop` / `Mobile` names,
 so "set this frame to Mobile" is a single consistent action. A mode in one collection and a
@@ -291,8 +292,8 @@ reported the previous `Dark Alt` accent while their binding resolved to the curr
 `paint.color` and you get the stale value; call `variable.resolveForConsumer(node)` and you get the
 live one.
 
-> **Do not "fix" this by re-baking.** A paint has one RGB slot and a themed paint has three correct
-> values, so re-baking to the current mode only makes it stale for the other two. It also proves the
+> **Do not "fix" this by re-baking.** A paint has one RGB slot and a themed paint has one correct
+> value per mode, so re-baking to one mode only makes it stale for the rest. It also proves the
 > baked value cannot be what Figma renders — otherwise modes would never work at all.
 
 Baking still matters at **write** time, which is the rule already recorded under stroke weights:
@@ -320,6 +321,15 @@ build the paint with the resolved RGB *first*, then bind, so the file looks righ
   `neutral-200` at 4.70 — but nothing on the boards uses either, so in the file an attribution is
   still separated from its quote by size alone. See DESIGN.md under Accent bands: the earlier
   "nothing blue on the band" reading overstated what was measured.
+- **Mis-bound text on the boards — trust DESIGN.md over the pixels, never the reverse.** Roughly
+  **21 `Header/H2`** and **34 `Label`** nodes sit on `color/page/text`, plus **6 `Caption`** and
+  **3 `Body`**. `Header/H2` and `Label` should be carrying `text-heading` and `text-muted`, and how
+  far off they render is **theme-dependent** — the trap. `text-heading` and `text` differ on Light
+  and are identical on Dark; `text-muted` and `text` differ in both. Checking a board in one theme
+  therefore cannot tell you whether its bindings are right, and **a correct dark build will
+  legitimately disagree with these boards.** The intended role has not been established node by
+  node, so this is a recorded defect, not a queued fix. Carried by hand through three phases before
+  being written down here, which matters more now that Figma is an archive, not a live reference.
 
 ## Resolved, for reference
 
