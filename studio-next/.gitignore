@@ -1,0 +1,12 @@
+# Compiled Studio
+dist/
+
+# Temporary Sanity runtime, regenerated on every dev server start
+.sanity/
+
+# TypeGen intermediate. The generated types in web-next ARE committed, so the web build never
+# needs this studio installed; the schema dump they are derived from does not need keeping.
+schema.json
+
+# TypeScript incremental build state
+*.tsbuildinfo

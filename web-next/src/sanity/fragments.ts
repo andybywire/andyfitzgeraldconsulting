@@ -6,11 +6,12 @@
  * TypeGen types whole queries. Interpolating one into a `defineQuery` template is what makes
  * it visible to TypeGen.
  *
- * VERIFY IN PHASE 1, when TypeGen is wired: that TypeGen resolves these across module
- * boundaries. ux-methods keeps its fragments in the same file as the queries that use them, so
- * cross-file resolution is the one part of this structure it does not prove. If types come back
- * as `any`, moving a fragment next to its queries is mechanical — but the whole point of the
- * split is that this site has far more document types than one file can hold.
+ * VERIFIED in phase 1: TypeGen resolves these across module boundaries. Every field from all
+ * three fragments lands in the generated types, and the result union is correctly discriminated
+ * on `_type`. It works because these are `const` string literals, so the interpolated template
+ * resolves to a single literal type — which is also the key TypeGen writes into `SanityQueries`.
+ * Keep them `const` and keep them literal: a fragment built at runtime would break the chain
+ * silently, leaving the types `any` while still looking correct.
  */
 
 /**
@@ -35,13 +36,13 @@ export const DATES = /* groq */ `
 /**
  * SKOS labels. Both fields are references, so both need dereferencing.
  *
- * `insightType` is the semantic-type vocabulary — it distinguishes kinds that share a single
- * structural Sanity type, so an `article` may be a Perspective where another is an Interview.
+ * `genre` is the semantic-type vocabulary — it distinguishes kinds that share a single
+ * structural Sanity type, so an `article` may be a Perspective where another is a Method.
  * `topic` is the hierarchical topic vocabulary used for tag browsing and related content.
  *
  * Both vocabularies are designed properly in phase 4; this reflects the model as it stands.
  */
 export const TAXONOMY = /* groq */ `
-	"insightType": insightType->prefLabel,
+	"genre": genre->prefLabel,
 	"topics": topic[]->prefLabel
 `

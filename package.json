@@ -12,5 +12,8 @@
     "dev": "pnpm -r --parallel dev"
   },
   "author": "Andy Fitzgerald",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "prettier": "^3.9.6"
+  }
 }

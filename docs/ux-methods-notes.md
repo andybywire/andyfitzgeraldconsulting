@@ -131,17 +131,22 @@ The failure mode this guards against is the quiet one: published content on a pu
 anonymously, so a preview build with no token **succeeds** and renders only published content. It
 looks like it works, which is exactly what makes it expensive.
 
-## Whether fragments can be split across files — open, and the answer flows *from* there
+## Fragments can be split across files — resolved, so the query file can be broken up
 
-`sanity.queries.ts` keeps projection fragments in the same file as the queries that interpolate them.
-This site splits queries per document type — it has far more types than one file can hold — with
-fragments in a separate module, which requires TypeGen to resolve **imported** string constants
-rather than local ones.
+`sanity.queries.ts` keeps projection fragments in the same file as the queries that interpolate them,
+which is the only arrangement it proves. This site put fragments in a separate module, requiring
+TypeGen to resolve **imported** string constants rather than local ones.
 
-Same-file resolution is proven by `ux-methods` working. Cross-file is not proven anywhere yet; it is
-flagged in `web-next/src/sanity/fragments.ts` to verify when TypeGen is wired in phase 1. If it does
-work, `ux-methods` can split its query file with confidence. If it does not, its single-file layout
-is vindicated and this site inlines instead.
+**Verified working in phase 1 here.** Every field from three separate imported fragments landed in the
+generated types, with the result union correctly discriminated on `_type`. So `ux-methods` can split
+`sanity.queries.ts` per document type or route whenever that file becomes unwieldy, without losing
+type generation.
+
+The mechanism worth knowing, because it is quiet when broken: it works because the fragments are
+`const` string literals, so the interpolated template resolves to a single literal type — and that
+literal is exactly the key TypeGen writes into `SanityQueries`. A fragment assembled at runtime, or
+typed as `string` rather than left literal, breaks the chain and silently yields `any` while still
+looking correct.
 
 ## Runtime and CI items — *carried*
 
