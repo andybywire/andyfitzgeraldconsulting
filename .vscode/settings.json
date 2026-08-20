@@ -1,4 +1,35 @@
 {
+  // ── Formatting ─────────────────────────────────────────────────────────────
+  // Pinned here rather than left to user settings so the repo is self-describing: the same
+  // formatter runs for anyone opening it, on any machine, and `pnpm format` produces identical
+  // output. Without this, a per-language `editor.defaultFormatter` in user settings silently
+  // wins — which is how `.tsx` files ended up on VS Code's built-in TypeScript formatter,
+  // inserting semicolons against this repo's `semi: false`.
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {"editor.defaultFormatter": "esbenp.prettier-vscode"},
+  "[typescriptreact]": {"editor.defaultFormatter": "esbenp.prettier-vscode"},
+  "[javascript]": {"editor.defaultFormatter": "esbenp.prettier-vscode"},
+  "[json]": {"editor.defaultFormatter": "esbenp.prettier-vscode"},
+  "[jsonc]": {"editor.defaultFormatter": "esbenp.prettier-vscode"},
+  "[css]": {"editor.defaultFormatter": "esbenp.prettier-vscode"},
+  // Prettier rather than the Astro extension, now that prettier-plugin-astro is installed.
+  // Both would read this repo's config, but routing through one Prettier guarantees the editor
+  // and the CLI cannot drift.
+  "[astro]": {"editor.defaultFormatter": "esbenp.prettier-vscode"},
+
+  // Never format using Prettier's built-in defaults — only ever from this repo's config.
+  "prettier.requireConfig": true,
+
+  // Matches .editorconfig, and overrides any wider indent set in user settings.
+  "editor.insertSpaces": true,
+  "editor.tabSize": 2,
+
+  // ── Existing project settings ──────────────────────────────────────────────
+  "html.suggest.html5": true,
+  "emmet.includeLanguages": {
+    "njk": "html",
+    "nunjucks": "html"
+  },
   "cSpell.words": [
     "ELEVENTY",
     "linkify",
@@ -14,10 +45,5 @@
     "syntaxhighlight",
     "taxo",
     "topline"
-  ],
-  "html.suggest.html5": true,
-  "emmet.includeLanguages": {
-    "njk": "html",
-    "nunjucks": "html"
-  },
+  ]
 }
