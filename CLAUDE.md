@@ -241,8 +241,11 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    below and the data-fetching shape below before writing pages.
    *This must not reach `main`: `main` still runs `npm ci` against `web/package-lock.json`.*
 1. **Studio on `production-26`.** New studio, current schema as the starting point, TypeGen wired.
-   Permalink design lands here — 301s are expected to be **minimal**, since `/insights/` is
-   unchanged and most other addressable content is net new.
+   **Permalink *design* lands here and is recorded in
+   [docs/urls-and-filtering.md](docs/urls-and-filtering.md)** — the URL surface, the addressing
+   scheme, and what redirects to what. Writing the redirects is **phase 6**, with the nginx config:
+   they are inert until there is a server to serve them, and the whole set is one rewrite rule plus
+   a singleton rename. Deferred deliberately, not overlooked.
 2. **Design tokens.** `variables.css` from DESIGN.md's front matter and the dark-mode table; global
    semantic role styles as **rules, not variables**. Font subsetting, preload, drop Open Sans, fix
    the `@font-face` syntax. **Theme switching ships with a toggle**, defaulting to system — see
@@ -268,9 +271,23 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    than a form target with its own display pages, since mail forms now appear on several pages.
    Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
    `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
-7. **Quality gates + POSSE.** Performance budgets, accessibility checks, link checking, HTML
+7. **Cleanup.** Deliberately after the site is live, so none of it can destabilise a launch, and
+   before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
+   still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:
+   - **Remove the deprecated `insightType` field** from `article` and `caseStudy`, and unset the
+     data. `genre` replaced it in phase 1 and both fields reference the same concepts.
+   - **Retire the two deprecated schemes** — `Insight Type [DEPRECATED]` and `Topic [DEPRECATED]` —
+     and any concepts left unreferenced with them.
+   - **Resolve the orphan types**, `service` (4 documents) and `collection` (2). They have live
+     documents and no schema file, which is why `hiddenDocTypes` exists. **Nothing renders them:**
+     `services.njk` iterates singletons, and no query fetches either type. So they are adopted into
+     the schema or deleted — the choice is editorial, not structural.
+   - **Shrink `hiddenDocTypes`** in `sanity.config.ts` to whatever survives the above.
+8. **Quality gates + POSSE.** Performance budgets, accessibility checks, link checking, HTML
    validation; per-taxonomy RSS feeds; **POSSE** (https://indieweb.org/POSSE) syndication to
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
+   Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
+   watch-mode generation is off and `pnpm typegen` is run by hand.
 
 ### Deploy shape — static production, SSR preview, one droplet
 

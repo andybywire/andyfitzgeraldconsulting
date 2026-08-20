@@ -4,9 +4,11 @@ The URL contract and the behaviour of the Insights facet browse. Companion to
 [decisions/](decisions/), which covers the design system; this covers addressing and browse
 behaviour, which are content-model concerns rather than design ones.
 
-**This file exists because the decisions in it are separated by months.** Permalinks and redirects
-land in phase 1; the filtering they were designed around lands in phase 4. Anything settled in one
-and needed in the other goes here rather than into a commit message.
+**This file exists because the decisions in it are separated by months, and by phase.** The URL
+design was settled in phase 1; the filtering it was designed around is built in phase 4; the
+redirects are written in phase 6 with the nginx config, since they are inert until there is a server
+to serve them. Anything settled in one phase and needed in another goes here rather than into a
+commit message.
 
 Decided 2026-08-18 unless noted.
 
@@ -34,7 +36,7 @@ not real 301s. Status codes need the server.
   that cannot be verified locally, so it is the last part that should live only on the droplet.
 - **Include it into both server blocks.** Production and the SSR preview sit behind the same nginx.
 - **`/feed.xml` stays exactly where it is.** Feed readers are the least forgiving consumers of a moved
-  URL — some handle a 301 poorly and simply go quiet. When per-taxonomy feeds arrive in phase 7 they
+  URL — some handle a 301 poorly and simply go quiet. When per-taxonomy feeds arrive in phase 8 they
   are additions, not a reorganisation.
 
 **Tag URLs redirect to a filter param, not to a bare index**, because the visitor's intent was the
