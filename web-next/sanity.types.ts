@@ -12,816 +12,890 @@
  * ---------------------------------------------------------------------------------
  */
 
-export declare const internalGroqTypeReferenceTo: unique symbol;
+export declare const internalGroqTypeReferenceTo: unique symbol
 
 // Source: schema.json
 export type Table = {
-  _type: "table";
-  headerRows?: number;
+  _type: 'table'
+  headerRows?: number
   rows?: Array<{
     cells?: Array<{
       value?: Array<{
         children?: Array<{
-          marks?: Array<string>;
-          text?: string;
-          _type: "span";
-          _key: string;
-        }>;
-        style?: "normal";
-        listItem?: "bullet" | "number";
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal'
+        listItem?: 'bullet' | 'number'
         markDefs?: Array<{
-          href?: string;
-          _type: "link";
-          _key: string;
-        }>;
-        level?: number;
-        _type: "block";
-        _key: string;
-      }>;
-      _type: "cell";
-      _key: string;
-    }>;
-    _type: "row";
-    _key: string;
-  }>;
-};
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }>
+      _type: 'cell'
+      _key: string
+    }>
+    _type: 'row'
+    _key: string
+  }>
+}
 
 export type SanityImageAssetReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "sanity.imageAsset";
-};
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'sanity.imageAsset'
+}
 
 export type Figure = {
-  _type: "figure";
-  asset?: SanityImageAssetReference;
-  media?: unknown;
-  hotspot?: SanityImageHotspot;
-  crop?: SanityImageCrop;
-  caption?: string;
-  altText?: string;
-  outline?: boolean;
-};
+  _type: 'figure'
+  asset?: SanityImageAssetReference
+  media?: unknown
+  hotspot?: SanityImageHotspot
+  crop?: SanityImageCrop
+  caption?: string
+  altText?: string
+  outline?: boolean
+}
 
 export type ClientReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "client";
-};
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'client'
+}
 
 export type ReviewReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "review";
-};
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'review'
+}
 
 export type CaseStudyReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "caseStudy";
-};
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'caseStudy'
+}
 
 export type Settings = {
-  _id: string;
-  _type: "settings";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  title?: string;
-  siteTitle?: string;
-  siteSubtitle?: string;
-  url?: string;
-  description?: string;
-  homeLogos?: Array<{
-    _key: string;
-  } & ClientReference>;
-  reviews?: Array<{
-    _key: string;
-  } & ReviewReference>;
+  _id: string
+  _type: 'settings'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  siteTitle?: string
+  siteSubtitle?: string
+  url?: string
+  description?: string
+  homeLogos?: Array<
+    {
+      _key: string
+    } & ClientReference
+  >
+  reviews?: Array<
+    {
+      _key: string
+    } & ReviewReference
+  >
   insightsBanner?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    _type: "image";
-  };
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    caption?: string
+    altText?: string
+    _type: 'image'
+  }
   clientWorkBanner?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    _type: "image";
-  };
-  featuredClients?: Array<{
-    _key: string;
-  } & CaseStudyReference>;
-};
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    caption?: string
+    altText?: string
+    _type: 'image'
+  }
+  featuredClients?: Array<
+    {
+      _key: string
+    } & CaseStudyReference
+  >
+}
 
 export type SanityImageCrop = {
-  _type: "sanity.imageCrop";
-  top?: number;
-  bottom?: number;
-  left?: number;
-  right?: number;
-};
+  _type: 'sanity.imageCrop'
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+}
 
 export type SanityImageHotspot = {
-  _type: "sanity.imageHotspot";
-  x?: number;
-  y?: number;
-  height?: number;
-  width?: number;
-};
+  _type: 'sanity.imageHotspot'
+  x?: number
+  y?: number
+  height?: number
+  width?: number
+}
 
 export type Singleton = {
-  _id: string;
-  _type: "singleton";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  title?: string;
-  slug?: Slug;
+  _id: string
+  _type: 'singleton'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  slug?: Slug
   heroCopy?: Array<{
     children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal";
-    listItem?: never;
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
     markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }>;
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
   heroImg?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    altText?: string;
-    _type: "image";
-  };
-  bodyText?: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    _type: "image";
-    _key: string;
-  }>;
-};
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    altText?: string
+    _type: 'image'
+  }
+  bodyText?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        _type: 'image'
+        _key: string
+      }
+  >
+}
 
 export type Slug = {
-  _type: "slug";
-  current?: string;
-  source?: string;
-};
+  _type: 'slug'
+  current?: string
+  source?: string
+}
 
 export type Event = {
-  _id: string;
-  _type: "event";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  event?: string;
-  date?: string;
+  _id: string
+  _type: 'event'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  event?: string
+  date?: string
   location?: {
-    city?: string;
-    state?: string;
-    country?: string;
-  };
-  title?: string;
-  type?: "talk" | "keynote" | "workshop" | "panel" | "podcast";
-  link?: string;
-};
+    city?: string
+    state?: string
+    country?: string
+  }
+  title?: string
+  type?: 'talk' | 'keynote' | 'workshop' | 'panel' | 'podcast'
+  link?: string
+}
 
 export type SkosConceptReference = {
-  _ref: string;
-  _type: "reference";
-  _weak?: boolean;
-  [internalGroqTypeReferenceTo]?: "skosConcept";
-};
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'skosConcept'
+}
 
 export type CaseStudy = {
-  _id: string;
-  _type: "caseStudy";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  title?: string;
-  genre?: SkosConceptReference;
-  insightType?: SkosConceptReference;
-  slug?: Slug;
-  pubDate?: string;
+  _id: string
+  _type: 'caseStudy'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  genre?: SkosConceptReference
+  insightType?: SkosConceptReference
+  slug?: Slug
+  pubDate?: string
   heroImage?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    adjBright?: boolean;
-    _type: "image";
-  };
-  topic?: Array<{
-    _key: string;
-  } & SkosConceptReference>;
-  client?: ClientReference;
-  shortDescription?: string;
-  description?: string;
-  review?: ReviewReference;
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    caption?: string
+    altText?: string
+    adjBright?: boolean
+    _type: 'image'
+  }
+  topic?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+  client?: ClientReference
+  shortDescription?: string
+  description?: string
+  review?: ReviewReference
   atGlance?: Array<{
     children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    listItem?: 'bullet' | 'number'
     markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }>;
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
   whatDid?: Array<{
     children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    listItem?: 'bullet' | 'number'
     markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }>;
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
   projectGoal?: Array<{
     children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    listItem?: 'bullet' | 'number'
     markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }>;
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
   beforeImage?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    _type: "image";
-  };
-  projectApproach?: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    _key: string;
-  } & Figure | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    _type: "image";
-    _key: string;
-  }>;
-  projectOutcome?: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    _key: string;
-  } & Figure | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    _type: "image";
-    _key: string;
-  }>;
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    caption?: string
+    altText?: string
+    _type: 'image'
+  }
+  projectApproach?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        _type: 'image'
+        _key: string
+      }
+  >
+  projectOutcome?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        _type: 'image'
+        _key: string
+      }
+  >
   afterImage?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    outline?: boolean;
-    _type: "image";
-  };
-};
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    caption?: string
+    altText?: string
+    outline?: boolean
+    _type: 'image'
+  }
+}
 
 export type Review = {
-  _id: string;
-  _type: "review";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  author?: string;
-  slug?: Slug;
-  title?: string;
-  employer?: ClientReference;
-  excerpt?: string;
+  _id: string
+  _type: 'review'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  author?: string
+  slug?: Slug
+  title?: string
+  employer?: ClientReference
+  excerpt?: string
   condensedBody?: Array<{
     children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    listItem?: 'bullet' | 'number'
     markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }>;
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
   body?: Array<{
     children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    listItem?: 'bullet' | 'number'
     markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }>;
-};
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+}
 
 export type Client = {
-  _id: string;
-  _type: "client";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  name?: string;
-  slug?: Slug;
+  _id: string
+  _type: 'client'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  name?: string
+  slug?: Slug
   logo?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    altText?: string;
-    _type: "image";
-  };
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    altText?: string
+    _type: 'image'
+  }
   tile?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    altText?: string;
-    _type: "image";
-  };
-};
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    altText?: string
+    _type: 'image'
+  }
+}
 
 export type Article = {
-  _id: string;
-  _type: "article";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  title?: string;
-  genre?: SkosConceptReference;
-  insightType?: SkosConceptReference;
-  slug?: Slug;
-  pubDate?: string;
+  _id: string
+  _type: 'article'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  genre?: SkosConceptReference
+  insightType?: SkosConceptReference
+  slug?: Slug
+  pubDate?: string
   heroImage?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    caption?: string;
-    altText?: string;
-    adjBright?: boolean;
-    _type: "image";
-  };
-  podcastId?: string;
-  topic?: Array<{
-    _key: string;
-  } & SkosConceptReference>;
-  shortDescription?: string;
-  description?: string;
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    caption?: string
+    altText?: string
+    adjBright?: boolean
+    _type: 'image'
+  }
+  podcastId?: string
+  topic?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+  shortDescription?: string
+  description?: string
   lede?: Array<{
     children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal";
-    listItem?: "bullet" | "number";
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
     markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }>;
-  bodyText?: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "blockquote";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    _key: string;
-  } & Figure | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    altText?: string;
-    floatLeft?: boolean;
-    _type: "image";
-    _key: string;
-  } | {
-    _key: string;
-  } & Code | {
-    _key: string;
-  } & Table>;
-  canonical?: string;
-};
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  bodyText?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        altText?: string
+        floatLeft?: boolean
+        _type: 'image'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Code)
+    | ({
+        _key: string
+      } & Table)
+  >
+  canonical?: string
+}
 
 export type Code = {
-  _type: "code";
-  language?: string;
-  filename?: string;
-  code?: string;
-  highlightedLines?: Array<number>;
-};
+  _type: 'code'
+  language?: string
+  filename?: string
+  code?: string
+  highlightedLines?: Array<number>
+}
 
 export type SkosConceptScheme = {
-  _id: string;
-  _type: "skosConceptScheme";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  title?: string;
-  description?: string;
-  controls?: boolean;
-  baseIri?: string;
-  schemeId?: string;
-  topConcepts?: Array<{
-    _key: string;
-  } & SkosConceptReference>;
-  concepts?: Array<{
-    _key: string;
-  } & SkosConceptReference>;
-};
+  _id: string
+  _type: 'skosConceptScheme'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  description?: string
+  controls?: boolean
+  baseIri?: string
+  schemeId?: string
+  topConcepts?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+  concepts?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+}
 
 export type SkosConcept = {
-  _id: string;
-  _type: "skosConcept";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  prefLabel?: string;
-  definition?: string;
-  example?: string;
-  scopeNote?: string;
-  altLabel?: Array<string>;
-  hiddenLabel?: Array<string>;
-  baseIri?: string;
-  conceptId?: string;
-  broader?: Array<{
-    _key: string;
-  } & SkosConceptReference>;
-  related?: Array<{
-    _key: string;
-  } & SkosConceptReference>;
-  historyNote?: string;
-  editorialNote?: string;
-  changeNote?: string;
-};
+  _id: string
+  _type: 'skosConcept'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  prefLabel?: string
+  definition?: string
+  example?: string
+  scopeNote?: string
+  altLabel?: Array<string>
+  hiddenLabel?: Array<string>
+  baseIri?: string
+  conceptId?: string
+  broader?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+  related?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+  historyNote?: string
+  editorialNote?: string
+  changeNote?: string
+}
 
 export type SanityImagePaletteSwatch = {
-  _type: "sanity.imagePaletteSwatch";
-  background?: string;
-  foreground?: string;
-  population?: number;
-  title?: string;
-};
+  _type: 'sanity.imagePaletteSwatch'
+  background?: string
+  foreground?: string
+  population?: number
+  title?: string
+}
 
 export type SanityImagePalette = {
-  _type: "sanity.imagePalette";
-  darkMuted?: SanityImagePaletteSwatch;
-  lightVibrant?: SanityImagePaletteSwatch;
-  darkVibrant?: SanityImagePaletteSwatch;
-  vibrant?: SanityImagePaletteSwatch;
-  dominant?: SanityImagePaletteSwatch;
-  lightMuted?: SanityImagePaletteSwatch;
-  muted?: SanityImagePaletteSwatch;
-};
+  _type: 'sanity.imagePalette'
+  darkMuted?: SanityImagePaletteSwatch
+  lightVibrant?: SanityImagePaletteSwatch
+  darkVibrant?: SanityImagePaletteSwatch
+  vibrant?: SanityImagePaletteSwatch
+  dominant?: SanityImagePaletteSwatch
+  lightMuted?: SanityImagePaletteSwatch
+  muted?: SanityImagePaletteSwatch
+}
 
 export type SanityImageDimensions = {
-  _type: "sanity.imageDimensions";
-  height?: number;
-  width?: number;
-  aspectRatio?: number;
-};
+  _type: 'sanity.imageDimensions'
+  height?: number
+  width?: number
+  aspectRatio?: number
+}
 
 export type SanityImageMetadata = {
-  _type: "sanity.imageMetadata";
-  location?: Geopoint;
-  dimensions?: SanityImageDimensions;
-  palette?: SanityImagePalette;
-  lqip?: string;
-  blurHash?: string;
-  thumbHash?: string;
-  hasAlpha?: boolean;
-  isOpaque?: boolean;
-};
+  _type: 'sanity.imageMetadata'
+  location?: Geopoint
+  dimensions?: SanityImageDimensions
+  palette?: SanityImagePalette
+  lqip?: string
+  blurHash?: string
+  thumbHash?: string
+  hasAlpha?: boolean
+  isOpaque?: boolean
+}
 
 export type SanityFileAsset = {
-  _id: string;
-  _type: "sanity.fileAsset";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  originalFilename?: string;
-  label?: string;
-  title?: string;
-  description?: string;
-  altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
-  uploadId?: string;
-  path?: string;
-  url?: string;
-  source?: SanityAssetSourceData;
-};
+  _id: string
+  _type: 'sanity.fileAsset'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  originalFilename?: string
+  label?: string
+  title?: string
+  description?: string
+  altText?: string
+  sha1hash?: string
+  extension?: string
+  mimeType?: string
+  size?: number
+  assetId?: string
+  uploadId?: string
+  path?: string
+  url?: string
+  source?: SanityAssetSourceData
+}
 
 export type SanityAssetSourceData = {
-  _type: "sanity.assetSourceData";
-  name?: string;
-  id?: string;
-  url?: string;
-};
+  _type: 'sanity.assetSourceData'
+  name?: string
+  id?: string
+  url?: string
+}
 
 export type SanityImageAsset = {
-  _id: string;
-  _type: "sanity.imageAsset";
-  _createdAt: string;
-  _updatedAt: string;
-  _rev: string;
-  originalFilename?: string;
-  label?: string;
-  title?: string;
-  description?: string;
-  altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
-  uploadId?: string;
-  path?: string;
-  url?: string;
-  metadata?: SanityImageMetadata;
-  source?: SanityAssetSourceData;
-};
+  _id: string
+  _type: 'sanity.imageAsset'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  originalFilename?: string
+  label?: string
+  title?: string
+  description?: string
+  altText?: string
+  sha1hash?: string
+  extension?: string
+  mimeType?: string
+  size?: number
+  assetId?: string
+  uploadId?: string
+  path?: string
+  url?: string
+  metadata?: SanityImageMetadata
+  source?: SanityAssetSourceData
+}
 
 export type Geopoint = {
-  _type: "geopoint";
-  lat?: number;
-  lng?: number;
-  alt?: number;
-};
+  _type: 'geopoint'
+  lat?: number
+  lng?: number
+  alt?: number
+}
 
-export type AllSanitySchemaTypes = Table | SanityImageAssetReference | Figure | ClientReference | ReviewReference | CaseStudyReference | Settings | SanityImageCrop | SanityImageHotspot | Singleton | Slug | Event | SkosConceptReference | CaseStudy | Review | Client | Article | Code | SkosConceptScheme | SkosConcept | SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityImageMetadata | SanityFileAsset | SanityAssetSourceData | SanityImageAsset | Geopoint;
+export type AllSanitySchemaTypes =
+  | Table
+  | SanityImageAssetReference
+  | Figure
+  | ClientReference
+  | ReviewReference
+  | CaseStudyReference
+  | Settings
+  | SanityImageCrop
+  | SanityImageHotspot
+  | Singleton
+  | Slug
+  | Event
+  | SkosConceptReference
+  | CaseStudy
+  | Review
+  | Client
+  | Article
+  | Code
+  | SkosConceptScheme
+  | SkosConcept
+  | SanityImagePaletteSwatch
+  | SanityImagePalette
+  | SanityImageDimensions
+  | SanityImageMetadata
+  | SanityFileAsset
+  | SanityAssetSourceData
+  | SanityImageAsset
+  | Geopoint
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHTS_INDEX_QUERY
 // Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription	}
-export type INSIGHTS_INDEX_QUERY_RESULT = Array<{
-  _id: string;
-  _type: "article";
-  slug: string | null;
-  pubDate: string | null;
-  _updatedAt: string;
-  genre: string | null;
-  topics: Array<string | null> | null;
-  title: string | null;
-  shortDescription: string | null;
-} | {
-  _id: string;
-  _type: "caseStudy";
-  slug: string | null;
-  pubDate: string | null;
-  _updatedAt: string;
-  genre: string | null;
-  topics: Array<string | null> | null;
-  title: string | null;
-  shortDescription: string | null;
-}>;
+export type INSIGHTS_INDEX_QUERY_RESULT = Array<
+  | {
+      _id: string
+      _type: 'article'
+      slug: string | null
+      pubDate: string | null
+      _updatedAt: string
+      genre: string | null
+      topics: Array<string | null> | null
+      title: string | null
+      shortDescription: string | null
+    }
+  | {
+      _id: string
+      _type: 'caseStudy'
+      slug: string | null
+      pubDate: string | null
+      _updatedAt: string
+      genre: string | null
+      topics: Array<string | null> | null
+      title: string | null
+      shortDescription: string | null
+    }
+>
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHT_DETAIL_QUERY
 // Query: *[_type in ["article", "caseStudy"] && slug.current == $slug][0] {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		lede,		bodyText	}
-export type INSIGHT_DETAIL_QUERY_RESULT = {
-  _id: string;
-  _type: "article";
-  slug: string | null;
-  pubDate: string | null;
-  _updatedAt: string;
-  genre: string | null;
-  topics: Array<string | null> | null;
-  title: string | null;
-  shortDescription: string | null;
-  lede: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  }> | null;
-  bodyText: Array<{
-    _key: string;
-  } & Code | {
-    _key: string;
-  } & Figure | {
-    _key: string;
-  } & Table | {
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "blockquote" | "h1" | "h2" | "h3" | "h4" | "normal";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    altText?: string;
-    floatLeft?: boolean;
-    _type: "image";
-    _key: string;
-  }> | null;
-} | {
-  _id: string;
-  _type: "caseStudy";
-  slug: string | null;
-  pubDate: string | null;
-  _updatedAt: string;
-  genre: string | null;
-  topics: Array<string | null> | null;
-  title: string | null;
-  shortDescription: string | null;
-  lede: null;
-  bodyText: null;
-} | null;
+export type INSIGHT_DETAIL_QUERY_RESULT =
+  | {
+      _id: string
+      _type: 'article'
+      slug: string | null
+      pubDate: string | null
+      _updatedAt: string
+      genre: string | null
+      topics: Array<string | null> | null
+      title: string | null
+      shortDescription: string | null
+      lede: Array<{
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }> | null
+      bodyText: Array<
+        | ({
+            _key: string
+          } & Code)
+        | ({
+            _key: string
+          } & Figure)
+        | ({
+            _key: string
+          } & Table)
+        | {
+            children?: Array<{
+              marks?: Array<string>
+              text?: string
+              _type: 'span'
+              _key: string
+            }>
+            style?: 'blockquote' | 'h1' | 'h2' | 'h3' | 'h4' | 'normal'
+            listItem?: 'bullet' | 'number'
+            markDefs?: Array<{
+              href?: string
+              _type: 'link'
+              _key: string
+            }>
+            level?: number
+            _type: 'block'
+            _key: string
+          }
+        | {
+            asset?: SanityImageAssetReference
+            media?: unknown
+            hotspot?: SanityImageHotspot
+            crop?: SanityImageCrop
+            altText?: string
+            floatLeft?: boolean
+            _type: 'image'
+            _key: string
+          }
+      > | null
+    }
+  | {
+      _id: string
+      _type: 'caseStudy'
+      slug: string | null
+      pubDate: string | null
+      _updatedAt: string
+      genre: string | null
+      topics: Array<string | null> | null
+      title: string | null
+      shortDescription: string | null
+      lede: null
+      bodyText: null
+    }
+  | null
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHT_SLUGS_QUERY
 // Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] {		"params": {"slug": slug.current}	}
 export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
   params: {
-    slug: string | null;
-  };
-}>;
+    slug: string | null
+  }
+}>
 
 // Query TypeMap
-import "@sanity/client";
-declare module "@sanity/client" {
+import '@sanity/client'
+declare module '@sanity/client' {
   interface SanityQueries {
-    "\n\t*[_type in [\"article\", \"caseStudy\"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t\"slug\": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t\"genre\": genre->prefLabel,\n\t\"topics\": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription\n\t}\n": INSIGHTS_INDEX_QUERY_RESULT;
-    "\n\t*[_type in [\"article\", \"caseStudy\"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t\"slug\": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t\"genre\": genre->prefLabel,\n\t\"topics\": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tlede,\n\t\tbodyText\n\t}\n": INSIGHT_DETAIL_QUERY_RESULT;
-    "\n\t*[_type in [\"article\", \"caseStudy\"] && defined(slug.current)] {\n\t\t\"params\": {\"slug\": slug.current}\n\t}\n": INSIGHT_SLUGS_QUERY_RESULT;
+    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tlede,\n\t\tbodyText\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
   }
 }
-
