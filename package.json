@@ -9,7 +9,9 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm -r --parallel dev"
+    "dev": "pnpm -r --parallel dev",
+    "typegen": "pnpm --filter studio-next typegen",
+    "format": "prettier --write ."
   },
   "author": "Andy Fitzgerald",
   "license": "ISC",
