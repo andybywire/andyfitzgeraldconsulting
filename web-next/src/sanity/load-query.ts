@@ -19,9 +19,9 @@ const isPreview = PUBLIC_SITE_MODE === 'preview'
  * succeed while silently rendering nothing but published content.
  */
 if (isPreview && !SANITY_API_READ_TOKEN) {
-	throw new Error(
-		'SANITY_API_READ_TOKEN is required when PUBLIC_SITE_MODE=preview — drafts cannot be read anonymously.'
-	)
+  throw new Error(
+    'SANITY_API_READ_TOKEN is required when PUBLIC_SITE_MODE=preview — drafts cannot be read anonymously.',
+  )
 }
 
 /**
@@ -34,25 +34,25 @@ if (isPreview && !SANITY_API_READ_TOKEN) {
  * are requested together or not at all.
  */
 const client = sanityClient.withConfig(
-	isPreview
-		? {
-				perspective: 'drafts',
-				useCdn: false,
-				token: SANITY_API_READ_TOKEN,
-				resultSourceMap: 'withKeyArraySelector',
-				stega: {
-					// Without a Studio URL there is nowhere for an edit link to point, so
-					// encoding would only corrupt the strings.
-					enabled: Boolean(PUBLIC_SANITY_STUDIO_URL),
-					studioUrl: PUBLIC_SANITY_STUDIO_URL,
-				},
-			}
-		: {
-				perspective: 'published',
-				useCdn: false,
-				resultSourceMap: false,
-				stega: {enabled: false},
-			}
+  isPreview
+    ? {
+        perspective: 'drafts',
+        useCdn: false,
+        token: SANITY_API_READ_TOKEN,
+        resultSourceMap: 'withKeyArraySelector',
+        stega: {
+          // Without a Studio URL there is nowhere for an edit link to point, so
+          // encoding would only corrupt the strings.
+          enabled: Boolean(PUBLIC_SANITY_STUDIO_URL),
+          studioUrl: PUBLIC_SANITY_STUDIO_URL,
+        },
+      }
+    : {
+        perspective: 'published',
+        useCdn: false,
+        resultSourceMap: false,
+        stega: {enabled: false},
+      },
 )
 
 /**
@@ -66,8 +66,8 @@ const client = sanityClient.withConfig(
  * projection rather than from a hand-written promise about it.
  */
 export function loadQuery<const Q extends string>(
-	query: Q,
-	params: QueryParams = {}
+  query: Q,
+  params: QueryParams = {},
 ): Promise<ClientReturn<Q>> {
-	return client.fetch(query, params)
+  return client.fetch(query, params)
 }

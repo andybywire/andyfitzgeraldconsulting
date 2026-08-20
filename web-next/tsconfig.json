@@ -1,11 +1,11 @@
 {
-	"extends": "astro/tsconfigs/strict",
-	"include": [".astro/types.d.ts", "**/*"],
-	"exclude": ["dist"],
-	"compilerOptions": {
-		// Naming `types` at all disables TypeScript's automatic @types discovery, so both
-		// entries are load-bearing: "node" restores `process` for astro.config.mjs, and
-		// "@sanity/astro/module" types the `sanity:client` virtual module.
-		"types": ["node", "@sanity/astro/module"]
-	}
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"],
+  "compilerOptions": {
+    // Naming `types` at all disables TypeScript's automatic @types discovery, so both
+    // entries are load-bearing: "node" restores `process` for astro.config.mjs, and
+    // "@sanity/astro/module" types the `sanity:client` virtual module.
+    "types": ["node", "@sanity/astro/module"]
+  }
 }

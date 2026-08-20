@@ -1,0 +1,17 @@
+# Hand-wrapped prose. Prettier reflows markdown, which would destroy deliberate line breaks in
+# DESIGN.md, CLAUDE.md and the decision records.
+*.md
+
+# Frozen generations — reformatting them would create noise against main
+web/
+studio/
+
+# Generated output
+web-next/dist/
+web-next/.astro/
+studio-next/dist/
+studio-next/schema.json
+
+# Lockfiles
+pnpm-lock.yaml
+package-lock.json

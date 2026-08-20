@@ -35,9 +35,9 @@ const isPreview = MODE === 'preview'
  * local `.env` file.
  */
 if (isPreview && !(process.env.SANITY_API_READ_TOKEN || fileEnv.SANITY_API_READ_TOKEN)) {
-	throw new Error(
-		'SANITY_API_READ_TOKEN is required when PUBLIC_SITE_MODE=preview — drafts cannot be read anonymously.'
-	)
+  throw new Error(
+    'SANITY_API_READ_TOKEN is required when PUBLIC_SITE_MODE=preview — drafts cannot be read anonymously.',
+  )
 }
 
 /**
@@ -47,51 +47,51 @@ if (isPreview && !(process.env.SANITY_API_READ_TOKEN || fileEnv.SANITY_API_READ_
 const SANITY_API_VERSION = '2026-08-18'
 
 export default defineConfig({
-	site: isPreview
-		? 'https://preview.andyfitzgeraldconsulting.com'
-		: 'https://andyfitzgeraldconsulting.com',
+  site: isPreview
+    ? 'https://preview.andyfitzgeraldconsulting.com'
+    : 'https://andyfitzgeraldconsulting.com',
 
-	// Static in production so the tar → scp → symlink deploy keeps working. The preview
-	// environment needs per-request rendering for visual editing, and only it pays for Node.
-	output: isPreview ? 'server' : 'static',
-	...(isPreview ? {adapter: node({mode: 'standalone'})} : {}),
+  // Static in production so the tar → scp → symlink deploy keeps working. The preview
+  // environment needs per-request rendering for visual editing, and only it pays for Node.
+  output: isPreview ? 'server' : 'static',
+  ...(isPreview ? {adapter: node({mode: 'standalone'})} : {}),
 
-	integrations: [
-		sanity({
-			projectId: PUBLIC_SANITY_PROJECT_ID,
-			dataset: PUBLIC_SANITY_DATASET,
-			apiVersion: SANITY_API_VERSION,
-			// Never the CDN: static builds want fresh content at build time, and the preview
-			// build wants drafts. Neither benefits from an edge cache.
-			useCdn: false,
-		}),
-		react(),
-	],
+  integrations: [
+    sanity({
+      projectId: PUBLIC_SANITY_PROJECT_ID,
+      dataset: PUBLIC_SANITY_DATASET,
+      apiVersion: SANITY_API_VERSION,
+      // Never the CDN: static builds want fresh content at build time, and the preview
+      // build wants drafts. Neither benefits from an edge cache.
+      useCdn: false,
+    }),
+    react(),
+  ],
 
-	env: {
-		schema: {
-			PUBLIC_SANITY_PROJECT_ID: envField.string({context: 'client', access: 'public'}),
-			PUBLIC_SANITY_DATASET: envField.string({context: 'client', access: 'public'}),
-			PUBLIC_SITE_MODE: envField.enum({
-				context: 'client',
-				access: 'public',
-				values: ['production', 'preview'],
-				default: 'production',
-			}),
-			// Where the Studio lives, for stega's click-to-edit links. Optional because only
-			// the preview build encodes them, and it is not set until studio-next exists.
-			PUBLIC_SANITY_STUDIO_URL: envField.string({
-				context: 'client',
-				access: 'public',
-				optional: true,
-			}),
-			// Only the preview build reads drafts, so this is optional by design — a missing
-			// token must not fail a production build.
-			SANITY_API_READ_TOKEN: envField.string({
-				context: 'server',
-				access: 'secret',
-				optional: true,
-			}),
-		},
-	},
+  env: {
+    schema: {
+      PUBLIC_SANITY_PROJECT_ID: envField.string({context: 'client', access: 'public'}),
+      PUBLIC_SANITY_DATASET: envField.string({context: 'client', access: 'public'}),
+      PUBLIC_SITE_MODE: envField.enum({
+        context: 'client',
+        access: 'public',
+        values: ['production', 'preview'],
+        default: 'production',
+      }),
+      // Where the Studio lives, for stega's click-to-edit links. Optional because only
+      // the preview build encodes them, and it is not set until studio-next exists.
+      PUBLIC_SANITY_STUDIO_URL: envField.string({
+        context: 'client',
+        access: 'public',
+        optional: true,
+      }),
+      // Only the preview build reads drafts, so this is optional by design — a missing
+      // token must not fail a production build.
+      SANITY_API_READ_TOKEN: envField.string({
+        context: 'server',
+        access: 'secret',
+        optional: true,
+      }),
+    },
+  },
 })
