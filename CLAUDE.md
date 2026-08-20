@@ -296,6 +296,25 @@ pnpm and PM2 surviving reboots.
 **Rejected: local-only preview.** Requiring `pnpm dev` to edit content works against the goal of
 making publishing easier.
 
+**The nginx config is authored in the repo and deployed, never edited on the server** (decided
+2026-08-20). DigitalOcean's tutorials present it as server-side editing, which is why it has been done
+that way until now; it costs version control, diffs, and the ability to use your own editor. Author it
+alongside the 301 map, ship it the same way the site ships — scp, `nginx -t`, then reload — and roll
+back with a revert plus a redeploy. The safety gate is real: `nginx -s reload` on a bad config fails
+and leaves the running config in place, so testing first makes it hard to take the site down. Learn
+enough `nano` for a 2am emergency, but keep it off the normal path.
+
+**Rejected: Docker** (2026-08-20). Considered both as a local harness for verifying the nginx routing
+table and as the production runtime. As a runtime it trades an atomic symlink swap for image builds, a
+registry and container lifecycle, adds a daemon to a small droplet and one more thing to survive
+reboots, and buys scaling and onboarding this project does not need. It also complicates TLS rather
+than simplifying it: certbot must answer an HTTP-01 challenge on port 80 for the real hostname, so
+containerising means either a sidecar sharing webroot and cert volumes or host certbot with mounts —
+both more moving parts than host certbot. The local-harness case was the stronger one, since
+`nginx -t` plus a curl sweep of the redirect list would close a real verification gap, but it needs
+path and version parity with the droplet to mean anything, and false confidence is worse than no test.
+**Debugging on the server is the accepted cost.**
+
 ### Data fetching — direct GROQ queries, not Astro Content Layer
 
 **Decided phase 0.** Content Layer is the obvious-looking choice and the wrong one here, so the
