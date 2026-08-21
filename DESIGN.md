@@ -2,10 +2,12 @@
 version: alpha
 name: Andy Fitzgerald Consulting
 description: >-
-  Typography-driven design system for andyfitzgeraldconsulting.com. Values here are
-  the specification for the build; the Figma library (pPZPGT6EpSaLkoUDK8HMMp) is the
-  source of truth for color roles. Desktop values are canonical — see Layout for the
-  mobile variants and Typography for the fluid clamps.
+  Typography-driven design system for andyfitzgeraldconsulting.com. Authoritative for
+  the RULES — the clamps, the leading ramp, measure, rhythm, the two-layer principle.
+  For VALUES the built CSS is truth as of phase 2: web-next/src/styles/tokens.css wins
+  if it and the front matter here ever disagree, and this file is the diffable record.
+  Desktop values are canonical — see Layout for the mobile variants and Typography for
+  the fluid clamps.
 
 colors:
   # ── Primitives ────────────────────────────────────────────────────────────
@@ -405,8 +407,12 @@ no component library. A project goal, not an implementation detail.
 A semantic *text* role is a bundle of applied properties, so in CSS it becomes a rule — `h2 { … }` —
 not a variable. **Do not collapse that distinction.**
 
-**Where things live.** The Figma library `pPZPGT6EpSaLkoUDK8HMMp` is the source of truth for color
-roles; this file reflects it and is authoritative for everything else.
+**Where things live.** This file is authoritative for the **rules** below. For the **values**, the
+built CSS is truth as of phase 2 — `web-next/src/styles/tokens.css` — and the front matter here is the
+diffable record of it; if the two ever disagree, the CSS is right. The Figma library
+`pPZPGT6EpSaLkoUDK8HMMp` is a **reference rather than an authority** — it cannot outrank either, but it
+is still the most detailed description of anything not yet built, so keep reading it for component
+composition. Full chain in CLAUDE.md → Design system.
 
 - **[docs/decisions/](docs/decisions/)** — why the system is the way it is. Read a record only when a
   decision is being questioned, excepted or changed.

@@ -329,7 +329,8 @@ build the paint with the resolved RGB *first*, then bind, so the file looks righ
   therefore cannot tell you whether its bindings are right, and **a correct dark build will
   legitimately disagree with these boards.** The intended role has not been established node by
   node, so this is a recorded defect, not a queued fix. Carried by hand through three phases before
-  being written down here, which matters more now that Figma is an archive, not a live reference.
+  being written down here, which matters more now that Figma is a file we read but no longer correct —
+  the boards stay worth reading for composition, so the defects have to travel with them.
 
 ## Resolved, for reference
 

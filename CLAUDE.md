@@ -154,10 +154,36 @@ what this split exists to prevent.
 **[docs/open-questions.md](docs/open-questions.md)** tracks what is *not* settled. Consult it when
 work approaches one of those areas; it is not general background either.
 
-The authority chain is **Figma → DESIGN.md → CLAUDE.md**: the Figma library is the source of truth
-for color roles, DESIGN.md reflects it and is authoritative for everything else, and this file
-defers to DESIGN.md. Figma mechanics and the constraints they impose on the system live in
-[docs/figma-notes.md](docs/figma-notes.md).
+**The authority chain changed when the CSS landed in phase 2.** It splits by *kind of thing* rather
+than by topic:
+
+- **Code is truth for values.** `web-next/src/styles/tokens.css` is where color, spacing, radius, type
+  sizes and grid actually live. **If it and DESIGN.md disagree — the front matter or the dark-mode
+  table — the CSS is right.** This is why tokens.css carries the invariant that it contains nothing
+  but custom-property declarations: it keeps the front matter useful as a *diffable record* instead of
+  letting it become a second spec.
+- **DESIGN.md is truth for rules.** The clamps, the leading ramp indexed by measure, measure itself,
+  the rhythm mechanism, the two-layer principle, the component relationships, and the standing do's
+  and don'ts. Neither Figma nor CSS records *why* or *when*, and this is what DESIGN.md is genuinely
+  good at.
+- **Figma is a reference, not an authority** — and those are different things. It cannot win an
+  argument against code or DESIGN.md, and no *new* design work starts there; that happens in the
+  browser against the built system. **But it remains the most detailed description of anything not yet
+  built, and you should absolutely still open it.** For most phase 4 components the boards are the only
+  place composition, states, adjacency and layout are drawn at all — nothing in code or DESIGN.md
+  replaces that, and there is nothing for them to contradict until the component exists. Read them for
+  *what a thing is made of*; where they disagree with DESIGN.md on a **value or a role**, DESIGN.md
+  wins. The boards carry known mis-bindings — see [docs/figma-notes.md](docs/figma-notes.md), which
+  catalogues them.
+
+**The failure mode this replaces:** the old chain named Figma as the source of truth for color roles,
+which invited someone to "fix" a working CSS value to match a dead Figma variable *on this file's
+authority*. The one-time drift diff at the start of phase 2 found all 105 variables in agreement
+across both themes, so nothing was lost by freezing Figma there.
+
+Figma mechanics and the constraints they imposed live in [docs/figma-notes.md](docs/figma-notes.md) —
+still the thing to read before touching that file, and now also the record of why parts of it look
+odd.
 
 What belongs here is only the working protocol — where the tools are and how to conduct the work:
 
@@ -190,9 +216,15 @@ One habit from the scarce era is still worth keeping: **batch aggressively** —
 script can read and write in the same call, so prefer a single comprehensive script over several
 probes.
 
-On authority, see the chain under **Design system**: Figma is the source of truth for **color
-roles**, and DESIGN.md is authoritative for everything else. The MCP keeps the two in sync; it does
-not replace the written spec, and reading Figma is how you check DESIGN.md rather than the reverse.
+On authority, see the chain under **Design system** — and note that this section was written while
+Figma was still the source of truth. **Since phase 2 it is a reference rather than an authority**:
+code is truth for values, DESIGN.md for rules. So the MCP no longer keeps anything in sync, reading
+Figma is no longer how you check DESIGN.md, and writing tokens back into it is maintaining a
+historical record — do that only when Andy asks.
+
+**None of which makes it less worth reading.** `get_metadata` and `get_screenshot` over the component
+boards are the primary way to find out what a phase 4 component is actually made of, and that stays
+true for the whole build. Demoting Figma removed its vote, not its content.
 
 **Never use Figma's design-to-code tooling** — `get_design_context`, `add_code_connect_map`,
 `get_code_connect_suggestions`, `send_code_connect_mappings`. Decided 2026-07-28. It is the Figma
@@ -201,8 +233,11 @@ and CSS would bypass the hands-on work Andy is doing this for. Reading a node fo
 discussing it is fine; generating code from it is not. Do not propose it as a shortcut.
 
 **Do** use it for:
-- `get_variable_defs` — read variables and diff them against DESIGN.md. Offer this after Andy has
-  had a Figma session; it has already caught six divergences.
+- `get_variable_defs` — read variables and diff them against DESIGN.md. This caught six divergences
+  while Figma was live, and the final full diff at the start of phase 2 found all 105 variables in
+  agreement. **Now that Figma no longer holds authority over values there is nothing left to sync**, so
+  reach for this only to answer a historical question — *what did this used to be?* — never as a
+  routine check. This retires the variable diff specifically; it says nothing about reading the boards.
 - `get_metadata` / `get_screenshot` — read structure and see the design to give grounded feedback.
 - `download_assets` — pull SVGs and images out for use as real site assets.
 - `use_figma` — write tokens and text styles back into Figma from DESIGN.md. Andy has approved
