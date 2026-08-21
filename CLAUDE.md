@@ -126,6 +126,11 @@ Current direction → Deploy shape, and is written in phase 6.
   no page-level stylesheets, and no import chain — that structure belonged to the 11ty build and is
   deliberately not carried forward.
 - All font sizing in `rem`, never `px`.
+- **Never write a font family name in CSS. Use `var(--font-prose)` or `var(--font-heading)`.** Astro's
+  Fonts API scopes the family it registers — the real name is `Lato-c04d3693128bd5b6`, not `Lato` — so
+  `font-family: 'Lato'` matches nothing and **fails silently**, falling through to a system default
+  that looks plausible. This already caught the specimen page's inline SVG. It applies to SVG
+  presentation attributes too, where `font-family="…"` takes no `var()`; use `style="font-family: …"`.
 - Andy maintains a **parallel design system in Figma** (variables + text styles). CSS mirrors that
   two-layer idea: **primitive tokens** and **semantic role styles** that reference them.
 - Linked Data matters here. Semantics and structured markup are first-class concerns, not
@@ -309,12 +314,10 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
    `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
 
-   **One cache-header constraint from phase 2:** the subset fonts live in `web-next/public/fonts/`,
-   so they ship at **stable, unhashed URLs**. Astro hashes what it processes from `src/`; `public/`
-   is copied verbatim. That was chosen deliberately — re-subsetting is a once-a-decade job at most,
-   and importing fonts through `src/` to get hashed URLs would mean threading those URLs into the
-   preload tags. The consequence is that fonts must get a **long but bustable** `max-age`, **never
-   `immutable`**, because there is no hash to change. If they are ever re-subset, rename the files.
+   **Fonts can take `immutable`.** An earlier note here warned they could not, because they shipped
+   from `public/` at unhashed URLs. They now go through Astro's Fonts API from
+   `web-next/src/assets/fonts/` and are emitted hashed into `_astro/fonts/`, so
+   `max-age=31536000, immutable` is safe for that directory alongside the rest of `_astro/`.
 7. **Cleanup.** Deliberately after the site is live, so none of it can destabilize a launch, and
    before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
    still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:
@@ -350,10 +353,10 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
      it can serve stale HTML indefinitely to anyone who already has it. Ship it with a documented
      unregister path.
 
-   Also the home for **fallback metric-matching** (`size-adjust`, `ascent-override`) if FOUT severity
-   turns out to warrant it. `font-display: swap` accepts FOUT by design — preload narrows the window
-   but never closes it — and metric overrides shrink the reflow rather than hiding it. Measure before
-   adding; don't guess at the numbers.
+   **Fallback metric-matching is already done** and is no longer a phase 8 item. It was listed here
+   while the `@font-face` rules were hand-written; adopting Astro's Fonts API brought it for free, via
+   `optimizedFallbacks`. `font-display: swap` still accepts FOUT by design and preload only narrows
+   the window — but the reflow when the swap happens is now matched rather than raw.
 
 ### Deploy shape — static production, SSR preview, one droplet
 
@@ -579,17 +582,33 @@ What remains is infrastructure, content-model constraints, and one measured inpu
   sibling margins rather than `gap`. This is a constraint on the markup, not a preference — see
   DESIGN.md and docs/decisions/layout.md.
 
-**Measured input for phase 2 (fonts):**
+**Fonts — settled in phase 2, recorded because the shape is easy to undo by accident:**
 
-- **2.7 MB of unsubset fonts, and the files carry over even though the CSS does not.** All four
-  variable files declare `font-stretch: 100%`, so the `wdth` axis is paid for and unusable — subset
-  it out. The body font was not preloaded at all, and `@font-face` used the obsolete
-  `format('woff2 supports variations')` syntax.
-- **~780 KB of that is pure deletion, no tooling needed.** Open Sans (two files, 591 KB) is dropped
-  because DESIGN.md never mentions it. **`Lato-Medium.woff2` (208 KB) has no consumer at all** — not
-  merely an over-preload, which is how this entry read until phase 2 measured it. DESIGN.md's only
-  `fontWeight: 500` role is `display`, which is *Noto Serif* and covered by its variable axis; Lato
-  Medium appears in no Figma text style either. DESIGN.md uses Lato at 400 and 700 only.
-- **The actual subsetting job is the two Noto Serif files** — 1.99 MB of the 2.7 MB total, and where
-  the whole win is. Both stay: the italic carries `<em>` in prose. The Lato pair is 28 KB each,
-  already latin-subset from Google Fonts, and likely needs no work.
+`web/assets/fonts/` held **2.7 MB** across six files. `web-next` ships **154 KB** across four, and the
+old files stay where they are — `web/` is frozen.
+
+- **Two families, four faces.** Noto Serif roman and italic (variable `wght 100–900`), Lato 400 and
+  700. Open Sans was dropped because DESIGN.md never mentions it, and `Lato-Medium.woff2` because it
+  had **no consumer at all** — DESIGN.md's only `fontWeight: 500` role is `display`, which is *Noto
+  Serif* and covered by its variable axis. Together those two were ~780 KB of pure deletion.
+- **Astro's Fonts API with the `local` provider**, configured in `web-next/astro.config.mjs`, with
+  `<Font>` in `BaseLayout`. `local` rather than `google` on purpose: a downloading provider would be
+  cold on every CI run, the same problem recorded against Content Layer and the image cache. What it
+  buys over hand-written `@font-face` is **`optimizedFallbacks`** — a metric-matched fallback face per
+  weight, derived from the real font metrics.
+- **`--font-prose` and `--font-heading` are declared by Astro, not by `tokens.css`.** Don't re-declare
+  them there; it would shadow the matched fallback, which is the point of the arrangement.
+- **Latin only. There is no Extended-A tier, and reintroducing one would be a regression.** An earlier
+  build shipped one for Noto Serif and none for Lato, so a Czech or Hungarian name rendered in real
+  Noto Serif in a paragraph and in Helvetica in a heading. Those characters now fall to the
+  metric-matched fallback in **both** families, which is uniform and costs nothing.
+- **`fallbacks` lists only the generic** (`serif` / `sans-serif`). Astro builds the matched face
+  against the generic's canonical font — Times New Roman, Arial — whatever is named ahead of it, and
+  that face resolves through `local()`. So any named family in the list sits behind a face that has
+  already matched and is unreachable. Georgia and Helvetica Neue were both there, both dead.
+- **`web-next/scripts/subset-fonts.sh` regenerates the four files** and is run by hand, never by the
+  build. It pins `wdth=100` out of the Noto Serif variable files before subsetting, because DESIGN.md
+  never uses a narrow width. It also pins `SOURCE_DATE_EPOCH`: fontTools stamps `head.modified` with
+  the current time, and that 4-byte change perturbs woff2 compression enough that two runs on
+  identical input produced 48016 and 48052 bytes. Without it, "the committed files are reproducible"
+  is false.

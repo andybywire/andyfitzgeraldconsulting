@@ -11,6 +11,8 @@
  * concatenates them into a single emitted asset, so the file split is source
  * organization with no delivery cost.
  */
+import {Font} from 'astro:assets'
+
 import '../styles/tokens.css'
 import '../styles/base.css'
 
@@ -55,33 +57,22 @@ const {title, description} = Astro.props
 
     {
       /*
-      Preload only the faces that paint above the fold on essentially every
-      page: prose (Noto Serif 400), headings (Lato 700), and nav/masthead
-      chrome (Lato 400). 104 KB of the 200 KB total.
+      Each <Font> emits its family's @font-face rules — including the
+      metric-matched fallback faces Astro derives from the real font metrics —
+      plus the preload links, which carry `crossorigin` automatically. That
+      attribute is required even same-origin: the CSS font loader always fetches
+      in anonymous CORS mode, so a preload without it does not match and the
+      font downloads TWICE. Worth knowing, since nothing here says it any more.
 
-      Deliberately NOT preloaded: the italic, which serves only <em> and
-      captions, and both Extended-A tiers, which `unicode-range` already makes
-      conditional — the browser fetches them only if the page contains one of
-      those characters.
-
-      `crossorigin` is REQUIRED even though these are same-origin. The CSS font
-      loader always fetches in anonymous CORS mode, so a preload made without
-      it does not match and the font is downloaded TWICE.
-
-      A preload is a mandatory high-priority fetch competing with the HTML and
-      CSS, which is why this list is short. Adding the other three would make
-      these three arrive later.
+      Preload only what paints above the fold on essentially every page. The
+      Noto Serif filter excludes the ITALIC, which serves only <em> and
+      captions; Lato takes both weights because 700 sets headings and 400 sets
+      nav and masthead chrome. A preload is a mandatory high-priority fetch
+      competing with the HTML and CSS, so this list stays short.
     */
     }
-    <link
-      rel="preload"
-      href="/fonts/noto-serif-latin.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin
-    />
-    <link rel="preload" href="/fonts/lato-bold.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/lato-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <Font cssVariable="--font-prose" preload={[{style: 'normal'}]} />
+    <Font cssVariable="--font-heading" preload />
 
     <title>{title}</title>
     {description && <meta name="description" content={description} />}

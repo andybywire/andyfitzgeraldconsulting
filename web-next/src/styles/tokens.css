@@ -103,16 +103,14 @@
   --color-error-line: var(--error-500);
   --color-error-text: var(--error-600);
 
-  /* ── Font stacks ───────────────────────────────────────────────────────── */
-  /* Two families only. A typographic ROLE is a bundle of properties and so
-     becomes a rule in base.css, but the family within it is a single value, so
-     it stays a token rather than being retyped in every rule.
-     Lato's fallbacks carry more weight than usual: Google's Lato contains only
-     24 of the 128 Latin Extended-A codepoints, so a Czech, Hungarian, Turkish
-     or Romanian name in a heading renders that letter from Helvetica or Arial.
-     Noto Serif covers all 128, so the same name in prose is fine. */
-  --font-prose: 'Noto Serif', Georgia, 'Times New Roman', serif;
-  --font-heading: Lato, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  /* ── Font stacks — NOT declared here ───────────────────────────────────── */
+  /* --font-prose and --font-heading are declared by ASTRO, not by this file, and
+     deliberately so. `fonts` in astro.config.mjs owns the two families and the
+     <Font> components emit the variables, so each stack arrives with the
+     metric-matched fallback face Astro derives from the real font metrics — a
+     value we could not write by hand without measuring the fonts ourselves.
+     Declaring them here too would shadow that, and the fallback is the point.
+     base.css consumes them exactly as if they were local. */
 
   /* ── Type scale — 18px base, ratio 1.25, fluid 375 → 1200px ────────────── */
   /* Steps 0 and 1 are static: 1 is the legibility floor, 0 is chrome only.

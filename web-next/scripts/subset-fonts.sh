@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 #
-# Build web-next/public/fonts/ from the upstream font files.
+# Build web-next/src/assets/fonts/ from the upstream font files.
 #
 # Run by hand, not by the build. The outputs are committed, so this only needs
-# re-running if the range changes or an upstream font is replaced.
+# re-running if the range changes or an upstream font is replaced. Astro's Fonts
+# API consumes these files through the `local` provider and hashes them into
+# _astro/fonts/, which is why they live in src/ rather than public/ — a file in
+# public/ would be copied verbatim AND emitted hashed, shipping both.
 #
 #   ./web-next/scripts/subset-fonts.sh [SRC_DIR]
 #
@@ -23,43 +26,49 @@
 #     survives in full, which is what `font-weight: 100 900` needs.
 #
 #  2. pyftsubset drops unreferenced glyphs, rewrites cmap, and prunes GSUB/GPOS
-#     to rules touching surviving glyphs. This is the lever: 3,783 glyphs -> 362
-#     for the latin tier. Greek, Cyrillic, Vietnamese and phonetics all go.
+#     to rules touching surviving glyphs. This is the lever: 3,783 glyphs -> 362.
+#     Greek, Cyrillic, Vietnamese and phonetics all go.
 #
-# ── Why two tiers ─────────────────────────────────────────────────────────────
+# ── Latin only, deliberately — there is no Extended-A tier ────────────────────
 #
-# `latin` is always fetched. `latin-ext` is Latin Extended-A only, and exists so
-# Central/Eastern European author names (Čapek, Erdős, Łukasiewicz) don't fall
-# back to a system serif mid-word. Because the @font-face carries a
-# `unicode-range`, a reader who never encounters one of those letters downloads
-# zero bytes of it.
+# An earlier version shipped a second `latin-ext` tier on a disjoint
+# unicode-range, so a Central/Eastern European name (Capek, Erdos, Lukasiewicz)
+# got real Noto Serif rather than a system serif. It was dropped, and the reason
+# is worth keeping: it only ever covered PROSE. Lato had no ext tier, because
+# Google's Lato carries just 24 of the 128 Extended-A codepoints -- so the same
+# name rendered in real Noto Serif in a paragraph and in Helvetica in a heading.
 #
-# The two ranges MUST NOT overlap. Where they do, font matching between equal
-# faces is decided by declaration order rather than by range, which is
-# ambiguous by construction. So the ext range is carved around the four
-# Extended-A codepoints the latin tier already claims: U+0131 (Turkish dotless
-# i), U+0152-0153 (OE ligature) and U+0178 (Y diaeresis).
+# Astro's `optimizedFallbacks` closed the gap from the other side. It reads each
+# face's real metrics and emits a metric-matched fallback @font-face, so those
+# characters now fall back consistently in BOTH families, scaled to match the
+# webfont's x-height. Uniform behavior beats a tier that fixed half the problem
+# for 40 KB. See CLAUDE.md, Fonts.
 #
 # Lato is copied through unchanged. Both files are already latin-subset from
 # Google Fonts at 28 KB each, so there is nothing to win.
 #
 set -euo pipefail
 
+# Reproducibility. fontTools stamps `head.modified` with the current time, and
+# that 4-byte change perturbs woff2 compression enough to move the output by tens
+# of bytes: two runs of this script produced 48016 and 48052 bytes for the same
+# input before this was pinned, which made "the committed files are reproducible"
+# false. SOURCE_DATE_EPOCH is fontTools' own hook for it. The value is arbitrary
+# but must not change, or every output moves. Verified: two consecutive runs now
+# produce byte-identical files.
+export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1136073600}"
+
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SRC="${1:-$REPO/web/assets/fonts}"
-OUT="$REPO/web-next/public/fonts"
+OUT="$REPO/web-next/src/assets/fonts"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-# Always fetched: ASCII + Latin-1 Supplement (all Spanish and French accents),
+# ASCII + Latin-1 Supplement (all Spanish and French accents),
 # OE ligature, Y diaeresis, General Punctuation, and a few marks and symbols.
 LATIN='U+0000-00FF,U+0131,U+0152-0153,U+0178,U+02BB-02BC,U+02C6,U+02DA,U+02DC'
 LATIN+=',U+0304,U+0308,U+0329,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193'
 LATIN+=',U+2212,U+2215,U+FEFF,U+FFFD'
-
-# Fetched only on demand: Latin Extended-A, carved around the four codepoints
-# above so the two ranges are disjoint.
-EXTA='U+0100-0130,U+0132-0151,U+0154-0177,U+0179-017F'
 
 mkdir -p "$OUT"
 
@@ -67,13 +76,10 @@ subset() {
   local src=$1 style=$2
   echo "  ${style}: pinning wdth=100"
   fonttools varLib.instancer -q -o "$TMP/$style.ttf" "$src" wdth=100
-  for tier in latin latin-ext; do
-    [ "$tier" = latin ] && local range="$LATIN" || local range="$EXTA"
-    pyftsubset "$TMP/$style.ttf" \
-      --unicodes="$range" \
-      --flavor=woff2 \
-      --output-file="$OUT/$style-$tier.woff2"
-  done
+  pyftsubset "$TMP/$style.ttf" \
+    --unicodes="$LATIN" \
+    --flavor=woff2 \
+    --output-file="$OUT/$style-latin.woff2"
 }
 
 echo "Subsetting Noto Serif from $SRC"

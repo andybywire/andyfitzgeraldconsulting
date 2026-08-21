@@ -2,7 +2,7 @@
  * Global element-level role styles. The second half of the global tier —
  * tokens.css holds the values, this holds the rules that apply them.
  *
- * SCOPE: @font-face, the theme's color-scheme, a minimal reset, h1–h4, body
+ * SCOPE: the theme's color-scheme, a minimal reset, h1–h4, body
  * prose, links, blockquote, figure, the focus-ring default, and the vertical
  * rhythm mechanism. Nothing else. Every other typographic role in DESIGN.md
  * (display, lead, small, label, nav, masthead-*, chip, tag, body-compact) is
@@ -15,78 +15,16 @@
 
 /* ── Fonts ─────────────────────────────────────────────────────────────────── */
 /*
- * Both Noto Serif files are variable on `wght` alone — the `wdth` axis was
- * pinned out at 100 during subsetting, so there is deliberately no
- * `font-stretch` here. The old build declared `font-stretch: 100%`, which paid
- * for an axis it then refused to use.
+ * There are no @font-face rules here. Astro owns them: `fonts` in
+ * astro.config.mjs declares the two families against the `local` provider, and
+ * the <Font> components in BaseLayout emit the rules, the preload links and the
+ * --font-prose / --font-heading variables this file consumes.
  *
- * `format('woff2')` is the current syntax. The old build used
- * `format('woff2 supports variations')`, which is obsolete.
- *
- * The two unicode-ranges are disjoint by construction: the ext range is carved
- * around U+0131, U+0152-0153 and U+0178, which the latin tier already carries.
- * Overlapping ranges resolve by declaration order rather than by range, which
- * is ambiguous by construction — so don't merge them into one range.
+ * That is not just less code. Astro reads each face's real metrics and emits a
+ * metric-matched fallback @font-face (size-adjust, ascent-override,
+ * descent-override), so the swap FOUT reflows far less than a raw fallback
+ * would — the one thing the hand-written version could not do.
  */
-
-@font-face {
-  font-family: 'Noto Serif';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('/fonts/noto-serif-latin.woff2') format('woff2');
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+0178, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-    U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: 'Noto Serif';
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('/fonts/noto-serif-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-0130, U+0132-0151, U+0154-0177, U+0179-017F;
-}
-
-@font-face {
-  font-family: 'Noto Serif';
-  font-style: italic;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('/fonts/noto-serif-italic-latin.woff2') format('woff2');
-  unicode-range:
-    U+0000-00FF, U+0131, U+0152-0153, U+0178, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-    U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-  font-family: 'Noto Serif';
-  font-style: italic;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url('/fonts/noto-serif-italic-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-0130, U+0132-0151, U+0154-0177, U+0179-017F;
-}
-
-/* Lato is static, one file per weight — DESIGN.md uses 400 and 700 only. No
-   unicode-range: each file is a single Google latin subset and there is no ext
-   companion worth shipping (its latin-ext file duplicates what latin holds). */
-@font-face {
-  font-family: 'Lato';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/lato-regular.woff2') format('woff2');
-}
-
-@font-face {
-  font-family: 'Lato';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/lato-bold.woff2') format('woff2');
-}
 
 /* ── Theme ─────────────────────────────────────────────────────────────────── */
 /*
