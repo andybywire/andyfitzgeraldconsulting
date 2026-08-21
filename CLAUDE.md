@@ -499,10 +499,11 @@ What remains is infrastructure, content-model constraints, and one measured inpu
 
 **Content-model constraints the new front end inherits:**
 
-- **`h5` is author-selectable in Sanity and does not exist in DESIGN.md.** The design system defines
-  `h1`–`h4` and stops there deliberately — below h3 size is no longer a usable signal. So either the
-  Portable Text schema drops `h5`, or the system needs a role for it. **`h4` already appears in
-  published content**, so it must render correctly from day one. Decide in phase 1, with the schema.
+- **`h5` was dropped from the schema in phase 1** — `article`, `caseStudy` and `singleton` offer
+  `h1`–`h4` only, matching DESIGN.md, so no h5 role is needed. `h4` renders from day one in
+  `web-next/src/styles/base.css`. **One residue: dropping the style from the schema does not remove it
+  from the data.** Any block already published as `h5` still carries that style and would render
+  unstyled. Unverified — worth one query against `production-26` at the phase 5 parity check.
 - **Portable Text emits a flat sequence with no section wrappers**, which is why vertical rhythm is
   sibling margins rather than `gap`. This is a constraint on the markup, not a preference — see
   DESIGN.md and docs/decisions/layout.md.

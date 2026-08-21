@@ -429,7 +429,7 @@ in the front matter; the reasoning is in [docs/decisions/color.md](docs/decision
 | Role | Use |
 |---|---|
 | `text` | body prose, and anything with no reason to differ |
-| `text-heading` | document headings, h1–h3 |
+| `text-heading` | document headings, h1–h4 |
 | `text-title` | block-level link titles — card titles, list headings |
 | `text-muted` | captions, labels, metadata — apparatus around the content |
 | `text-lead` | the lead paragraph |
