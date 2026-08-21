@@ -1,0 +1,92 @@
+---
+/**
+ * The phase 2 shell — NOT the real layout.
+ *
+ * It exists to load the global tier and set the theme before first paint. The
+ * grid, masthead, footer and band system are phase 3 and belong to whoever
+ * writes the layout mechanics; this file should stay boring.
+ *
+ * Both stylesheets are imported here rather than in a page, so the global tier
+ * loads exactly once for every route. Neither sheet imports the other: Rollup
+ * concatenates them into a single emitted asset, so the file split is source
+ * organization with no delivery cost.
+ */
+import '../styles/tokens.css'
+import '../styles/base.css'
+
+interface Props {
+  title: string
+  description?: string
+}
+
+const {title, description} = Astro.props
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    {
+      /*
+      Theme, resolved BEFORE anything paints.
+
+      `is:inline` is load-bearing. Without it Astro treats this as a module and
+      bundles it, which gives it `defer` semantics — it would run after the
+      document is parsed, so the page would paint in the wrong theme and then
+      correct itself. That flash is the exact failure the three-block CSS in
+      tokens.css was written to avoid, and deferring this script reintroduces it.
+
+      Only an explicit choice sets the attribute. Following the system means
+      leaving `data-theme` ABSENT, so the `prefers-color-scheme` block applies
+      untouched — which is why there is no `else` here.
+
+      try/catch because reading localStorage THROWS outright (not returns null)
+      when storage is blocked, e.g. Safari with cross-site tracking prevention
+      in some embedded contexts. An exception here would break the whole page.
+    */
+    }
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('theme')
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
+      } catch {}
+    </script>
+
+    {
+      /*
+      Preload only the faces that paint above the fold on essentially every
+      page: prose (Noto Serif 400), headings (Lato 700), and nav/masthead
+      chrome (Lato 400). 104 KB of the 200 KB total.
+
+      Deliberately NOT preloaded: the italic, which serves only <em> and
+      captions, and both Extended-A tiers, which `unicode-range` already makes
+      conditional — the browser fetches them only if the page contains one of
+      those characters.
+
+      `crossorigin` is REQUIRED even though these are same-origin. The CSS font
+      loader always fetches in anonymous CORS mode, so a preload made without
+      it does not match and the font is downloaded TWICE.
+
+      A preload is a mandatory high-priority fetch competing with the HTML and
+      CSS, which is why this list is short. Adding the other three would make
+      these three arrive later.
+    */
+    }
+    <link
+      rel="preload"
+      href="/fonts/noto-serif-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="preload" href="/fonts/lato-bold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/lato-regular.woff2" as="font" type="font/woff2" crossorigin />
+
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
