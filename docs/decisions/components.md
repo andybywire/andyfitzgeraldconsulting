@@ -18,7 +18,7 @@ the page, never against the previous step.
 or darker — `blue-400` is only 4.08 under white — and on a near-black page every legal step from there
 moves *toward* the page: 3.33 → 2.32 → 1.78. **A white-text accent fill on a near-black page has no
 working interaction ramp at any values.** Structural dead end, not a tuning problem. See
-[colour.md](colour.md) for the theme-wide consequence.
+[color.md](color.md) for the theme-wide consequence.
 
 **The light-ground button has no border, and that is a specification rather than an omission.** It
 carried a white 1px stroke for a while, invisible against the `#f9fafb` ground at 1.05 — so it went
@@ -28,16 +28,16 @@ a border.
 **On an accent band the button cannot lighten while keeping white text, so it inverts instead.** The
 window is genuinely empty: white text survives only to L 41%, where the fill sits 1.23 against the
 band and is invisible against it; separating from the band needs L ≥ 80%, where white text is at 1.53.
-So the ghost goes **outline → solid white → grey**, three maximally distinct states rather than a
+So the ghost goes **outline → solid white → gray**, three maximally distinct states rather than a
 tonal ramp.
 
 ---
 
-## The focus ring is stated by relationship, not by fixed colours
+## The focus ring is stated by relationship, not by fixed colors
 
 > **Inner ring contrasts with the control; outer ring contrasts with the surface.**
 
-The same two colours in both contexts, order swapped — 5.67 / 5.42 on light, 5.67 / 5.67 on the band.
+The same two colors in both contexts, order swapped — 5.67 / 5.42 on light, 5.67 / 5.67 on the band.
 
 **Rejected: a fixed inner-white / outer-accent ring.** It **fails on the accent band**, where the
 white inner merges with the white ghost button and the accent outer merges with the band. Stating the
@@ -82,7 +82,7 @@ accompanies it.
 **Rejected: the accent for tags.** It read too pressable. A filled accent pill with white text is
 structurally the *selected* filter chip, so on an index a tag and a selected chip would have looked
 alike while meaning different things. A tag has no hover, no pressed and no focus, and those variants
-were **deleted rather than specified**, because they would document behaviour that cannot occur.
+were **deleted rather than specified**, because they would document behavior that cannot occur.
 
 If tags ever become links to a topic archive they need hover and focus, and a link needs them at 4.5.
 

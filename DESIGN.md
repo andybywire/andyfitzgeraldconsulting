@@ -4,7 +4,7 @@ name: Andy Fitzgerald Consulting
 description: >-
   Typography-driven design system for andyfitzgeraldconsulting.com. Values here are
   the specification for the build; the Figma library (pPZPGT6EpSaLkoUDK8HMMp) is the
-  source of truth for colour roles. Desktop values are canonical — see Layout for the
+  source of truth for color roles. Desktop values are canonical — see Layout for the
   mobile variants and Typography for the fluid clamps.
 
 colors:
@@ -205,7 +205,7 @@ spacing:
   # `--rhythm-band`, `card-pad` → `--card-pad`. TWO EXCEPTIONS, both deliberate:
   #   border-hairline → --border-width-hairline
   #   border-quote    → --border-width-quote
-  # so that a stroke's WIDTH cannot collide with its COLOUR — `color/border-quote` already emits
+  # so that a stroke's WIDTH cannot collide with its COLOR — `color/border-quote` already emits
   # `--color-border-quote`. Verified against Figma codeSyntax 2026-08-20. See docs/figma-notes.md.
   #
   # ── Primitives — one body line box (32.4px) rounded to 32, then quartered ──
@@ -393,7 +393,7 @@ substantial articles and describing consulting services, reframed from "consulta
 "engaged professional's digital home."
 
 The surface is **typography-driven and lightly styled**. Long-form reading is the primary job and
-everything else is chrome around it: one accent colour, no shadows, no illustration, hierarchy carried
+everything else is chrome around it: one accent color, no shadows, no illustration, hierarchy carried
 by type, space and a hairline border. **When two options are equally defensible, the quieter one
 wins.**
 
@@ -401,11 +401,11 @@ Everything is **hand-authored CSS and HTML** — native nesting, no preprocessor
 no component library. A project goal, not an implementation detail.
 
 **Two layers.** Primitives name *values* (`blue-500`, `space-4`); semantic roles name *uses*
-(`accent`, `rhythm-paragraph`). A semantic colour or size is genuinely one value, so it stays a token.
+(`accent`, `rhythm-paragraph`). A semantic color or size is genuinely one value, so it stays a token.
 A semantic *text* role is a bundle of applied properties, so in CSS it becomes a rule — `h2 { … }` —
 not a variable. **Do not collapse that distinction.**
 
-**Where things live.** The Figma library `pPZPGT6EpSaLkoUDK8HMMp` is the source of truth for colour
+**Where things live.** The Figma library `pPZPGT6EpSaLkoUDK8HMMp` is the source of truth for color
 roles; this file reflects it and is authoritative for everything else.
 
 - **[docs/decisions/](docs/decisions/)** — why the system is the way it is. Read a record only when a
@@ -416,7 +416,7 @@ roles; this file reflects it and is authoritative for everything else.
 ## Colors
 
 One accent, a neutral ramp derived from it, and an error hue deliberately far from both. Values are
-in the front matter; the reasoning is in [docs/decisions/colour.md](docs/decisions/colour.md).
+in the front matter; the reasoning is in [docs/decisions/color.md](docs/decisions/color.md).
 
 - **Accent `#326e85` (`blue-500`)** — brand surfaces, buttons, link hover. It is the lightest step in
   this hue that carries white text at AA (5.67), and almost everything else follows from that.
@@ -444,8 +444,8 @@ the light/dark asset swap belongs in CSS on the front end.
 
 ### Links
 
-**Inline links take body text colour with a persistent underline**, moving to `link-hover` on hover.
-The underline rather than the colour carries the affordance, which satisfies WCAG 1.4.1.
+**Inline links take body text color with a persistent underline**, moving to `link-hover` on hover.
+The underline rather than the color carries the affordance, which satisfies WCAG 1.4.1.
 **Block-level link titles take `text-title` with no underline** — a title in its own block at heading
 size is identified as a link by position.
 
@@ -491,7 +491,7 @@ ones — and a theme is one CSS override block, where a viewport twin is a real 
 **Dark is not a mechanical inversion of light, and two of its rules will surprise you.** Contrast is
 non-linear, so mirrored steps give unmirrored ratios; and the accent family inverts to dark text on
 light fills rather than keeping white text. Both follow from measurement — **read
-[the record](docs/decisions/colour.md) before changing a dark value.**
+[the record](docs/decisions/color.md) before changing a dark value.**
 
 ## Typography
 
@@ -552,7 +552,7 @@ differ only in leading.
 | **Noto Serif, every size** | **0%** | `display`, `lead`, `body`, `small`, `caption` |
 
 **h4 has no size step left** — it differentiates by family + weight + tracking. If it reads as bold
-body text the levers are uppercase, small caps, colour or a rule, **not** a smaller size.
+body text the levers are uppercase, small caps, color or a rule, **not** a smaller size.
 
 ### Measure
 
@@ -573,7 +573,7 @@ article.detail :where(p, ul, ol, blockquote, figure) { max-width: 66ch; }
 
 **12 columns, 996px content, 222px margins at 1440.** Detail-page prose is **8 columns = 656px**; the
 right rail is one skipped column away. Both ends close exactly, at 1440 and at the 375 floor — don't
-nudge the numbers. Grids stretch rather than centre. Reasoning in
+nudge the numbers. Grids stretch rather than center. Reasoning in
 [docs/decisions/layout.md](docs/decisions/layout.md).
 
 ### Grid owns horizontal, rhythm owns vertical
@@ -716,7 +716,7 @@ not 48 and 24.
 
 **The light-ground button has no border.** Only the accent-band ghost takes one, and it takes
 `border-on-accent`. On a band the ghost cannot lighten while keeping its label legible, so it inverts:
-**outline → solid white → grey**.
+**outline → solid white → gray**.
 
 **Filter chips.** Rest is a surface with a control border; hover and pressed tint toward the accent;
 selected is a filled accent pill. **The chip border is its own role, not the card hairline** — a card
@@ -732,11 +732,11 @@ state that cannot occur.
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
 **not margin** — the bar sits at the box edge, so a margin would put the gap outside it.
 
-**The focus ring is stated by relationship, not by fixed colours:**
+**The focus ring is stated by relationship, not by fixed colors:**
 
 > **Inner ring contrasts with the control; outer ring contrasts with the surface.**
 
-The same two colours in both contexts, order swapped. In CSS:
+The same two colors in both contexts, order swapped. In CSS:
 `box-shadow: 0 0 0 2px <inner>, 0 0 0 4px <outer>`.
 
 **The page header is one component with an optional lead**, and the boolean is required by the rail
@@ -748,9 +748,9 @@ component, so pages legitimately differ there.
 The build checklist. Each rule stands on its own; the link is the reasoning, for when a rule is being
 questioned rather than followed.
 
-**Colour** — [record](docs/decisions/colour.md)
+**Color** — [record](docs/decisions/color.md)
 
-- **Don't** infer lightness from a colour step number — `blue-500` is the accent at L 36%.
+- **Don't** infer lightness from a color step number — `blue-500` is the accent at L 36%.
 - **Do** verify novel pairings against **four combinations**: ground and card, in each theme.
 - **Don't** carry a light rule of thumb into dark. *"`blue-500` or darker always passes"* is true on
   light and **false on dark**, where `blue-500` reaches 3.33 on the ground and `neutral-700` is the
@@ -759,13 +759,13 @@ questioned rather than followed.
   clears AA; on dark nothing blue does.
 - **Don't** use `neutral-600` for text on light — its one sanctioned light job is a control boundary.
   In dark it is `disabled-text`, where low contrast is the point.
-- **Do** pick a colour role by name, never by value — two pairs render identically on light and have
+- **Do** pick a color role by name, never by value — two pairs render identically on light and have
   already produced wrong bindings.
 - **Don't** treat the disabled states' low contrast as a bug. Disabled is exempt (WCAG 1.4.3, 1.4.11)
   and the low contrast *is* the signal — but read the guardrail as being about the *pairing*, not
-  which side the colour sits on.
-- **Do** identify errors in text, never by colour alone (WCAG 3.3.1).
-- **Don't** add success or warning colours until a state is actually designed.
+  which side the color sits on.
+- **Do** identify errors in text, never by color alone (WCAG 3.3.1).
+- **Don't** add success or warning colors until a state is actually designed.
 
 **Typography** — [record](docs/decisions/typography.md)
 
@@ -775,14 +775,14 @@ questioned rather than followed.
 - **Do** keep every `clamp()` preferred value `rem`-dominant, ~85% for body. A `vw`-dominant value
   locks the reader's font-size preference.
 - **Don't** add a size step below 16px for reading text. The levers for a smaller-feeling role are
-  weight, tracking, colour and italic.
+  weight, tracking, color and italic.
 - **Do** give headings their own `ch` value if capping them at all — `ch` resolves against each
   element's own font.
 
 **Layout** — [record](docs/decisions/layout.md)
 
 - **Do** cap measure with `max-width` on existing left-aligned grid items. **Don't** introduce a
-  `.prose` container — it re-centres the measure and moves the left edge of text between page types.
+  `.prose` container — it re-centers the measure and moves the left edge of text between page types.
 - **Do** pick a spacing token by prefix first, then by name. **Never** by value — four values are
   shared by two or more roles.
 - **Do** let the wide column fill and pin only the narrow one. **Don't** let a rail size itself from
@@ -795,7 +795,7 @@ questioned rather than followed.
 
 - **Do** check an interaction ramp's direction against **the page**, never the previous step.
 - **Do** state the focus ring as a relationship — inner contrasts the control, outer contrasts the
-  surface. A fixed colour pair fails on the accent band.
+  surface. A fixed color pair fails on the accent band.
 - **Don't** give tags hover, pressed or focus states. They are markers, not controls.
 
 ## Open questions

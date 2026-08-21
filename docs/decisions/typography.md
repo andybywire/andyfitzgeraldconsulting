@@ -29,7 +29,7 @@ minimum for captions — and **the ratio cannot be lowered to fix it.** Keeping 
 base caps the ratio at 1.125, which would put step 6 at 28.8px and leave no display size at all.
 
 The consequence is paid at the small end: body:small compresses from 1.25 to **1.125**, so captions
-read as slightly-smaller body rather than clearly subordinate. They lean on italic and muted colour
+read as slightly-smaller body rather than clearly subordinate. They lean on italic and muted color
 instead, which is why `caption` is italic rather than merely smaller.
 
 `size/0` (14px, chip and tag labels) sits below the floor deliberately — the floor is about *reading*
@@ -104,7 +104,7 @@ heading ramp's 1.2 however short it gets.
 **The serif is never tracked.** `display` was originally specified at −0.5%, scaled down from Lato's
 −1.5% on the reasoning that "a serif needs less." Three reasons 0% is the better answer:
 
-- Negative tracking compensates for spacing optimised for *reading* sizes and only earns its keep
+- Negative tracking compensates for spacing optimized for *reading* sizes and only earns its keep
   above roughly 50–60px. At 35px a face is barely into display territory.
 - Noto Serif's spacing is deliberately generous, and tightening closes its counters.
 - Serifs already create horizontal connection between letters.
@@ -117,7 +117,7 @@ h4 sits at body size and differentiates by **family + weight + tracking** — La
 size stops being a usable signal: any step small enough to sit between h3 and body is too close to
 body to read as a heading.
 
-**If it reads as bold body text, the levers are uppercase, small caps, colour or a hairline rule —
+**If it reads as bold body text, the levers are uppercase, small caps, color or a hairline rule —
 not a smaller size step.**
 
 ---
@@ -133,7 +133,7 @@ character count: **~664px at 18px** where it was 738px at 20px.
 primary mechanism.
 
 **Rejected: a `.prose` grid container.** It was prototyped and it worked — pixel-exact alignment,
-measure/wide/full tiers, `subgrid` full-bleed panels — but it **re-centred the measure, which moved
+measure/wide/full tiers, `subgrid` full-bleed panels — but it **re-centered the measure, which moved
 the left edge of text between page types.** That is a whole-site layout decision, and it was being
 driven by one page's measure requirement. It also assumed detail pages had no right-column content,
 which is false: case studies carry both rail relationships. **Don't revive it outside an explicit
@@ -147,11 +147,11 @@ is capped with no layout disruption and no template change.
 ## Two smaller rules
 
 **`caption` is italic serif.** A caption reads as part of the reading matter, not apparatus around it,
-and the italic plus muted colour do the subordinating the size step can no longer do — body:small is
+and the italic plus muted color do the subordinating the size step can no longer do — body:small is
 only 1.125 on this scale. Figma renders it roman purely because Noto Serif Italic is not installed
 there; the site ships the italic face.
 
 **A role may occupy a different step per viewport, but only where the layout jumps.**
 `masthead-name` is the one case — step 4 desktop, step 5 mobile — acceptable only because the
-element's *job* changes at that breakpoint, from a left lockup beside the nav to a centred standalone
+element's *job* changes at that breakpoint, from a left lockup beside the nav to a centered standalone
 wordmark. **It would never be acceptable for body text**, which does the same job at every width.

@@ -20,7 +20,7 @@ with 8-column prose, or 1200 with 7-column prose — so it constrained the *colu
 This is the corollary that keeps one page's reading requirement from setting the whole site's
 geometry.
 
-**Layout grids stretch rather than centre.** A centred grid fixes the column width and lets the
+**Layout grids stretch rather than center.** A centered grid fixes the column width and lets the
 margins float; stretching fixes the margin and lets the columns flex, which is what
 `minmax(1rem, …)` gutters against `1fr` columns produce.
 
@@ -105,7 +105,7 @@ suggest.
 **`rhythm-band` and `rhythm-section` are two values of one property**, not two properties: both are a
 band's vertical padding, and `section` is the heavier choice for a band opening a new page region.
 Bands stack at gap 0, so band-to-band space is simply two paddings. **Which of the two a band takes is
-decided by how it reads, not by a rule** — the Hero takes `band` despite being a coloured
+decided by how it reads, not by a rule** — the Hero takes `band` despite being a colored
 self-contained region, because 96 read as too much air above a three-line statement. Expect to try
 both and look.
 

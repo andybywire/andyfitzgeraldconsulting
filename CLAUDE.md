@@ -35,7 +35,7 @@ work is worth his hands.
 | **You write** | tokens transcribed from DESIGN.md, boilerplate, config, repetitive sweeps, query modules — anything mechanical |
 | **Andy writes** | **layout mechanics, the cascade, component boundaries**, plus content model, URL design and semantics |
 
-For the second row: explain the reasoning and the underlying platform behaviour, then let him write
+For the second row: explain the reasoning and the underlying platform behavior, then let him write
 it. He may delegate one of these once he has the concept, but **let him offer** — don't assume, and
 don't do it for him.
 
@@ -139,13 +139,13 @@ Current direction → Deploy shape, and is written in phase 6.
 
 **[DESIGN.md](DESIGN.md) is the single source for design direction** — every token value plus the
 rules that govern a build: the two-layer principle, the modular scale and its clamps, the leading
-ramp, measure, the grid, vertical rhythm, colour roles, components, and the standing do's and don'ts.
-**Read it before touching type, colour, spacing or layout, and do not restate its rules here** — a
+ramp, measure, the grid, vertical rhythm, color roles, components, and the standing do's and don'ts.
+**Read it before touching type, color, spacing or layout, and do not restate its rules here** — a
 second copy is just something to get wrong and to fall out of sync. If a design rule seems to be
 missing, add it to DESIGN.md rather than to this file.
 
 **[docs/decisions/](docs/decisions/) holds the reasoning behind settled design decisions**, split by
-theme — colour, typography, layout, components. DESIGN.md links to them. **Read a record only when a
+theme — color, typography, layout, components. DESIGN.md links to them. **Read a record only when a
 decision it covers is being questioned, excepted, or changed** — not as background for ordinary work.
 If you find yourself re-deriving a value that has a record, read the record instead. **When a decision
 changes, supersede the record rather than editing rationale back into DESIGN.md** — that growth is
@@ -155,7 +155,7 @@ what this split exists to prevent.
 work approaches one of those areas; it is not general background either.
 
 The authority chain is **Figma → DESIGN.md → CLAUDE.md**: the Figma library is the source of truth
-for colour roles, DESIGN.md reflects it and is authoritative for everything else, and this file
+for color roles, DESIGN.md reflects it and is authoritative for everything else, and this file
 defers to DESIGN.md. Figma mechanics and the constraints they impose on the system live in
 [docs/figma-notes.md](docs/figma-notes.md).
 
@@ -190,7 +190,7 @@ One habit from the scarce era is still worth keeping: **batch aggressively** —
 script can read and write in the same call, so prefer a single comprehensive script over several
 probes.
 
-On authority, see the chain under **Design system**: Figma is the source of truth for **colour
+On authority, see the chain under **Design system**: Figma is the source of truth for **color
 roles**, and DESIGN.md is authoritative for everything else. The MCP keeps the two in sync; it does
 not replace the written spec, and reading Figma is how you check DESIGN.md rather than the reverse.
 
@@ -227,7 +227,7 @@ boards, by eye. **Content parity becomes the verification instrument instead** �
 every type must render — because a changed model breaking a published document is the failure mode
 that actually bites.
 
-**Two datasets, deliberately not synchronised.** Model iteration happens on the duplicated
+**Two datasets, deliberately not synchronized.** Model iteration happens on the duplicated
 `production-26` dataset while `production` serves the live site. Migration scripts were considered
 and **declined**: Andy is publishing little or nothing before cutover, and hand-migrating one or two
 articles is cheaper than maintaining and debugging a migration suite. At cutover, `production-26`
@@ -273,7 +273,7 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    than a form target with its own display pages, since mail forms now appear on several pages.
    Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
    `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
-7. **Cleanup.** Deliberately after the site is live, so none of it can destabilise a launch, and
+7. **Cleanup.** Deliberately after the site is live, so none of it can destabilize a launch, and
    before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
    still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:
    - **Remove the deprecated `insightType` field** from `article` and `caseStudy`, and unset the
@@ -328,7 +328,7 @@ table and as the production runtime. As a runtime it trades an atomic symlink sw
 registry and container lifecycle, adds a daemon to a small droplet and one more thing to survive
 reboots, and buys scaling and onboarding this project does not need. It also complicates TLS rather
 than simplifying it: certbot must answer an HTTP-01 challenge on port 80 for the real hostname, so
-containerising means either a sidecar sharing webroot and cert volumes or host certbot with mounts —
+containerizing means either a sidecar sharing webroot and cert volumes or host certbot with mounts —
 both more moving parts than host certbot. The local-harness case was the stronger one, since
 `nginx -t` plus a curl sweep of the redirect list would close a real verification gap, but it needs
 path and version parity with the droplet to mean anything, and false confidence is worse than no test.
@@ -444,7 +444,7 @@ Astro `web-next/`, and once `next` is on pnpm the merge only produces lockfile c
 **Andy does the visual verification himself.** Get changes green and integration-verified, then hand
 him the specific eyeball steps rather than asking him to check things you could have checked.
 
-Nothing on `next` is ever deployed, so **nginx config, 301 redirects and CI build behaviour cannot
+Nothing on `next` is ever deployed, so **nginx config, 301 redirects and CI build behavior cannot
 be verified locally.** The SSR preview environment closes part of this gap early; the rest needs a
 staging deploy before cutover.
 
@@ -468,7 +468,7 @@ Andy's read is that the site is **already typography-driven and lightly styled**
 digital garden or blog than a corporate site. So the reframe is carried mostly by content and IA
 plus tightening, not a visual overhaul. Don't propose a redesign.
 
-**Colour, type, grid and rhythm live in [DESIGN.md](DESIGN.md)** — values, rules and rationale
+**Color, type, grid and rhythm live in [DESIGN.md](DESIGN.md)** — values, rules and rationale
 alike. Don't restate them here.
 
 **Layout and page-template changes get discussed against the whole page inventory** — index,
@@ -479,7 +479,7 @@ which is why it sits here; the layout constraints it protects are in DESIGN.md.
 
 **Most of the old debt list has been deleted rather than carried forward.** It described
 `web/style/` — the import chain, uncontrolled measure, ten hand-picked font sizes, Sass-era dead
-comments, the ungoverned greys, the shipped contrast failures. None of it survives a build that
+comments, the ungoverned grays, the shipped contrast failures. None of it survives a build that
 starts from DESIGN.md, and keeping it would only invite someone to "migrate" the thing we are
 deliberately not migrating. **If you want to know how the old CSS worked, read the git history.**
 
@@ -492,7 +492,7 @@ What remains is infrastructure, content-model constraints, and one measured inpu
   security issue on the running site, not just a migration note**, and it should be fixed in the new
   workflow rather than reproduced.
 - **The droplet keeps 3 releases, not 5.** Commit `5e9fac8` deliberately changed `tail -n +6` to
-  `+4`; only the comment still says five. Preserve the retention behaviour in the new workflow and
+  `+4`; only the comment still says five. Preserve the retention behavior in the new workflow and
   write the comment to match.
 - **`mailhandler.php` needs the Composer step.** PHP deps are installed in CI and shipped with the
   tar. Easy to lose in a JavaScript migration — see phase 6.

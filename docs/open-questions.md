@@ -13,7 +13,7 @@ Settled decisions live in [decisions/](decisions/). Figma mechanics live in
 
 **Custom form-validation messaging.** Native validation bubbles cannot be styled, so the error tokens
 cannot actually be used until this is designed. **This is the real blocker on the error state, not the
-colours** — `error-bg`, `error-line` and `error-text` are specified in both themes and have nowhere to
+colors** — `error-bg`, `error-line` and `error-text` are specified in both themes and have nowhere to
 go.
 
 ---
@@ -50,7 +50,7 @@ where light is 12.25 against 6.78.
 
 **Headings no longer sit softer than body in dark.** `text`, `text-heading` and `text-title` all
 resolve to `neutral-200`. Recovering the softening needs a neutral step between `200` and `300`, which
-the ramp does not have. See [decisions/colour.md](decisions/colour.md).
+the ramp does not have. See [decisions/color.md](decisions/color.md).
 
 ---
 

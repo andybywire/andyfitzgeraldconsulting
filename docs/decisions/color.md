@@ -1,8 +1,8 @@
-# Colour — decisions and rationale
+# Color — decisions and rationale
 
 Backs the **Colors** and **Elevation & Depth** sections of [DESIGN.md](../../DESIGN.md).
 
-Read this when a colour decision is being **questioned, excepted, or changed** — not as background
+Read this when a color decision is being **questioned, excepted, or changed** — not as background
 for ordinary work. DESIGN.md carries the values and the rules; this carries why they are what they
 are, so the same ground does not get re-argued.
 
@@ -12,14 +12,14 @@ are, so the same ground does not get re-argued.
 
 **It is the lightest step in this hue that carries white text at AA — 5.67.** That single constraint
 set the palette. The previous brand blue `#4e9dbc` reached only 3.09 under white and could never be a
-button, a band, or a link colour; it survives in the ramp as `blue-300`.
+button, a band, or a link color; it survives in the ramp as `blue-300`.
 
 **Step numbers do not track lightness.** `500` sits at L 36%, where most ramps put it near 52%. The
 trade was deliberate: the number a person reaches for first should be the primary. The cost is that
 `blue-500` reads like a mid-tone in a picker and is not one.
 
 **The gap between `blue-200` (L 78%) and `blue-300` (L 52%) is deliberate.** The ramp is dense at the
-dark end where every step is a legal text or surface colour, and sparse in the middle where nothing
+dark end where every step is a legal text or surface color, and sparse in the middle where nothing
 needed a value. Dark mode later found a use for that gap — see `blue-250` below.
 
 **`blue-300` and `blue-400` have almost no legal use on light** — 2.92 and 3.91 on the ground, so 300
@@ -55,7 +55,7 @@ dark mode pulled them apart. **Pick by name, never by value.**
 
 **`text-lead` is content, not apparatus.** The lead is the most prominent prose on the page; a caption
 is furniture around it. The trade worth knowing: the lead ends up **larger but lighter** than body, so
-size and colour point in opposite directions. Size wins. This is a common editorial pattern but a
+size and color point in opposite directions. Size wins. This is a common editorial pattern but a
 deliberate choice rather than a neutral one.
 
 ---
@@ -73,23 +73,23 @@ an incident:
 | `*-inverse` | `*-on-accent` | see below |
 
 **Superseded: `text-inverse`, `icon-inverse`, `border-inverse`.** "Inverse" claims a *direction* — the
-opposite of the default text colour. True on light, where `text` is near-black and the band carries
+opposite of the default text color. True on light, where `text` is near-black and the band carries
 white. False on dark, where `text` is already light. `-on-accent` names the **pairing**, which is the
 same in every theme, and it is what made the dark theme expressible at all: `text-inverse:
 neutral-900` is a contradiction, `text-on-accent: neutral-900` is a fact about that theme's band.
 
 ---
 
-## Links are identified by underline, not by colour
+## Links are identified by underline, not by color
 
-**Inline links take body text colour with a persistent underline**, moving to `link-hover` on hover.
-Because the underline rather than the colour carries the affordance, this satisfies WCAG 1.4.1, which
-a coloured-text link does not.
+**Inline links take body text color with a persistent underline**, moving to `link-hover` on hover.
+Because the underline rather than the color carries the affordance, this satisfies WCAG 1.4.1, which
+a colored-text link does not.
 
 **Block-level link titles take `text-title` with no underline.** 1.4.1 governs links being
 distinguishable *from surrounding text*, which is an inline problem; a title in its own block at
 heading size is identified as a link by position. Dark titles also quiet the page down and pass on
-both surfaces at any size, which coloured titles did not.
+both surfaces at any size, which colored titles did not.
 
 ---
 
@@ -227,7 +227,7 @@ toggles, panels and overlays, and it scales to a second elevation. Naming it for
 a role name in a slot that should hold a value. A full-bleed band can therefore be a surface.
 
 **The ground's hue is nominal.** `#f9fafb` computes to 210°, not the brand's 197°, and that distinction
-is not representable: at 98% lightness the colour spans 2 units of 255 per channel, so both hues
+is not representable: at 98% lightness the color spans 2 units of 255 per channel, so both hues
 quantize to the same hex. For anyone tempted to fix it — **a perceptibly brand-tinted ground needs
 lightness at ~95% or below**, where the channel span widens enough for hue to be encodable.
 
@@ -237,8 +237,8 @@ lightness at ~95% or below**, where the channel span widens enough for hue to be
 
 - **Success and warning tokens are deliberately omitted.** There is no designed use, and the previous
   palette's alert pair sat declared-but-unused for years. Per WCAG 3.3.1 errors must be identified in
-  **text**, never by colour alone.
+  **text**, never by color alone.
 - **Disabled states are exempt** from 1.4.3 and 1.4.11, and their low contrast *is* the signal. Read
-  the guardrail as being about the *pairing*, not about which side the colour sits on — a resting
-  control wearing the disabled colour is the precedent this exists to prevent.
+  the guardrail as being about the *pairing*, not about which side the color sits on — a resting
+  control wearing the disabled color is the precedent this exists to prevent.
 - **Verify against four combinations**, not two: ground and card, in each theme.

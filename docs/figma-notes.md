@@ -11,8 +11,8 @@ Design file: `pPZPGT6EpSaLkoUDK8HMMp`.
 
 | Collection | Contents | Modes |
 |---|---|---|
-| `Primitives` | 24 raw colours | single (`Value`) |
-| `Semantic` | 35 colours aliasing primitives | `Light` / `Dark` |
+| `Primitives` | 24 raw colors | single (`Value`) |
+| `Semantic` | 35 colors aliasing primitives | `Light` / `Dark` |
 | `Type Scale` | 7 sizes `size/0`–`size/6` + `role/masthead-name` | `Desktop` / `Mobile` |
 | `Spacing` | 30 — `space/*`, `rhythm/*`, `card/*`, `chrome/*`, `field/*`, `radius/*`, `border/*`, `quote/*` | `Desktop` / `Mobile` |
 | `Grid` | 8 | `Desktop` / `Mobile` |
@@ -36,7 +36,7 @@ viewport cannot participate in a mode switch. (DESIGN.md's front matter *does* c
 keys — that is a flat-file artifact, since the DESIGN.md format has no mode concept. The rule still
 holds here.)
 
-**`Spacing` keeps both layers in one collection, distinguished by prefix.** Colour splits its layers
+**`Spacing` keeps both layers in one collection, distinguished by prefix.** Color splits its layers
 across `Primitives` and `Semantic`; spacing does not, because 29 variables do not justify two more
 collections and the prefixes already make the layer legible in the picker. Splitting later is a
 rename, not a rebuild.
@@ -138,16 +138,16 @@ caveat so the roman is not mistaken for an intention.
 
 **Prefer a layer name for a derived number and a Dev Mode annotation for intent.** A layer name sits
 where the number would be edited; annotations are the right home for what no property can express —
-scroll behaviour, what is deliberately absent at a viewport, what is a mockup artefact.
+scroll behavior, what is deliberately absent at a viewport, what is a mockup artefact.
 `node.annotations` is readable through the plugin API, so they reach tooling too.
 
-## Semantic colour names — one axis, and the path is not the token
+## Semantic color names — one axis, and the path is not the token
 
 **The 34 semantic roles are grouped by *context*: `page/`, `surface/`, `accent/`, `control/`,
 `error/`.** Context is the axis Figma cannot infer for itself. It already filters the picker by
 **scope** — a text node is only offered `TEXT_FILL` variables — so grouping by *property*
 (`text/`, `border/`, `bg/`) would duplicate work Figma does for free, while leaving the genuinely
-ambiguous question unanswered: *which plane is this colour for?*
+ambiguous question unanswered: *which plane is this color for?*
 
 **Use one axis and only one.** An earlier pass mixed three at the same level — `ground/` and
 `surface/` (context), `error/` (state), `icon/` (property) — and it immediately produced two
@@ -158,27 +158,27 @@ disagreeing. There was also no home for `focus-ring` or `link-strong` under any 
 
 > **The folder path is a Figma affordance. `codeSyntax` is the contract.**
 
-The path organises the picker; the emitted `var()` is what the codebase consumes, and it **does not
+The path organizes the picker; the emitted `var()` is what the codebase consumes, and it **does not
 move when tokens are regrouped**. So `color/page/bg` emits `var(--color-bg)`, and `color/accent/band`
 emits `var(--color-surface-accent)`. Renaming in the Figma UI leaves `codeSyntax` untouched, which is
-what makes reorganising free — the 31-token regroup changed zero emitted names.
+what makes reorganizing free — the 31-token regroup changed zero emitted names.
 
 **Do not "fix" the divergence.** Fourteen roles now emit something that cannot be derived from their
 path, and that is the design, not drift. Deriving the token from the path would either force verbose
-CSS (`--color-page-text` for the most-used colour in the system) or freeze the Figma structure
+CSS (`--color-page-text` for the most-used color in the system) or freeze the Figma structure
 against the codebase. Check `codeSyntax` in Dev Mode; never infer a token name from the layer path.
 
 ## `codeSyntax` — what the tokens emit
 
-**Every variable emits `var(--name)`.** Two sweeps settled this: 16 semantic colours had dropped the
+**Every variable emits `var(--name)`.** Two sweeps settled this: 16 semantic colors had dropped the
 `color-` prefix, and 39 tokens emitted a bare `--name` rather than the usage form. Dev Mode presents
 `codeSyntax` as *how to use* the token, so the wrapped form is the right one — and these strings are
 what gets copied into `variables.css`.
 
 | Layer | Emits |
 |---|---|
-| colour primitives | `var(--blue-500)`, `var(--neutral-100)`, `var(--white)` |
-| semantic colours | `var(--color-<role>)` — **always** the prefix, and **not** the folder path |
+| color primitives | `var(--blue-500)`, `var(--neutral-100)`, `var(--white)` |
+| semantic colors | `var(--color-<role>)` — **always** the prefix, and **not** the folder path |
 | type sizes | `var(--font-size-N)`, plus `var(--role-masthead-name)` |
 | spacing and grid | `var(--<prefix>-<name>)` — `var(--rhythm-band)`, `var(--grid-margin)` |
 
@@ -187,7 +187,7 @@ four semantic roles that alias it.
 
 **Border widths emit `--border-width-*`, not `--border-*`.** That is deliberate: `color/border-quote`
 emits `var(--color-border-quote)` and `border/quote` emits `var(--border-width-quote)`, so the quote
-bar's colour and its width cannot collide. Naming the colour by its nearest siblings would have
+bar's color and its width cannot collide. Naming the color by its nearest siblings would have
 produced `--border-quote` for both.
 
 `codeSyntax` is read-only as a property — `variable.codeSyntax = {…}` throws *"no setter for
@@ -218,16 +218,16 @@ const ok = SIDES.every(s => n.boundVariables[s] && n.boundVariables[s].id === ha
   `border/quote`.
 - **~116 nodes at 1.2px named `stroke` / `fill+stroke`** are imported icon vector geometry, not UI
   boundaries. A hairline token has nothing to say about them. If icon stroke weight ever needs
-  systematising it wants its own token, not this one.
+  systematizing it wants its own token, not this one.
 
-**An image outline counts as a hairline.** `image 51` was the one judgement call — a `RECTANGLE`
+**An image outline counts as a hairline.** `image 51` was the one judgment call — a `RECTANGLE`
 rather than a card, panel, chip or input — and it takes `border/hairline` for the weight and
 `color/border` for the stroke, like any other boundary. It is the only image on its page with a
 stroke at all, and it carries `cornerRadius: 0` where its neighbours take `radius/2`.
 
 ## Paint bindings — bind the component, and know what escapes
 
-Every component and instance now resolves its colour through the **`Semantic`** collection rather
+Every component and instance now resolves its color through the **`Semantic`** collection rather
 than through a primitive or a raw hex. That is what a `Dark` mode switches on: a paint bound to
 `color/text` flips, a paint bound to the `neutral/900` **primitive does not** (primitives have a
 single `Value` mode), and a raw hex certainly does not. The mis-layered half is the dangerous one —
@@ -259,12 +259,12 @@ Sweeps must exclude artwork, or they will bind it and read as thorough. Four kin
 
 - **`VECTOR` nodes** — social icons (`brand / github`, `brand / LinkedIn`)
 - **Page-loose frames** — client logos (`client/shoreline`, `client/moz`)
-- **`#c4c4c4` placeholder greys** on `Ellipse 1` / `Rectangle 4`
+- **`#c4c4c4` placeholder grays** on `Ellipse 1` / `Rectangle 4`
 - **Nodes named `fill` / `stroke` / `fill+stroke`** — imported icon geometry, and the same nodes that
   carry the 1.2px strokes the hairline sweep skipped. **Exclude them by property, not by name.**
-  Their *stroke weight* is not a design token and never will be. Their *colour* is — `color/page/icon`
+  Their *stroke weight* is not a design token and never will be. Their *color* is — `color/page/icon`
   exists for exactly this. Excluding the node wholesale is what left the Search Box magnifier on a
-  raw primitive through an entire colour sweep, where it would have stayed black on a dark page.
+  raw primitive through an entire color sweep, where it would have stayed black on a dark page.
 
 ## Two ways a node stops following its theme
 
@@ -286,7 +286,7 @@ for (const n of page.findAll(x => x.explicitVariableModes && x.explicitVariableM
 
 Clear with `node.clearExplicitVariableModeForCollection(collection)`.
 
-**2. A stale baked paint colour.** A `SolidPaint` carries *both* an RGB and a variable binding, and
+**2. A stale baked paint color.** A `SolidPaint` carries *both* an RGB and a variable binding, and
 the RGB is a stored value that does not refresh when the variable changes. Twenty-seven paints here
 reported the previous `Dark Alt` accent while their binding resolved to the current one. Read
 `paint.color` and you get the stale value; call `variable.resolveForConsumer(node)` and you get the
@@ -354,7 +354,7 @@ is what actually closes them.
 
 **All 434 legacy raw text paints are bound** — `#000000`, `#646464`, `#2b383d`, `#414141` and
 `#2b2b2b`, none of which were palette values. Each move was a real visual change rather than a
-re-layering, so they were run one colour at a time with the rendered result asserted per paint. Zero
+re-layering, so they were run one color at a time with the rendered result asserted per paint. Zero
 raw text paints remain on any page.
 
 **The `Connect/Work with me` band takes `color/surface`** — confirmed, and the reasoning is recorded
