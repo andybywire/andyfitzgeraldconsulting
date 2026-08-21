@@ -273,6 +273,13 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    than a form target with its own display pages, since mail forms now appear on several pages.
    Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
    `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
+
+   **One cache-header constraint from phase 2:** the subset fonts live in `web-next/public/fonts/`,
+   so they ship at **stable, unhashed URLs**. Astro hashes what it processes from `src/`; `public/`
+   is copied verbatim. That was chosen deliberately — re-subsetting is a once-a-decade job at most,
+   and importing fonts through `src/` to get hashed URLs would mean threading those URLs into the
+   preload tags. The consequence is that fonts must get a **long but bustable** `max-age`, **never
+   `immutable`**, because there is no hash to change. If they are ever re-subset, rename the files.
 7. **Cleanup.** Deliberately after the site is live, so none of it can destabilize a launch, and
    before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
    still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:
@@ -290,6 +297,28 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
    Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
    watch-mode generation is off and `pnpm typegen` is run by hand.
+
+   **The service worker decision lands here** (deferred from phase 2, 2026-08-21). Andy has shipped
+   service workers on Jekyll and 11ty sites and runs one on `ux-methods`, which is also Astro, so
+   read that one first rather than starting cold. Four things shape the decision:
+   - **Astro hashes asset filenames at build**, so a hand-written worker with a hardcoded precache
+     list goes stale every build. Either do runtime caching only — cache-first for fonts, network-
+     first for HTML, no manifest — or use `@vite-pwa/astro`/Workbox to generate the manifest. This is
+     the part that differs from Jekyll and 11ty, where the filenames were ours to control.
+   - **Scope it to production only, deliberately.** A worker registered on `preview.` would cache
+     draft content and fight visual editing, and because a worker persists client-side it can outlive
+     the session that installed it. The two build modes make this a real hazard, not a hypothetical.
+   - **The marginal benefit over correct `Cache-Control` is small.** This is a content site; headers
+     already win most of the repeat-visit case. The worker's real value is an **offline fallback
+     page** and navigation preload.
+   - **A misconfigured worker is one of the few ways to semi-permanently break a static site**, since
+     it can serve stale HTML indefinitely to anyone who already has it. Ship it with a documented
+     unregister path.
+
+   Also the home for **fallback metric-matching** (`size-adjust`, `ascent-override`) if FOUT severity
+   turns out to warrant it. `font-display: swap` accepts FOUT by design — preload narrows the window
+   but never closes it — and metric overrides shrink the reflow rather than hiding it. Measure before
+   adding; don't guess at the numbers.
 
 ### Deploy shape — static production, SSR preview, one droplet
 
@@ -424,6 +453,13 @@ first. Set `color-scheme: light dark` on `:root` so form controls follow.
 
 The cost is not the ~60 lines of code; it is that every token now has three places it can be wrong,
 and the test matrix doubles.
+
+**The control lives in the footer** (decided 2026-08-21), so the `ThemeToggle` component lands with
+the footer in phase 3 rather than in phase 2. Phase 2 shipped the mechanism — the three CSS blocks and
+the head script — plus a throwaway control in the specimen page purely to exercise it. All three
+blocks are verified, including the case the structure exists for: OS dark with `data-theme="light"`
+correctly resolves to light. **"System" is the absence of a choice**, not a third stored value: it
+removes both the attribute and the `localStorage` key, so there is no third state to keep in sync.
 
 ### Branching and verification
 
