@@ -716,9 +716,26 @@ The shape language is quiet: small radii, hairline strokes, no ornament. Reasoni
 variables. Reasoning in [docs/decisions/components.md](docs/decisions/components.md).
 
 **Focus-ring radii derive from the control they wrap** — inner at `radius + 2`, outer at `radius + 4`.
-Write it as a real `calc()` so the dependency stays live. **The capsule is the one exception: a ring
-around a capsule is a capsule**, so both rings take `radius-full` rather than a derived value, and
-`+2` / `+4` describe only their offset.
+**`box-shadow` derives them for you**: spread grows a shadow's corner radius by exactly the spread
+distance, so `0 0 0 2px, 0 0 0 4px` on a 3px control renders rings at 5 and 7 with no `calc()` written
+anywhere. That is the reason to prefer it over drawn geometry — and also why the derivation is **not
+overridable**. Breaking it means drawing the rings as pseudo-elements and positioning them by hand.
+*(An earlier version of this line called for a real `calc()`; that describes work the browser already
+does.)*
+
+**The capsule is the one exception: a ring around a capsule is a capsule**, so both rings take
+`radius-full` rather than a derived value, and `+2` / `+4` describe only their offset.
+
+> **Check on the real button in phase 3 — a constant offset is not constant curvature.**
+
+At `radius-1` the radii run 3 → 5 → 7, so the outer corner is **2.3× rounder** than the control's.
+The offset is uniform and the rings genuinely are concentric, but the eye compares roundness, so a
+near-square field inside a visibly rounded ring reads as a mismatch. **The effect is confined to the
+1–4px band** — at 0 the rings stay square, at `radius-full` they stay capsules, and both read as
+exactly concentric. `radius-1` is the smallest radius in the system and so the worst case in it, and
+the button is the component that will show it. Judge it at 1× on the real button, not on a blowup. If
+it needs fixing, the fix is a **second exception here beside the capsule**, not a change to the
+offsets — those are correct.
 
 **The quote bar sits inside the indent**, so text sits 42px from the bar on desktop and 20 on mobile,
 not 48 and 24.
