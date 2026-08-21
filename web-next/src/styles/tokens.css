@@ -1,0 +1,331 @@
+/*
+ * Design tokens — transcribed by hand from DESIGN.md's front matter and its
+ * Colors → Dark mode table. Verified against the Figma library 2026-08-20:
+ * all 105 variables matched, both themes.
+ *
+ * INVARIANT: this file contains nothing but custom-property declarations.
+ * No rules, no selectors doing work, no `color-scheme`. That is what lets it be
+ * diffed mechanically against DESIGN.md. Element-level role styles live in
+ * base.css; everything else is component-scoped.
+ *
+ * UNITS — split by cause, the same way DESIGN.md splits responsive behavior:
+ *   type sizes    rem   — never px (DESIGN.md, Conventions)
+ *   spacing       rem   — type-derived. One body line box is 32px = 2rem, and
+ *                         space-1…7 are quarters of it, so the rhythm should
+ *                         scale with a reader's font-size preference.
+ *   grid          px    — viewport-derived. The arithmetic closes against the
+ *                         viewport, which is a px space; in rem a reader who
+ *                         scaled text up would push the columns off the grid.
+ *   radius, borders px  — neither is a measurement that should track type.
+ *
+ * `primary` in DESIGN.md's front matter is deliberately NOT emitted: the file
+ * says it is a format requirement rather than a role, nothing binds it, and it
+ * has no Figma counterpart.
+ */
+
+:root {
+  /* ── Colour primitives ─────────────────────────────────────────────────── */
+  /* Blue: hue 197° / saturation 45%, stepped by lightness. Step numbers do NOT
+     track lightness — 500 is the accent, at L 36%. */
+  --blue-50: #e1eff4;
+  --blue-100: #c4dee9;
+  --blue-200: #aed2e0;
+  --blue-300: #4e9dbc;
+  --blue-400: #3e86a3;
+  --blue-500: #326e85;
+  --blue-600: #275568;
+  --blue-700: #1f4351;
+
+  /* Neutral: derived from #051319 (198°, essentially the brand hue) toward white. */
+  --neutral-900: #051319;
+  --neutral-850: #142329;
+  --neutral-800: #283439;
+  --neutral-700: #505a5e;
+  --neutral-600: #788083;
+  --neutral-500: #969c9e;
+  --neutral-400: #b4b8ba;
+  --neutral-300: #d2d5d6;
+  --neutral-200: #e9eaea;
+  --neutral-100: #f9fafb;
+
+  /* Error: hue 8°, deliberately far from the brand's 197°. */
+  --error-100: #f9e9e7;
+  --error-300: #e09185;
+  --error-500: #cc4c38;
+  --error-600: #b33f2e;
+  --error-800: #341814;
+
+  --white: #ffffff;
+
+  /* ── Semantic color roles — LIGHT ─────────────────────────────────────── */
+  /* Pick a role by NAME, never by value: several pairs render identically here
+     and diverge in dark, which has already produced wrong bindings. */
+  --color-bg: var(--neutral-100);
+  --color-surface: var(--white);
+  --color-surface-hover: var(--neutral-100);
+  --color-surface-pressed: var(--neutral-200);
+  --color-surface-muted: var(--neutral-200);
+  --color-surface-accent: var(--blue-500);
+  --color-surface-logo-band: var(--white);
+
+  --color-text: var(--neutral-900);
+  --color-text-muted: var(--neutral-700);
+  --color-text-lead: var(--neutral-700);
+  --color-text-title: var(--neutral-800);
+  --color-text-heading: var(--neutral-800);
+  --color-text-on-accent: var(--white);
+  --color-text-on-accent-hover: var(--white);
+
+  --color-icon: var(--neutral-900);
+  --color-icon-on-accent: var(--white);
+
+  --color-border: var(--neutral-300);
+  --color-border-control: var(--neutral-400);
+  --color-border-control-hover: var(--blue-500);
+  --color-border-on-accent: var(--white);
+  --color-border-quote: var(--neutral-300);
+
+  --color-accent: var(--blue-500);
+  --color-accent-hover: var(--blue-600);
+  --color-accent-pressed: var(--blue-700);
+  --color-link-hover: var(--blue-500);
+  --color-link-strong: var(--blue-700);
+
+  --color-control-hover: var(--blue-300);
+  --color-control-pressed: var(--blue-400);
+
+  --color-focus-ring: var(--blue-500);
+  --color-focus-offset: var(--white);
+  --color-disabled-surface: var(--neutral-200);
+  --color-disabled-text: var(--neutral-500);
+
+  --color-error-bg: var(--error-100);
+  --color-error-line: var(--error-500);
+  --color-error-text: var(--error-600);
+
+  /* ── Font stacks ───────────────────────────────────────────────────────── */
+  /* Two families only. A typographic ROLE is a bundle of properties and so
+     becomes a rule in base.css, but the family within it is a single value, so
+     it stays a token rather than being retyped in every rule.
+     Lato's fallbacks carry more weight than usual: Google's Lato contains only
+     24 of the 128 Latin Extended-A codepoints, so a Czech, Hungarian, Turkish
+     or Romanian name in a heading renders that letter from Helvetica or Arial.
+     Noto Serif covers all 128, so the same name in prose is fine. */
+  --font-prose: 'Noto Serif', Georgia, 'Times New Roman', serif;
+  --font-heading: Lato, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* ── Type scale — 18px base, ratio 1.25, fluid 375 → 1200px ───────────── */
+  /* Steps 0 and 1 are static: 1 is the legibility floor, 0 is chrome only.
+     Every preferred value is rem-dominant on purpose — a vw-dominant value
+     locks the reader's font-size preference. */
+  --font-size-0: 0.875rem;
+  --font-size-1: 1rem;
+  --font-size-2: clamp(1.0625rem, 1.0341rem + 0.1212vw, 1.125rem);
+  --font-size-3: clamp(1.3125rem, 1.2699rem + 0.1818vw, 1.40625rem);
+  --font-size-4: clamp(1.5625rem, 1.4737rem + 0.3788vw, 1.7578125rem);
+  --font-size-5: clamp(1.875rem, 1.7285rem + 0.625vw, 2.197265625rem);
+  --font-size-6: clamp(2rem, 1.6606rem + 1.4479vw, 2.746582031rem);
+
+  /* --role-masthead-name is deliberately absent. It is the one role whose size
+     GROWS as the viewport narrows (28.125 desktop → 30 mobile), so its
+     endpoints are inverted and the mechanism — an inverted clamp, or a step at
+     the masthead's own breakpoint — is a phase 3 call. See DESIGN.md,
+     Typography → Fluid sizing. */
+
+  /* ── Spacing primitives ────────────────────────────────────────────────── */
+  /* One body line box (18px × 1.8 = 32.4px) rounded to 32 = 2rem, then
+     quartered: ¼, ½, ¾, 1, 1½, 2, 3 units. An 8px grid derived from the line
+     box rather than imposed on it. */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+  --space-6: 4rem;
+  --space-7: 6rem;
+
+  /* ── Page flow ─────────────────────────────────────────────────────────── */
+  /* band and section interpolate with no breakpoint — they are page-derived, so
+     they are the only rhythm roles that vary by viewport. */
+  --rhythm-tight: var(--space-1);
+  --rhythm-heading-close: var(--space-2);
+  --rhythm-item: var(--space-2);
+  --rhythm-paragraph: var(--space-3);
+  --rhythm-list: var(--space-4);
+  --rhythm-block: var(--space-5);
+  --rhythm-heading-minor: var(--space-5);
+  --rhythm-heading-major: var(--space-6);
+  --rhythm-band: clamp(2rem, 1.0909rem + 3.8788vw, 4rem);
+  --rhythm-section: clamp(4rem, 3.0909rem + 3.8788vw, 6rem);
+
+  /* ── Component internals ───────────────────────────────────────────────── */
+  --card-gap: var(--space-1);
+  --card-pad: var(--space-2);
+  --card-media: var(--space-3);
+  --chrome-pad-header: var(--space-4);
+  --chrome-pad-footer: var(--space-5);
+  --chrome-inset: var(--space-5);
+  --field-height: var(--space-5);
+  --quote-indent: var(--space-5);
+
+  /* Border WIDTHS carry the `-width-` infix so a stroke's width cannot collide
+     with its colour: --color-border-quote is a different token. */
+  --border-width-hairline: 1px;
+  --border-width-quote: 6px;
+
+  /* ── Radius ────────────────────────────────────────────────────────────── */
+  /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
+     is arbitrarily large because border-radius clamps to half the shorter
+     side — it is not a measurement. */
+  --radius-1: 3px;
+  --radius-2: 6px;
+  --radius-full: 9999px;
+
+  /* ── Grid — 12 columns, 996px content, 222px margins at 1440 ───────────── */
+  /* Bind the skips rather than retyping them: 109 and 194 look arbitrary enough
+     to get "corrected". skip-1 = column + 2 gutters, skip-2 = 2 columns + 3. */
+  --grid-margin: 222px;
+  --grid-gutter: 24px;
+  --grid-gutter-content: 24px;
+  --grid-column: 61px;
+  --grid-skip-1: 109px;
+  --grid-skip-2: 194px;
+  --grid-span-3: 231px;
+  --grid-span-4: 316px;
+}
+
+/*
+ * ── Viewport overrides — NOT WRITTEN YET, deliberately ──────────────────────
+ *
+ * Eleven tokens above take a different value on mobile. They are not emitted as
+ * `*-mobile` twins (that shape is a DESIGN.md flat-file artifact; Figma models
+ * the viewport as a mode) — they belong in one media query, overriding the
+ * properties in place.
+ *
+ * The breakpoint is not settled, so writing the query now would invent a value.
+ * docs/open-questions.md calls the fixed 222px margin "the one known hole": the
+ * real rule is cap content at 996, let margins absorb the remainder, floor 16 —
+ * which gives 222 at 1440, 105 at 1206 and 16 below ~1028. The token and the
+ * rule agree at 1440 and at 360 and disagree everywhere between.
+ *
+ * This lands in phase 3 with the grid. Mobile values, for whoever writes it:
+ *
+ *   --chrome-inset          space-2   (16px)
+ *   --quote-indent          space-3   (24px)
+ *   --border-width-quote    4px
+ *   --grid-margin           16px
+ *   --grid-gutter           8px
+ *   --grid-gutter-content   32px   ← larger on mobile, not smaller
+ *   --grid-column           20px
+ *   --grid-skip-1           36px
+ *   --grid-skip-2           64px
+ *   --grid-span-3           343px  ← both spans collapse to the full content
+ *   --grid-span-4           343px     width, which is 375 − 2 × 16
+ *
+ * rhythm-band and rhythm-section also vary, but they clamp above and need no
+ * breakpoint at all.
+ */
+
+/* ── Semantic color roles — DARK ─────────────────────────────────────────── */
+/*
+ * Two blocks, not one, so an explicit choice wins in both directions: the media
+ * query is skipped when the reader has asked for light, and the attribute
+ * selector overrides a system preference for dark.
+ *
+ * Dark is NOT a mechanical inversion. Contrast is non-linear, so mirrored steps
+ * give un-mirrored ratios; and the accent family inverts to dark text on light
+ * fills rather than keeping white text. Read docs/decisions/color.md before
+ * changing a value here.
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: var(--neutral-900);
+    --color-surface: var(--neutral-850);
+    --color-surface-hover: var(--neutral-800);
+    --color-surface-pressed: var(--neutral-700);
+    --color-surface-muted: var(--neutral-800);
+    --color-surface-accent: var(--blue-300);
+    --color-surface-logo-band: var(--neutral-900);
+
+    --color-text: var(--neutral-200);
+    --color-text-muted: var(--neutral-500);
+    --color-text-lead: var(--neutral-300);
+    --color-text-title: var(--neutral-200);
+    --color-text-heading: var(--neutral-200);
+    --color-text-on-accent: var(--neutral-900);
+    --color-text-on-accent-hover: var(--neutral-900);
+
+    --color-icon: var(--neutral-200);
+    --color-icon-on-accent: var(--neutral-900);
+
+    --color-border: var(--neutral-700);
+    --color-border-control: var(--neutral-700);
+    --color-border-control-hover: var(--blue-300);
+    --color-border-on-accent: var(--neutral-900);
+    --color-border-quote: var(--neutral-700);
+
+    --color-accent: var(--blue-300);
+    --color-accent-hover: var(--blue-50);
+    --color-accent-pressed: var(--white);
+    --color-link-hover: var(--blue-300);
+    --color-link-strong: var(--blue-200);
+
+    --color-control-hover: var(--blue-700);
+    --color-control-pressed: var(--blue-600);
+
+    --color-focus-ring: var(--blue-300);
+    --color-focus-offset: var(--neutral-900);
+    --color-disabled-surface: var(--neutral-800);
+    --color-disabled-text: var(--neutral-600);
+
+    --color-error-bg: var(--error-800);
+    --color-error-line: var(--error-500); /* unchanged — mirrors the table */
+    --color-error-text: var(--error-300);
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: var(--neutral-900);
+  --color-surface: var(--neutral-850);
+  --color-surface-hover: var(--neutral-800);
+  --color-surface-pressed: var(--neutral-700);
+  --color-surface-muted: var(--neutral-800);
+  --color-surface-accent: var(--blue-300);
+  --color-surface-logo-band: var(--neutral-900);
+
+  --color-text: var(--neutral-200);
+  --color-text-muted: var(--neutral-500);
+  --color-text-lead: var(--neutral-300);
+  --color-text-title: var(--neutral-200);
+  --color-text-heading: var(--neutral-200);
+  --color-text-on-accent: var(--neutral-900);
+  --color-text-on-accent-hover: var(--neutral-900);
+
+  --color-icon: var(--neutral-200);
+  --color-icon-on-accent: var(--neutral-900);
+
+  --color-border: var(--neutral-700);
+  --color-border-control: var(--neutral-700);
+  --color-border-control-hover: var(--blue-300);
+  --color-border-on-accent: var(--neutral-900);
+  --color-border-quote: var(--neutral-700);
+
+  --color-accent: var(--blue-300);
+  --color-accent-hover: var(--blue-50);
+  --color-accent-pressed: var(--white);
+  --color-link-hover: var(--blue-300);
+  --color-link-strong: var(--blue-200);
+
+  --color-control-hover: var(--blue-700);
+  --color-control-pressed: var(--blue-600);
+
+  --color-focus-ring: var(--blue-300);
+  --color-focus-offset: var(--neutral-900);
+  --color-disabled-surface: var(--neutral-800);
+  --color-disabled-text: var(--neutral-600);
+
+  --color-error-bg: var(--error-800);
+  --color-error-line: var(--error-500); /* unchanged — mirrors the table */
+  --color-error-text: var(--error-300);
+}

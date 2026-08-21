@@ -1,0 +1,367 @@
+/*
+ * Global element-level role styles. The second half of the global tier —
+ * tokens.css holds the values, this holds the rules that apply them.
+ *
+ * SCOPE: @font-face, the theme's color-scheme, a minimal reset, h1–h4, body
+ * prose, links, blockquote, figure, the focus-ring default, and the vertical
+ * rhythm mechanism. Nothing else. Every other typographic role in DESIGN.md
+ * (display, lead, small, label, nav, masthead-*, chip, tag, body-compact) is
+ * component-scoped and belongs to the component that owns it.
+ *
+ * A semantic TEXT role is a bundle of applied properties, so in CSS it is a
+ * rule — not a variable. That is why these are rules and tokens.css has no
+ * `--text-h2` in it.
+ */
+
+/* ── Fonts ─────────────────────────────────────────────────────────────────── */
+/*
+ * Both Noto Serif files are variable on `wght` alone — the `wdth` axis was
+ * pinned out at 100 during subsetting, so there is deliberately no
+ * `font-stretch` here. The old build declared `font-stretch: 100%`, which paid
+ * for an axis it then refused to use.
+ *
+ * `format('woff2')` is the current syntax. The old build used
+ * `format('woff2 supports variations')`, which is obsolete.
+ *
+ * The two unicode-ranges are disjoint by construction: the ext range is carved
+ * around U+0131, U+0152-0153 and U+0178, which the latin tier already carries.
+ * Overlapping ranges resolve by declaration order rather than by range, which
+ * is ambiguous by construction — so don't merge them into one range.
+ */
+
+@font-face {
+  font-family: 'Noto Serif';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/noto-serif-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+0178, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Noto Serif';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/noto-serif-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-0130, U+0132-0151, U+0154-0177, U+0179-017F;
+}
+
+@font-face {
+  font-family: 'Noto Serif';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/noto-serif-italic-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+0178, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+    U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Noto Serif';
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/fonts/noto-serif-italic-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-0130, U+0132-0151, U+0154-0177, U+0179-017F;
+}
+
+/* Lato is static, one file per weight — DESIGN.md uses 400 and 700 only. No
+   unicode-range: each file is a single Google latin subset and there is no ext
+   companion worth shipping (its latin-ext file duplicates what latin holds). */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/lato-regular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/lato-bold.woff2') format('woff2');
+}
+
+/* ── Theme ─────────────────────────────────────────────────────────────────── */
+/*
+ * `color-scheme` is a rendering property, not a token, which is why it lives
+ * here and not in tokens.css. It makes form controls, scrollbars and the canvas
+ * follow the theme. The two explicit values pin it so a chosen theme also
+ * re-skins native UI, matching the two dark blocks in tokens.css.
+ */
+
+:root {
+  color-scheme: light dark;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+/*
+ * Deliberately minimal. Zeroing block margins is load-bearing rather than
+ * cosmetic: the rhythm mechanism below is built entirely from `margin-top` on
+ * adjacent siblings, so any default `margin-bottom` would collapse against it
+ * and produce spacing no token accounts for.
+ *
+ * `:where()` keeps this at zero specificity, so a component overrides it
+ * without needing to escalate.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:where(h1, h2, h3, h4, p, ul, ol, dl, blockquote, figure, pre, hr) {
+  margin: 0;
+}
+
+/* ── Page ──────────────────────────────────────────────────────────────────── */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-prose);
+  font-size: var(--font-size-2);
+  font-weight: 400;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Headings ──────────────────────────────────────────────────────────────── */
+/*
+ * Lato throughout, weight 700. Leading tightens as size grows; tracking is
+ * negative at display sizes and positive on h4, which is the small-label
+ * treatment. Noto Serif takes no tracking at any size.
+ *
+ * h4 has no size step left — it sits at the body's step and differentiates by
+ * family, weight and tracking alone. If it ever reads as bold body text, the
+ * levers are uppercase, small caps, color or a rule. NOT a smaller size.
+ *
+ * `text-wrap: balance` is NOT in DESIGN.md — it evens out the rag on a wrapped
+ * heading and is capped by the UA at a handful of lines. Drop it if you'd
+ * rather headings break naturally.
+ */
+
+:is(h1, h2, h3, h4) {
+  color: var(--color-text-heading);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--font-size-6);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+h2 {
+  font-size: var(--font-size-4);
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+h3 {
+  font-size: var(--font-size-3);
+  line-height: 1.3;
+}
+
+h4 {
+  font-size: var(--font-size-2);
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
+/* ── Prose ─────────────────────────────────────────────────────────────────── */
+/*
+ * `body` already carries the prose role, so paragraphs need no declaration of
+ * their own. Lists inherit it too and keep the UA's `padding-inline-start` as
+ * their indent — DESIGN.md specifies no list indent.
+ *
+ * `strong` is left at the UA default (700), which the variable `wght` axis
+ * serves. DESIGN.md defines no bold-prose weight; its only Noto Serif 500 is
+ * the `display` role.
+ *
+ * `--rhythm-item` here is an INFERENCE, not a transcription. DESIGN.md never
+ * says where `rhythm-item` (16px) or `rhythm-tight` (8px) are consumed, and its
+ * own guidance is to pick a spacing token "by prefix first, then by name, never
+ * by value" — which points a list item at the role literally called `item`.
+ * Note `rhythm-list` (32px) is NOT the token for this: open-questions.md shows
+ * it sitting between unboxed note cards, so the name misleads.
+ */
+
+li + li {
+  margin-top: var(--rhythm-item);
+}
+
+/* ── Links ─────────────────────────────────────────────────────────────────── */
+/*
+ * Inline links take the surrounding text colour with a persistent underline,
+ * and move to `link-hover` on hover. The UNDERLINE carries the affordance, not
+ * the color, which is what satisfies WCAG 1.4.1.
+ *
+ * `currentColor` rather than `--color-text`, so a link inside a caption or a
+ * muted block takes that block's color instead of jumping back to body black.
+ *
+ * Block-level link titles take `--color-text-title` with no underline. That is
+ * a component concern — a title in its own block at heading size is identified
+ * as a link by position.
+ *
+ * The offset and thickness are NOT in DESIGN.md. They are here because a UA
+ * underline on Noto Serif at this size collides with descenders. Drop them if
+ * you'd rather the browser decide.
+ */
+
+a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-thickness: 0.06em;
+  text-underline-offset: 0.16em;
+}
+
+a:hover {
+  color: var(--color-link-hover);
+}
+
+/* ── Blockquote ────────────────────────────────────────────────────────────── */
+/*
+ * An element rule, not a component.
+ *
+ * The indent is `padding-inline-start`, never margin: the bar sits at the box
+ * edge, so a margin would put the gap outside it and the bar would drift off
+ * the text block.
+ *
+ * The bar sits INSIDE the indent, so the padding is the indent minus the bar's
+ * own width — 48 − 6 = 42px of space on desktop, 24 − 4 = 20 on mobile. Written
+ * as a calc() so the relationship survives a change to either token.
+ */
+
+blockquote {
+  border-inline-start: var(--border-width-quote) solid var(--color-border-quote);
+  padding-inline-start: calc(var(--quote-indent) - var(--border-width-quote));
+  color: var(--color-text);
+}
+
+/* ── Figures ───────────────────────────────────────────────────────────────── */
+/* The `caption` role: Noto Serif italic at the 16px step, in `text-muted` —
+   apparatus around the content rather than content. */
+
+figcaption {
+  margin-top: var(--rhythm-tight);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-1);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+img,
+picture,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Focus ─────────────────────────────────────────────────────────────────── */
+/*
+ * Stated as a relationship: the inner ring contrasts the control, the outer
+ * contrasts the surface. The same two colors serve both contexts with the
+ * order swapped, which is why a fixed pair fails on an accent band — this is
+ * the on-page-ground default, and a component on an accent band swaps them.
+ *
+ * `box-shadow` rather than two drawn rectangles: spread grows the shadow's
+ * corner radius along with the element's, so the rings stay concentric with
+ * whatever radius the control has, with no calc() needed. That is the +2 / +4
+ * derivation happening for free — and the capsule case falls out too, because a
+ * ring around a capsule is a capsule.
+ */
+
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--color-focus-offset),
+    0 0 0 4px var(--color-focus-ring);
+}
+
+/* ── Vertical rhythm ───────────────────────────────────────────────────────── */
+/*
+ * Sibling margins, not `gap`. Portable Text emits a flat sequence with no
+ * section wrappers, so there is no container to put a `gap` on, and `gap` could
+ * not express "tighter after a heading" anyway.
+ *
+ * SOURCE ORDER DECIDES. Rules 2–6 all have identical specificity (0,1,2), so
+ * the last matching one wins — which is why `heading-close` is last: a heading
+ * binds to whatever follows it, whatever that is.
+ *
+ * The base rule is (0,1,1), one notch lower, so it is the fallback the others
+ * override. That is only true because the `.sidebar`/`.banner` exclusion is
+ * written as `:where(:not(…))`. A bare `:not(.sidebar):not(.banner)` would add
+ * two class weights and lift the base rule to (0,3,1) — beating every rule
+ * below it and silently flattening the whole ramp to one value. `:where()`
+ * always contributes zero specificity regardless of what is inside it.
+ *
+ * Both classes are excluded because they are explicitly grid-placed: a
+ * margin-top would push them off their grid row.
+ *
+ * No `margin-bottom` anywhere, so nothing collapses.
+ */
+
+article.detail > * + *:where(:not(.sidebar, .banner)) {
+  margin-top: var(--rhythm-paragraph);
+}
+
+article.detail > * + :is(ul, ol, blockquote, figure, pre) {
+  margin-top: var(--rhythm-block);
+}
+
+article.detail > :is(ul, ol, blockquote, figure, pre) + * {
+  margin-top: var(--rhythm-block);
+}
+
+article.detail > * + h3 {
+  margin-top: var(--rhythm-heading-minor);
+}
+
+article.detail > * + h2 {
+  margin-top: var(--rhythm-heading-major);
+}
+
+article.detail > :is(h2, h3, h4) + * {
+  margin-top: var(--rhythm-heading-close);
+}
+
+/* ── Measure ───────────────────────────────────────────────────────────────── */
+/*
+ * Target 60–75 characters; `66ch` measures about 67. On the 996px grid the
+ * measure normally comes from the column span (8 of 12 = 656px) and this cap is
+ * the safety net for anything wider.
+ *
+ * Capped with `max-width` on the existing left-aligned grid items rather than
+ * with a `.prose` container — a container re-centres the measure and moves the
+ * left edge of text between page types.
+ *
+ * `figure` is included because it inherits the body font, so `ch` resolves
+ * identically and its edge aligns with the prose. `figcaption` is NOT: its 16px
+ * font makes `ch` resolve narrower than its own image. Headings are not capped
+ * either — `ch` resolves against each element's own font, so 66ch on an h2
+ * would be 66 characters of Lato.
+ */
+
+article.detail :where(p, ul, ol, blockquote, figure) {
+  max-width: 66ch;
+}
