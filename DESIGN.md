@@ -618,7 +618,7 @@ Portable Text emits a flat sequence with no section wrappers, so `gap` cannot ex
 heading."
 
 ```css
-article.detail > * + *                                    { margin-top: var(--rhythm-paragraph); }
+article.detail > * + *:where(:not(.sidebar, .banner))     { margin-top: var(--rhythm-paragraph); }
 article.detail > * + :is(ul, ol, blockquote, figure, pre) { margin-top: var(--rhythm-block); }
 article.detail > :is(ul, ol, blockquote, figure, pre) + * { margin-top: var(--rhythm-block); }
 article.detail > * + h3                                   { margin-top: var(--rhythm-heading-minor); }
@@ -626,9 +626,25 @@ article.detail > * + h2                                   { margin-top: var(--rh
 article.detail > :is(h2, h3, h4) + *                      { margin-top: var(--rhythm-heading-close); }
 ```
 
-**Source order decides** — all six have equal specificity, and `heading-close` is last so a heading
-binds to whatever follows it. No `margin-bottom` anywhere, so no collapsing. The base rule needs
-`:not(.sidebar):not(.banner)` — both are explicitly grid-placed.
+**Source order decides among the last five.** They have identical specificity — (0,1,2) — and
+`heading-close` is last so a heading binds to whatever follows it. No `margin-bottom` anywhere, so
+nothing collapses. The base rule sits deliberately one notch lower at (0,1,1), which is what makes it
+the fallback the other five override.
+
+> **The exclusion must be `:where(:not(…))`, never a bare `:not()`.**
+
+`.sidebar` and `.banner` are explicitly grid-placed, so a flow margin would push them off their row —
+but `*:not(.sidebar):not(.banner)` adds **two class weights** and lifts the base rule to **(0,3,1)**.
+Three classes outrank one class plus two types, so it then beats all five overrides and **flattens the
+whole ramp to `rhythm-paragraph`** — every heading and block gap silently gone. Uniform 24px spacing
+reads as a design choice rather than a cascade bug, which is what makes this worth stating. `:where()`
+contributes zero specificity whatever it contains.
+
+**The exclusion is one-directional, by construction.** It stops a margin landing *on* a grid-placed
+element; it does not stop the element's *successor* taking one. So `.sidebar + p` gets
+`rhythm-paragraph`, and an `h2` → `.sidebar` → `p` sequence gives the paragraph 24px instead of
+`heading-close`'s 16, losing its bond to the heading. Sibling margins cannot express "skip the
+out-of-flow thing." See docs/open-questions.md.
 
 ### Responsive — split by cause, not by size
 

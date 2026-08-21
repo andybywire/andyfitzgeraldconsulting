@@ -26,6 +26,18 @@ The token is a fixed 222, so the two agree at 1440 and at 360 and disagree every
 first real tablet frame will need either its own mode or hand-set margins. **Still the one known
 hole.**
 
+**A grid-placed sibling breaks the rhythm bond above it.** The vertical rhythm ramp excludes
+`.sidebar` and `.banner` from *taking* a flow margin, but it cannot stop them *giving* one —
+`.sidebar + p` still matches the base rule. So an `h2` → `.sidebar` → `p` sequence gives the paragraph
+`rhythm-paragraph` (24) where `heading-close` would give 16, and the paragraph loses its bond to its
+heading. Sibling margins have no way to express "skip the out-of-flow element."
+
+Whether it ever bites depends on **grid placement, not on the ramp.** If the rail is explicitly
+`grid-row`-placed so it consumes no row in the prose column, the paragraphs either side are visually
+adjacent and the 24 is already right. If it does consume a row, the result is a vertical hole. **Not
+addressable until the grid and the rail component exist — phase 4** — and the fix belongs in the grid
+rules rather than in the ramp. See DESIGN.md → The CSS mechanism.
+
 **Mobile prose leading.** Every prose measure roughly halves at 360 while the type barely moves — the
 hero statement runs 43 characters on desktop and 19 on mobile, descriptions 50 → 33, paragraphs
 46 → 31. `body`'s 1.8 was derived for **~67 characters**; at 31–33 it is squarely in the 1.5 register.
