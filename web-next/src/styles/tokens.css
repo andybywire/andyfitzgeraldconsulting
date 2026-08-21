@@ -24,7 +24,7 @@
  */
 
 :root {
-  /* ── Colour primitives ─────────────────────────────────────────────────── */
+  /* ── Color primitives ──────────────────────────────────────────────────── */
   /* Blue: hue 197° / saturation 45%, stepped by lightness. Step numbers do NOT
      track lightness — 500 is the accent, at L 36%. */
   --blue-50: #e1eff4;
@@ -57,7 +57,7 @@
 
   --white: #ffffff;
 
-  /* ── Semantic color roles — LIGHT ─────────────────────────────────────── */
+  /* ── Semantic color roles — LIGHT ──────────────────────────────────────── */
   /* Pick a role by NAME, never by value: several pairs render identically here
      and diverge in dark, which has already produced wrong bindings. */
   --color-bg: var(--neutral-100);
@@ -114,7 +114,7 @@
   --font-prose: 'Noto Serif', Georgia, 'Times New Roman', serif;
   --font-heading: Lato, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 
-  /* ── Type scale — 18px base, ratio 1.25, fluid 375 → 1200px ───────────── */
+  /* ── Type scale — 18px base, ratio 1.25, fluid 375 → 1200px ────────────── */
   /* Steps 0 and 1 are static: 1 is the legibility floor, 0 is chrome only.
      Every preferred value is rem-dominant on purpose — a vw-dominant value
      locks the reader's font-size preference. */
@@ -169,7 +169,7 @@
   --quote-indent: var(--space-5);
 
   /* Border WIDTHS carry the `-width-` infix so a stroke's width cannot collide
-     with its colour: --color-border-quote is a different token. */
+     with its color: --color-border-quote is a different token. */
   --border-width-hairline: 1px;
   --border-width-quote: 6px;
 
