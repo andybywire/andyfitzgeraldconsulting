@@ -1,5 +1,5 @@
 // @ts-check
-import {defineConfig, envField} from 'astro/config'
+import {defineConfig, envField, fontProviders} from 'astro/config'
 import {loadEnv} from 'vite'
 import sanity from '@sanity/astro'
 import react from '@astrojs/react'
@@ -55,6 +55,68 @@ export default defineConfig({
   // environment needs per-request rendering for visual editing, and only it pays for Node.
   output: isPreview ? 'server' : 'static',
   ...(isPreview ? {adapter: node({mode: 'standalone'})} : {}),
+
+  /**
+   * Two families, four faces, our own subset files — the `local` provider rather than
+   * `google`, so nothing is fetched at build time. A provider that downloads would be
+   * cold on every CI run, the same problem already recorded against Content Layer and
+   * the Astro image cache.
+   *
+   * The files are `wdth`-instanced at 100 and Latin-subset by hand; Astro only wires
+   * them up. What it adds over hand-written @font-face is `optimizedFallbacks`, which
+   * reads each face's real metrics and emits a metric-matched fallback @font-face, so a
+   * swap reflows far less. The last entry in `fallbacks` MUST be a generic family name
+   * or that optimization is skipped.
+   *
+   * Extended-A is deliberately absent. Those glyphs fall through to the metric-matched
+   * fallback, which is uniform across both families — the previous hand-rolled setup
+   * gave Noto Serif an ext tier and Lato none, so a Czech name rendered in real Noto
+   * Serif in prose and in Helvetica in a heading.
+   */
+  fonts: [
+    {
+      name: 'Noto Serif',
+      cssVariable: '--font-prose',
+      provider: fontProviders.local(),
+      display: 'swap',
+      // Just the generic. Astro builds the metric-matched face against the
+      // generic's canonical font — Times New Roman for `serif` — regardless of
+      // what is named ahead of it, and that face resolves via local(). So any
+      // named family listed here sits AFTER a face that has already matched and
+      // is never reached. Georgia and an explicit Times New Roman were both in
+      // this list and both were dead weight.
+      fallbacks: ['serif'],
+      options: {
+        variants: [
+          {
+            weight: '100 900',
+            style: 'normal',
+            src: ['./src/assets/fonts/noto-serif-latin.woff2'],
+          },
+          {
+            weight: '100 900',
+            style: 'italic',
+            src: ['./src/assets/fonts/noto-serif-italic-latin.woff2'],
+          },
+        ],
+      },
+    },
+    {
+      name: 'Lato',
+      cssVariable: '--font-heading',
+      provider: fontProviders.local(),
+      display: 'swap',
+      // Same reasoning as above: the matched face is built against Arial, so
+      // 'Helvetica Neue' and 'Helvetica' would sit behind it unreachable.
+      fallbacks: ['sans-serif'],
+      options: {
+        variants: [
+          {weight: 400, style: 'normal', src: ['./src/assets/fonts/lato-regular.woff2']},
+          {weight: 700, style: 'normal', src: ['./src/assets/fonts/lato-bold.woff2']},
+        ],
+      },
+    },
+  ],
 
   integrations: [
     sanity({

@@ -35,7 +35,7 @@ work is worth his hands.
 | **You write** | tokens transcribed from DESIGN.md, boilerplate, config, repetitive sweeps, query modules — anything mechanical |
 | **Andy writes** | **layout mechanics, the cascade, component boundaries**, plus content model, URL design and semantics |
 
-For the second row: explain the reasoning and the underlying platform behaviour, then let him write
+For the second row: explain the reasoning and the underlying platform behavior, then let him write
 it. He may delegate one of these once he has the concept, but **let him offer** — don't assume, and
 don't do it for him.
 
@@ -126,24 +126,31 @@ Current direction → Deploy shape, and is written in phase 6.
   no page-level stylesheets, and no import chain — that structure belonged to the 11ty build and is
   deliberately not carried forward.
 - All font sizing in `rem`, never `px`.
+- **Never write a font family name in CSS. Use `var(--font-prose)` or `var(--font-heading)`.** Astro's
+  Fonts API scopes the family it registers — the real name is `Lato-c04d3693128bd5b6`, not `Lato` — so
+  `font-family: 'Lato'` matches nothing and **fails silently**, falling through to a system default
+  that looks plausible. This already caught the specimen page's inline SVG. It applies to SVG
+  presentation attributes too, where `font-family="…"` takes no `var()`; use `style="font-family: …"`.
 - Andy maintains a **parallel design system in Figma** (variables + text styles). CSS mirrors that
   two-layer idea: **primitive tokens** and **semantic role styles** that reference them.
 - Linked Data matters here. Semantics and structured markup are first-class concerns, not
   nice-to-haves — JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2.
-- Tabs for indentation in CSS; Prettier config in `studio/` uses no semicolons, single quotes,
-  100 char width.
+- **Two-space indentation everywhere, CSS included.** One Prettier style repo-wide — no semicolons,
+  single quotes, 100 char width — configured at the root and mirrored in `web-next/` only to add the
+  Astro plugin. The old rule here said tabs in CSS; that described `web/style/`, which is reference
+  only. Don't reintroduce a per-language override.
 
 ## Design system
 
 **[DESIGN.md](DESIGN.md) is the single source for design direction** — every token value plus the
 rules that govern a build: the two-layer principle, the modular scale and its clamps, the leading
-ramp, measure, the grid, vertical rhythm, colour roles, components, and the standing do's and don'ts.
-**Read it before touching type, colour, spacing or layout, and do not restate its rules here** — a
+ramp, measure, the grid, vertical rhythm, color roles, components, and the standing do's and don'ts.
+**Read it before touching type, color, spacing or layout, and do not restate its rules here** — a
 second copy is just something to get wrong and to fall out of sync. If a design rule seems to be
 missing, add it to DESIGN.md rather than to this file.
 
 **[docs/decisions/](docs/decisions/) holds the reasoning behind settled design decisions**, split by
-theme — colour, typography, layout, components. DESIGN.md links to them. **Read a record only when a
+theme — color, typography, layout, components. DESIGN.md links to them. **Read a record only when a
 decision it covers is being questioned, excepted, or changed** — not as background for ordinary work.
 If you find yourself re-deriving a value that has a record, read the record instead. **When a decision
 changes, supersede the record rather than editing rationale back into DESIGN.md** — that growth is
@@ -152,10 +159,36 @@ what this split exists to prevent.
 **[docs/open-questions.md](docs/open-questions.md)** tracks what is *not* settled. Consult it when
 work approaches one of those areas; it is not general background either.
 
-The authority chain is **Figma → DESIGN.md → CLAUDE.md**: the Figma library is the source of truth
-for colour roles, DESIGN.md reflects it and is authoritative for everything else, and this file
-defers to DESIGN.md. Figma mechanics and the constraints they impose on the system live in
-[docs/figma-notes.md](docs/figma-notes.md).
+**The authority chain changed when the CSS landed in phase 2.** It splits by *kind of thing* rather
+than by topic:
+
+- **Code is truth for values.** `web-next/src/styles/tokens.css` is where color, spacing, radius, type
+  sizes and grid actually live. **If it and DESIGN.md disagree — the front matter or the dark-mode
+  table — the CSS is right.** This is why tokens.css carries the invariant that it contains nothing
+  but custom-property declarations: it keeps the front matter useful as a *diffable record* instead of
+  letting it become a second spec.
+- **DESIGN.md is truth for rules.** The clamps, the leading ramp indexed by measure, measure itself,
+  the rhythm mechanism, the two-layer principle, the component relationships, and the standing do's
+  and don'ts. Neither Figma nor CSS records *why* or *when*, and this is what DESIGN.md is genuinely
+  good at.
+- **Figma is a reference, not an authority** — and those are different things. It cannot win an
+  argument against code or DESIGN.md, and no *new* design work starts there; that happens in the
+  browser against the built system. **But it remains the most detailed description of anything not yet
+  built, and you should absolutely still open it.** For most phase 4 components the boards are the only
+  place composition, states, adjacency and layout are drawn at all — nothing in code or DESIGN.md
+  replaces that, and there is nothing for them to contradict until the component exists. Read them for
+  *what a thing is made of*; where they disagree with DESIGN.md on a **value or a role**, DESIGN.md
+  wins. The boards carry known mis-bindings — see [docs/figma-notes.md](docs/figma-notes.md), which
+  catalogues them.
+
+**The failure mode this replaces:** the old chain named Figma as the source of truth for color roles,
+which invited someone to "fix" a working CSS value to match a dead Figma variable *on this file's
+authority*. The one-time drift diff at the start of phase 2 found all 105 variables in agreement
+across both themes, so nothing was lost by freezing Figma there.
+
+Figma mechanics and the constraints they imposed live in [docs/figma-notes.md](docs/figma-notes.md) —
+still the thing to read before touching that file, and now also the record of why parts of it look
+odd.
 
 What belongs here is only the working protocol — where the tools are and how to conduct the work:
 
@@ -188,9 +221,15 @@ One habit from the scarce era is still worth keeping: **batch aggressively** —
 script can read and write in the same call, so prefer a single comprehensive script over several
 probes.
 
-On authority, see the chain under **Design system**: Figma is the source of truth for **colour
-roles**, and DESIGN.md is authoritative for everything else. The MCP keeps the two in sync; it does
-not replace the written spec, and reading Figma is how you check DESIGN.md rather than the reverse.
+On authority, see the chain under **Design system** — and note that this section was written while
+Figma was still the source of truth. **Since phase 2 it is a reference rather than an authority**:
+code is truth for values, DESIGN.md for rules. So the MCP no longer keeps anything in sync, reading
+Figma is no longer how you check DESIGN.md, and writing tokens back into it is maintaining a
+historical record — do that only when Andy asks.
+
+**None of which makes it less worth reading.** `get_metadata` and `get_screenshot` over the component
+boards are the primary way to find out what a phase 4 component is actually made of, and that stays
+true for the whole build. Demoting Figma removed its vote, not its content.
 
 **Never use Figma's design-to-code tooling** — `get_design_context`, `add_code_connect_map`,
 `get_code_connect_suggestions`, `send_code_connect_mappings`. Decided 2026-07-28. It is the Figma
@@ -199,8 +238,11 @@ and CSS would bypass the hands-on work Andy is doing this for. Reading a node fo
 discussing it is fine; generating code from it is not. Do not propose it as a shortcut.
 
 **Do** use it for:
-- `get_variable_defs` — read variables and diff them against DESIGN.md. Offer this after Andy has
-  had a Figma session; it has already caught six divergences.
+- `get_variable_defs` — read variables and diff them against DESIGN.md. This caught six divergences
+  while Figma was live, and the final full diff at the start of phase 2 found all 105 variables in
+  agreement. **Now that Figma no longer holds authority over values there is nothing left to sync**, so
+  reach for this only to answer a historical question — *what did this used to be?* — never as a
+  routine check. This retires the variable diff specifically; it says nothing about reading the boards.
 - `get_metadata` / `get_screenshot` — read structure and see the design to give grounded feedback.
 - `download_assets` — pull SVGs and images out for use as real site assets.
 - `use_figma` — write tokens and text styles back into Figma from DESIGN.md. Andy has approved
@@ -225,7 +267,7 @@ boards, by eye. **Content parity becomes the verification instrument instead** �
 every type must render — because a changed model breaking a published document is the failure mode
 that actually bites.
 
-**Two datasets, deliberately not synchronised.** Model iteration happens on the duplicated
+**Two datasets, deliberately not synchronized.** Model iteration happens on the duplicated
 `production-26` dataset while `production` serves the live site. Migration scripts were considered
 and **declined**: Andy is publishing little or nothing before cutover, and hand-migrating one or two
 articles is cheaper than maintaining and debugging a migration suite. At cutover, `production-26`
@@ -271,7 +313,12 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    than a form target with its own display pages, since mail forms now appear on several pages.
    Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
    `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
-7. **Cleanup.** Deliberately after the site is live, so none of it can destabilise a launch, and
+
+   **Fonts can take `immutable`.** An earlier note here warned they could not, because they shipped
+   from `public/` at unhashed URLs. They now go through Astro's Fonts API from
+   `web-next/src/assets/fonts/` and are emitted hashed into `_astro/fonts/`, so
+   `max-age=31536000, immutable` is safe for that directory alongside the rest of `_astro/`.
+7. **Cleanup.** Deliberately after the site is live, so none of it can destabilize a launch, and
    before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
    still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:
    - **Remove the deprecated `insightType` field** from `article` and `caseStudy`, and unset the
@@ -288,6 +335,28 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
    Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
    watch-mode generation is off and `pnpm typegen` is run by hand.
+
+   **The service worker decision lands here** (deferred from phase 2, 2026-08-21). Andy has shipped
+   service workers on Jekyll and 11ty sites and runs one on `ux-methods`, which is also Astro, so
+   read that one first rather than starting cold. Four things shape the decision:
+   - **Astro hashes asset filenames at build**, so a hand-written worker with a hardcoded precache
+     list goes stale every build. Either do runtime caching only — cache-first for fonts, network-
+     first for HTML, no manifest — or use `@vite-pwa/astro`/Workbox to generate the manifest. This is
+     the part that differs from Jekyll and 11ty, where the filenames were ours to control.
+   - **Scope it to production only, deliberately.** A worker registered on `preview.` would cache
+     draft content and fight visual editing, and because a worker persists client-side it can outlive
+     the session that installed it. The two build modes make this a real hazard, not a hypothetical.
+   - **The marginal benefit over correct `Cache-Control` is small.** This is a content site; headers
+     already win most of the repeat-visit case. The worker's real value is an **offline fallback
+     page** and navigation preload.
+   - **A misconfigured worker is one of the few ways to semi-permanently break a static site**, since
+     it can serve stale HTML indefinitely to anyone who already has it. Ship it with a documented
+     unregister path.
+
+   **Fallback metric-matching is already done** and is no longer a phase 8 item. It was listed here
+   while the `@font-face` rules were hand-written; adopting Astro's Fonts API brought it for free, via
+   `optimizedFallbacks`. `font-display: swap` still accepts FOUT by design and preload only narrows
+   the window — but the reflow when the swap happens is now matched rather than raw.
 
 ### Deploy shape — static production, SSR preview, one droplet
 
@@ -326,7 +395,7 @@ table and as the production runtime. As a runtime it trades an atomic symlink sw
 registry and container lifecycle, adds a daemon to a small droplet and one more thing to survive
 reboots, and buys scaling and onboarding this project does not need. It also complicates TLS rather
 than simplifying it: certbot must answer an HTTP-01 challenge on port 80 for the real hostname, so
-containerising means either a sidecar sharing webroot and cert volumes or host certbot with mounts —
+containerizing means either a sidecar sharing webroot and cert volumes or host certbot with mounts —
 both more moving parts than host certbot. The local-harness case was the stronger one, since
 `nginx -t` plus a curl sweep of the redirect list would close a real verification gap, but it needs
 path and version parity with the droplet to mean anything, and false confidence is worse than no test.
@@ -423,6 +492,13 @@ first. Set `color-scheme: light dark` on `:root` so form controls follow.
 The cost is not the ~60 lines of code; it is that every token now has three places it can be wrong,
 and the test matrix doubles.
 
+**The control lives in the footer** (decided 2026-08-21), so the `ThemeToggle` component lands with
+the footer in phase 3 rather than in phase 2. Phase 2 shipped the mechanism — the three CSS blocks and
+the head script — plus a throwaway control in the specimen page purely to exercise it. All three
+blocks are verified, including the case the structure exists for: OS dark with `data-theme="light"`
+correctly resolves to light. **"System" is the absence of a choice**, not a third stored value: it
+removes both the attribute and the `localStorage` key, so there is no third state to keep in sync.
+
 ### Branching and verification
 
 **`main` is the live production site and is frozen and terminal.** CI deploys on any push to `main`
@@ -442,7 +518,7 @@ Astro `web-next/`, and once `next` is on pnpm the merge only produces lockfile c
 **Andy does the visual verification himself.** Get changes green and integration-verified, then hand
 him the specific eyeball steps rather than asking him to check things you could have checked.
 
-Nothing on `next` is ever deployed, so **nginx config, 301 redirects and CI build behaviour cannot
+Nothing on `next` is ever deployed, so **nginx config, 301 redirects and CI build behavior cannot
 be verified locally.** The SSR preview environment closes part of this gap early; the rest needs a
 staging deploy before cutover.
 
@@ -466,7 +542,7 @@ Andy's read is that the site is **already typography-driven and lightly styled**
 digital garden or blog than a corporate site. So the reframe is carried mostly by content and IA
 plus tightening, not a visual overhaul. Don't propose a redesign.
 
-**Colour, type, grid and rhythm live in [DESIGN.md](DESIGN.md)** — values, rules and rationale
+**Color, type, grid and rhythm live in [DESIGN.md](DESIGN.md)** — values, rules and rationale
 alike. Don't restate them here.
 
 **Layout and page-template changes get discussed against the whole page inventory** — index,
@@ -477,7 +553,7 @@ which is why it sits here; the layout constraints it protects are in DESIGN.md.
 
 **Most of the old debt list has been deleted rather than carried forward.** It described
 `web/style/` — the import chain, uncontrolled measure, ten hand-picked font sizes, Sass-era dead
-comments, the ungoverned greys, the shipped contrast failures. None of it survives a build that
+comments, the ungoverned grays, the shipped contrast failures. None of it survives a build that
 starts from DESIGN.md, and keeping it would only invite someone to "migrate" the thing we are
 deliberately not migrating. **If you want to know how the old CSS worked, read the git history.**
 
@@ -490,26 +566,49 @@ What remains is infrastructure, content-model constraints, and one measured inpu
   security issue on the running site, not just a migration note**, and it should be fixed in the new
   workflow rather than reproduced.
 - **The droplet keeps 3 releases, not 5.** Commit `5e9fac8` deliberately changed `tail -n +6` to
-  `+4`; only the comment still says five. Preserve the retention behaviour in the new workflow and
+  `+4`; only the comment still says five. Preserve the retention behavior in the new workflow and
   write the comment to match.
 - **`mailhandler.php` needs the Composer step.** PHP deps are installed in CI and shipped with the
   tar. Easy to lose in a JavaScript migration — see phase 6.
 
 **Content-model constraints the new front end inherits:**
 
-- **`h5` is author-selectable in Sanity and does not exist in DESIGN.md.** The design system defines
-  `h1`–`h4` and stops there deliberately — below h3 size is no longer a usable signal. So either the
-  Portable Text schema drops `h5`, or the system needs a role for it. **`h4` already appears in
-  published content**, so it must render correctly from day one. Decide in phase 1, with the schema.
+- **`h5` was dropped from the schema in phase 1** — `article`, `caseStudy` and `singleton` offer
+  `h1`–`h4` only, matching DESIGN.md, so no h5 role is needed. `h4` renders from day one in
+  `web-next/src/styles/base.css`. **One residue: dropping the style from the schema does not remove it
+  from the data.** Any block already published as `h5` still carries that style and would render
+  unstyled. Unverified — worth one query against `production-26` at the phase 5 parity check.
 - **Portable Text emits a flat sequence with no section wrappers**, which is why vertical rhythm is
   sibling margins rather than `gap`. This is a constraint on the markup, not a preference — see
   DESIGN.md and docs/decisions/layout.md.
 
-**Measured input for phase 2 (fonts):**
+**Fonts — settled in phase 2, recorded because the shape is easy to undo by accident:**
 
-- **2.7 MB of unsubset fonts, and the files carry over even though the CSS does not.** All four
-  variable files declare `font-stretch: 100%`, so the `wdth` axis is paid for and unusable.
-  `Lato-Medium.woff2` is 203 KB — 7× Regular or Bold — and went unused on article pages while being
-  preloaded on every one. The body font was not preloaded at all. `@font-face` used the obsolete
-  `format('woff2 supports variations')` syntax. Open Sans is dropped entirely, which alone saves
-  ~577 KB.
+`web/assets/fonts/` held **2.7 MB** across six files. `web-next` ships **154 KB** across four, and the
+old files stay where they are — `web/` is frozen.
+
+- **Two families, four faces.** Noto Serif roman and italic (variable `wght 100–900`), Lato 400 and
+  700. Open Sans was dropped because DESIGN.md never mentions it, and `Lato-Medium.woff2` because it
+  had **no consumer at all** — DESIGN.md's only `fontWeight: 500` role is `display`, which is *Noto
+  Serif* and covered by its variable axis. Together those two were ~780 KB of pure deletion.
+- **Astro's Fonts API with the `local` provider**, configured in `web-next/astro.config.mjs`, with
+  `<Font>` in `BaseLayout`. `local` rather than `google` on purpose: a downloading provider would be
+  cold on every CI run, the same problem recorded against Content Layer and the image cache. What it
+  buys over hand-written `@font-face` is **`optimizedFallbacks`** — a metric-matched fallback face per
+  weight, derived from the real font metrics.
+- **`--font-prose` and `--font-heading` are declared by Astro, not by `tokens.css`.** Don't re-declare
+  them there; it would shadow the matched fallback, which is the point of the arrangement.
+- **Latin only. There is no Extended-A tier, and reintroducing one would be a regression.** An earlier
+  build shipped one for Noto Serif and none for Lato, so a Czech or Hungarian name rendered in real
+  Noto Serif in a paragraph and in Helvetica in a heading. Those characters now fall to the
+  metric-matched fallback in **both** families, which is uniform and costs nothing.
+- **`fallbacks` lists only the generic** (`serif` / `sans-serif`). Astro builds the matched face
+  against the generic's canonical font — Times New Roman, Arial — whatever is named ahead of it, and
+  that face resolves through `local()`. So any named family in the list sits behind a face that has
+  already matched and is unreachable. Georgia and Helvetica Neue were both there, both dead.
+- **`web-next/scripts/subset-fonts.sh` regenerates the four files** and is run by hand, never by the
+  build. It pins `wdth=100` out of the Noto Serif variable files before subsetting, because DESIGN.md
+  never uses a narrow width. It also pins `SOURCE_DATE_EPOCH`: fontTools stamps `head.modified` with
+  the current time, and that 4-byte change perturbs woff2 compression enough that two runs on
+  identical input produced 48016 and 48052 bytes. Without it, "the committed files are reproducible"
+  is false.

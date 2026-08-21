@@ -13,7 +13,7 @@ Settled decisions live in [decisions/](decisions/). Figma mechanics live in
 
 **Custom form-validation messaging.** Native validation bubbles cannot be styled, so the error tokens
 cannot actually be used until this is designed. **This is the real blocker on the error state, not the
-colours** — `error-bg`, `error-line` and `error-text` are specified in both themes and have nowhere to
+colors** — `error-bg`, `error-line` and `error-text` are specified in both themes and have nowhere to
 go.
 
 ---
@@ -25,6 +25,18 @@ absorb the remainder, floor 16*, which gives 222 at 1440, **105 at 1206**, and 1
 The token is a fixed 222, so the two agree at 1440 and at 360 and disagree everywhere between. The
 first real tablet frame will need either its own mode or hand-set margins. **Still the one known
 hole.**
+
+**A grid-placed sibling breaks the rhythm bond above it.** The vertical rhythm ramp excludes
+`.sidebar` and `.banner` from *taking* a flow margin, but it cannot stop them *giving* one —
+`.sidebar + p` still matches the base rule. So an `h2` → `.sidebar` → `p` sequence gives the paragraph
+`rhythm-paragraph` (24) where `heading-close` would give 16, and the paragraph loses its bond to its
+heading. Sibling margins have no way to express "skip the out-of-flow element."
+
+Whether it ever bites depends on **grid placement, not on the ramp.** If the rail is explicitly
+`grid-row`-placed so it consumes no row in the prose column, the paragraphs either side are visually
+adjacent and the 24 is already right. If it does consume a row, the result is a vertical hole. **Not
+addressable until the grid and the rail component exist — phase 4** — and the fix belongs in the grid
+rules rather than in the ramp. See DESIGN.md → The CSS mechanism.
 
 **Mobile prose leading.** Every prose measure roughly halves at 360 while the type barely moves — the
 hero statement runs 43 characters on desktop and 19 on mobile, descriptions 50 → 33, paragraphs
@@ -50,7 +62,7 @@ where light is 12.25 against 6.78.
 
 **Headings no longer sit softer than body in dark.** `text`, `text-heading` and `text-title` all
 resolve to `neutral-200`. Recovering the softening needs a neutral step between `200` and `300`, which
-the ramp does not have. See [decisions/colour.md](decisions/colour.md).
+the ramp does not have. See [decisions/color.md](decisions/color.md).
 
 ---
 

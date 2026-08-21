@@ -9,7 +9,7 @@ record instead.
 
 | Record | Backs | Covers |
 |---|---|---|
-| [colour.md](colour.md) | Colors, Elevation & Depth | the accent, text roles, role naming, links, the dark theme, accent bands, the deliberate WCAG 1.4.11 miss, tonal depth |
+| [color.md](color.md) | Colors, Elevation & Depth | the accent, text roles, role naming, links, the dark theme, accent bands, the deliberate WCAG 1.4.11 miss, tonal depth |
 | [typography.md](typography.md) | Typography | the 18px base and 1.25 ratio, fluid clamps and rem-dominance, leading by measure, tracking, h4, measure |
 | [layout.md](layout.md) | Layout & Spacing | the grid, the skip family, span tokens, vertical rhythm, the sibling-margin mechanism, responsive, outdenting |
 | [components.md](components.md) | Components, Shapes | buttons, the focus-ring relationship, chips and tags, note cards, blockquote, the page header |
@@ -19,7 +19,7 @@ Alongside these:
 - **[../figma-notes.md](../figma-notes.md)** — Figma mechanics and the constraints they impose. Tooling,
   not design decisions.
 - **[../urls-and-filtering.md](../urls-and-filtering.md)** — the URL contract, redirects, and the
-  Insights facet browse. Addressing and browse behaviour, not design.
+  Insights facet browse. Addressing and browse behavior, not design.
 - **[../open-questions.md](../open-questions.md)** — what is *not* settled.
 
 ## Conventions

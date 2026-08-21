@@ -2,10 +2,12 @@
 version: alpha
 name: Andy Fitzgerald Consulting
 description: >-
-  Typography-driven design system for andyfitzgeraldconsulting.com. Values here are
-  the specification for the build; the Figma library (pPZPGT6EpSaLkoUDK8HMMp) is the
-  source of truth for colour roles. Desktop values are canonical — see Layout for the
-  mobile variants and Typography for the fluid clamps.
+  Typography-driven design system for andyfitzgeraldconsulting.com. Authoritative for
+  the RULES — the clamps, the leading ramp, measure, rhythm, the two-layer principle.
+  For VALUES the built CSS is truth as of phase 2: web-next/src/styles/tokens.css wins
+  if it and the front matter here ever disagree, and this file is the diffable record.
+  Desktop values are canonical — see Layout for the mobile variants and Typography for
+  the fluid clamps.
 
 colors:
   # ── Primitives ────────────────────────────────────────────────────────────
@@ -169,6 +171,7 @@ typography:
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: 0em
+  # The one role that GROWS as the viewport narrows: 28.125 desktop, 30 mobile. See Typography.
   masthead-name:
     fontFamily: Noto Serif
     fontSize: 1.7578125rem
@@ -200,6 +203,13 @@ radius:
   full: 9999px
 
 spacing:
+  # Keys self-prefix into the emitted property — `space-1` → `--space-1`, `rhythm-band` →
+  # `--rhythm-band`, `card-pad` → `--card-pad`. TWO EXCEPTIONS, both deliberate:
+  #   border-hairline → --border-width-hairline
+  #   border-quote    → --border-width-quote
+  # so that a stroke's WIDTH cannot collide with its COLOR — `color/border-quote` already emits
+  # `--color-border-quote`. Verified against Figma codeSyntax 2026-08-20. See docs/figma-notes.md.
+  #
   # ── Primitives — one body line box (32.4px) rounded to 32, then quartered ──
   space-1: 8px
   space-2: 16px
@@ -385,7 +395,7 @@ substantial articles and describing consulting services, reframed from "consulta
 "engaged professional's digital home."
 
 The surface is **typography-driven and lightly styled**. Long-form reading is the primary job and
-everything else is chrome around it: one accent colour, no shadows, no illustration, hierarchy carried
+everything else is chrome around it: one accent color, no shadows, no illustration, hierarchy carried
 by type, space and a hairline border. **When two options are equally defensible, the quieter one
 wins.**
 
@@ -393,12 +403,16 @@ Everything is **hand-authored CSS and HTML** — native nesting, no preprocessor
 no component library. A project goal, not an implementation detail.
 
 **Two layers.** Primitives name *values* (`blue-500`, `space-4`); semantic roles name *uses*
-(`accent`, `rhythm-paragraph`). A semantic colour or size is genuinely one value, so it stays a token.
+(`accent`, `rhythm-paragraph`). A semantic color or size is genuinely one value, so it stays a token.
 A semantic *text* role is a bundle of applied properties, so in CSS it becomes a rule — `h2 { … }` —
 not a variable. **Do not collapse that distinction.**
 
-**Where things live.** The Figma library `pPZPGT6EpSaLkoUDK8HMMp` is the source of truth for colour
-roles; this file reflects it and is authoritative for everything else.
+**Where things live.** This file is authoritative for the **rules** below. For the **values**, the
+built CSS is truth as of phase 2 — `web-next/src/styles/tokens.css` — and the front matter here is the
+diffable record of it; if the two ever disagree, the CSS is right. The Figma library
+`pPZPGT6EpSaLkoUDK8HMMp` is a **reference rather than an authority** — it cannot outrank either, but it
+is still the most detailed description of anything not yet built, so keep reading it for component
+composition. Full chain in CLAUDE.md → Design system.
 
 - **[docs/decisions/](docs/decisions/)** — why the system is the way it is. Read a record only when a
   decision is being questioned, excepted or changed.
@@ -408,7 +422,7 @@ roles; this file reflects it and is authoritative for everything else.
 ## Colors
 
 One accent, a neutral ramp derived from it, and an error hue deliberately far from both. Values are
-in the front matter; the reasoning is in [docs/decisions/colour.md](docs/decisions/colour.md).
+in the front matter; the reasoning is in [docs/decisions/color.md](docs/decisions/color.md).
 
 - **Accent `#326e85` (`blue-500`)** — brand surfaces, buttons, link hover. It is the lightest step in
   this hue that carries white text at AA (5.67), and almost everything else follows from that.
@@ -421,7 +435,7 @@ in the front matter; the reasoning is in [docs/decisions/colour.md](docs/decisio
 | Role | Use |
 |---|---|
 | `text` | body prose, and anything with no reason to differ |
-| `text-heading` | document headings, h1–h3 |
+| `text-heading` | document headings, h1–h4 |
 | `text-title` | block-level link titles — card titles, list headings |
 | `text-muted` | captions, labels, metadata — apparatus around the content |
 | `text-lead` | the lead paragraph |
@@ -436,8 +450,8 @@ the light/dark asset swap belongs in CSS on the front end.
 
 ### Links
 
-**Inline links take body text colour with a persistent underline**, moving to `link-hover` on hover.
-The underline rather than the colour carries the affordance, which satisfies WCAG 1.4.1.
+**Inline links take body text color with a persistent underline**, moving to `link-hover` on hover.
+The underline rather than the color carries the affordance, which satisfies WCAG 1.4.1.
 **Block-level link titles take `text-title` with no underline** — a title in its own block at heading
 size is identified as a link by position.
 
@@ -483,7 +497,7 @@ ones — and a theme is one CSS override block, where a viewport twin is a real 
 **Dark is not a mechanical inversion of light, and two of its rules will surprise you.** Contrast is
 non-linear, so mirrored steps give unmirrored ratios; and the accent family inverts to dark text on
 light fills rather than keeping white text. Both follow from measurement — **read
-[the record](docs/decisions/colour.md) before changing a dark value.**
+[the record](docs/decisions/color.md) before changing a dark value.**
 
 ## Typography
 
@@ -506,6 +520,17 @@ don't add a step below it for reading text. `size/0` (14px) is chrome only. The 
 | 4 | 25 | 28.125 | `clamp(1.5625rem, 1.4737rem + 0.3788vw, 1.7578125rem)` | 84% |
 | 5 | 30 | 35.15625 | `clamp(1.875rem, 1.7285rem + 0.625vw, 2.197265625rem)` | 79% |
 | 6 | 32 | 43.9453125 | `clamp(2rem, 1.6606rem + 1.4479vw, 2.746582031rem)` | 60% |
+
+**`masthead-name` does not ride this ramp — it is the one role that grows as the viewport narrows.**
+It takes step 4 on desktop and step 5 on mobile, so **28.125 → 30**, while every other role shrinks.
+That is deliberate: the wordmark holding roughly constant is what keeps it reading as the masthead
+once the header stacks. Figma models it as `role/masthead-name`, an alias to a *different step per
+mode* rather than a size of its own — the only token in the system shaped that way.
+
+**Its endpoints are inverted, which `clamp()` will punish.** `clamp()` orders its arguments by
+value, not by viewport, so 28.125 is still the first argument and 30 the third, and the `vw`
+coefficient is **negative**. Whether it wants that inverted clamp or a plain step change at the
+masthead's own breakpoint is a phase 3 call, since that is where the header restacks.
 
 ### Leading — indexed by measure, not by size step
 
@@ -533,7 +558,7 @@ differ only in leading.
 | **Noto Serif, every size** | **0%** | `display`, `lead`, `body`, `small`, `caption` |
 
 **h4 has no size step left** — it differentiates by family + weight + tracking. If it reads as bold
-body text the levers are uppercase, small caps, colour or a rule, **not** a smaller size.
+body text the levers are uppercase, small caps, color or a rule, **not** a smaller size.
 
 ### Measure
 
@@ -554,7 +579,7 @@ article.detail :where(p, ul, ol, blockquote, figure) { max-width: 66ch; }
 
 **12 columns, 996px content, 222px margins at 1440.** Detail-page prose is **8 columns = 656px**; the
 right rail is one skipped column away. Both ends close exactly, at 1440 and at the 375 floor — don't
-nudge the numbers. Grids stretch rather than centre. Reasoning in
+nudge the numbers. Grids stretch rather than center. Reasoning in
 [docs/decisions/layout.md](docs/decisions/layout.md).
 
 ### Grid owns horizontal, rhythm owns vertical
@@ -599,7 +624,7 @@ Portable Text emits a flat sequence with no section wrappers, so `gap` cannot ex
 heading."
 
 ```css
-article.detail > * + *                                    { margin-top: var(--rhythm-paragraph); }
+article.detail > * + *:where(:not(.sidebar, .banner))     { margin-top: var(--rhythm-paragraph); }
 article.detail > * + :is(ul, ol, blockquote, figure, pre) { margin-top: var(--rhythm-block); }
 article.detail > :is(ul, ol, blockquote, figure, pre) + * { margin-top: var(--rhythm-block); }
 article.detail > * + h3                                   { margin-top: var(--rhythm-heading-minor); }
@@ -607,9 +632,25 @@ article.detail > * + h2                                   { margin-top: var(--rh
 article.detail > :is(h2, h3, h4) + *                      { margin-top: var(--rhythm-heading-close); }
 ```
 
-**Source order decides** — all six have equal specificity, and `heading-close` is last so a heading
-binds to whatever follows it. No `margin-bottom` anywhere, so no collapsing. The base rule needs
-`:not(.sidebar):not(.banner)` — both are explicitly grid-placed.
+**Source order decides among the last five.** They have identical specificity — (0,1,2) — and
+`heading-close` is last so a heading binds to whatever follows it. No `margin-bottom` anywhere, so
+nothing collapses. The base rule sits deliberately one notch lower at (0,1,1), which is what makes it
+the fallback the other five override.
+
+> **The exclusion must be `:where(:not(…))`, never a bare `:not()`.**
+
+`.sidebar` and `.banner` are explicitly grid-placed, so a flow margin would push them off their row —
+but `*:not(.sidebar):not(.banner)` adds **two class weights** and lifts the base rule to **(0,3,1)**.
+Three classes outrank one class plus two types, so it then beats all five overrides and **flattens the
+whole ramp to `rhythm-paragraph`** — every heading and block gap silently gone. Uniform 24px spacing
+reads as a design choice rather than a cascade bug, which is what makes this worth stating. `:where()`
+contributes zero specificity whatever it contains.
+
+**The exclusion is one-directional, by construction.** It stops a margin landing *on* a grid-placed
+element; it does not stop the element's *successor* taking one. So `.sidebar + p` gets
+`rhythm-paragraph`, and an `h2` → `.sidebar` → `p` sequence gives the paragraph 24px instead of
+`heading-close`'s 16, losing its bond to the heading. Sibling margins cannot express "skip the
+out-of-flow thing." See docs/open-questions.md.
 
 ### Responsive — split by cause, not by size
 
@@ -681,9 +722,26 @@ The shape language is quiet: small radii, hairline strokes, no ornament. Reasoni
 variables. Reasoning in [docs/decisions/components.md](docs/decisions/components.md).
 
 **Focus-ring radii derive from the control they wrap** — inner at `radius + 2`, outer at `radius + 4`.
-Write it as a real `calc()` so the dependency stays live. **The capsule is the one exception: a ring
-around a capsule is a capsule**, so both rings take `radius-full` rather than a derived value, and
-`+2` / `+4` describe only their offset.
+**`box-shadow` derives them for you**: spread grows a shadow's corner radius by exactly the spread
+distance, so `0 0 0 2px, 0 0 0 4px` on a 3px control renders rings at 5 and 7 with no `calc()` written
+anywhere. That is the reason to prefer it over drawn geometry — and also why the derivation is **not
+overridable**. Breaking it means drawing the rings as pseudo-elements and positioning them by hand.
+*(An earlier version of this line called for a real `calc()`; that describes work the browser already
+does.)*
+
+**The capsule is the one exception: a ring around a capsule is a capsule**, so both rings take
+`radius-full` rather than a derived value, and `+2` / `+4` describe only their offset.
+
+> **Check on the real button in phase 3 — a constant offset is not constant curvature.**
+
+At `radius-1` the radii run 3 → 5 → 7, so the outer corner is **2.3× rounder** than the control's.
+The offset is uniform and the rings genuinely are concentric, but the eye compares roundness, so a
+near-square field inside a visibly rounded ring reads as a mismatch. **The effect is confined to the
+1–4px band** — at 0 the rings stay square, at `radius-full` they stay capsules, and both read as
+exactly concentric. `radius-1` is the smallest radius in the system and so the worst case in it, and
+the button is the component that will show it. Judge it at 1× on the real button, not on a blowup. If
+it needs fixing, the fix is a **second exception here beside the capsule**, not a change to the
+offsets — those are correct.
 
 **The quote bar sits inside the indent**, so text sits 42px from the bar on desktop and 20 on mobile,
 not 48 and 24.
@@ -697,7 +755,7 @@ not 48 and 24.
 
 **The light-ground button has no border.** Only the accent-band ghost takes one, and it takes
 `border-on-accent`. On a band the ghost cannot lighten while keeping its label legible, so it inverts:
-**outline → solid white → grey**.
+**outline → solid white → gray**.
 
 **Filter chips.** Rest is a surface with a control border; hover and pressed tint toward the accent;
 selected is a filled accent pill. **The chip border is its own role, not the card hairline** — a card
@@ -713,11 +771,11 @@ state that cannot occur.
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
 **not margin** — the bar sits at the box edge, so a margin would put the gap outside it.
 
-**The focus ring is stated by relationship, not by fixed colours:**
+**The focus ring is stated by relationship, not by fixed colors:**
 
 > **Inner ring contrasts with the control; outer ring contrasts with the surface.**
 
-The same two colours in both contexts, order swapped. In CSS:
+The same two colors in both contexts, order swapped. In CSS:
 `box-shadow: 0 0 0 2px <inner>, 0 0 0 4px <outer>`.
 
 **The page header is one component with an optional lead**, and the boolean is required by the rail
@@ -729,9 +787,9 @@ component, so pages legitimately differ there.
 The build checklist. Each rule stands on its own; the link is the reasoning, for when a rule is being
 questioned rather than followed.
 
-**Colour** — [record](docs/decisions/colour.md)
+**Color** — [record](docs/decisions/color.md)
 
-- **Don't** infer lightness from a colour step number — `blue-500` is the accent at L 36%.
+- **Don't** infer lightness from a color step number — `blue-500` is the accent at L 36%.
 - **Do** verify novel pairings against **four combinations**: ground and card, in each theme.
 - **Don't** carry a light rule of thumb into dark. *"`blue-500` or darker always passes"* is true on
   light and **false on dark**, where `blue-500` reaches 3.33 on the ground and `neutral-700` is the
@@ -740,13 +798,13 @@ questioned rather than followed.
   clears AA; on dark nothing blue does.
 - **Don't** use `neutral-600` for text on light — its one sanctioned light job is a control boundary.
   In dark it is `disabled-text`, where low contrast is the point.
-- **Do** pick a colour role by name, never by value — two pairs render identically on light and have
+- **Do** pick a color role by name, never by value — two pairs render identically on light and have
   already produced wrong bindings.
 - **Don't** treat the disabled states' low contrast as a bug. Disabled is exempt (WCAG 1.4.3, 1.4.11)
   and the low contrast *is* the signal — but read the guardrail as being about the *pairing*, not
-  which side the colour sits on.
-- **Do** identify errors in text, never by colour alone (WCAG 3.3.1).
-- **Don't** add success or warning colours until a state is actually designed.
+  which side the color sits on.
+- **Do** identify errors in text, never by color alone (WCAG 3.3.1).
+- **Don't** add success or warning colors until a state is actually designed.
 
 **Typography** — [record](docs/decisions/typography.md)
 
@@ -756,14 +814,14 @@ questioned rather than followed.
 - **Do** keep every `clamp()` preferred value `rem`-dominant, ~85% for body. A `vw`-dominant value
   locks the reader's font-size preference.
 - **Don't** add a size step below 16px for reading text. The levers for a smaller-feeling role are
-  weight, tracking, colour and italic.
+  weight, tracking, color and italic.
 - **Do** give headings their own `ch` value if capping them at all — `ch` resolves against each
   element's own font.
 
 **Layout** — [record](docs/decisions/layout.md)
 
 - **Do** cap measure with `max-width` on existing left-aligned grid items. **Don't** introduce a
-  `.prose` container — it re-centres the measure and moves the left edge of text between page types.
+  `.prose` container — it re-centers the measure and moves the left edge of text between page types.
 - **Do** pick a spacing token by prefix first, then by name. **Never** by value — four values are
   shared by two or more roles.
 - **Do** let the wide column fill and pin only the narrow one. **Don't** let a rail size itself from
@@ -776,7 +834,7 @@ questioned rather than followed.
 
 - **Do** check an interaction ramp's direction against **the page**, never the previous step.
 - **Do** state the focus ring as a relationship — inner contrasts the control, outer contrasts the
-  surface. A fixed colour pair fails on the accent band.
+  surface. A fixed color pair fails on the accent band.
 - **Don't** give tags hover, pressed or focus states. They are markers, not controls.
 
 ## Open questions

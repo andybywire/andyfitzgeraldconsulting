@@ -1,8 +1,8 @@
 # URLs and filtering
 
-The URL contract and the behaviour of the Insights facet browse. Companion to
+The URL contract and the behavior of the Insights facet browse. Companion to
 [decisions/](decisions/), which covers the design system; this covers addressing and browse
-behaviour, which are content-model concerns rather than design ones.
+behavior, which are content-model concerns rather than design ones.
 
 **This file exists because the decisions in it are separated by months, and by phase.** The URL
 design was settled in phase 1; the filtering it was designed around is built in phase 4; the
@@ -37,7 +37,7 @@ not real 301s. Status codes need the server.
 - **Include it into both server blocks.** Production and the SSR preview sit behind the same nginx.
 - **`/feed.xml` stays exactly where it is.** Feed readers are the least forgiving consumers of a moved
   URL — some handle a 301 poorly and simply go quiet. When per-taxonomy feeds arrive in phase 8 they
-  are additions, not a reorganisation.
+  are additions, not a reorganization.
 
 **Tag URLs redirect to a filter param, not to a bare index**, because the visitor's intent was the
 topic and the new design can honour it:
@@ -69,7 +69,7 @@ single owner, which is the condition that usually fails.
   to it — prefLabel plus altLabels — so an old link works the day the label changes rather than the
   day someone remembers it.
 - **altLabel covers relabels, not restructures.** If a concept splits or merges, pointing the old slug
-  at one of the results is an editorial judgement, not a mechanical alias. That case needs a decision,
+  at one of the results is an editorial judgment, not a mechanical alias. That case needs a decision,
   not an entry.
 
 ## The filter model
@@ -145,7 +145,7 @@ comma-joined string of prefLabels and needs to become an array of slugs.
 **Accepted, not a bug to fix.** Preview mode encodes stega metadata into content strings for
 click-to-edit, so anything comparing rendered text stops matching — in preview only. Filters should
 match on `data-` attributes carrying clean slugs, or run values through `stegaClean` from
-`@sanity/client`. Even then, exact behaviour in preview is not a target.
+`@sanity/client`. Even then, exact behavior in preview is not a target.
 
 ## Open
 
@@ -157,7 +157,7 @@ from the model. It disappears from view but is still there, dimmed and reading z
 opens "See more topics" — so the map of the collection survives without costing anything above the
 fold.
 
-**Two costs of re-sorting that are worth designing against.** Sorting by count optimises the *first*
+**Two costs of re-sorting that are worth designing against.** Sorting by count optimizes the *first*
 click, since the broadest next cut sits at the front; it works against *re-finding* a term seen a
 moment ago, which is what alphabetical is good at. A possible split: count-descending in the truncated
 visible set, alphabetical inside the expanded "See more" panel, so each list does the job its context
@@ -173,7 +173,7 @@ leading group, in selection order — while unselected ones re-sort beneath is t
 count scanned as a number of topics rather than of resources, and it appeared in both groups with the
 same number, leaving its scope unclear.
 
-Replaced by a **labelled text control per group — "reset topics" / "reset genres" — on the group's
+Replaced by a **labeled text control per group — "reset topics" / "reset genres" — on the group's
 heading row, right-aligned, appearing only once that group has a selection.** Clicking it clears that
 group, restores the facets to their unselected order, and moves focus to the first facet.
 
@@ -253,10 +253,10 @@ vocabularies. `Topic` and `Topic Taxonomy` look like one live and one legacy. **
 defined on 0 of 42 documents** — dead, along with the 11ty build's `service` and `categoryTag`
 projections that read it. Resolve with the schema in phase 1.
 
-**Parameter syntax.** `?topic=a,b` against repeated `?topic=a&topic=b`. Whether values are normalised
+**Parameter syntax.** `?topic=a,b` against repeated `?topic=a&topic=b`. Whether values are normalized
 to a stable order, so one filter state is one URL rather than several.
 
-**History behaviour.** `pushState` per toggle means Back walks the filter history and can trap someone
+**History behavior.** `pushState` per toggle means Back walks the filter history and can trap someone
 behind a dozen presses; `replaceState` loses the ability to undo a selection with Back.
 
 **Announcing result changes.** A filter that silently changes content is invisible to a screen reader.

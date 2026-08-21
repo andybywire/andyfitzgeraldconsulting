@@ -1,0 +1,219 @@
+---
+/**
+ * THROWAWAY — a specimen page for eyeballing phase 2. Delete or replace when the
+ * real page types land in phase 4.
+ *
+ * Its whole job is to exercise every rule in base.css against real prose so the
+ * type scale, the rhythm ramp, the measure cap and both themes can be checked in
+ * a browser rather than taken on trust.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Phase 2 specimen — design tokens and element role styles"
+  description="Throwaway page for verifying the global tier."
+>
+  <div class="scaffold">
+    <form class="controls">
+      <label for="theme">Theme</label>
+      <select id="theme" name="theme">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+      <label for="probe">Native control</label>
+      <input id="probe" type="text" placeholder="checks color-scheme" />
+    </form>
+
+    <article class="detail">
+      <h1>The quiet option wins</h1>
+
+      <p>
+        This page exists to be looked at. Every rule in <code>base.css</code> is exercised below, so the
+        type scale, the vertical rhythm and both themes can be checked against DESIGN.md by eye. Paragraph
+        text should cap at roughly sixty-seven characters — count a line if you like — while headings
+        deliberately run wider, because <code>ch</code> resolves against each element's own font and a
+        shared cap would mean something different for Lato than for Noto Serif.
+      </p>
+
+      <p>
+        A second paragraph, to check the gap between siblings. It should be{' '}
+        <strong>24px</strong>, noticeably tighter than the space above the heading that follows it.
+        Inline links take the surrounding text color with a persistent underline and shift to the
+        accent on hover — <a href="#nowhere">this one, for instance</a> — because the underline rather
+        than the color carries the affordance. Tab to it to check the focus ring: two concentric rings,
+        the inner contrasting the control and the outer the page.
+      </p>
+
+      <h2>A major heading</h2>
+
+      <p>
+        The space above that h2 should be visibly larger than the space below it — 64px against 16px
+        in raw token terms, though half-leading means the <em>apparent</em> ratio is closer to 2.5:1 than
+        the 4:1 the numbers suggest. Check the apparent space, not the values.
+      </p>
+
+      <h3>A minor heading</h3>
+
+      <p>
+        Above this h3, 48px. Below it, the same 16px as the h2, because{' '}
+        <code>rhythm-heading-close</code> is last in source order and binds a heading to whatever follows
+        it regardless of level.
+      </p>
+
+      <h4>A heading with no size step left</h4>
+
+      <p>
+        The h4 above sits at exactly the same size as this paragraph. It differentiates by family,
+        weight and tracking alone — Lato 700 with 2% letter-spacing against Noto Serif 400. If it
+        reads as merely bold body text, the levers are uppercase, small caps, color or a rule, never
+        a smaller size.
+      </p>
+
+      <ul>
+        <li>An unordered list, to check the 48px block gap above it.</li>
+        <li>
+          A second item, checking the 16px between items. This one runs long enough to wrap, so the
+          leading inside an item can be compared against the gap between them.
+        </li>
+        <li>A third, shorter.</li>
+      </ul>
+
+      <p>And a paragraph after the list, which should also take the 48px block gap.</p>
+
+      <ol>
+        <li>Ordered lists take the same treatment.</li>
+        <li>Both keep the browser's own indent — DESIGN.md specifies none.</li>
+      </ol>
+
+      <blockquote>
+        <p>
+          The bar sits inside the indent, so the text starts 42px from the page edge rather than 48
+          — the 6px rule plus 42px of padding. On mobile that becomes a 4px rule and 20px, and both
+          come from one <code>calc()</code> so the relationship survives a change to either token.
+        </p>
+      </blockquote>
+
+      <p>
+        Blockquote is an element rule rather than a component, and the indent is{' '}
+        <code>padding-inline-start</code> rather than margin — a margin would put the gap outside the
+        box and the bar would drift off the text block.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 640 300" role="img" aria-labelledby="fig-title">
+          <title id="fig-title">A placeholder rectangle standing in for a figure</title>
+          <rect width="640" height="300" fill="var(--color-surface-muted)"></rect>
+          <rect
+            x="0.5"
+            y="0.5"
+            width="639"
+            height="299"
+            fill="none"
+            stroke="var(--color-border)"
+            stroke-width="1"></rect>
+          <text
+            x="320"
+            y="158"
+            text-anchor="middle"
+            fill="var(--color-text-muted)"
+            style="font-family: var(--font-heading)"
+            font-size="16">640 × 300</text
+          >
+        </svg>
+        <figcaption>
+          Captions are Noto Serif italic at the 16px step in <code>text-muted</code> — apparatus around
+          the content rather than content. The figure is capped at the prose measure; the caption deliberately
+          is not, because its smaller font makes <code>ch</code> resolve narrower than its own image.
+        </figcaption>
+      </figure>
+
+      <p>
+        Last paragraph. Switch the theme with the control at the top of the page and check all of
+        the above again — every token has three places it can be wrong, and the native form controls
+        should re-skin along with the page because <code>color-scheme</code> is set.
+      </p>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  /*
+   * THROWAWAY SCAFFOLDING — not the grid, and must not become it.
+   *
+   * base.css caps the measure but nothing centers or insets anything yet, so
+   * without this the article hugs the viewport edge and the type is hard to
+   * judge. The real grid — 12 columns, 996px content, 222px margins — is phase 3.
+   * Delete this block when it arrives.
+   */
+  .scaffold {
+    max-width: 62rem;
+    margin-inline: auto;
+    padding: var(--space-5) var(--space-3);
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    margin-block-end: var(--rhythm-section);
+    padding-block-end: var(--space-3);
+    border-block-end: var(--border-width-hairline) solid var(--color-border);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+  }
+
+  .controls select,
+  .controls input {
+    font: inherit;
+    padding: var(--space-1);
+    border: var(--border-width-hairline) solid var(--color-border-control);
+    border-radius: var(--radius-1);
+  }
+
+  code {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.9em;
+  }
+</style>
+
+<script>
+  /*
+   * The toggle's wiring, unlike the resolver in BaseLayout, does NOT need to run
+   * before paint — the head script has already set the theme. So this is an
+   * ordinary bundled module with defer semantics, which is the cheaper default.
+   *
+   * "System" REMOVES both the attribute and the stored value rather than storing
+   * the word "system", so following the OS is the absence of a choice rather
+   * than a third state to keep in sync.
+   */
+  const select = document.querySelector<HTMLSelectElement>('#theme')
+  const root = document.documentElement
+
+  if (select) {
+    try {
+      select.value = localStorage.getItem('theme') ?? 'system'
+    } catch {
+      select.value = 'system'
+    }
+
+    select.addEventListener('change', () => {
+      const choice = select.value
+      try {
+        if (choice === 'system') {
+          localStorage.removeItem('theme')
+          delete root.dataset.theme
+        } else {
+          localStorage.setItem('theme', choice)
+          root.dataset.theme = choice
+        }
+      } catch {
+        // Storage blocked — apply for this page view only.
+        if (choice === 'system') delete root.dataset.theme
+        else root.dataset.theme = choice
+      }
+    })
+  }
+</script>
