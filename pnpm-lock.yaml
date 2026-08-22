@@ -60,6 +60,9 @@ importers:
       '@astrojs/react':
         specifier: ^6.0.2
         version: 6.0.2(@types/node@26.2.0)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(esbuild@0.28.2)(jiti@2.7.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(supports-color@8.1.1)(tsx@4.23.12)(yaml@2.9.0)
+      '@lucide/astro':
+        specifier: ^1.33.0
+        version: 1.33.0(astro@7.2.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))
       '@sanity/astro':
         specifier: ^3.5.0
         version: 3.5.0(9e2a597616804175b351710ca338d392)
@@ -1779,6 +1782,11 @@ packages:
 
   '@lezer/php@1.0.5':
     resolution: {integrity: sha512-W7asp9DhM6q0W6DYNwIkLSKOvxlXRrif+UXBMxzsJUuqmhE7oVU+gS3THO4S/Puh7Xzgm858UNaFi6dxTP8dJA==}
+
+  '@lucide/astro@1.33.0':
+    resolution: {integrity: sha512-vhqvQKoPIW3vsOoCb+ZUDgWCP2zfiwhwRqwrnIkNxvtrm4pbaaO0qUlfPK+RvIdn9AlUmyouXFM+9w9AuUbrFA==}
+    peerDependencies:
+      astro: ^4 || ^5 || ^6 || ^7
 
   '@marijn/find-cluster-break@1.0.3':
     resolution: {integrity: sha512-FY+MKLBoTsLNJF/eLWaOsXGdz6uh3Iu1axjPf6TUq92IYumcTcXWHoS747JARLkcdlJ/Waiaxc5wQfFO8jC6NA==}
@@ -7707,6 +7715,10 @@ snapshots:
       '@lezer/common': 1.5.2
       '@lezer/highlight': 1.2.3
       '@lezer/lr': 1.4.10
+
+  '@lucide/astro@1.33.0(astro@7.2.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0))':
+    dependencies:
+      astro: 7.2.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@26.2.0)(jiti@2.7.0)(tsx@4.23.12)(yaml@2.9.0)
 
   '@marijn/find-cluster-break@1.0.3': {}
 

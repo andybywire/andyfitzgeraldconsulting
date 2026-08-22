@@ -36,12 +36,13 @@
 interface Props {
   as?: 'div' | 'section' | 'header' | 'footer' | 'nav' | 'ul' | 'article'
   class?: string
+  [key: string]: unknown
 }
 
-const {as: Tag = 'div', class: className}: Props = Astro.props
+const {as: Tag = 'div', class: className, ...rest}: Props = Astro.props
 ---
 
-<Tag class:list={['grid', className]}>
+<Tag class:list={['grid', className]} {...rest}>
   <slot />
 </Tag>
 

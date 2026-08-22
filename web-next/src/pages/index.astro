@@ -11,6 +11,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Band from '../components/Band.astro'
 import Grid from '../components/Grid.astro'
+import {Search, Rss} from '@lucide/astro'
 ---
 
 <BaseLayout
@@ -28,6 +29,8 @@ import Grid from '../components/Grid.astro'
         </select>
         <label for="probe">Native control</label>
         <input id="probe" type="text" placeholder="checks color-scheme" />
+        <button type="button" aria-label="Search"><Search /></button>
+        <span class="muted-probe"><Rss class="icon-sm" /> 18px, inherits muted text</span>
       </form>
     </Grid>
   </Band>
@@ -243,6 +246,23 @@ import Grid from '../components/Grid.astro'
     border-block-end: var(--border-width-hairline) solid var(--color-border);
     font-family: var(--font-heading);
     font-size: var(--font-size-1);
+  }
+
+  .muted-probe {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--color-text-muted);
+  }
+
+  .controls button {
+    display: inline-flex;
+    padding: var(--space-1);
+    border: var(--border-width-hairline) solid var(--color-border-control);
+    border-radius: var(--radius-1);
+    background: none;
+    color: inherit;
+    cursor: pointer;
   }
 
   .controls select,

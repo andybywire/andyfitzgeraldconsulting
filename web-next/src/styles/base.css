@@ -2,9 +2,9 @@
  * Global element-level role styles. The second half of the global tier —
  * tokens.css holds the values, this holds the rules that apply them.
  *
- * SCOPE: the theme's color-scheme, a minimal reset, h1–h4, body
- * prose, links, blockquote, figure, the focus-ring default, and the vertical
- * rhythm mechanism. Nothing else. Every other typographic role in DESIGN.md
+ * SCOPE: the theme's color-scheme, a minimal reset, h1–h4, body prose, links,
+ * blockquote, figure, icons, the focus-ring default, and the vertical rhythm
+ * mechanism. Nothing else. Every other typographic role in DESIGN.md
  * (display, lead, small, label, nav, masthead-*, chip, tag, body-compact) is
  * component-scoped and belongs to the component that owns it.
  *
@@ -221,6 +221,41 @@ video {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+/* ── Icons ─────────────────────────────────────────────────────────────────── */
+/*
+ * Lucide icons, from @lucide/astro. Inline SVG at build time, zero runtime JS.
+ *
+ * NO COLOR IS SET HERE, deliberately. Lucide emits `stroke="currentColor"`, so an
+ * icon takes the color of the text around it — which is exactly DESIGN.md's rule
+ * that "icon and icon-on-accent mirror text and text-on-accent, so an icon beside
+ * a label reads as part of it". Binding `color: var(--color-icon)` would BREAK
+ * that: an icon in muted metadata would jump back to full-strength text. The token
+ * names the intent; currentColor implements it, and it inverts on an accent band
+ * for free because the band re-points --color-text.
+ *
+ * Size and stroke come from CSS rather than Lucide's `size` prop so both live in
+ * tokens.css. CSS wins over SVG presentation attributes, so this overrides Lucide's
+ * defaults cleanly — and it means a `size={N}` prop at a call site is silently
+ * ignored. Reach for `class="icon-sm"` instead.
+ *
+ * Accessibility is Lucide's default and it is the right one: it adds
+ * `aria-hidden="true"` unless you pass an a11y prop, so an icon-only control puts
+ * its name on the BUTTON (`aria-label`) and leaves the glyph decorative.
+ */
+
+svg.lucide {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  stroke-width: var(--icon-stroke);
+  flex: none;
+}
+
+svg.lucide.icon-sm {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  stroke-width: var(--icon-stroke-sm);
 }
 
 /* ── Focus ─────────────────────────────────────────────────────────────────── */

@@ -20,12 +20,22 @@ interface Props {
   space?: 'band' | 'section' | 'none'
   as?: 'section' | 'header' | 'footer' | 'div' | 'aside'
   class?: string
+  /* Anything else is forwarded to the root element. That is also what lets a
+     PAGE style this component: Astro passes the parent's scope down as a prop,
+     and it only reaches the DOM if the component spreads rest onto an element. */
+  [key: string]: unknown
 }
 
-const {tone = 'page', space = 'band', as: Tag = 'section', class: className}: Props = Astro.props
+const {
+  tone = 'page',
+  space = 'band',
+  as: Tag = 'section',
+  class: className,
+  ...rest
+}: Props = Astro.props
 ---
 
-<Tag class:list={['band', className]} data-tone={tone} data-space={space}>
+<Tag class:list={['band', className]} data-tone={tone} data-space={space} {...rest}>
   <slot />
 </Tag>
 

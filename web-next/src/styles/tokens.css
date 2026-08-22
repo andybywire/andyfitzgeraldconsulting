@@ -171,6 +171,24 @@
   --border-width-hairline: 1px;
   --border-width-quote: 4px; /* -> 6px at 50rem */
 
+  /* ── Icons ─────────────────────────────────────────────────────────────── */
+  /* Unitless numbers, not lengths: `stroke-width` in an SVG is in USER UNITS, and
+     Lucide draws everything in a 24x24 viewBox, so the value is scaled along with
+     the icon. Rendered px = stroke x (size / 24).
+
+     Sizes are set from CSS, not from Lucide's `size` prop, so they live here in one
+     place. Consequence worth knowing: `size={N}` at a call site is SILENTLY
+     OVERRIDDEN. Use the size classes in base.css instead.
+
+     Stroke is proportional by default — the same drawing scaled, so 20px renders
+     1.67px and 18px renders 1.50px. To make the two read as one weight family
+     instead, set the smaller stroke to keep rendered px constant:
+     2 x (20/24) / (18/24) = 2.22. */
+  --icon-size: 20px;
+  --icon-size-sm: 18px;
+  --icon-stroke: 2;
+  --icon-stroke-sm: 2;
+
   /* ── Radius ────────────────────────────────────────────────────────────── */
   /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
      is arbitrarily large because border-radius clamps to half the shorter
