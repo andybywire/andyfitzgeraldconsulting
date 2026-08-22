@@ -162,14 +162,14 @@
   --card-media: var(--space-3);
   --chrome-pad-header: var(--space-4);
   --chrome-pad-footer: var(--space-5);
-  --chrome-inset: var(--space-2); /* -> space-5 at 60rem */
+  --chrome-inset: var(--space-2); /* -> space-5 at 50rem */
   --field-height: var(--space-5);
-  --quote-indent: var(--space-3); /* -> space-5 at 60rem */
+  --quote-indent: var(--space-3); /* -> space-5 at 50rem */
 
   /* Border WIDTHS carry the `-width-` infix so a stroke's width cannot collide
      with its color: --color-border-quote is a different token. */
   --border-width-hairline: 1px;
-  --border-width-quote: 4px; /* -> 6px at 60rem */
+  --border-width-quote: 4px; /* -> 6px at 50rem */
 
   /* ── Radius ────────────────────────────────────────────────────────────── */
   /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
@@ -217,10 +217,10 @@
      full-width element. Used on something narrower it silently returns the
      16px floor rather than the page margin. <Grid> is its one consumer. */
   --grid-margin: max(16px, calc((100% - var(--grid-content)) / 2));
-  --grid-gutter: 8px; /* -> 24px at 60rem */
+  --grid-gutter: 8px; /* -> 24px at 50rem */
   /* DESIGN.md: use gutter-content for real gaps between content columns;
      grid-gutter exists to make the arithmetic close. No consumer yet. */
-  --grid-gutter-content: 32px; /* -> 24px at 60rem. LARGER here, not smaller */
+  --grid-gutter-content: 32px; /* -> 24px at 50rem. LARGER here, not smaller */
 
   /* ── Column placement ──────────────────────────────────────────────────── */
   /* A custom property can hold ANY token sequence, `/` included, so a whole grid
@@ -239,8 +239,8 @@
      IMPLICIT columns and break the layout structurally. Same collapse, milder
      failure. */
   --col-full: 1 / -1; /* never varies */
-  --col-main: var(--col-full); /* -> 1 / span 8 at 60rem */
-  --col-rail: var(--col-full); /* -> 10 / span 3 at 60rem */
+  --col-main: var(--col-full); /* -> 1 / span 8 at 50rem */
+  --col-rail: var(--col-full); /* -> 10 / span 3 at 50rem */
 }
 
 /*
@@ -262,13 +262,15 @@
  * means placement, flex-direction, display and grid-template-areas can all be
  * driven from here. Verified, not assumed.
  *
- * 60rem is not invented: DESIGN.md already uses it for the Home notes outdent.
+ * 50rem was arrived at by eye against real layouts. DESIGN.md's Outdenting example
+ * still shows 60rem for the note-card outdent — reconcile the two if that rule is
+ * meant to fire with the rest of the collapse rather than at its own width.
  *
  * MOBILE-FIRST. :root holds the narrow values, this block holds the wide ones, so
  * if the query never evaluates you get the mobile layout rather than a desktop
  * grid on a phone. DESIGN.md calls desktop values canonical, so THIS block is the
  * side to diff against for anything viewport-varying; each token in :root carries
- * an inline `-> value at 60rem` note so the pair is findable. See DESIGN.md →
+ * an inline `-> value at 50rem` note so the pair is findable. See DESIGN.md →
  * Layout & Spacing → Responsive.
  *
  * ADDING A SECOND BREAKPOINT is one more block, not a sweep through components.
@@ -276,10 +278,10 @@
  * and source order decides. Keep every query in one direction — a `max-width` and
  * a `min-width` at the same value both match at exactly that width.
  *
- *     @media (min-width: 60rem) { :root { --col-main: 1 / span 8; } }
+ *     @media (min-width: 50rem)   { :root { --col-main: 1 / span 8; } }
  *     @media (min-width: 75rem) { :root { --col-rail: 10 / span 3; } }
  *
- * — prose widens at 60rem while the rail stays stacked, then the rail moves beside
+ * — prose widens at 50rem while the rail stays stacked, then the rail moves beside
  * it at 75rem.
  *
  * Seven tokens vary. Note what does NOT need to be here: --grid-margin is a

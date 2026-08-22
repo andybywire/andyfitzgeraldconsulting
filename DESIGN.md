@@ -672,8 +672,8 @@ with grid, so source order equals reading order at both sizes.
 
 ### One breakpoint, mobile-first — and why that is not a conflict
 
-**There is exactly one breakpoint in the CSS, at 60rem, and it lives in one place:** a single
-`@media (min-width: 60rem)` block in `web-next/src/styles/tokens.css`. No component carries a media
+**There is exactly one breakpoint in the CSS, at 50rem, and it lives in one place:** a single
+`@media (min-width: 50rem)` block in `web-next/src/styles/tokens.css`. No component carries a media
 query. The breakpoint flips *tokens*, and components read tokens — including placement, because a
 custom property can hold any token sequence, so `--col-rail: 10 / span 3` collapses to `1 / -1` at the
 base and every consumer follows. There is no CSS way to put a breakpoint in a variable
@@ -692,6 +692,12 @@ conflict, and the difference is deliberate:
 So for the seven viewport-varying tokens, **the `@media` block is the side that matches this
 document**, not `:root`. Each token in `:root` carries an inline note naming its wide value, so the
 pair is readable without cross-referencing. Adding a second breakpoint is one more block, wider last.
+
+**50rem was arrived at by eye against real layouts**, which leaves one thing to reconcile: the
+Outdenting example below still shows `min-width: 60rem`, from before the value was tuned. The note
+cards it governs do not exist yet, so nothing is broken — but when they land, either that rule joins
+the single breakpoint or it becomes a deliberate second one. **Don't let it become an accidental
+second one.**
 
 ### Outdenting
 
