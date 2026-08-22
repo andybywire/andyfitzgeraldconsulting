@@ -805,6 +805,29 @@ The same two colors in both contexts, order swapped. In CSS:
 rather than offered as flexibility. **The gap after the header belongs to the parent band**, not the
 component, so pages legitimately differ there.
 
+### Search — specified 2026-08-21, built in phase 4
+
+Recorded ahead of the build so the masthead can leave the right seam. **Phase 3 ships the icon inert**
+— it links nowhere and carries no behavior.
+
+- **It expands in place, replacing the nav items.** Search is not a separate page you navigate to; the
+  masthead trades its navigation for a field. So the nav and the field occupy the same slot, and that
+  slot has to be able to hold either — which is a constraint on the masthead's markup, not a later
+  addition to it.
+- **Results replace the content of the current page**, adopting the results layout on the Figma board.
+  The page is not navigated away from, so the masthead stays put and the URL question (does a search
+  push history?) sits with the phase 4 filter work in
+  [docs/urls-and-filtering.md](docs/urls-and-filtering.md).
+- **Fuse.js**, the same engine the previous version of the site used.
+- **`cmd + k` opens it**, moving focus into the field, and the icon is independently clickable and
+  focusable. Two entry points to one state.
+- **On mobile the icon becomes the word "search"** — the masthead restacks at that breakpoint and the
+  nav moves to a full-bleed accent strip, where an icon alone reads as decoration. The Figma file has
+  a mobile search-results screen showing the behavior.
+
+**Icons come from Lucide** (the Astro integration), for everything except the footer's social marks,
+which are brand assets rather than interface icons and are not ours to restyle.
+
 ## Do's and Don'ts
 
 The build checklist. Each rule stands on its own; the link is the reasoning, for when a rule is being
