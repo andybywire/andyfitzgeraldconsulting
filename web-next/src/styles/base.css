@@ -70,6 +70,14 @@
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 
 body {
+  /* NOT cosmetic. The UA gives body `margin: 8px`, and while that is invisible
+     on a page with no full-width surfaces, it insets every band by 8px so a
+     full-bleed accent band stops reaching the viewport edge — with a hairline of
+     page ground showing down both sides. Zeroing it is what makes `full bleed`
+     true. Declared here rather than in the :where() reset above so it is not
+     silently overridable: everything full-width depends on it. */
+  margin: 0;
+
   background-color: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-prose);
