@@ -1,0 +1,70 @@
+---
+/**
+ * The 12-column content grid, inset from the viewport by the page margin.
+ *
+ * Ordinary `display: grid` — no bleed tracks, no named lines, no subgrid. Those
+ * exist to let one item inside a flowing article escape to the viewport edge, and
+ * nothing here needs that: full-bleed is what <Band> is for, and a band is a
+ * sibling in the page stack rather than a child needing to break out.
+ *
+ * ── THE CONTRACT ─────────────────────────────────────────────────────────────
+ *
+ * 12 columns at EVERY width. A child places itself with a placement token and
+ * never with a media query of its own:
+ *
+ *     .sidebar { grid-column: var(--col-rail); }
+ *
+ * The token is `1 / -1` by default and OPENS UP to its split at the breakpoint —
+ * tokens.css is mobile-first — so the narrow behavior is the base case and comes
+ * for free. There is no wrong way to write it. Hardcode `10 / span 3` instead and
+ * it simply stays narrow on mobile: visibly wrong but recoverable, which is why
+ * the grid keeps 12 columns rather than dropping to one.
+ *
+ * ── Why column-gap rather than fixed 61px columns ────────────────────────────
+ *
+ * Grid subtracts the total gap first, then divides the remainder. At 1440 that is
+ * (996 − 11 × 24) ÷ 12 = 61 — DESIGN.md's column width, derived instead of typed,
+ * and still correct at every other width where a fixed 61px would not be.
+ *
+ * It also makes the spans and skips fall out on their own:
+ *   1 / span 8    →  8 × 61 + 7 × 24 = 656, the prose measure
+ *   10 / span 3   →  skips column 9; that gap is grid-skip-1, 61 + 48 = 109
+ *   9 / span 4    →  after `1 / span 6`, skips 7–8; that is grid-skip-2, 194
+ * None of those three lengths is ever written down. That is why the five grid
+ * length tokens were removed from tokens.css.
+ */
+interface Props {
+  as?: 'div' | 'section' | 'header' | 'footer' | 'nav' | 'ul' | 'article'
+  class?: string
+}
+
+const {as: Tag = 'div', class: className}: Props = Astro.props
+---
+
+<Tag class:list={['grid', className]}>
+  <slot />
+</Tag>
+
+<style>
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+
+    /* --grid-margin is a formula, not 222px: it caps content at 996 and lets the
+       margins absorb the remainder, floored at 16. Used directly, with nothing
+       subtracted, because the gap sits between content columns only — there are
+       no margin tracks for it to inflate. */
+    padding-inline: var(--grid-margin);
+    column-gap: var(--grid-gutter);
+
+    /* Row gap is VERTICAL, so it is rhythm rather than grid — and specifically
+       rhythm-heading-major, "because what lands below always starts with a
+       heading" (DESIGN.md). It applies whenever content wraps to a second row,
+       which on mobile is every row, since the placement tokens all collapse to
+       full width.
+       This is the one place the grid touches a rhythm token, and the reason it
+       is legitimate: `grid owns horizontal, rhythm owns vertical` is not
+       self-enforcing for gaps, so it has to be kept by hand. */
+    row-gap: var(--rhythm-heading-major);
+  }
+</style>

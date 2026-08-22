@@ -1,0 +1,113 @@
+---
+/**
+ * A full-bleed horizontal stripe of the page. The page is a vertical stack of
+ * these, which is what makes full-bleed cheap: a band is already the viewport's
+ * width, so nothing has to break out of a container to reach the edge.
+ *
+ * It carries no radius and no border by design — "the viewport edges do the
+ * containing" (DESIGN.md, Elevation). A band is a position in the tonal layering,
+ * not a component with a boundary.
+ *
+ * Band owns the VERTICAL space and the tone. It does not inset its content: wrap
+ * children in <Grid> for that. Two components rather than one so a band can hold
+ * a full-bleed image without fighting a boolean — the cost is one extra level of
+ * nesting in the common case.
+ */
+interface Props {
+  /** Tonal layer. Only `accent` re-points the text roles — see the style block. */
+  tone?: 'page' | 'surface' | 'accent' | 'logo'
+  /** Vertical padding. Both band and section interpolate with no breakpoint. */
+  space?: 'band' | 'section' | 'none'
+  as?: 'section' | 'header' | 'footer' | 'div' | 'aside'
+  class?: string
+}
+
+const {tone = 'page', space = 'band', as: Tag = 'section', class: className}: Props = Astro.props
+---
+
+<Tag class:list={['band', className]} data-tone={tone} data-space={space}>
+  <slot />
+</Tag>
+
+<style>
+  /*
+   * No width, no margin, no max-width. A band is a block in normal flow, so it
+   * is already full width; saying so again would only invite someone to
+   * "correct" it to a container.
+   */
+
+  .band[data-space='band'] {
+    padding-block: var(--rhythm-band);
+  }
+
+  .band[data-space='section'] {
+    padding-block: var(--rhythm-section);
+  }
+
+  .band[data-space='none'] {
+    padding-block: 0;
+  }
+
+  .band[data-tone='surface'] {
+    background-color: var(--color-surface);
+  }
+
+  /* white on light, neutral-900 on dark — in both themes a ground that ordinary
+     text roles already read correctly against, so nothing is re-pointed. */
+  .band[data-tone='logo'] {
+    background-color: var(--color-surface-logo-band);
+  }
+
+  /*
+   * The accent band RE-POINTS THE ROLE TOKENS rather than setting colors.
+   *
+   * DESIGN.md: "Changing a band's fill is never a one-property change — the text
+   * on it has to move in the same breath." Re-pointing makes that structural
+   * instead of a thing to remember. Custom properties inherit, and inheritance
+   * does not care about component boundaries or Astro's style scoping — so every
+   * element rule in base.css and every component slotted in here picks these up
+   * automatically. An h2 inside this band reads --color-text-heading and gets the
+   * on-accent value without knowing it is on a band.
+   *
+   * This is the same mechanism as the theme blocks in tokens.css, applied to a
+   * subtree instead of the document.
+   *
+   * `text-muted` is the compromise. DESIGN.md has no muted-on-accent role, so
+   * captions and metadata flatten to full-strength here rather than keeping their
+   * hierarchy. Leaving it unmapped is not an option — neutral-700 on blue-500
+   * fails contrast outright. docs/open-questions.md tracks this as "tonal
+   * hierarchy on accent bands is thin"; blue-50 (4.82) and neutral-200 (4.70)
+   * both clear AA if a muted role is ever wanted.
+   */
+  .band[data-tone='accent'] {
+    background-color: var(--color-surface-accent);
+
+    --color-text: var(--color-text-on-accent);
+    --color-text-heading: var(--color-text-on-accent);
+    --color-text-title: var(--color-text-on-accent);
+    --color-text-lead: var(--color-text-on-accent);
+    --color-text-muted: var(--color-text-on-accent);
+    --color-icon: var(--color-icon-on-accent);
+    --color-border: var(--color-border-on-accent);
+    --color-border-quote: var(--color-border-on-accent);
+
+    /* Inline links keep the underline as the affordance and stop changing color
+       on hover — link-hover is blue-500, which is the band itself. This is the
+       role that exists for exactly that case. */
+    --color-link-hover: var(--color-text-on-accent-hover);
+
+    /* The focus ring is deliberately NOT re-pointed here, for two reasons.
+       First, it cannot be done this way: `--color-focus-ring: var(--color-focus-offset)`
+       alongside a declaration of --color-focus-offset in the same block resolves
+       against this element's own cascaded value, not the inherited one, so both
+       tokens would collapse to the same color and the ring would vanish. Custom
+       property substitution is not sequential.
+       Second, it should not be done here anyway. DESIGN.md models the two cases
+       as separate component entries — focus-ring-on-light and focus-ring-on-accent
+       — because which color contrasts "the control" depends on the control, not on
+       the band. base.css carries the on-page-ground default; a control that can
+       appear on a band swaps the pair itself. */
+
+    color: var(--color-text);
+  }
+</style>

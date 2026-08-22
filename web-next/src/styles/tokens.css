@@ -162,14 +162,14 @@
   --card-media: var(--space-3);
   --chrome-pad-header: var(--space-4);
   --chrome-pad-footer: var(--space-5);
-  --chrome-inset: var(--space-5);
+  --chrome-inset: var(--space-2); /* -> space-5 at 60rem */
   --field-height: var(--space-5);
-  --quote-indent: var(--space-5);
+  --quote-indent: var(--space-3); /* -> space-5 at 60rem */
 
   /* Border WIDTHS carry the `-width-` infix so a stroke's width cannot collide
      with its color: --color-border-quote is a different token. */
   --border-width-hairline: 1px;
-  --border-width-quote: 6px;
+  --border-width-quote: 4px; /* -> 6px at 60rem */
 
   /* ── Radius ────────────────────────────────────────────────────────────── */
   /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
@@ -180,49 +180,137 @@
   --radius-full: 9999px;
 
   /* ── Grid — 12 columns, 996px content, 222px margins at 1440 ───────────── */
-  /* Bind the skips rather than retyping them: 109 and 194 look arbitrary enough
-     to get "corrected". skip-1 = column + 2 gutters, skip-2 = 2 columns + 3. */
-  --grid-margin: 222px;
-  --grid-gutter: 24px;
-  --grid-gutter-content: 24px;
-  --grid-column: 61px;
-  --grid-skip-1: 109px;
-  --grid-skip-2: 194px;
-  --grid-span-3: 231px;
-  --grid-span-4: 316px;
+  /* --grid-margin is a FORMULA, not the 222px DESIGN.md quotes. Cap content at
+     996 and let the margins absorb the remainder, floored at the mobile value:
+     222 at 1440, 105 at 1206, 16 below ~1028, and content never exceeds 996 at
+     any width. 222 is what the formula produces at 1440, not an input. Reading
+     it as an input is what open-questions.md recorded as "the one known hole".
+
+     Used directly as `padding-inline` on the grid. px, not rem, per the units
+     note at the top of this file: the arithmetic closes against the viewport.
+
+     FIVE TOKENS WERE REMOVED HERE — grid-column (61), grid-skip-1 (109),
+     grid-skip-2 (194), grid-span-3 (231), grid-span-4 (316). A real CSS grid
+     expresses every one of them structurally, so emitting them as lengths would
+     invite someone to type a length where a line number belongs:
+
+       repeat(12, 1fr) + column-gap    ->  columns compute to 61 at 1440
+       grid-column: 1 / span 8         ->  656, the prose width
+       grid-column: 10 / span 3        ->  starts at line 10, so column 9 is
+                                           skipped — that gap IS skip-1, 109
+       grid-column: 9 / span 4         ->  after `1 / span 6`, skips 7-8 = 194
+
+     They exist in DESIGN.md's front matter because Figma has no `fr` and needed
+     lengths. We don't. Same shape as box-shadow deriving the focus-ring radii. */
+  --grid-content: 996px;
+
+  /* PERCENTAGE, not vw, and the difference is a real bug not a preference.
+     `50vw` includes the scrollbar, so on a 1440 window with a 16px classic
+     scrollbar the inset computes from 720 while only 1424 is available to
+     content — giving 980 where DESIGN.md says 996, and dragging the column,
+     prose and skip widths 16px short with it. Measured. macOS overlay
+     scrollbars hide this; Windows, where classic scrollbars are the default,
+     does not.
+
+     CONSTRAINT that comes with it: a percentage resolves against the
+     CONTAINING BLOCK, so this is only correct as `padding-inline` on a
+     full-width element. Used on something narrower it silently returns the
+     16px floor rather than the page margin. <Grid> is its one consumer. */
+  --grid-margin: max(16px, calc((100% - var(--grid-content)) / 2));
+  --grid-gutter: 8px; /* -> 24px at 60rem */
+  /* DESIGN.md: use gutter-content for real gaps between content columns;
+     grid-gutter exists to make the arithmetic close. No consumer yet. */
+  --grid-gutter-content: 32px; /* -> 24px at 60rem. LARGER here, not smaller */
+
+  /* ── Column placement ──────────────────────────────────────────────────── */
+  /* A custom property can hold ANY token sequence, `/` included, so a whole grid
+     placement fits in one. That is what keeps the breakpoint in a single place:
+     these collapse in the media query below and no component needs a query of
+     its own. Verified — flipping the value re-lays out.
+
+     The names are the RELATIONSHIP, per DESIGN.md's skip family: 8 + skip-1 + 3
+     "reads as a sidebar, set apart from the prose". Add a pair when a layout
+     actually needs one; do not build the vocabulary speculatively.
+
+     The grid itself stays `repeat(12, 1fr)` at every width — only these collapse.
+     That is deliberate: if a component forgets the token and hardcodes
+     `10 / span 3`, it lands in columns 10-12, narrow and visibly wrong but
+     recoverable. Against a one-column grid the same mistake would create nine
+     IMPLICIT columns and break the layout structurally. Same collapse, milder
+     failure. */
+  --col-full: 1 / -1; /* never varies */
+  --col-main: var(--col-full); /* -> 1 / span 8 at 60rem */
+  --col-rail: var(--col-full); /* -> 10 / span 3 at 60rem */
 }
 
 /*
- * ── Viewport overrides — NOT WRITTEN YET, deliberately ──────────────────────
+ * ══ THE BREAKPOINT ══════════════════════════════════════════════════════════
  *
- * Eleven tokens above take a different value on mobile. They are not emitted as
- * `*-mobile` twins (that shape is a DESIGN.md flat-file artifact; Figma models
- * the viewport as a mode) — they belong in one media query, overriding the
- * properties in place.
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  THIS IS THE ONLY BREAKPOINT IN THE CODEBASE. To move it, edit the ONE    │
+ * │  `min-width` value below. No component carries a media query.             │
+ * └──────────────────────────────────────────────────────────────────────────┘
  *
- * The breakpoint is not settled, so writing the query now would invent a value.
- * docs/open-questions.md calls the fixed 222px margin "the one known hole": the
- * real rule is cap content at 996, let margins absorb the remainder, floor 16 —
- * which gives 222 at 1440, 105 at 1206 and 16 below ~1028. The token and the
- * rule agree at 1440 and at 360 and disagree everywhere between.
+ * `@media (min-width: var(--bp))` is invalid CSS and always will be: a media
+ * query is evaluated against the media context, which is not attached to any
+ * element, while custom properties resolve per element at computed-value time.
+ * There is nothing for var() to resolve against, so the rule is dropped whole.
  *
- * This lands in phase 3 with the grid. Mobile values, for whoever writes it:
+ * The way around it is this block: flip TOKENS in one query and let components
+ * read tokens. It works for more than lengths — a custom property holds any
+ * token sequence, so `1 / span 8`, `column`, `grid` and `"a" "b"` all fit, which
+ * means placement, flex-direction, display and grid-template-areas can all be
+ * driven from here. Verified, not assumed.
  *
- *   --chrome-inset          space-2   (16px)
- *   --quote-indent          space-3   (24px)
- *   --border-width-quote    4px
- *   --grid-margin           16px
- *   --grid-gutter           8px
- *   --grid-gutter-content   32px   ← larger on mobile, not smaller
- *   --grid-column           20px
- *   --grid-skip-1           36px
- *   --grid-skip-2           64px
- *   --grid-span-3           343px  ← both spans collapse to the full content
- *   --grid-span-4           343px     width, which is 375 − 2 × 16
+ * 60rem is not invented: DESIGN.md already uses it for the Home notes outdent.
  *
- * rhythm-band and rhythm-section also vary, but they clamp above and need no
- * breakpoint at all.
+ * MOBILE-FIRST. :root holds the narrow values, this block holds the wide ones, so
+ * if the query never evaluates you get the mobile layout rather than a desktop
+ * grid on a phone. DESIGN.md calls desktop values canonical, so THIS block is the
+ * side to diff against for anything viewport-varying; each token in :root carries
+ * an inline `-> value at 60rem` note so the pair is findable. See DESIGN.md →
+ * Layout & Spacing → Responsive.
+ *
+ * ADDING A SECOND BREAKPOINT is one more block, not a sweep through components.
+ * The WIDER query comes LAST: both are true at wide widths, specificity is equal,
+ * and source order decides. Keep every query in one direction — a `max-width` and
+ * a `min-width` at the same value both match at exactly that width.
+ *
+ *     @media (min-width: 60rem) { :root { --col-main: 1 / span 8; } }
+ *     @media (min-width: 75rem) { :root { --col-rail: 10 / span 3; } }
+ *
+ * — prose widens at 60rem while the rail stays stacked, then the rail moves beside
+ * it at 75rem.
+ *
+ * Seven tokens vary. Note what does NOT need to be here: --grid-margin is a
+ * formula that floors itself, and --rhythm-band and --rhythm-section clamp. If
+ * this list grows past a dozen, that is the signal something structural wants its
+ * own query rather than another token.
  */
+@media (min-width: 50rem) {
+  :root {
+    /* The splits open up. DESIGN.md: 8 + skip-1 + 3 "reads as a sidebar, set
+       apart from the prose" — below this width both are full bleed. */
+    --col-main: 1 / span 8;
+    --col-rail: 10 / span 3;
+
+    /* Page-derived, so it varies. Type-derived spacing does not. */
+    --chrome-inset: var(--space-5);
+
+    /* The quote bar and its indent both grow, and the calc() in base.css keeps
+       the bar inside the indent at either size: 48 - 6 = 42px of space. */
+    --quote-indent: var(--space-5);
+    --border-width-quote: 6px;
+
+    /* 24, not 8. This is the gutter the whole grid arithmetic closes against:
+       (996 - 11 x 24) / 12 = 61, DESIGN.md's column. */
+    --grid-gutter: 24px;
+
+    /* SMALLER here than on mobile. DESIGN.md is explicit and it reads like a
+       typo until you know. Still unconsumed. */
+    --grid-gutter-content: 24px;
+  }
+}
 
 /* ── Semantic color roles — DARK ─────────────────────────────────────────── */
 /*

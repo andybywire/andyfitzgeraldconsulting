@@ -670,6 +670,29 @@ moves onto the page ground at 1.25 leading; article cards swap to their **vertic
 than merely narrowing; and the footer restacks. **Author the footer DOM in mobile order** and place it
 with grid, so source order equals reading order at both sizes.
 
+### One breakpoint, mobile-first — and why that is not a conflict
+
+**There is exactly one breakpoint in the CSS, at 60rem, and it lives in one place:** a single
+`@media (min-width: 60rem)` block in `web-next/src/styles/tokens.css`. No component carries a media
+query. The breakpoint flips *tokens*, and components read tokens — including placement, because a
+custom property can hold any token sequence, so `--col-rail: 10 / span 3` collapses to `1 / -1` at the
+base and every consumer follows. There is no CSS way to put a breakpoint in a variable
+(`@media (min-width: var(--bp))` is invalid — a media query has no element for `var()` to resolve
+against), so this is the mechanism that gets it to one place.
+
+**This document's values stay desktop-first; the CSS is written mobile-first.** Those are not in
+conflict, and the difference is deliberate:
+
+- **Here, desktop is canonical** because it is the fuller specification — the mobile column is a set
+  of exceptions to it, which is why the front matter carries desktop values and Layout describes the
+  collapse.
+- **In CSS, mobile is the base** because an unevaluated query should leave a phone with the phone
+  layout, not a 996px grid.
+
+So for the seven viewport-varying tokens, **the `@media` block is the side that matches this
+document**, not `:root`. Each token in `:root` carries an inline note naming its wide value, so the
+pair is readable without cross-referencing. Adding a second breakpoint is one more block, wider last.
+
 ### Outdenting
 
 Note cards sit unboxed at rest, so their text must align with the heading above. On hover the box
