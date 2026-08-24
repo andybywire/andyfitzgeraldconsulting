@@ -1,9 +1,16 @@
 ---
 /**
- * The site header. Two configurations, one DOM.
+ * The site header. Three states, one DOM, no media query.
  *
- *   STACKED (base)   identity centered, nav below it on a full-bleed accent band
- *   INLINE  (≥64rem) identity left, nav right, no band
+ *   STACKED  base    identity centered; nav below it on a full-bleed accent
+ *                    band, in two rows of three
+ *   ROW      md      the same, with the nav on ONE row — the state the Figma
+ *                    boards never drew, and the reason it needed no design
+ *   INLINE   lg      identity left, nav right, no band
+ *
+ * Each state is additive on the one before it, read off a `--breakpoint-*` flag
+ * with a style container query. Nothing here undoes anything, which is what makes
+ * the base state what a browser falls back to — see tokens.css → THE BREAKPOINTS.
  *
  * ── WHY THERE IS NO <Band> HERE ──────────────────────────────────────────────
  *
@@ -33,7 +40,7 @@
  *
  * <Band tone="accent"> re-points the whole role bundle, which is the right idea
  * and the wrong direction here: those declarations would have to be UNDONE at
- * 64rem, and restoring an inherited custom property from inside the block that
+ * lg, and restoring an inherited custom property from inside the block that
  * overrode it means `unset` and a paragraph explaining it. Three explicit
  * declarations per state is smaller than that, and reads in both directions.
  *
@@ -106,11 +113,10 @@ import {Search} from '@lucide/astro'
             after writing it the other way first.
           */
           }
-          <a href="/consulting/"
-            ><span class="label-stacked">Consulting</span><span class="label-inline"
-              >{' '}Work with me</span
-            ></a
-          >
+          <a href="/consulting/">
+            <span class="label-stacked">Consulting</span>
+            <span class="label-inline">{' '}Work with me</span>
+          </a>
         </li>
         <li><a href="/contact/">Contact</a></li>
         <li>
@@ -185,10 +191,30 @@ import {Search} from '@lucide/astro'
   }
 
   .name {
-    /* Noto Serif 400. The one type role with a step CHANGE rather than a clamp —
-       30px stacked, 28.125 inline. See tokens.css. */
+    /*
+     * Noto Serif 400 — DESIGN.md's `masthead-name` role, kept here as a RULE
+     * rather than a token because a semantic text role is a bundle of applied
+     * properties. It briefly lived in tokens.css as `--role-masthead-name`, the
+     * only `--role-*` token in the system, purely because its size steps by
+     * viewport; reading `--breakpoint-lg` here does that without the exception.
+     *
+     * THE ONE ROLE WHOSE SIZE GROWS AS THE VIEWPORT NARROWS: 30px stacked,
+     * 28.125 inline. A STEP at lg rather than an inverted clamp, because lg is
+     * where the header restacks — a 2px snap inside a relayout that moves the
+     * whole identity block is invisible, where the same snap drifting on its own
+     * would not be.
+     *
+     * STATIC AT BOTH ENDS, and these two literals are the only place in the CSS
+     * that retypes a value off the scale. They are `size/5`'s mobile endpoint and
+     * `size/4`'s desktop endpoint — the ramp's ends, which are not themselves
+     * tokens; only the clamps between them are. Using var(--font-size-5) and
+     * var(--font-size-4) would ride those clamps and make the snap WORSE:
+     * font-size-4 computes to 26.6px at lg, so the step would be 3.4px rather
+     * than 1.9. The wordmark sits deliberately outside the type hierarchy, so
+     * holding still at each end is the point. If the scale moves, move these.
+     */
     font-family: var(--font-prose);
-    font-size: var(--role-masthead-name);
+    font-size: 1.875rem;
     font-weight: 400;
     line-height: 1.1;
   }
@@ -200,13 +226,17 @@ import {Search} from '@lucide/astro'
     font-size: var(--font-size-3);
     font-weight: 400;
     line-height: 1.3;
+    color: var(
+      --color-text-muted
+    ); /* Muting to decrease relative prominence — this is too similar in size and color to .name */
   }
 
-  /* The home link's only affordance. Not a color change: the identity is chrome,
-     and turning the wordmark accent-blue on hover is louder than this page wants. */
-  .identity:hover .name {
-    text-decoration: underline;
-  }
+  /* NO HOVER TREATMENT ON THE IDENTITY, deliberately. An underline on the
+     wordmark was tried and read as noise, and a color change is louder still —
+     the identity is chrome, not a link in prose. A wordmark linking home is a
+     strong enough convention that the pointer carries it. Nothing is lost for
+     keyboard users either: the focus ring is unaffected. If it ever needs more,
+     it wants a designed interaction rather than a borrowed link style. */
 
   /* ── The slot: a full-bleed accent band in the stacked state ────────────── */
   /*
@@ -247,37 +277,40 @@ import {Search} from '@lucide/astro'
     list-style: none;
 
     /*
-     * ── WHY WRAPPING FLEX, AND WHAT IT BUYS ─────────────────────────────────
+     * ── EXPLICIT COLUMNS, NOT WRAPPING ──────────────────────────────────────
      *
-     * The boards draw two nav states — 3+3 on Mobile, one row on Desktop — and a
-     * tablet-width state, one row while still on the band, was never drawn. It
-     * does not need to be. Six items sharing a flex basis produce 3+3, 4+2, 5+1
-     * and 6 as the line grows, so the undrawn state falls out of the wrap and
-     * costs no breakpoint.
+     * A wrapping row would also produce the three states, but it would choose
+     * the break points itself — 3+3, then 4+2, then 5+1 — and a lone "Search" on
+     * its own row is not a layout anyone drew. Stating the column count instead
+     * means the shape only ever changes where we say it does.
      *
-     * The basis has to sit in [102, 109]px and 6.5rem = 104 is the middle of it.
-     * Above 109 the phone would break to 2 per line where the board says 3
-     * (328px of line ÷ 3 = 109.33); below ~102 "Presentations" would be the
-     * widest item on its line. It is a PREFERRED size, not a floor — `flex-grow`
-     * means every line always fills, so each of three items gets 109 or more and
-     * being a few px off moves a wrap point rather than overflowing anything.
-     *
-     * No column gap: the board centers each label in an equal share of the line,
-     * and the labels are narrower than their shares, so the whitespace between
-     * hit areas is real without a gap declaration.
+     * No column gap, and that is not an omission. The board centers each label
+     * in an equal share of the line, and every label is narrower than its share,
+     * so the whitespace between hit areas is real without a gap declaration —
+     * which also means the columns stay EVEN. A column gap would reintroduce the
+     * unevenness this grid exists to prevent: `1fr` is `minmax(auto, 1fr)`, so a
+     * track cannot shrink below its own min-content, and once the gaps take
+     * enough room "Presentations" keeps its 107px while the other five share
+     * what is left. That is exactly what happens at md — see the note there.
      */
-    display: flex;
-    flex-wrap: wrap;
-    row-gap: var(--space-2);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: var(--space-3);
   }
 
   li {
-    flex: 1 1 6.5rem;
     text-align: center;
 
+    /* Inert at THIS state — grid ignores `flex` — and inert at lg, which
+       overrides it. It is here for md alone, where the list becomes a flex row
+       and the items need a shared basis to share the line. Leaving it in the
+       base rule rather than the md block keeps one declaration instead of two,
+       at the cost of looking dead where it is written. */
+    flex: 1 1 6.5rem;
+
     /* base.css puts `margin-top: var(--rhythm-item)` on `li + li` for prose
-       lists. In a wrapped flex row that would land on items 2–6 including the
-       ones already on the first line; `row-gap` above does the job correctly. */
+       lists, which would land on items 2–6 here — including the ones already on
+       the first row. `row-gap` above does the job correctly. */
     margin-top: 0;
   }
 
@@ -309,8 +342,6 @@ import {Search} from '@lucide/astro'
     /* Not `all: unset` — that would take the font, cursor and inherited color
        with it. Just the five things a UA button brings that this one does not
        want. */
-    display: inline-flex;
-    align-items: center;
     padding: 0;
     border: 0;
     background: none;
@@ -318,32 +349,119 @@ import {Search} from '@lucide/astro'
     color: inherit;
     cursor: pointer;
 
+    /*
+     * `flex`, NOT `inline-flex` — this is the fix for the icon sitting high
+     * against the other nav items.
+     *
+     * Once the label is visually hidden the button's only in-flow child is the
+     * 20px icon, so the button collapses to 20px. As an INLINE-level box it then
+     * participates in the row's inline formatting context, and a flex container's
+     * baseline with no baseline-aligned items is synthesized from its bottom
+     * margin edge — so the icon's bottom landed on the text baseline and the
+     * whole glyph sat above it, about 3px high.
+     *
+     * Going block-level takes it out of that inline context entirely, and
+     * `1lh` gives it the nav's own line height, so it matches the text rows it
+     * sits beside without a number being typed. Measured against the "Contact"
+     * row: 0.0px off center, and the Figma board agrees (20px icon at y=3.5 in a
+     * 27px row).
+     */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 1lh;
+
+    /* A <button> sizes to fit-content whatever its `display` is, so going
+       block-level above stopped it inheriting the cell's `text-align: center` and
+       left "Search" flush left in its column while every other label stayed
+       centered. Auto margins center the box itself.
+       Deliberately not `width: 100%`: that would center the word too, but it
+       would also stretch the focus ring across the whole cell, where every
+       neighboring link's ring hugs its text. */
+    margin-inline: auto;
+
     /* Containing block for the visually-hidden label in the inline state, so it
        cannot land somewhere that lengthens the page. */
     position: relative;
   }
 
-  /* ── Inline: ≥64rem ─────────────────────────────────────────────────────── */
+  /* ── Row: md ────────────────────────────────────────────────────────────── */
   /*
-   * One branch, in the component that owns the layout, on the flag tokens.css
-   * sets in its second media query. A style container query needs no
-   * `container-type` — every element is a style container by default, and the
-   * flag inherits from :root, so this reads the value off the parent.
+   * Still on the band, still centered, but the six items go to one row. This is
+   * the tablet state the boards never drew.
    *
-   * Everything here is the WIDE case, which means an engine without style
-   * container queries keeps the block above: the stacked masthead at desktop
-   * width, which works. The reverse arrangement would put the inline masthead on
-   * a phone, which does not.
+   * ONE KNOWN ROUGH EDGE, unresolved rather than overlooked: between 768 and
+   * about 864 the items are NOT even — 89,89,107,89,89,89 at 768 — because the
+   * 24px gaps take enough of the line that "Presentations" falls back on its own
+   * min-content while the other five share the rest. Flex and grid behave
+   * identically here; `flex: 1 1 6.5rem` and `1fr` have the same min-content
+   * floor, so switching between them changes nothing.
+   *
+   * The one-line alternative is `grid-template-columns: repeat(6, 1fr)` with no
+   * column gap, keeping the base state's mechanism and giving an even 112px per
+   * column at 768. It reads as the more consistent answer; it is not made here
+   * because it is a layout call, not a comment fix.
    */
-  @container style(--masthead-inline: 1) {
+  @container style(--breakpoint-md: true) {
+    ul {
+      display: flex;
+      flex-wrap: nowrap;
+      column-gap: var(--space-3);
+    }
+  }
+
+  /* ── Inline: lg ─────────────────────────────────────────────────────────── */
+  /*
+   * The header stops being a stack and becomes one row: identity left, nav
+   * right, band gone. The width this fires at is pinned by arithmetic rather
+   * than taste — the inline form needs 951px minimum, measured — so if this
+   * layout ever looks cramped, read the note on the lg block in tokens.css
+   * before moving anything.
+   */
+  @container style(--breakpoint-lg: true) {
+    /*
+     * Drops the nav onto the wordmark's baseline.
+     *
+     * IT IS AN OPTICAL CONSTANT AND CANNOT BE DERIVED, which is worth stating
+     * because CSS looks like it should be able to. Two mechanisms were tried:
+     *
+     *   - `align-items: baseline` on the header. Lands 44px out. A flex
+     *     container's baseline comes from its FIRST flex item, and `.identity`'s
+     *     first item is the logo — a replaced element whose baseline is its
+     *     bottom margin edge. So the header aligns the nav to the bottom of the
+     *     disc rather than to the name.
+     *   - Making the wordmark supply that baseline instead, via `align-self:
+     *     baseline` on it. That works, but a single baseline participant is
+     *     placed at cross-start, so the wordmark jumps 10px up and stops being
+     *     centered against the mark.
+     *
+     * Arithmetic is out too: the offset needs the name's half-leading plus its
+     * ASCENT, and CSS exposes no font metric. So it is eye-set, and it measures
+     * 0.59px off — better than most derivations would land. Re-check it by eye if
+     * either type role or `--chrome-pad-header` moves.
+     */
+    nav {
+      padding-top: var(--space-2);
+    }
+
     /* The inset moves UP to the header, which is what the two `padding-inline: 0`
        declarations below are for. See the note at the top of the file: leaving it
        on the children costs 96px of minimum width and overflows this breakpoint. */
     .masthead {
       display: flex;
-      align-items: center;
+
+      /* Top-aligned so the nav can be dropped onto the wordmark's baseline by
+         its own padding above. `flex-start`, NOT `top` — there is no `top` for
+         align-items, so that declaration was dropped as invalid and the computed
+         value fell back to `normal`, which behaves as `stretch`. It looked right
+         because a stretched slot puts its content at the top anyway; this says the
+         same thing on purpose, and renders identically. */
+      align-items: flex-start;
       justify-content: space-between;
       padding-inline: var(--chrome-inset);
+    }
+    .name {
+      font-size: 1.7578125rem;
     }
 
     .identity {
@@ -366,10 +484,11 @@ import {Search} from '@lucide/astro'
     }
 
     /* Content-width items with a real gap, rather than equal shares of the line.
-       `nowrap` because at this width they fit by construction — 64rem was chosen
-       from that arithmetic — and wrapping here would mean the breakpoint is wrong
+       `nowrap` because at this width they fit by construction — lg is pinned by
+       that arithmetic — so wrapping here would mean the breakpoint is wrong
        rather than that the nav should reflow. */
     ul {
+      display: flex;
       flex-wrap: nowrap;
       column-gap: var(--space-3);
     }
@@ -390,8 +509,26 @@ import {Search} from '@lucide/astro'
       display: block;
     }
 
-    /* Visually hidden, NOT removed — the icon is `aria-hidden`, so this text is
-       the button's entire accessible name. */
+    /*
+     * Visually hidden, NOT removed — the icon is `aria-hidden`, so this text is
+     * the button's entire accessible name.
+     *
+     * NEITHER `visibility: hidden` NOR `width: 0` can do this job:
+     *
+     *   - `visibility: hidden` takes an element out of the ACCESSIBILITY TREE as
+     *     surely as `display: none` does. The button ends up with no accessible
+     *     name at all, which is the one thing this rule exists to prevent.
+     *   - `width: 0` does not remove text from layout, it only makes it spill.
+     *     This label sits at the nav's right edge, so "Search" overflowed 54px
+     *     past it — 6px past the viewport — putting a horizontal scrollbar on
+     *     every page at this width. Measured: scrollWidth 1206 against 1200.
+     *
+     * So `overflow: hidden` and the negative margin are load-bearing rather than
+     * boilerplate. Every declaration here is doing something.
+     *
+     * The icon shift this was reaching for is real, and it is fixed on
+     * `.search-toggle` instead — see the note there.
+     */
     .search-label {
       position: absolute;
       width: 1px;

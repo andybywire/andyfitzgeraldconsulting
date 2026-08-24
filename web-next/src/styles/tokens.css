@@ -124,21 +124,13 @@
   --font-size-5: clamp(1.875rem, 1.7285rem + 0.625vw, 2.197265625rem);
   --font-size-6: clamp(2rem, 1.6606rem + 1.4479vw, 2.746582031rem);
 
-  /* The one role whose size GROWS as the viewport narrows: 30 stacked, 28.125
-     inline. Resolved in phase 3 as a STEP at the masthead's own breakpoint
-     rather than an inverted clamp, because that is where the header restacks —
-     a 2px snap inside a relayout that moves the whole identity block is
-     invisible, where the same snap drifting on its own would not be.
-
-     STATIC AT BOTH ENDS, and the two literals are the only place in the CSS
-     that retypes a value off the scale. They are `size/5`'s mobile endpoint and
-     `size/4`'s desktop endpoint — the ramp's ends, which are not themselves
-     tokens, only the clamps between them are. Using var(--font-size-5) and
-     var(--font-size-4) instead would ride those clamps and make the snap WORSE:
-     font-size-4 computes to 26.6px at 1024, so the step down would be 3.4px
-     rather than 1.9. The wordmark sits deliberately outside the type hierarchy,
-     so holding still at each end is the point. If the scale moves, move these. */
-  --role-masthead-name: 1.875rem; /* size/5 mobile end, 30px -> 1.7578125rem (size/4 desktop end, 28.125) at 64rem */
+  /* `masthead-name` is NOT a token, and its absence here is the two-layer rule
+     working rather than an omission. A semantic TEXT role is a bundle of applied
+     properties, so in CSS it is a rule — which is why h1-h4 and body live in
+     base.css and every other type role lives in the component that owns it.
+     `--role-masthead-name` was the one exception, and it existed only because the
+     size steps by viewport; a component can read `--breakpoint-lg` and do that
+     itself. The role now lives in Masthead.astro with the rest of its bundle. */
 
   /* ── Spacing primitives ────────────────────────────────────────────────── */
   /* One body line box (18px × 1.8 = 32.4px) rounded to 32 = 2rem, then
@@ -170,16 +162,16 @@
   --card-gap: var(--space-1);
   --card-pad: var(--space-2);
   --card-media: var(--space-3);
-  --chrome-pad-header: var(--space-4);
+  --chrome-pad-header: var(--space-3);
   --chrome-pad-footer: var(--space-5);
-  --chrome-inset: var(--space-2); /* -> space-5 at 50rem */
+  --chrome-inset: var(--space-2); /* -> space-5 at md */
   --field-height: var(--space-5);
-  --quote-indent: var(--space-3); /* -> space-5 at 50rem */
+  --quote-indent: var(--space-3); /* -> space-5 at md */
 
   /* Border WIDTHS carry the `-width-` infix so a stroke's width cannot collide
      with its color: --color-border-quote is a different token. */
   --border-width-hairline: 1px;
-  --border-width-quote: 4px; /* -> 6px at 50rem */
+  --border-width-quote: 4px; /* -> 6px at md */
 
   /* ── Icons ─────────────────────────────────────────────────────────────── */
   /* Unitless numbers, not lengths: `stroke-width` in an SVG is in USER UNITS, and
@@ -199,39 +191,13 @@
   --icon-stroke: 2;
   --icon-stroke-sm: 2;
 
-  /* ── The logo mark ─────────────────────────────────────────────────────── */
-  /* NOT in DESIGN.md — measured off the Figma Top Bar boards, where the mark is
-     80px on Desktop and 100px on Mobile. So it is the SECOND role that GROWS as
-     the viewport narrows, alongside masthead-name, and for the same reason: the
-     identity block has to keep its presence once it is the only thing in the
-     header. DESIGN.md should gain an entry for it.
-
-     rem, not px, against the units note at the top of this file: the mark is
-     paired with the wordmark beside it, so it should scale with a reader's
-     font-size preference rather than with the viewport. 6.25rem = 100px. */
-  --logo-size: 6.25rem; /* -> 5rem (80px) at 64rem */
-
-  /* ── Breakpoint flags ──────────────────────────────────────────────────── */
-  /* A flag exists for the case a token flip CANNOT express: a rule that must
-     genuinely EXIST or NOT EXIST at a width. A component reads it with a style
-     container query — `@container style(--masthead-inline: 1) { … }` — which
-     needs no `container-type`, because every element is a style container by
-     default and the value inherits from here.
-
-     Why a flag rather than more tokens: the masthead's stacked form puts its nav
-     on a full-bleed accent band and its inline form does not. Expressing that as
-     tokens would mean a component-specific token per property the band re-points
-     — surface, text, link-hover — which is Band's job duplicated badly, and it
-     would push this media query well past the dozen-token line the comment below
-     warns about. The flag keeps the breakpoint VALUE in this file, which is the
-     actual goal, and leaves the masthead's own layout in the masthead.
-
-     Mobile-first is load-bearing for a second reason here: if a browser does not
-     support style container queries, no `@container` block matches and every
-     element keeps its BASE rules — so an unsupported query yields the stacked
-     masthead at desktop width, which works. Written the other way round it would
-     yield the inline masthead on a phone, which does not. */
-  --masthead-inline: 0; /* -> 1 at 64rem */
+  /* ── Breakpoint flags — deliberately NOT declared here ─────────────────── */
+  /* `--breakpoint-md` and `--breakpoint-lg` are set ONLY inside their media
+     queries below, and their absence up here is the base state rather than an
+     omission: an undeclared custom property matches no style container query, so
+     "narrower than md" and "no such property" are the same condition. Declaring
+     them `0` would say the same thing at the cost of a second place to keep in
+     step. Full explanation of the flag mechanism with the breakpoints below. */
 
   /* ── Radius ────────────────────────────────────────────────────────────── */
   /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
@@ -279,15 +245,15 @@
      full-width element. Used on something narrower it silently returns the
      16px floor rather than the page margin. <Grid> is its one consumer. */
   --grid-margin: max(16px, calc((100% - var(--grid-content)) / 2));
-  --grid-gutter: 8px; /* -> 24px at 50rem */
+  --grid-gutter: 8px; /* -> 24px at md */
   /* DESIGN.md: use gutter-content for real gaps between content columns;
      grid-gutter exists to make the arithmetic close. No consumer yet. */
-  --grid-gutter-content: 32px; /* -> 24px at 50rem. LARGER here, not smaller */
+  --grid-gutter-content: 32px; /* -> 24px at md. LARGER here, not smaller */
 
   /* ── Column placement ──────────────────────────────────────────────────── */
   /* A custom property can hold ANY token sequence, `/` included, so a whole grid
      placement fits in one. That is what keeps the breakpoint in a single place:
-     these collapse in the media query below and no component needs a query of
+     these collapse in the md query below and no component needs a query of
      its own. Verified — flipping the value re-lays out.
 
      The names are the RELATIONSHIP, per DESIGN.md's skip family: 8 + skip-1 + 3
@@ -301,18 +267,34 @@
      IMPLICIT columns and break the layout structurally. Same collapse, milder
      failure. */
   --col-full: 1 / -1; /* never varies */
-  --col-main: var(--col-full); /* -> 1 / span 8 at 50rem */
-  --col-rail: var(--col-full); /* -> 10 / span 3 at 50rem */
+  --col-main: var(--col-full); /* -> 1 / span 8 at md */
+  --col-rail: var(--col-full); /* -> 10 / span 3 at md */
 }
 
 /*
  * ══ THE BREAKPOINTS ═════════════════════════════════════════════════════════
  *
  * ┌──────────────────────────────────────────────────────────────────────────┐
- * │  THESE ARE THE ONLY BREAKPOINTS IN THE CODEBASE — 50rem for the content   │
- * │  grid, 64rem for the masthead. To move one, edit the ONE `min-width`      │
- * │  value on its block. No component carries a media query.                  │
+ * │  THESE ARE THE ONLY MAJOR BREAKPOINTS IN THE CODEBASE — md at 48rem and   │
+ * │  lg at 64rem. To move one, edit the ONE `min-width` value on its block.   │
+ * │  No component carries a major breakpoint of its own.                      │
  * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * MAJOR versus MINOR, because the rule above is about major breakpoints only.
+ * A MAJOR breakpoint is a width the whole page agrees on, and it lives here. A
+ * MINOR one is a single component adjusting to the space IT has — a card that
+ * needs two columns once its own box is wide enough — and that belongs in the
+ * component, because its condition is particular to it and could not be stated
+ * globally anyway. Prefer a real SIZE container query for those:
+ *
+ *     .deck { container-type: inline-size }
+ *     @container (inline-size > 30rem) { .card { … } }
+ *
+ * — which answers to the space the component actually occupies, so a card in the
+ * 3-column rail and the same card at full width get different treatment from one
+ * rule where a media query would give both the same answer. Note that a size
+ * query needs `container-type` on an ancestor; the style queries below do not.
+ * There are no minor breakpoints yet. This is the model for when there are.
  *
  * `@media (min-width: var(--bp))` is invalid CSS and always will be: a media
  * query is evaluated against the media context, which is not attached to any
@@ -325,50 +307,109 @@
  * means placement, flex-direction, display and grid-template-areas can all be
  * driven from here. Verified, not assumed.
  *
- * 50rem was arrived at by eye against real layouts. DESIGN.md's Outdenting example
- * still shows 60rem for the note-card outdent — reconcile the two if that rule is
- * meant to fire with the rest of the collapse rather than at its own width.
+ * THE FLAGS — `--breakpoint-md` and `--breakpoint-lg` — exist for the case a
+ * token flip CANNOT express: a rule that must genuinely EXIST or NOT EXIST at a
+ * width, like the masthead's accent band, which is a whole bundle of declarations
+ * rather than one value. A component reads a flag with a STYLE container query:
  *
- * 64rem is ARITHMETIC, not taste, and it is the reason there are two blocks rather
- * than one. The masthead's inline form needs, at minimum:
+ *     @container style(--breakpoint-lg: true) { … }
  *
- *     chrome-inset 48 + identity 309 + nav 548 + chrome-inset 48  =  953px
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  ALWAYS THE `: true` FORM, NEVER THE BARE `style(--breakpoint-lg)`.       │
+ * │  The bare form tests whether the property is DECLARED, not whether it is  │
+ * │  true — `false`, `0` and an empty value all MATCH it. Verified.           │
+ * └──────────────────────────────────────────────────────────────────────────┘
  *
- * — identity being the 80px mark, a 16px gap and a 213px wordmark, and the nav
- * being its six items at 18px with 24px gaps, both measured off the Figma board.
- * At 50rem (800px) that overflows by 153px with no gap between the two halves at
- * all, so the content grid's breakpoint is simply the wrong width for the header.
- * 64rem (1024) leaves 71px between them. Tune it by eye like 50rem; do not tune it
- * below ~62rem, where the two halves start to touch.
+ * The scenario that convention protects is not someone disabling a live
+ * breakpoint, which nobody does. It is someone SCAFFOLDING the next one:
  *
- * MOBILE-FIRST. :root holds the narrow values, this block holds the wide ones, so
- * if the query never evaluates you get the mobile layout rather than a desktop
- * grid on a phone. DESIGN.md calls desktop values canonical, so THIS block is the
- * side to diff against for anything viewport-varying; each token in :root carries
- * an inline `-> value at 50rem` note so the pair is findable. See DESIGN.md →
- * Layout & Spacing → Responsive.
+ *     @media (min-width: 80rem) { :root { --breakpoint-xl: false } }
  *
- * A THIRD BREAKPOINT is one more block, not a sweep through components. The WIDER
+ * — stubbed out until the layout is ready, which is an ordinary thing to write.
+ * Under the bare form that is live the moment it is typed. Under `: true` it is
+ * inert, which is what its author meant. Seven characters to make a wrong value
+ * fail loudly instead of quietly, which is the standard the rest of this file
+ * holds to.
+ *
+ * Four more things about the mechanism, all verified rather than assumed:
+ *
+ *   - It needs no `container-type`. Every element is a style container by
+ *     default, which is what makes this cheap.
+ *   - It evaluates on the nearest ANCESTOR, never on the element itself. That
+ *     works only because the flags inherit from :root down through <body>. If
+ *     anything ever sets a flag on the same element it styles, that element will
+ *     not see it.
+ *   - Only CUSTOM properties are queryable this way. Style queries on standard
+ *     properties are not shipped anywhere.
+ *   - An UNDECLARED property matches nothing, which is what makes the base state
+ *     work and why the flags carry no declaration in :root. "Narrower than md"
+ *     and "no such property" are the same condition, deliberately — and with the
+ *     `: true` form, so is "declared to anything else".
+ *
+ * Support: style queries are Chrome/Edge 111, Firefox 128, Safari 18 — Baseline
+ * since late 2024, and the `: true` form is the original one every engine shipped
+ * first. Verified here in Chromium only, so it is still worth one manual pass in
+ * Safari and Firefox, because the whole layout rests on it. The failure mode is
+ * safe: an engine that does not match the query keeps the base rules, which is
+ * the stacked layout at desktop width — degraded, not broken.
+ *
+ * NAMED BY WIDTH, NOT BY PURPOSE, and that trade is deliberate. `--masthead-inline`
+ * — what this flag was first called — could only ever be wrong for the masthead.
+ * `--breakpoint-lg` can be read by any component, which is the point of a MAJOR
+ * breakpoint, but it also means a change made for one component lands on every
+ * other one. The mitigation is the note on each block below recording what PINS
+ * its value. Add to those notes rather than replacing them.
+ *
+ * MOBILE-FIRST, and here it is load-bearing twice over. :root holds the narrow
+ * values and these blocks hold the wide ones, so a query that never evaluates
+ * leaves a phone with the phone layout. That covers the container queries too: an
+ * engine without style-query support matches no `@container` block, so every
+ * component keeps its base rules and a desktop gets the stacked layout — degraded
+ * but working. Written the other way round it would put the inline layout on a
+ * phone. DESIGN.md calls desktop values canonical, so THESE blocks are the side to
+ * diff against; each token in :root carries an inline `-> value at md/lg` note so
+ * the pair is findable. See DESIGN.md → Layout & Spacing → Responsive.
+ *
+ * ANOTHER BREAKPOINT is one more block, not a sweep through components. The WIDER
  * query comes LAST: both are true at wide widths, specificity is equal, and source
- * order decides — which is why the 64rem block sits below the 50rem one and may
- * override it. Keep every query in one direction: a `max-width` and a `min-width`
- * at the same value both match at exactly that width.
+ * order decides — which is why lg sits below md and may override it. Keep every
+ * query in one direction: a `max-width` and a `min-width` at the same value both
+ * match at exactly that width.
  *
- * WHAT DOES NOT NEED A BREAKPOINT, and this is worth reading before adding one.
- * The Figma boards draw the nav two ways — six items on two rows when narrow, one
- * row when inline — and a tablet-width state, one row still on the accent band,
- * was never drawn. It does not need to be: the nav is a wrapping flex row whose
- * items share a flex basis, so it goes 3+3 on a phone, then 4+2, 5+1 and 6 as the
- * viewport grows, and the undrawn state falls out of the wrap. Reach for a token
- * flip first, a flag second, and a new breakpoint only when neither works.
+ * WHAT DOES NOT NEED A BREAKPOINT, worth reading before adding one. The Figma
+ * boards draw the nav two ways — six items on two rows when narrow, one row when
+ * inline — and never drew the tablet state, one row still on the accent band. It
+ * did not need drawing: six items in equal columns produce it on the way from one
+ * shape to the other. Reach for a token flip first, a flag second, and a new
+ * breakpoint only when neither works.
  *
- * Ten tokens vary, one of which is a flag. Note what does NOT need to be here:
+ * Nine declarations vary, two of which are flags. Note what does NOT need to be here:
  * --grid-margin is a formula that floors itself, and --rhythm-band and
- * --rhythm-section clamp. If this list grows past a dozen, that is the signal
+ * --rhythm-section clamp. If this list grows much past a dozen, that is the signal
  * something structural wants its own query rather than another token.
  */
-@media (min-width: 50rem) {
+
+/* ── Medium breakpoint ────────────────────────────────────────────────────── */
+/*
+ * 48rem = 768px. Arrived at by eye; iterate against real layouts.
+ *
+ * WHAT PINS IT: nothing hard yet, which is why it is the one to move first. It
+ * currently carries two unrelated decisions — the nav going to a single row, and
+ * the content grid opening its 8+3 split — and only the nav is comfortable here.
+ * The split takes the prose from 66 characters at 767 to 49 at 768, recovering at
+ * about 1024, and leaves the rail 166px wide. Both measured.
+ *
+ * That is ACCEPTED, not overlooked (2026-08-24): a short measure is the cheaper
+ * failure — long lines lose the reader at the line return, short ones only cost a
+ * few extra returns — and the rail is the likelier thing to force a change, where
+ * DESIGN.md's `body-compact` role already exists for "a column too narrow for
+ * body". Revisit once real content pages exist rather than against a specimen. It
+ * stays cheap to revisit precisely because no component hardcodes a width; if one
+ * ever does, this decision gets expensive.
+ */
+@media (min-width: 48rem) {
   :root {
+    --breakpoint-md: true;
     /* The splits open up. DESIGN.md: 8 + skip-1 + 3 "reads as a sidebar, set
        apart from the prose" — below this width both are full bleed. */
     --col-main: 1 / span 8;
@@ -393,18 +434,29 @@
   }
 }
 
+/* ── Large breakpoint ─────────────────────────────────────────────────────── */
 /*
- * ── The masthead's breakpoint ──────────────────────────────────────────────
+ * 64rem = 1024px.
  *
- * Three tokens, all of them the header's. Two of the three GROW as the viewport
- * narrows, which is why they are here and not in the block above: they step where
- * the header restacks, not where the content grid opens up.
+ * WHAT PINS IT: arithmetic, not taste. The masthead's inline form needs
+ *
+ *     chrome-inset 48 + identity 309 + nav 548 + chrome-inset 48  =  953px
+ *
+ * — the identity being an 80px mark, a 16px gap and a 213px wordmark; the nav
+ * being six items at 18px with 24px gaps. Measured in the browser at 951px, which
+ * leaves 73px between the two halves at 1024. DO NOT MOVE THIS BELOW ~62rem: the
+ * halves touch, then flex-shrink squeezes the identity and the wordmark breaks
+ * onto two lines. That failure is quiet — it looks like a spacing problem.
+ *
+ * NOTHING BUT THE FLAG IS SET HERE, and that is the point of the flag. The three
+ * things that step at this width — the mark's size, the wordmark's size, and the
+ * nav's baseline offset — are all component internals with exactly one consumer
+ * each, so they live in Logo.astro and Masthead.astro and read `--breakpoint-lg`
+ * from here. A value with one consumer is not a token.
  */
 @media (min-width: 64rem) {
   :root {
-    --masthead-inline: 1;
-    --logo-size: 5rem;
-    --role-masthead-name: 1.7578125rem;
+    --breakpoint-lg: true;
   }
 }
 

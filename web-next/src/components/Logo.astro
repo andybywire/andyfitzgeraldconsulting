@@ -58,12 +58,28 @@ const {class: className, ...rest}: Props = Astro.props
 
 <style>
   .logo {
-    /* Square, so one dimension is enough — but `height` has to be stated because
-       base.css sets `svg { height: auto }`, and `auto` on an SVG with a viewBox
-       resolves from the aspect ratio only if the inline size is definite. Saying
-       both is one line cheaper than reasoning about when it is. */
-    inline-size: var(--logo-size);
-    block-size: var(--logo-size);
+    /*
+     * Square, so one dimension is enough — but `height` has to be stated because
+     * base.css sets `svg { height: auto }`, and `auto` on an SVG with a viewBox
+     * resolves from the aspect ratio only if the inline size is definite. Saying
+     * both is one line cheaper than reasoning about when it is.
+     *
+     * ── THE SIZE, AND WHY IT STEPS BACKWARDS ────────────────────────────────
+     *
+     * NOT in DESIGN.md — measured off the Figma Top Bar boards, where the mark is
+     * 100px on Mobile and 80px on Desktop. So it GROWS as the viewport narrows,
+     * making it one of two roles in the system shaped that way, alongside the
+     * wordmark, and for the same reason: the identity block has to keep its
+     * presence once it is the only thing in the header. DESIGN.md should gain an
+     * entry for it.
+     *
+     * rem rather than px, against tokens.css's units note, which splits by cause:
+     * the mark is paired with the wordmark beside it, so it should track a
+     * reader's font-size preference rather than the viewport. 6.25rem = 100px,
+     * 5rem = 80px.
+     */
+    inline-size: 6.25rem;
+    block-size: 6.25rem;
 
     /* NO COLOR IS SET HERE, for the same reason base.css sets none on Lucide
        icons: the mark takes the color of its context, and its consumer names the
@@ -75,5 +91,15 @@ const {class: className, ...rest}: Props = Astro.props
        `fill` inherits from here down to the path, which carries no fill of its
        own. That is the whole mechanism. */
     fill: currentColor;
+  }
+
+  /* The one place this component knows about the page. `--breakpoint-lg` is
+     declared in tokens.css and read here with a style container query — see that
+     file for what the flag is and the one way it can bite. */
+  @container style(--breakpoint-lg: true) {
+    .logo {
+      inline-size: 5rem;
+      block-size: 5rem;
+    }
   }
 </style>
