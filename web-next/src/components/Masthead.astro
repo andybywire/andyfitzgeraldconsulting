@@ -1,0 +1,406 @@
+---
+/**
+ * The site header. Two configurations, one DOM.
+ *
+ *   STACKED (base)   identity centered, nav below it on a full-bleed accent band
+ *   INLINE  (≥64rem) identity left, nav right, no band
+ *
+ * ── WHY THERE IS NO <Band> HERE ──────────────────────────────────────────────
+ *
+ * The masthead is chrome, and chrome is inset from the VIEWPORT rather than laid
+ * on the content grid — the Figma boards put it 48px from each edge on Desktop
+ * and 16 on Mobile, which is `chrome-inset` exactly, not `grid-margin`. So no
+ * <Grid>. And <Band> would only contribute `data-space="none"` and a tone this
+ * header does not have, while adding a wrapper between <header> and the two
+ * things that have to be flex siblings in the inline state. So no <Band> either.
+ *
+ * That leaves the question the accent band poses: how does the nav reach the
+ * viewport edge when the header is inset? Answer — WHICH ELEMENT CARRIES THE
+ * INSET IS ITSELF PART OF THE STATE:
+ *
+ *   stacked  the two CHILDREN are inset; <header> is not, so the band bleeds
+ *   inline   <header> is inset; the children are not, because there is no band
+ *
+ * Putting it on the children in both states is the obvious-looking version and it
+ * is wrong. The identity's trailing inset and the nav's leading one look free —
+ * one is behind a centered block, the other behind a nav pushed to the far side —
+ * but they still occupy 96px of the header's MINIMUM width, which is enough to
+ * make the inline layout overflow at its own breakpoint. It did: flex-shrink then
+ * squeezed the identity until the wordmark broke onto two lines, and the header
+ * came out 184px tall against the board's 144. Measured, not theorized.
+ *
+ * ── AND WHY THE BAND IS NOT A <Band> EITHER ──────────────────────────────────
+ *
+ * <Band tone="accent"> re-points the whole role bundle, which is the right idea
+ * and the wrong direction here: those declarations would have to be UNDONE at
+ * 64rem, and restoring an inherited custom property from inside the block that
+ * overrode it means `unset` and a paragraph explaining it. Three explicit
+ * declarations per state is smaller than that, and reads in both directions.
+ *
+ * ── THE NAV / SEARCH SLOT ────────────────────────────────────────────────────
+ *
+ * `.slot` is a seam, not decoration. Search expands IN PLACE, replacing the nav
+ * items (DESIGN.md → Components → Search), so the two occupy one slot and the
+ * slot has to be able to hold either. Phase 3 puts the nav in it and leaves the
+ * toggle inert.
+ */
+import Logo from './Logo.astro'
+import {Search} from '@lucide/astro'
+---
+
+{
+  /*
+  DOM ORDER IS READING ORDER at both widths, and nothing here depends on CSS to
+  be legible: identity, then a list of links. That is the stacked configuration,
+  so a document that loses its stylesheet entirely degrades to it rather than to
+  a half-collapsed inline header.
+
+  The wordmark and role are hardcoded, unlike the nav, and for a weaker reason —
+  the nav is site structure by decision, but these two strings ARE content: the
+  live site reads them from the Sanity `settings` singleton, where they currently
+  say "Andy Fitzgerald Consulting" / "Content Operations Strategy & Design"
+  against the board's shorter pair. Worth a decision before phase 4.
+*/
+}
+<header class="masthead">
+  <a class="identity" href="/" rel="home">
+    <Logo class="mark" />
+    <span class="wordmark">
+      <span class="name">Andy Fitzgerald</span>
+      <span class="role">Information Architect</span>
+    </span>
+  </a>
+
+  <div class="slot">
+    <nav aria-label="Main">
+      {
+        /*
+        `role="list"` because Safari drops list semantics from a `list-style: none`
+        list, which is the one thing that makes the declaration an a11y change
+        rather than a cosmetic one.
+      */
+      }
+      <ul role="list">
+        <li><a href="/insights/">Insights</a></li>
+        <li><a href="/projects/">Projects</a></li>
+        <li><a href="/presentations/">Presentations</a></li>
+        <li>
+          {
+            /*
+            One link, one href, two labels — the terse one for the band and the
+            verbose one for the inline nav, exactly parallel to the search item
+            below. Two <li>s would mean two links to one page in one nav.
+
+            THE SPACE BELONGS INSIDE `.label-inline`, and that is deliberate. With
+            no space at all, a document that lost its stylesheet would read
+            "ConsultingWork with me"; with the space outside the spans, the
+            surviving label would carry a stray one and a centered label would sit
+            half a space off. Inside the span it is removed with the span when the
+            span is hidden, and when the OTHER span is hidden it lands first in the
+            line box, where white-space processing drops it. Correct in all three
+            cases, which is why it is written this way rather than tidily.
+
+            It has to be `{' '}` rather than typed whitespace: Astro trims leading
+            whitespace inside an element written across a line break, so a literal
+            space here silently disappears from the build. Verified in the output,
+            after writing it the other way first.
+          */
+          }
+          <a href="/consulting/"
+            ><span class="label-stacked">Consulting</span><span class="label-inline"
+              >{' '}Work with me</span
+            ></a
+          >
+        </li>
+        <li><a href="/contact/">Contact</a></li>
+        <li>
+          {
+            /*
+            INERT: no handler, wired in phase 4. A <button> rather than a link
+            because search does not navigate — it replaces this slot's contents in
+            place — so the element that gets behavior later is the element here now.
+
+            The label is real text at BOTH widths, visually hidden rather than
+            removed in the inline state. That is what lets an icon-only control
+            have an accessible name without `aria-label`: Lucide marks its own SVG
+            `aria-hidden`, so with `display: none` on the label the button would
+            have no name at all.
+          */
+          }
+          <button class="search-toggle" type="button">
+            <Search class="search-icon" />
+            <span class="search-label">Search</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  /* ── The header ─────────────────────────────────────────────────────────── */
+  /* No padding, no width, no background. Stacked is plain block flow, so the
+     stacked state needs no rule at all — see the note above about why the inset
+     lives on the children. */
+
+  /* ── Identity ───────────────────────────────────────────────────────────── */
+
+  .identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--chrome-pad-header);
+    padding-inline: var(--chrome-inset);
+    text-align: center;
+    text-decoration: none;
+  }
+
+  /* The mark names its role here; the component itself binds no color. */
+  .mark {
+    color: var(--color-accent);
+
+    /* A flex item shrinks by default, and an SVG has no intrinsic minimum to stop
+       it, so under any width pressure the disc goes oval before the text beside it
+       gives an inch. base.css does this for Lucide icons for the same reason. */
+    flex: none;
+  }
+
+  /* Name over role with NO gap — the boards stack them on their own line boxes
+     and the leading does the spacing, which is why the block measures 62px at
+     both widths despite the name changing size. */
+  .name,
+  .role {
+    display: block;
+
+    /* Stated on the children rather than on the link, so base.css's
+       `a:hover { color: var(--color-link-hover) }` cannot reach them: it sets
+       `color` on the <a>, and a child with its own value simply does not inherit
+       it. Overriding it on `.identity:hover` instead would need (0,2,0) to beat
+       the pseudo-class's (0,1,1) — a specificity race for no reason.
+
+       DESIGN.md assigns no color role to either. `text` is the reading, since the
+       wordmark is the site's own name rather than apparatus around content. */
+    color: var(--color-text);
+  }
+
+  .name {
+    /* Noto Serif 400. The one type role with a step CHANGE rather than a clamp —
+       30px stacked, 28.125 inline. See tokens.css. */
+    font-family: var(--font-prose);
+    font-size: var(--role-masthead-name);
+    font-weight: 400;
+    line-height: 1.1;
+  }
+
+  .role {
+    /* Lato 400 at size/3, riding the ordinary fluid ramp — only the name is
+       special. */
+    font-family: var(--font-heading);
+    font-size: var(--font-size-3);
+    font-weight: 400;
+    line-height: 1.3;
+  }
+
+  /* The home link's only affordance. Not a color change: the identity is chrome,
+     and turning the wordmark accent-blue on hover is louder than this page wants. */
+  .identity:hover .name {
+    text-decoration: underline;
+  }
+
+  /* ── The slot: a full-bleed accent band in the stacked state ────────────── */
+  /*
+   * Three declarations, not a token re-point. `color` is enough for everything
+   * inside because base.css gives links `color: inherit` and Lucide strokes with
+   * `currentColor`, so the band's text and its icons both follow from one value.
+   */
+
+  .slot {
+    background-color: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+    padding-block: var(--space-3);
+    padding-inline: var(--chrome-inset);
+  }
+
+  /* The focus ring needs NO override on the band, which is worth stating because
+     it looks like it should. base.css orders the rings offset-then-ring, so on
+     this band the inner 2px is `focus-offset` — white on light, near-black on
+     dark, both legible against the fill — and the outer 2px is `focus-ring`,
+     which blends into it. A tight legible ring rather than an offset one, in both
+     themes. Verified against both dark values, not assumed. */
+
+  /* ── Nav ────────────────────────────────────────────────────────────────── */
+
+  nav {
+    /* The `nav` role: Lato 400 at size/2, leading 1.5, no tracking. Set on the
+       container so the search BUTTON inherits it too via `font: inherit`. */
+    font-family: var(--font-heading);
+    font-size: var(--font-size-2);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  ul {
+    /* base.css's reset zeroes list margin but deliberately keeps the UA's
+       padding-inline-start as a prose indent, so this list has to drop it. */
+    padding: 0;
+    list-style: none;
+
+    /*
+     * ── WHY WRAPPING FLEX, AND WHAT IT BUYS ─────────────────────────────────
+     *
+     * The boards draw two nav states — 3+3 on Mobile, one row on Desktop — and a
+     * tablet-width state, one row while still on the band, was never drawn. It
+     * does not need to be. Six items sharing a flex basis produce 3+3, 4+2, 5+1
+     * and 6 as the line grows, so the undrawn state falls out of the wrap and
+     * costs no breakpoint.
+     *
+     * The basis has to sit in [102, 109]px and 6.5rem = 104 is the middle of it.
+     * Above 109 the phone would break to 2 per line where the board says 3
+     * (328px of line ÷ 3 = 109.33); below ~102 "Presentations" would be the
+     * widest item on its line. It is a PREFERRED size, not a floor — `flex-grow`
+     * means every line always fills, so each of three items gets 109 or more and
+     * being a few px off moves a wrap point rather than overflowing anything.
+     *
+     * No column gap: the board centers each label in an equal share of the line,
+     * and the labels are narrower than their shares, so the whitespace between
+     * hit areas is real without a gap declaration.
+     */
+    display: flex;
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+  }
+
+  li {
+    flex: 1 1 6.5rem;
+    text-align: center;
+
+    /* base.css puts `margin-top: var(--rhythm-item)` on `li + li` for prose
+       lists. In a wrapped flex row that would land on items 2–6 including the
+       ones already on the first line; `row-gap` above does the job correctly. */
+    margin-top: 0;
+  }
+
+  /* Chrome, not prose: the underline is the hover affordance rather than the
+     resting state. */
+  :is(li a, .search-toggle) {
+    text-decoration: none;
+  }
+
+  :is(li a, .search-toggle):hover {
+    color: var(--color-text-on-accent-hover);
+    text-decoration: underline;
+  }
+
+  /* ── The two swapped labels ─────────────────────────────────────────────── */
+  /* Each pair keeps the STACKED member in normal flow and hides its inline twin,
+     so the base state is the one a document keeps if the container query below
+     never evaluates. */
+
+  .label-inline {
+    display: none;
+  }
+
+  .search-icon {
+    display: none;
+  }
+
+  .search-toggle {
+    /* Not `all: unset` — that would take the font, cursor and inherited color
+       with it. Just the five things a UA button brings that this one does not
+       want. */
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+
+    /* Containing block for the visually-hidden label in the inline state, so it
+       cannot land somewhere that lengthens the page. */
+    position: relative;
+  }
+
+  /* ── Inline: ≥64rem ─────────────────────────────────────────────────────── */
+  /*
+   * One branch, in the component that owns the layout, on the flag tokens.css
+   * sets in its second media query. A style container query needs no
+   * `container-type` — every element is a style container by default, and the
+   * flag inherits from :root, so this reads the value off the parent.
+   *
+   * Everything here is the WIDE case, which means an engine without style
+   * container queries keeps the block above: the stacked masthead at desktop
+   * width, which works. The reverse arrangement would put the inline masthead on
+   * a phone, which does not.
+   */
+  @container style(--masthead-inline: 1) {
+    /* The inset moves UP to the header, which is what the two `padding-inline: 0`
+       declarations below are for. See the note at the top of the file: leaving it
+       on the children costs 96px of minimum width and overflows this breakpoint. */
+    .masthead {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-inline: var(--chrome-inset);
+    }
+
+    .identity {
+      flex-direction: row;
+      text-align: start;
+      padding-inline: 0;
+    }
+
+    /* The band goes away. `padding-block` deliberately stays: the identity is the
+       taller child, so it sets the header's height and this padding never shows —
+       and it is the breathing room the search field will want in phase 4. */
+    .slot {
+      background-color: transparent;
+      color: var(--color-text);
+      padding-inline: 0;
+    }
+
+    :is(li a, .search-toggle):hover {
+      color: var(--color-link-hover);
+    }
+
+    /* Content-width items with a real gap, rather than equal shares of the line.
+       `nowrap` because at this width they fit by construction — 64rem was chosen
+       from that arithmetic — and wrapping here would mean the breakpoint is wrong
+       rather than that the nav should reflow. */
+    ul {
+      flex-wrap: nowrap;
+      column-gap: var(--space-3);
+    }
+
+    li {
+      flex: 0 0 auto;
+    }
+
+    .label-stacked {
+      display: none;
+    }
+
+    .label-inline {
+      display: inline;
+    }
+
+    .search-icon {
+      display: block;
+    }
+
+    /* Visually hidden, NOT removed — the icon is `aria-hidden`, so this text is
+       the button's entire accessible name. */
+    .search-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+</style>

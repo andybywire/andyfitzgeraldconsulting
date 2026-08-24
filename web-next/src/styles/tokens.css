@@ -124,11 +124,21 @@
   --font-size-5: clamp(1.875rem, 1.7285rem + 0.625vw, 2.197265625rem);
   --font-size-6: clamp(2rem, 1.6606rem + 1.4479vw, 2.746582031rem);
 
-  /* --role-masthead-name is deliberately absent. It is the one role whose size
-     GROWS as the viewport narrows (28.125 desktop → 30 mobile), so its
-     endpoints are inverted and the mechanism — an inverted clamp, or a step at
-     the masthead's own breakpoint — is a phase 3 call. See DESIGN.md,
-     Typography → Fluid sizing. */
+  /* The one role whose size GROWS as the viewport narrows: 30 stacked, 28.125
+     inline. Resolved in phase 3 as a STEP at the masthead's own breakpoint
+     rather than an inverted clamp, because that is where the header restacks —
+     a 2px snap inside a relayout that moves the whole identity block is
+     invisible, where the same snap drifting on its own would not be.
+
+     STATIC AT BOTH ENDS, and the two literals are the only place in the CSS
+     that retypes a value off the scale. They are `size/5`'s mobile endpoint and
+     `size/4`'s desktop endpoint — the ramp's ends, which are not themselves
+     tokens, only the clamps between them are. Using var(--font-size-5) and
+     var(--font-size-4) instead would ride those clamps and make the snap WORSE:
+     font-size-4 computes to 26.6px at 1024, so the step down would be 3.4px
+     rather than 1.9. The wordmark sits deliberately outside the type hierarchy,
+     so holding still at each end is the point. If the scale moves, move these. */
+  --role-masthead-name: 1.875rem; /* size/5 mobile end, 30px -> 1.7578125rem (size/4 desktop end, 28.125) at 64rem */
 
   /* ── Spacing primitives ────────────────────────────────────────────────── */
   /* One body line box (18px × 1.8 = 32.4px) rounded to 32 = 2rem, then
@@ -188,6 +198,40 @@
   --icon-size-sm: 18px;
   --icon-stroke: 2;
   --icon-stroke-sm: 2;
+
+  /* ── The logo mark ─────────────────────────────────────────────────────── */
+  /* NOT in DESIGN.md — measured off the Figma Top Bar boards, where the mark is
+     80px on Desktop and 100px on Mobile. So it is the SECOND role that GROWS as
+     the viewport narrows, alongside masthead-name, and for the same reason: the
+     identity block has to keep its presence once it is the only thing in the
+     header. DESIGN.md should gain an entry for it.
+
+     rem, not px, against the units note at the top of this file: the mark is
+     paired with the wordmark beside it, so it should scale with a reader's
+     font-size preference rather than with the viewport. 6.25rem = 100px. */
+  --logo-size: 6.25rem; /* -> 5rem (80px) at 64rem */
+
+  /* ── Breakpoint flags ──────────────────────────────────────────────────── */
+  /* A flag exists for the case a token flip CANNOT express: a rule that must
+     genuinely EXIST or NOT EXIST at a width. A component reads it with a style
+     container query — `@container style(--masthead-inline: 1) { … }` — which
+     needs no `container-type`, because every element is a style container by
+     default and the value inherits from here.
+
+     Why a flag rather than more tokens: the masthead's stacked form puts its nav
+     on a full-bleed accent band and its inline form does not. Expressing that as
+     tokens would mean a component-specific token per property the band re-points
+     — surface, text, link-hover — which is Band's job duplicated badly, and it
+     would push this media query well past the dozen-token line the comment below
+     warns about. The flag keeps the breakpoint VALUE in this file, which is the
+     actual goal, and leaves the masthead's own layout in the masthead.
+
+     Mobile-first is load-bearing for a second reason here: if a browser does not
+     support style container queries, no `@container` block matches and every
+     element keeps its BASE rules — so an unsupported query yields the stacked
+     masthead at desktop width, which works. Written the other way round it would
+     yield the inline masthead on a phone, which does not. */
+  --masthead-inline: 0; /* -> 1 at 64rem */
 
   /* ── Radius ────────────────────────────────────────────────────────────── */
   /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
@@ -262,11 +306,12 @@
 }
 
 /*
- * ══ THE BREAKPOINT ══════════════════════════════════════════════════════════
+ * ══ THE BREAKPOINTS ═════════════════════════════════════════════════════════
  *
  * ┌──────────────────────────────────────────────────────────────────────────┐
- * │  THIS IS THE ONLY BREAKPOINT IN THE CODEBASE. To move it, edit the ONE    │
- * │  `min-width` value below. No component carries a media query.             │
+ * │  THESE ARE THE ONLY BREAKPOINTS IN THE CODEBASE — 50rem for the content   │
+ * │  grid, 64rem for the masthead. To move one, edit the ONE `min-width`      │
+ * │  value on its block. No component carries a media query.                  │
  * └──────────────────────────────────────────────────────────────────────────┘
  *
  * `@media (min-width: var(--bp))` is invalid CSS and always will be: a media
@@ -284,6 +329,18 @@
  * still shows 60rem for the note-card outdent — reconcile the two if that rule is
  * meant to fire with the rest of the collapse rather than at its own width.
  *
+ * 64rem is ARITHMETIC, not taste, and it is the reason there are two blocks rather
+ * than one. The masthead's inline form needs, at minimum:
+ *
+ *     chrome-inset 48 + identity 309 + nav 548 + chrome-inset 48  =  953px
+ *
+ * — identity being the 80px mark, a 16px gap and a 213px wordmark, and the nav
+ * being its six items at 18px with 24px gaps, both measured off the Figma board.
+ * At 50rem (800px) that overflows by 153px with no gap between the two halves at
+ * all, so the content grid's breakpoint is simply the wrong width for the header.
+ * 64rem (1024) leaves 71px between them. Tune it by eye like 50rem; do not tune it
+ * below ~62rem, where the two halves start to touch.
+ *
  * MOBILE-FIRST. :root holds the narrow values, this block holds the wide ones, so
  * if the query never evaluates you get the mobile layout rather than a desktop
  * grid on a phone. DESIGN.md calls desktop values canonical, so THIS block is the
@@ -291,21 +348,24 @@
  * an inline `-> value at 50rem` note so the pair is findable. See DESIGN.md →
  * Layout & Spacing → Responsive.
  *
- * ADDING A SECOND BREAKPOINT is one more block, not a sweep through components.
- * The WIDER query comes LAST: both are true at wide widths, specificity is equal,
- * and source order decides. Keep every query in one direction — a `max-width` and
- * a `min-width` at the same value both match at exactly that width.
+ * A THIRD BREAKPOINT is one more block, not a sweep through components. The WIDER
+ * query comes LAST: both are true at wide widths, specificity is equal, and source
+ * order decides — which is why the 64rem block sits below the 50rem one and may
+ * override it. Keep every query in one direction: a `max-width` and a `min-width`
+ * at the same value both match at exactly that width.
  *
- *     @media (min-width: 50rem)   { :root { --col-main: 1 / span 8; } }
- *     @media (min-width: 75rem) { :root { --col-rail: 10 / span 3; } }
+ * WHAT DOES NOT NEED A BREAKPOINT, and this is worth reading before adding one.
+ * The Figma boards draw the nav two ways — six items on two rows when narrow, one
+ * row when inline — and a tablet-width state, one row still on the accent band,
+ * was never drawn. It does not need to be: the nav is a wrapping flex row whose
+ * items share a flex basis, so it goes 3+3 on a phone, then 4+2, 5+1 and 6 as the
+ * viewport grows, and the undrawn state falls out of the wrap. Reach for a token
+ * flip first, a flag second, and a new breakpoint only when neither works.
  *
- * — prose widens at 50rem while the rail stays stacked, then the rail moves beside
- * it at 75rem.
- *
- * Seven tokens vary. Note what does NOT need to be here: --grid-margin is a
- * formula that floors itself, and --rhythm-band and --rhythm-section clamp. If
- * this list grows past a dozen, that is the signal something structural wants its
- * own query rather than another token.
+ * Ten tokens vary, one of which is a flag. Note what does NOT need to be here:
+ * --grid-margin is a formula that floors itself, and --rhythm-band and
+ * --rhythm-section clamp. If this list grows past a dozen, that is the signal
+ * something structural wants its own query rather than another token.
  */
 @media (min-width: 50rem) {
   :root {
@@ -327,8 +387,24 @@
     --grid-gutter: 24px;
 
     /* SMALLER here than on mobile. DESIGN.md is explicit and it reads like a
-       typo until you know. Still unconsumed. */
+       typo until you know — until the footer's link columns, which are its first
+       consumer and are gapped 32 on mobile against 24 here. */
     --grid-gutter-content: 24px;
+  }
+}
+
+/*
+ * ── The masthead's breakpoint ──────────────────────────────────────────────
+ *
+ * Three tokens, all of them the header's. Two of the three GROW as the viewport
+ * narrows, which is why they are here and not in the block above: they step where
+ * the header restacks, not where the content grid opens up.
+ */
+@media (min-width: 64rem) {
+  :root {
+    --masthead-inline: 1;
+    --logo-size: 5rem;
+    --role-masthead-name: 1.7578125rem;
   }
 }
 
