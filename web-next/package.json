@@ -8,7 +8,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --host",
     "dev:preview": "PUBLIC_SITE_MODE=preview astro dev",
     "build": "PUBLIC_SITE_MODE=production astro build",
     "build:preview": "PUBLIC_SITE_MODE=preview astro build",
