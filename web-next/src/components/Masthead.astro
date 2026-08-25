@@ -365,7 +365,23 @@ import {Search} from '@lucide/astro'
     display: flex;
     align-items: center;
     justify-content: center;
+
+    /*
+     * SQUARE, from the type. `1lh` is the nav's own line height, so both axes come
+     * out at whatever a nav row measures — 27px today — and the icon centres in it
+     * without a number being typed.
+     *
+     * `min-` on both, not a fixed size. At the stacked and md widths this button
+     * holds the WORD "Search", which is wider than 1lh, so the inline minimum is
+     * inert there and the label sizes the box as before. It only bites once the
+     * control is icon-only, which is exactly where the square is wanted — and it
+     * leaves room for the search field to widen the slot in phase 4.
+     *
+     * The cost is 7px of nav width at rest, since the box goes 20 -> 27. No jitter:
+     * the change is at rest, not on hover.
+     */
     min-block-size: 1lh;
+    min-inline-size: 1lh;
 
     /* A <button> sizes to fit-content whatever its `display` is, so going
        block-level above stopped it inheriting the cell's `text-align: center` and
@@ -379,6 +395,19 @@ import {Search} from '@lucide/astro'
     /* Containing block for the visually-hidden label in the inline state, so it
        cannot land somewhere that lengthens the page. */
     position: relative;
+
+    /* Matching the mode selector, which is the other control that fills on
+       interaction. Inert below lg, where nothing about this button's fill
+       changes. */
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-toggle {
+      transition: none;
+    }
   }
 
   /* base.css hangs the nav underline 0.15em below its host box. That lands right
@@ -504,6 +533,38 @@ import {Search} from '@lucide/astro'
        once it exists beats inventing a second one here. */
     .search-toggle::after {
       content: none;
+    }
+
+    /*
+     * ...and in its place, the field fills. `accent` behind `text-on-accent` is
+     * DESIGN.md's `button-primary` pair, so on hover the control briefly becomes
+     * the primary button it structurally is — a filled chip with the magnifier
+     * knocked out of it. Both themes clear AA: white on blue-500 at 5.67, and
+     * neutral-900 on blue-300 at 6.17 once the accent inverts.
+     *
+     * The glyph is knocked out by `color` alone, because Lucide strokes with
+     * `currentColor`. There is no second declaration for the icon.
+     *
+     * `border-radius` above is what shapes the fill; at rest it is invisible.
+     *
+     * THIRD TREATMENT TRIED HERE, and the earlier two are worth knowing about
+     * before a fourth: the mode selector's 1px outline read as too slight at this
+     * size, and a blue outline with a blue glyph read as neither one thing nor the
+     * other. This is the loudest of the three — it is the primary-button
+     * treatment, and it may prove too loud for a nav row where every neighbour
+     * answers hover with a 3px underline.
+     *
+     * Only at lg. Below it the button shows the word "Search" and reads as one of
+     * six nav labels, so it takes the same wipe-in underline they do; this is the
+     * icon-only form, which is the one that is not a nav item.
+     */
+    .search-toggle {
+      border-radius: var(--radius-1);
+    }
+
+    .search-toggle:hover {
+      background-color: var(--color-accent);
+      color: var(--color-text-on-accent);
     }
 
     /* Content-width items with a real gap, rather than equal shares of the line.

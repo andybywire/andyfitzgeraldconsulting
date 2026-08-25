@@ -247,6 +247,24 @@ nav :is(a, button)[aria-current]::after {
   inline-size: 100%;
 }
 
+/*
+ * AND THE COLOR HOLDS STILL. The underline is the whole affordance here, so the
+ * global `a:hover` from the Links section above has to be cancelled for nav —
+ * that rule is for INLINE PROSE LINKS, where moving to `link-hover` is the point.
+ *
+ * On an accent band it is worse than redundant. `link-hover` is blue-500, which is
+ * the band's own fill, so a nav label on the masthead's band turned exactly the
+ * color of the surface behind it and disappeared under the pointer. A real <Band>
+ * hides this by re-pointing the token; the masthead is not one, so it showed.
+ *
+ * `inherit` rather than a named role, because the right value differs by context —
+ * page text on a light ground, `text-on-accent` on a band — and inheriting is how
+ * you say "whatever it already was" once rather than naming both.
+ */
+nav :is(a, button):hover {
+  color: inherit;
+}
+
 /* The wipe is decoration; the underline still appears, it just stops traveling. */
 @media (prefers-reduced-motion: reduce) {
   nav :is(a, button)::after {
