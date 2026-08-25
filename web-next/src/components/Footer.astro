@@ -307,22 +307,23 @@ const SOCIAL = [
      *
      * The slack an artboard needs is HALF THE SCREEN STROKE DIVIDED BY THE RENDER
      * SCALE, because `non-scaling-stroke` fixes the width in screen px while the
-     * viewBox is in user units. At `stroke-width: 2px` and 3rem that is 2.08 user
-     * units for the 100-unit boards and 2.44 for Medium's 117 — and not one of
-     * the four has it. What each would lose at its tightest edge, in rendered
-     * pixels:
+     * viewBox is in user units. At `stroke-width: 1px` and 3rem that is 1.04 user
+     * units for the 100-unit boards and 1.22 for Medium's 117. What each would
+     * lose at its tightest edge without `overflow: visible`, in rendered pixels:
      *
-     *     GitHub    0.28    slack 1.50u
-     *     LinkedIn  0.52    slack 1.00u, at the bottom only
-     *     Bluesky   1.00    slack 0 on every edge
-     *     Medium    1.00    slack 0 on three edges
+     *     GitHub    0        slack 1.50u — clears it
+     *     LinkedIn  0.02     slack 1.00u, at the bottom only
+     *     Bluesky   0.50     slack 0 on every edge
+     *     Medium    0.50     slack 0 on three edges
+     *
+     * THE STROKE HAS MOVED THREE TIMES — 1.5, then 3, then 2, now 1 — and every
+     * number above moves with it, since the requirement is half the stroke. Which
+     * is the argument for the rule rather than for padding four artboards to fit
+     * one weight: two of the four still clip at the lightest stroke tried.
      *
      * Bluesky reads worst because its wing tips sit in the exact corners of its
      * box AND its outline runs parallel to the edge there, so the clip shows as a
-     * flat cut rather than a softened corner. Raising `stroke-width` makes every
-     * row of that table worse — it went 1.5 -> 3 -> 2 while the weight was being
-     * matched to the footer links' underline — which is why this is a rule rather
-     * than a per-mark nudge.
+     * flat cut rather than a softened corner.
      *
      * `overflow: visible` rather than padding each viewBox, for three reasons: the
      * padding differs per artboard; it would need recomputing if `inline-size`
@@ -331,7 +332,7 @@ const SOCIAL = [
      * inside the same box, so all four optical sizes would shift. One declaration
      * here is independent of both artboard and size.
      *
-     * The ink now reaches half a stroke past each mark's box — 1px today. The gap
+     * The ink now reaches half a stroke past each mark's box — 0.5px today. The gap
      * between them is `space-5`, so nothing can collide.
      */
     overflow: visible;
@@ -356,8 +357,8 @@ const SOCIAL = [
      *
      * STROKE WIDTH IS IN USER UNITS, so it is scaled by the viewBox — the same
      * fact tokens.css records about Lucide. The artboards are 100, 100, 100 and
-     * 117 units wide, so at a shared 3rem one `stroke-width: 2px` would render
-     * 0.96, 0.96, 0.96 and 0.82px, leaving Medium ~15% light.
+     * 117 units wide, so at a shared 3rem one `stroke-width: 1px` would render
+     * 0.48, 0.48, 0.48 and 0.41px, leaving Medium ~15% light.
      *
      * That gap used to be far worse, which is worth remembering: Bluesky first
      * arrived on its official 568-unit artboard and rendered 0.25px — nearly six
