@@ -6,6 +6,8 @@ description: >-
   the RULES — the clamps, the leading ramp, measure, rhythm, the two-layer principle.
   For VALUES the built CSS is truth as of phase 2: web-next/src/styles/tokens.css wins
   if it and the front matter here ever disagree, and this file is the diffable record.
+  Phase 3 moved several values OUT of tokens.css into the one component that consumes
+  each — a value with one consumer is not a token — so for those the component is truth.
   Desktop values are canonical — see Layout for the mobile variants and Typography for
   the fluid clamps.
 
@@ -172,6 +174,10 @@ typography:
     lineHeight: 1.5
     letterSpacing: 0em
   # The one role that GROWS as the viewport narrows: 28.125 desktop, 30 mobile. See Typography.
+  # NOT a token in the CSS — it briefly was, as `--role-masthead-name`, the only `--role-*`
+  # in the system, and only because its size steps by viewport. A component can read
+  # `--breakpoint-lg` and do that itself, so it lives in Masthead.astro as a rule like every
+  # other text role. Both endpoints are static: this desktop value and size/5's mobile end.
   masthead-name:
     fontFamily: Noto Serif
     fontSize: 1.7578125rem
@@ -235,7 +241,13 @@ spacing:
   card-gap: "{spacing.space-1}"
   card-pad: "{spacing.space-2}"
   card-media: "{spacing.space-3}"
-  chrome-pad-header: "{spacing.space-4}"
+  # space-4 until 2026-08-25, when the masthead was built and 32px top and bottom
+  # made the header taller than the page wanted to give it. Reduced to shorten the
+  # header's vertical footprint so it competes less with page content — a call made
+  # against the real thing rather than the board, and expected to be revisited once
+  # actual pages sit under it. The footer keeps space-5: it has nothing below it to
+  # crowd, so the two chrome paddings are no longer a matched pair.
+  chrome-pad-header: "{spacing.space-3}"
   chrome-pad-footer: "{spacing.space-5}"
   chrome-inset: "{spacing.space-5}"
   field-height: "{spacing.space-5}"
@@ -256,7 +268,12 @@ spacing:
   # ── Mobile variants ───────────────────────────────────────────────────────
   # A flat-file artifact: this format has no mode concept, so a viewport-varying
   # token needs a twin key. In Figma the viewport is a MODE and `*-mobile` twins
-  # are forbidden. Only these thirteen vary.
+  # are forbidden. Only these thirteen vary HERE — and fewer than that in the CSS,
+  # because five of them (grid-column, the two skips, the two spans) are expressed
+  # structurally by a real grid and were never emitted, and grid-margin is a formula
+  # that floors itself. The seven that survive all flip at `md`. `lg` carries nothing
+  # but its flag: the three things that step there are component internals with one
+  # consumer each, so they live in their components. See Layout → Two breakpoints.
   rhythm-band-mobile: "{spacing.space-4}"
   rhythm-section-mobile: "{spacing.space-6}"
   chrome-inset-mobile: "{spacing.space-2}"
@@ -443,6 +460,11 @@ in the front matter; the reasoning is in [docs/decisions/color.md](docs/decision
 
 `text-heading`/`text-title` and `text-lead`/`text-muted` share a value on light and stay separate
 roles because they diverge in dark.
+
+**The masthead's wordmark takes `text` and its role line takes `text-muted`** — decided at build
+(2026-08-25) rather than transcribed, because the front matter assigns neither a color. `text` because
+the wordmark is the site's own name rather than apparatus around content; `text-muted` on the line
+below because at one size step apart the two were reading as equals.
 
 `icon` and `icon-on-accent` mirror `text` and `text-on-accent`, so an icon beside a label reads as
 part of it. **Third-party brand marks are not bound at all** — a client logo is not ours to theme, and
@@ -670,16 +692,87 @@ moves onto the page ground at 1.25 leading; article cards swap to their **vertic
 than merely narrowing; and the footer restacks. **Author the footer DOM in mobile order** and place it
 with grid, so source order equals reading order at both sizes.
 
+**The masthead has three states, not two** (built 2026-08-25). Stacked, then the same thing with the
+nav on one row, then inline with no band. The middle one was never drawn and needed no design: six
+items in equal columns produce it on the way between the other two. Worth generalizing — *a shape that
+falls out of the mechanism does not need a breakpoint, and giving it one only pins it in place.*
+
+### Two breakpoints, mobile-first — and why that is not a conflict
+
+**There are exactly two major breakpoints in the CSS and they live in one place:** `md` at 48rem and
+`lg` at 64rem, as two `@media` blocks in `web-next/src/styles/tokens.css`. No component carries a
+major breakpoint. They flip *tokens*, and components read tokens — including placement, because a
+custom property can hold any token sequence, so `--col-rail: 10 / span 3` collapses to `1 / -1` at the
+base and every consumer follows. There is no CSS way to put a breakpoint in a variable
+(`@media (min-width: var(--bp))` is invalid — a media query has no element for `var()` to resolve
+against), so this is the mechanism that gets it to one place.
+
+**Major versus minor.** A *major* breakpoint is a width the whole page agrees on, and it lives in
+tokens.css. A *minor* one is a single component adapting to the space **it** has — a card that wants
+two columns once its own box is wide enough — and that belongs in the component, because its condition
+is particular to it and could not be stated globally. Prefer a real **size container query** for those,
+which answers to the space the component occupies rather than to the viewport, so the same card in the
+rail and at full width get different treatment from one rule. There are none yet; this is the model for
+when there are.
+
+**Some rules cannot be expressed as a token, and those read a flag.** A token flip cannot say "this
+rule exists at one width and not the other" — the masthead's accent band is a bundle of declarations,
+not a value. So tokens.css also declares `--breakpoint-md` and `--breakpoint-lg`, and a component
+reads one with a **style container query**:
+
+```css
+@container style(--breakpoint-lg: true) { … }
+```
+
+**Always the `: true` form, never the bare `style(--breakpoint-lg)`.** The bare form tests whether a
+property is *declared*, so `false`, `0` and an empty value all match it. The case that protects is not
+disabling a live breakpoint, which nobody does, but scaffolding the next one with a `false` stub —
+ordinary to write, and live the moment it is typed under the bare form.
+
+**Why 64rem is not a taste value.** The masthead's inline form needs 951px minimum, measured — its
+mark, wordmark and six nav items plus two chrome insets. At 48rem it overflows and flex-shrink breaks
+the wordmark onto two lines, which reads as a spacing bug rather than a breakpoint one. Do not move it
+below ~62rem.
+
+**This document's values stay desktop-first; the CSS is written mobile-first.** Those are not in
+conflict, and the difference is deliberate:
+
+- **Here, desktop is canonical** because it is the fuller specification — the mobile column is a set
+  of exceptions to it, which is why the front matter carries desktop values and Layout describes the
+  collapse.
+- **In CSS, mobile is the base** because an unevaluated query should leave a phone with the phone
+  layout, not a 996px grid.
+
+So for the viewport-varying tokens, **the `@media` blocks are the side that matches this document**,
+not `:root`. Each token in `:root` carries an inline note naming its wide value, so the pair is
+readable without cross-referencing. Adding a third breakpoint is one more block, wider last.
+
+**48rem was arrived at by eye and is the one to move first.** It currently carries two unrelated
+decisions — the masthead nav going to a single row, and the content grid opening its 8+3 split — and
+only the nav is comfortable there. The split takes the prose from 66 characters at 767 to **49 at
+768**, recovering around 1028, and leaves the rail 166px wide. Both measured.
+
+That is **accepted rather than overlooked** (2026-08-24): a short measure is the cheaper failure, since
+a long line loses the reader at the return where a short one only costs a few extra returns, and the
+rail is the likelier thing to force a change — `body-compact` already exists for "a column too narrow
+for `body`". Revisit against real content pages rather than against a specimen. It stays cheap to
+revisit precisely because no component hardcodes a width.
+
 ### Outdenting
 
 Note cards sit unboxed at rest, so their text must align with the heading above. On hover the box
 appears and bleeds outward:
 
 ```css
-@media (min-width: 60rem) {
+@container style(--breakpoint-lg: true) {
   .home .notes > .note { margin-inline: calc(var(--card-pad) * -1); }
 }
 ```
+
+**This used to read `@media (min-width: 60rem)`**, from before the breakpoints were settled. The note
+cards do not exist yet, so nothing was broken — but a third width invented here would have been the
+accidental breakpoint this section exists to prevent. Written against `lg` unless building the cards
+shows they want their own width, in which case it is a *minor* breakpoint and belongs in the card.
 
 **Outdent the card, never the column** — widening the column looks like the same fix and drifts a
 sibling column off the grid. Scope it deliberately: on mobile the cards go full width with no room to
@@ -771,6 +864,14 @@ state that cannot occur.
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
 **not margin** — the bar sits at the box edge, so a margin would put the gap outside it.
 
+**The color-mode selector** is a radio group — three exclusive options with one active is what radios
+are, where `aria-pressed` would claim all three can be on at once. **"System" is the absence of a
+choice**: it removes both the stored value and the attribute, so `prefers-color-scheme` applies
+untouched. Selected is a filled pill using the ghost button's `surface`-behind-`accent` inversion;
+hover on the unselected two is the ghost's **outline**, not a tint — `control-hover` is `blue-300`, and
+white on it measures 2.9 against 5.67 at rest, so a tint would announce itself by making the icon
+harder to see.
+
 **The focus ring is stated by relationship, not by fixed colors:**
 
 > **Inner ring contrasts with the control; outer ring contrasts with the surface.**
@@ -781,6 +882,93 @@ The same two colors in both contexts, order swapped. In CSS:
 **The page header is one component with an optional lead**, and the boolean is required by the rail
 rather than offered as flexibility. **The gap after the header belongs to the parent band**, not the
 component, so pages legitimately differ there.
+
+### The logo mark
+
+A 100×100 circular AF monogram, one `evenodd` path — so the letters are **holes**, not shapes. The disc
+takes the fill and the counters show whatever is painted behind them, which is why the mark is inlined
+rather than an `<img>`: it themes from `currentColor`, and its counters are automatically right on the
+page ground, on a card, and in either theme with nothing to keep in sync.
+
+It binds no color of its own; the consumer names the role, and the masthead names `accent`.
+
+**It is the second role that grows as the viewport narrows** — 100px stacked, 80px inline, alongside
+`masthead-name` and for the same reason: the identity block has to keep its presence once it is the
+only thing in the header. Not a token: one consumer, so it lives in the component, in `rem` so it
+tracks a reader's text size rather than the viewport.
+
+### The hero image — one crop, not two designs
+
+Full bleed on article and case-study pages. It reads as two designs and is one:
+
+```css
+inline-size: 100%;  aspect-ratio: 16/9;  max-block-size: 24rem;  object-fit: cover;
+```
+
+Below about 683px the ratio governs. Above it the height pins at 24rem while the width keeps growing,
+so the box widens into 2.08:1 at 800, 3.75:1 at 1440 and 5:1 at 1920. **The panorama is a consequence,
+not a declaration** — and the switch point is wherever 16:9 happens to meet 24rem, so it moves if
+either constant does. That is why it takes no breakpoint and could not sensibly use one.
+
+**The hotspot works twice**, because the image is cropped twice: Sanity crops to 16/9 using it, and
+`object-position` then aims `object-fit: cover` as the box flattens past that. Without the second, a
+subject that is not centered slides out of shot on wide screens, silently.
+
+At `lg` the hero swaps places with the page title, sitting directly below the masthead. That is a
+reorder of the page stack, not a property of the image.
+
+**Hero sources want ~2880px wide.** The srcset ladder stops at the source's own width, so a smaller
+asset is stretched by the browser on a wide screen. That is intended — full bleed is not negotiable,
+and stretching the largest real file is strictly better than asking Sanity to upscale it first — but it
+means sharpness is an authoring responsibility. 2880 covers a 2560px display at 1× and a 1440px laptop
+at 2×.
+
+### Search — specified 2026-08-21, built in phase 4
+
+Recorded ahead of the build so the masthead can leave the right seam. **Phase 3 ships the icon inert**
+— it links nowhere and carries no behavior.
+
+- **It expands in place, replacing the nav items.** Search is not a separate page you navigate to; the
+  masthead trades its navigation for a field. So the nav and the field occupy the same slot, and that
+  slot has to be able to hold either — which is a constraint on the masthead's markup, not a later
+  addition to it.
+- **Results replace the content of the current page**, adopting the results layout on the Figma board.
+  The page is not navigated away from, so the masthead stays put and the URL question (does a search
+  push history?) sits with the phase 4 filter work in
+  [docs/urls-and-filtering.md](docs/urls-and-filtering.md).
+- **Fuse.js**, the same engine the previous version of the site used.
+- **`cmd + k` opens it**, moving focus into the field, and the icon is independently clickable and
+  focusable. Two entry points to one state.
+- **On mobile the icon becomes the word "search"** — the masthead restacks at that breakpoint and the
+  nav moves to a full-bleed accent strip, where an icon alone reads as decoration. The Figma file has
+  a mobile search-results screen showing the behavior.
+
+**Icons come from Lucide** (the Astro integration), for everything except the footer's social marks,
+which are brand assets rather than interface icons and are not ours to restyle.
+
+### Navigation — a global role, not a component one
+
+`nav` was on the list of type roles that live in the component that owns them, and it was **promoted
+into the global tier** (2026-08-25) when the masthead and the footer arrived independently at the same
+four declarations and the same hover. A second consumer is this project's trigger for promotion. It
+stays element-level — `nav`, not a class — so it is a role style like `h1` rather than a global
+component layer, which this project does not have.
+
+**Nav links carry no resting underline. Hover wipes one in from the leading edge**, ported from the
+live site: a pseudo-element animating `width: 0 → 100%`, because `text-decoration` cannot be animated
+from zero width. It takes `link-hover`, which gives both of the live site's treatments from one
+declaration — blue on a light ground, white inside an accent band, which re-points that token.
+
+**The color holds still on hover.** The underline is the whole affordance, so the global inline-link
+rule has to be cancelled for nav. On an accent band that is not merely redundant: `link-hover` is the
+band's own fill, so a nav label turned exactly the color of the surface behind it and vanished under
+the pointer.
+
+**The current page is `aria-current`**, not a data attribute — the fact belongs to the document, so the
+attribute that carries it to assistive technology should also draw the indicator.
+
+A nav whose links are not link-shaped — filter chips are the case coming — opts out with
+`::after { content: none }`.
 
 ## Do's and Don'ts
 

@@ -124,11 +124,13 @@
   --font-size-5: clamp(1.875rem, 1.7285rem + 0.625vw, 2.197265625rem);
   --font-size-6: clamp(2rem, 1.6606rem + 1.4479vw, 2.746582031rem);
 
-  /* --role-masthead-name is deliberately absent. It is the one role whose size
-     GROWS as the viewport narrows (28.125 desktop → 30 mobile), so its
-     endpoints are inverted and the mechanism — an inverted clamp, or a step at
-     the masthead's own breakpoint — is a phase 3 call. See DESIGN.md,
-     Typography → Fluid sizing. */
+  /* `masthead-name` is NOT a token, and its absence here is the two-layer rule
+     working rather than an omission. A semantic TEXT role is a bundle of applied
+     properties, so in CSS it is a rule — which is why h1-h4 and body live in
+     base.css and every other type role lives in the component that owns it.
+     `--role-masthead-name` was the one exception, and it existed only because the
+     size steps by viewport; a component can read `--breakpoint-lg` and do that
+     itself. The role now lives in Masthead.astro with the rest of its bundle. */
 
   /* ── Spacing primitives ────────────────────────────────────────────────── */
   /* One body line box (18px × 1.8 = 32.4px) rounded to 32 = 2rem, then
@@ -160,16 +162,42 @@
   --card-gap: var(--space-1);
   --card-pad: var(--space-2);
   --card-media: var(--space-3);
-  --chrome-pad-header: var(--space-4);
+  --chrome-pad-header: var(--space-3);
   --chrome-pad-footer: var(--space-5);
-  --chrome-inset: var(--space-5);
+  --chrome-inset: var(--space-2); /* -> space-5 at md */
   --field-height: var(--space-5);
-  --quote-indent: var(--space-5);
+  --quote-indent: var(--space-3); /* -> space-5 at md */
 
   /* Border WIDTHS carry the `-width-` infix so a stroke's width cannot collide
      with its color: --color-border-quote is a different token. */
   --border-width-hairline: 1px;
-  --border-width-quote: 6px;
+  --border-width-quote: 4px; /* -> 6px at md */
+
+  /* ── Icons ─────────────────────────────────────────────────────────────── */
+  /* Unitless numbers, not lengths: `stroke-width` in an SVG is in USER UNITS, and
+     Lucide draws everything in a 24x24 viewBox, so the value is scaled along with
+     the icon. Rendered px = stroke x (size / 24).
+
+     Sizes are set from CSS, not from Lucide's `size` prop, so they live here in one
+     place. Consequence worth knowing: `size={N}` at a call site is SILENTLY
+     OVERRIDDEN. Use the size classes in base.css instead.
+
+     Stroke is proportional by default — the same drawing scaled, so 20px renders
+     1.67px and 18px renders 1.50px. To make the two read as one weight family
+     instead, set the smaller stroke to keep rendered px constant:
+     2 x (20/24) / (18/24) = 2.22. */
+  --icon-size: 20px;
+  --icon-size-sm: 18px;
+  --icon-stroke: 2;
+  --icon-stroke-sm: 2;
+
+  /* ── Breakpoint flags — deliberately NOT declared here ─────────────────── */
+  /* `--breakpoint-md` and `--breakpoint-lg` are set ONLY inside their media
+     queries below, and their absence up here is the base state rather than an
+     omission: an undeclared custom property matches no style container query, so
+     "narrower than md" and "no such property" are the same condition. Declaring
+     them `0` would say the same thing at the cost of a second place to keep in
+     step. Full explanation of the flag mechanism with the breakpoints below. */
 
   /* ── Radius ────────────────────────────────────────────────────────────── */
   /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
@@ -180,49 +208,257 @@
   --radius-full: 9999px;
 
   /* ── Grid — 12 columns, 996px content, 222px margins at 1440 ───────────── */
-  /* Bind the skips rather than retyping them: 109 and 194 look arbitrary enough
-     to get "corrected". skip-1 = column + 2 gutters, skip-2 = 2 columns + 3. */
-  --grid-margin: 222px;
-  --grid-gutter: 24px;
-  --grid-gutter-content: 24px;
-  --grid-column: 61px;
-  --grid-skip-1: 109px;
-  --grid-skip-2: 194px;
-  --grid-span-3: 231px;
-  --grid-span-4: 316px;
+  /* --grid-margin is a FORMULA, not the 222px DESIGN.md quotes. Cap content at
+     996 and let the margins absorb the remainder, floored at the mobile value:
+     222 at 1440, 105 at 1206, 16 below ~1028, and content never exceeds 996 at
+     any width. 222 is what the formula produces at 1440, not an input. Reading
+     it as an input is what open-questions.md recorded as "the one known hole".
+
+     Used directly as `padding-inline` on the grid. px, not rem, per the units
+     note at the top of this file: the arithmetic closes against the viewport.
+
+     FIVE TOKENS WERE REMOVED HERE — grid-column (61), grid-skip-1 (109),
+     grid-skip-2 (194), grid-span-3 (231), grid-span-4 (316). A real CSS grid
+     expresses every one of them structurally, so emitting them as lengths would
+     invite someone to type a length where a line number belongs:
+
+       repeat(12, 1fr) + column-gap    ->  columns compute to 61 at 1440
+       grid-column: 1 / span 8         ->  656, the prose width
+       grid-column: 10 / span 3        ->  starts at line 10, so column 9 is
+                                           skipped — that gap IS skip-1, 109
+       grid-column: 9 / span 4         ->  after `1 / span 6`, skips 7-8 = 194
+
+     They exist in DESIGN.md's front matter because Figma has no `fr` and needed
+     lengths. We don't. Same shape as box-shadow deriving the focus-ring radii. */
+  --grid-content: 996px;
+
+  /* PERCENTAGE, not vw, and the difference is a real bug not a preference.
+     `50vw` includes the scrollbar, so on a 1440 window with a 16px classic
+     scrollbar the inset computes from 720 while only 1424 is available to
+     content — giving 980 where DESIGN.md says 996, and dragging the column,
+     prose and skip widths 16px short with it. Measured. macOS overlay
+     scrollbars hide this; Windows, where classic scrollbars are the default,
+     does not.
+
+     CONSTRAINT that comes with it: a percentage resolves against the
+     CONTAINING BLOCK, so this is only correct as `padding-inline` on a
+     full-width element. Used on something narrower it silently returns the
+     16px floor rather than the page margin. <Grid> is its one consumer. */
+  --grid-margin: max(16px, calc((100% - var(--grid-content)) / 2));
+  --grid-gutter: 8px; /* -> 24px at md */
+  /* DESIGN.md: use gutter-content for real gaps between content columns;
+     grid-gutter exists to make the arithmetic close. No consumer yet. */
+  --grid-gutter-content: 32px; /* -> 24px at md. LARGER here, not smaller */
+
+  /* ── Column placement ──────────────────────────────────────────────────── */
+  /* A custom property can hold ANY token sequence, `/` included, so a whole grid
+     placement fits in one. That is what keeps the breakpoint in a single place:
+     these collapse in the md query below and no component needs a query of
+     its own. Verified — flipping the value re-lays out.
+
+     The names are the RELATIONSHIP, per DESIGN.md's skip family: 8 + skip-1 + 3
+     "reads as a sidebar, set apart from the prose". Add a pair when a layout
+     actually needs one; do not build the vocabulary speculatively.
+
+     The grid itself stays `repeat(12, 1fr)` at every width — only these collapse.
+     That is deliberate: if a component forgets the token and hardcodes
+     `10 / span 3`, it lands in columns 10-12, narrow and visibly wrong but
+     recoverable. Against a one-column grid the same mistake would create nine
+     IMPLICIT columns and break the layout structurally. Same collapse, milder
+     failure. */
+  --col-full: 1 / -1; /* never varies */
+  --col-main: var(--col-full); /* -> 1 / span 8 at md */
+  --col-rail: var(--col-full); /* -> 10 / span 3 at md */
 }
 
 /*
- * ── Viewport overrides — NOT WRITTEN YET, deliberately ──────────────────────
+ * ══ THE BREAKPOINTS ═════════════════════════════════════════════════════════
  *
- * Eleven tokens above take a different value on mobile. They are not emitted as
- * `*-mobile` twins (that shape is a DESIGN.md flat-file artifact; Figma models
- * the viewport as a mode) — they belong in one media query, overriding the
- * properties in place.
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  THESE ARE THE ONLY MAJOR BREAKPOINTS IN THE CODEBASE — md at 48rem and   │
+ * │  lg at 64rem. To move one, edit the ONE `min-width` value on its block.   │
+ * │  No component carries a major breakpoint of its own.                      │
+ * └──────────────────────────────────────────────────────────────────────────┘
  *
- * The breakpoint is not settled, so writing the query now would invent a value.
- * docs/open-questions.md calls the fixed 222px margin "the one known hole": the
- * real rule is cap content at 996, let margins absorb the remainder, floor 16 —
- * which gives 222 at 1440, 105 at 1206 and 16 below ~1028. The token and the
- * rule agree at 1440 and at 360 and disagree everywhere between.
+ * MAJOR versus MINOR, because the rule above is about major breakpoints only.
+ * A MAJOR breakpoint is a width the whole page agrees on, and it lives here. A
+ * MINOR one is a single component adjusting to the space IT has — a card that
+ * needs two columns once its own box is wide enough — and that belongs in the
+ * component, because its condition is particular to it and could not be stated
+ * globally anyway. Prefer a real SIZE container query for those:
  *
- * This lands in phase 3 with the grid. Mobile values, for whoever writes it:
+ *     .deck { container-type: inline-size }
+ *     @container (inline-size > 30rem) { .card { … } }
  *
- *   --chrome-inset          space-2   (16px)
- *   --quote-indent          space-3   (24px)
- *   --border-width-quote    4px
- *   --grid-margin           16px
- *   --grid-gutter           8px
- *   --grid-gutter-content   32px   ← larger on mobile, not smaller
- *   --grid-column           20px
- *   --grid-skip-1           36px
- *   --grid-skip-2           64px
- *   --grid-span-3           343px  ← both spans collapse to the full content
- *   --grid-span-4           343px     width, which is 375 − 2 × 16
+ * — which answers to the space the component actually occupies, so a card in the
+ * 3-column rail and the same card at full width get different treatment from one
+ * rule where a media query would give both the same answer. Note that a size
+ * query needs `container-type` on an ancestor; the style queries below do not.
+ * There are no minor breakpoints yet. This is the model for when there are.
  *
- * rhythm-band and rhythm-section also vary, but they clamp above and need no
- * breakpoint at all.
+ * `@media (min-width: var(--bp))` is invalid CSS and always will be: a media
+ * query is evaluated against the media context, which is not attached to any
+ * element, while custom properties resolve per element at computed-value time.
+ * There is nothing for var() to resolve against, so the rule is dropped whole.
+ *
+ * The way around it is this block: flip TOKENS in one query and let components
+ * read tokens. It works for more than lengths — a custom property holds any
+ * token sequence, so `1 / span 8`, `column`, `grid` and `"a" "b"` all fit, which
+ * means placement, flex-direction, display and grid-template-areas can all be
+ * driven from here. Verified, not assumed.
+ *
+ * THE FLAGS — `--breakpoint-md` and `--breakpoint-lg` — exist for the case a
+ * token flip CANNOT express: a rule that must genuinely EXIST or NOT EXIST at a
+ * width, like the masthead's accent band, which is a whole bundle of declarations
+ * rather than one value. A component reads a flag with a STYLE container query:
+ *
+ *     @container style(--breakpoint-lg: true) { … }
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  ALWAYS THE `: true` FORM, NEVER THE BARE `style(--breakpoint-lg)`.       │
+ * │  The bare form tests whether the property is DECLARED, not whether it is  │
+ * │  true — `false`, `0` and an empty value all MATCH it. Verified.           │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * The scenario that convention protects is not someone disabling a live
+ * breakpoint, which nobody does. It is someone SCAFFOLDING the next one:
+ *
+ *     @media (min-width: 80rem) { :root { --breakpoint-xl: false } }
+ *
+ * — stubbed out until the layout is ready, which is an ordinary thing to write.
+ * Under the bare form that is live the moment it is typed. Under `: true` it is
+ * inert, which is what its author meant. Seven characters to make a wrong value
+ * fail loudly instead of quietly, which is the standard the rest of this file
+ * holds to.
+ *
+ * Four more things about the mechanism, all verified rather than assumed:
+ *
+ *   - It needs no `container-type`. Every element is a style container by
+ *     default, which is what makes this cheap.
+ *   - It evaluates on the nearest ANCESTOR, never on the element itself. That
+ *     works only because the flags inherit from :root down through <body>. If
+ *     anything ever sets a flag on the same element it styles, that element will
+ *     not see it.
+ *   - Only CUSTOM properties are queryable this way. Style queries on standard
+ *     properties are not shipped anywhere.
+ *   - An UNDECLARED property matches nothing, which is what makes the base state
+ *     work and why the flags carry no declaration in :root. "Narrower than md"
+ *     and "no such property" are the same condition, deliberately — and with the
+ *     `: true` form, so is "declared to anything else".
+ *
+ * Support: style queries are Chrome/Edge 111, Firefox 128, Safari 18 — Baseline
+ * since late 2024, and the `: true` form is the original one every engine shipped
+ * first. Verified here in Chromium only, so it is still worth one manual pass in
+ * Safari and Firefox, because the whole layout rests on it. The failure mode is
+ * safe: an engine that does not match the query keeps the base rules, which is
+ * the stacked layout at desktop width — degraded, not broken.
+ *
+ * NAMED BY WIDTH, NOT BY PURPOSE, and that trade is deliberate. `--masthead-inline`
+ * — what this flag was first called — could only ever be wrong for the masthead.
+ * `--breakpoint-lg` can be read by any component, which is the point of a MAJOR
+ * breakpoint, but it also means a change made for one component lands on every
+ * other one. The mitigation is the note on each block below recording what PINS
+ * its value. Add to those notes rather than replacing them.
+ *
+ * MOBILE-FIRST, and here it is load-bearing twice over. :root holds the narrow
+ * values and these blocks hold the wide ones, so a query that never evaluates
+ * leaves a phone with the phone layout. That covers the container queries too: an
+ * engine without style-query support matches no `@container` block, so every
+ * component keeps its base rules and a desktop gets the stacked layout — degraded
+ * but working. Written the other way round it would put the inline layout on a
+ * phone. DESIGN.md calls desktop values canonical, so THESE blocks are the side to
+ * diff against; each token in :root carries an inline `-> value at md/lg` note so
+ * the pair is findable. See DESIGN.md → Layout & Spacing → Responsive.
+ *
+ * ANOTHER BREAKPOINT is one more block, not a sweep through components. The WIDER
+ * query comes LAST: both are true at wide widths, specificity is equal, and source
+ * order decides — which is why lg sits below md and may override it. Keep every
+ * query in one direction: a `max-width` and a `min-width` at the same value both
+ * match at exactly that width.
+ *
+ * WHAT DOES NOT NEED A BREAKPOINT, worth reading before adding one. The Figma
+ * boards draw the nav two ways — six items on two rows when narrow, one row when
+ * inline — and never drew the tablet state, one row still on the accent band. It
+ * did not need drawing: six items in equal columns produce it on the way from one
+ * shape to the other. Reach for a token flip first, a flag second, and a new
+ * breakpoint only when neither works.
+ *
+ * Nine declarations vary, two of which are flags. Note what does NOT need to be here:
+ * --grid-margin is a formula that floors itself, and --rhythm-band and
+ * --rhythm-section clamp. If this list grows much past a dozen, that is the signal
+ * something structural wants its own query rather than another token.
  */
+
+/* ── Medium breakpoint ────────────────────────────────────────────────────── */
+/*
+ * 48rem = 768px. Arrived at by eye; iterate against real layouts.
+ *
+ * WHAT PINS IT: nothing hard yet, which is why it is the one to move first. It
+ * currently carries two unrelated decisions — the nav going to a single row, and
+ * the content grid opening its 8+3 split — and only the nav is comfortable here.
+ * The split takes the prose from 66 characters at 767 to 49 at 768, recovering at
+ * about 1024, and leaves the rail 166px wide. Both measured.
+ *
+ * That is ACCEPTED, not overlooked (2026-08-24): a short measure is the cheaper
+ * failure — long lines lose the reader at the line return, short ones only cost a
+ * few extra returns — and the rail is the likelier thing to force a change, where
+ * DESIGN.md's `body-compact` role already exists for "a column too narrow for
+ * body". Revisit once real content pages exist rather than against a specimen. It
+ * stays cheap to revisit precisely because no component hardcodes a width; if one
+ * ever does, this decision gets expensive.
+ */
+@media (min-width: 48rem) {
+  :root {
+    --breakpoint-md: true;
+    /* The splits open up. DESIGN.md: 8 + skip-1 + 3 "reads as a sidebar, set
+       apart from the prose" — below this width both are full bleed. */
+    --col-main: 1 / span 8;
+    --col-rail: 10 / span 3;
+
+    /* Page-derived, so it varies. Type-derived spacing does not. */
+    --chrome-inset: var(--space-5);
+
+    /* The quote bar and its indent both grow, and the calc() in base.css keeps
+       the bar inside the indent at either size: 48 - 6 = 42px of space. */
+    --quote-indent: var(--space-5);
+    --border-width-quote: 6px;
+
+    /* 24, not 8. This is the gutter the whole grid arithmetic closes against:
+       (996 - 11 x 24) / 12 = 61, DESIGN.md's column. */
+    --grid-gutter: 24px;
+
+    /* SMALLER here than on mobile. DESIGN.md is explicit and it reads like a
+       typo until you know — until the footer's link columns, which are its first
+       consumer and are gapped 32 on mobile against 24 here. */
+    --grid-gutter-content: 24px;
+  }
+}
+
+/* ── Large breakpoint ─────────────────────────────────────────────────────── */
+/*
+ * 64rem = 1024px.
+ *
+ * WHAT PINS IT: arithmetic, not taste. The masthead's inline form needs
+ *
+ *     chrome-inset 48 + identity 309 + nav 548 + chrome-inset 48  =  953px
+ *
+ * — the identity being an 80px mark, a 16px gap and a 213px wordmark; the nav
+ * being six items at 18px with 24px gaps. Measured in the browser at 951px, which
+ * leaves 73px between the two halves at 1024. DO NOT MOVE THIS BELOW ~62rem: the
+ * halves touch, then flex-shrink squeezes the identity and the wordmark breaks
+ * onto two lines. That failure is quiet — it looks like a spacing problem.
+ *
+ * NOTHING BUT THE FLAG IS SET HERE, and that is the point of the flag. The three
+ * things that step at this width — the mark's size, the wordmark's size, and the
+ * nav's baseline offset — are all component internals with exactly one consumer
+ * each, so they live in Logo.astro and Masthead.astro and read `--breakpoint-lg`
+ * from here. A value with one consumer is not a token.
+ */
+@media (min-width: 64rem) {
+  :root {
+    --breakpoint-lg: true;
+  }
+}
 
 /* ── Semantic color roles — DARK ─────────────────────────────────────────── */
 /*

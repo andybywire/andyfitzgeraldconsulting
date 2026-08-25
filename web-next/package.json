@@ -8,7 +8,7 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro dev --host",
     "dev:preview": "PUBLIC_SITE_MODE=preview astro dev",
     "build": "PUBLIC_SITE_MODE=production astro build",
     "build:preview": "PUBLIC_SITE_MODE=preview astro build",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@astrojs/node": "^11.1.2",
     "@astrojs/react": "^6.0.2",
+    "@lucide/astro": "^1.33.0",
     "@sanity/astro": "^3.5.0",
     "@sanity/client": "^7.26.2",
     "@sanity/image-url": "^2.1.1",

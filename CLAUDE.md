@@ -121,10 +121,14 @@ Current direction → Deploy shape, and is written in phase 6.
   Don't propose these as shortcuts.
 - Plain CSS with **native nesting** (`&`, nested `@media`) — no preprocessor.
 - **Two tiers, and only two.** Global: primitive tokens, semantic role tokens, and the element-level
-  role styles (`h1`–`h4`, body prose, the rhythm mechanism). Everything else is a
+  role styles (`h1`–`h4`, body prose, `nav`, the rhythm mechanism). Everything else is a
   **component-scoped style in the component that owns it.** There is no global `components/` layer,
   no page-level stylesheets, and no import chain — that structure belonged to the 11ty build and is
   deliberately not carried forward.
+  `nav` was promoted out of the component tier in phase 3, once the masthead and the footer had
+  independently written the same rules. **A second consumer is the trigger for promotion**, and it
+  runs the other way too: phase 3 moved `--logo-size`, `--nav-padding` and `--role-masthead-name`
+  *out* of tokens.css, because a value with one consumer is not a token.
 - All font sizing in `rem`, never `px`.
 - **Never write a font family name in CSS. Use `var(--font-prose)` or `var(--font-heading)`.** Astro's
   Fonts API scopes the family it registers — the real name is `Lato-c04d3693128bd5b6`, not `Lato` — so
@@ -301,6 +305,10 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    3. **Home** — mostly composition of bands that already exist by then.
    4. The rest — services, projects, case study, reviews, presentations, search.
 
+   **Search behavior is already specified** — see DESIGN.md → Components → Search. Phase 3 ships the
+   masthead icon inert; the spec covers expand-in-place replacing the nav, results replacing the page
+   content, Fuse.js, `cmd + k`, and the mobile treatment. Don't redesign it from scratch here.
+
    The content model is iterated alongside, driven by what each page needs. **The `note` type and
    the two SKOS vocabularies** land here rather than up front — a hierarchical topic vocabulary for
    tag browsing and related content, and a **semantic type** vocabulary distinguishing kinds that
@@ -467,7 +475,12 @@ write**: takes an image ref, applies hotspot/crop via `@sanity/image-url`, emits
 **Astro's `<Image>` still applies to repo assets** — logo, OG images, anything checked in. Two
 pipelines, each doing what it is good at.
 
-**To verify in phase 3: serving Sanity images from a Cloudflare-CNAMEd subdomain.** The intent is
+**Dropped, not verified (2026-08-25).** Andy's call: neither high-impact nor certain enough to spend
+phase 3 on. Images are served from `cdn.sanity.io`. The builder is still a single wrapper module, so
+this stays a one-line change if it comes back. The rest of this note is kept as the record of what
+would need confirming.
+
+**Was: to verify in phase 3 — serving Sanity images from a Cloudflare-CNAMEd subdomain.** The intent is
 to let Cloudflare cache transforms and, more importantly, to put images on a domain where
 Cloudflare's free **Hotlink Protection** applies. Two things must be confirmed before committing:
 

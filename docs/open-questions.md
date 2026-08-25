@@ -26,6 +26,18 @@ The token is a fixed 222, so the two agree at 1440 and at 360 and disagree every
 first real tablet frame will need either its own mode or hand-set margins. **Still the one known
 hole.**
 
+*Phase 3 gave it a second face.* The formula's own switch at ~1028 means **the content width has three
+regimes while the CSS has two breakpoints**, so anything that has to mirror the layout outside the
+cascade needs a condition at a width that appears nowhere in tokens.css. That surfaced while writing
+`sizes` attributes and was avoided by using `sizes="auto"` — the browser measures the box instead of
+being told about it — but the underlying mismatch is unchanged and the next thing that cannot read the
+cascade will meet it again.
+
+*And a measured consequence.* Opening the 8+3 split at 48rem takes the prose from 66 characters at 767
+to **49 at 768**, recovering around 1028, with the rail at 166px. Accepted for now (2026-08-24) on the
+grounds that a short measure is the cheaper failure and the rail is likelier to force the change —
+see DESIGN.md → Two breakpoints. Judge it against real content pages, not the specimen.
+
 **A grid-placed sibling breaks the rhythm bond above it.** The vertical rhythm ramp excludes
 `.sidebar` and `.banner` from *taking* a flow margin, but it cannot stop them *giving* one —
 `.sidebar + p` still matches the base rule. So an `h2` → `.sidebar` → `p` sequence gives the paragraph
@@ -52,6 +64,20 @@ diffability the two systems are built for, so it deserves a decision rather than
 
 ---
 
+## Settled in phase 3
+
+Kept here rather than deleted, because each was an open question long enough to be worth a pointer.
+
+- **`masthead-name`'s inverted endpoints** — a step at the masthead's own breakpoint, not an inverted
+  clamp, and static at both ends. DESIGN.md → Typography.
+- **The focus ring at `radius-1`** now has a real control to judge on: the mode selector. DESIGN.md
+  asked for that check in phase 3 and it is on screen, unresolved by eye.
+- **Whether an accent band's focus ring needs the swapped pair** — yes, and the mode selector is the
+  first component that proves it: `focus-offset` is white and its selected pill is white, so the
+  default order would put an invisible ring on the one control that most needs it.
+- **The masthead's tablet state**, which the Figma boards never drew. It needed no design: six items in
+  equal columns produce it on the way from two rows to one.
+
 ## Roles that may be missing
 
 **Rail headings have no role.** "On this page", "Topics", "Work I Did" — h3-styled headings in a
@@ -76,8 +102,9 @@ the ramp does not have. See [decisions/color.md](decisions/color.md).
   Both label pairings pass (4.62 and 6.17), so this is a legibility-of-state question, not a contrast
   one.
 - **Whether card titles get an underline.** Not required — see Links in DESIGN.md.
-- **Hover transition conventions have not converged.** The defensible rule is 0.15s for controls and
-  0.3s for cards — a control should feel immediate, a card can be languid — which leaves only the note
-  card out of step.
+- **Hover transition conventions have not converged**, though phase 3 built to the rule rather than
+  against it: 0.15s on the mode selector and the search button, 0.3s on the nav underline wipe and the
+  social marks' draw. That is controls-immediate, decoration-languid, which leaves only the note card
+  to check when it lands.
 - **`rhythm-list` (32) between unboxed note cards may be too tight.** Their hover boxes bleed 16px
   each side, so two adjacent hover targets sit 32 apart with 16px of box between them.

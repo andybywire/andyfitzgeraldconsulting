@@ -1,0 +1,300 @@
+---
+/**
+ * The color-mode selector. Three exclusive choices, in the footer.
+ *
+ * ── WHY RADIOS AND NOT BUTTONS ───────────────────────────────────────────────
+ *
+ * Three mutually exclusive options with one active is what a radio group IS.
+ * Three <button>s with `aria-pressed` would be wrong twice over: `aria-pressed`
+ * describes an independent toggle, and it would claim all three can be on at
+ * once. Native radios also bring arrow-key navigation and a single tab stop for
+ * the group, both of which would otherwise have to be written by hand.
+ *
+ * ── "SYSTEM" IS THE ABSENCE OF A CHOICE ──────────────────────────────────────
+ *
+ * There is no stored value for it. Choosing System REMOVES the `localStorage`
+ * key and the `data-theme` attribute, so the `prefers-color-scheme` block in
+ * tokens.css applies untouched and follows the OS live with no JS involved. That
+ * is why it is the checked radio when nothing is stored rather than a third
+ * value to keep in step — see BaseLayout's head script, which is the other half.
+ *
+ * ── ACCESSIBLE NAMES ARE `aria-label`, DELIBERATELY ──────────────────────────
+ *
+ * These three labels are never visible at any width, so `aria-label` is the right
+ * tool rather than real text hidden with a clip. That is the opposite call to the
+ * masthead's search button, where the label IS visible on the band and only
+ * hidden once the control becomes an icon — there the text has to be real. The
+ * distinction is whether the name is ever seen, not which technique is nicer.
+ */
+import {Monitor, Sun, Moon} from '@lucide/astro'
+
+/**
+ * Board order — system, light, dark. Sanity's docs, which this borrows its
+ * selected-state from, run sun / monitor / moon instead, putting the two poles at
+ * the ends. Ours leads with the default. Worth a look side by side.
+ */
+const MODES = [
+  {value: 'system', label: 'Follow system setting', tip: 'System Theme', Icon: Monitor},
+  {value: 'light', label: 'Light', tip: 'Light Mode', Icon: Sun},
+  {value: 'dark', label: 'Dark', tip: 'Dark Mode', Icon: Moon},
+]
+---
+
+{
+  /*
+  A <fieldset> to group the radios, named with `aria-label` rather than a
+  <legend> — a legend would have to be visually hidden, and there is no visible
+  group label in the design to hide.
+
+  `checked` on System here is the NO-JS answer, and it is also the correct one:
+  without the script, no `data-theme` is set and the page follows the OS, which is
+  exactly what System means. The script below re-checks whichever radio matches a
+  stored choice; it corrects this rather than establishing it.
+*/
+}
+<fieldset class="mode" aria-label="Color theme">
+  {
+    MODES.map(({value, label, tip, Icon}) => (
+      <>
+        <input
+          type="radio"
+          name="theme-mode"
+          id={`theme-${value}`}
+          value={value}
+          aria-label={label}
+          checked={value === 'system'}
+        />
+        <label for={`theme-${value}`} title={tip}>
+          <Icon />
+        </label>
+      </>
+    ))
+  }
+</fieldset>
+
+<style>
+  .mode {
+    /* A fieldset arrives with a border, padding and margin, and its own
+       `min-inline-size: min-content` which stops it shrinking. All four go. */
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
+
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  /*
+   * The input stays in the layout and in the accessibility tree — it is only
+   * INVISIBLE. `display: none` or `visibility: hidden` would make it unfocusable
+   * and unreachable, which for the actual control is the whole game.
+   *
+   * `opacity: 0` plus `position: absolute` is enough here, where the masthead's
+   * hidden label needed the full clip technique: there the thing being hidden was
+   * TEXT, which overflows its box and spills; a 1px transparent form control has
+   * nothing to leak.
+   */
+  input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: 0;
+    opacity: 0;
+  }
+
+  label {
+    display: grid;
+    place-items: center;
+    padding: var(--space-1);
+    border-radius: var(--radius-1);
+    cursor: pointer;
+
+    /* Nothing at rest. On the band the icons inherit `icon-on-accent` from
+       <Band>, so all three read at full strength — DESIGN.md has no
+       muted-on-accent role, which is the known gap that stops the two unselected
+       ones being dimmed the way the Sanity reference dims them. */
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+
+  /*
+   * SELECTED: a filled pill, which is DESIGN.md's `button-ghost-hover` pair —
+   * `surface` behind `accent`. That is the established on-band inversion, and it
+   * carries both themes without a second rule, and every pairing clears AA:
+   *
+   *     light   blue-500 glyph on a white pill          5.67
+   *             white pill against the blue-500 band    5.67
+   *     dark    blue-300 glyph on a neutral-850 pill    5.28
+   *             neutral-850 pill against the band       5.28
+   *
+   * Computed from the token values, not estimated. Note the pill has to clear the
+   * BAND as well as carry its glyph — a selected state nobody can find is not a
+   * selected state — and here one number happens to serve both, because the pill
+   * and the glyph are the band's own two role colors swapped.
+   *
+   * `radius-1` because DESIGN.md assigns it to "the button" and these are
+   * buttons. It is also the case DESIGN.md asks to have judged in phase 3 — at
+   * radius-1 the derived focus rings run 3 -> 5 -> 7, so the outer corner is
+   * 2.3x rounder than the control's. This is the first real control to show it.
+   * Judge at 1x, not on a blowup.
+   */
+  input:checked + label {
+    background-color: var(--color-surface);
+    color: var(--color-accent);
+  }
+
+  /*
+   * HOVER, on the unselected two only — clicking the selected one does nothing,
+   * so it offers nothing.
+   *
+   * The outline is the ghost button's REST state on an accent band, which makes
+   * the three states read as one ramp: nothing, outlined, filled. A background
+   * tint was the obvious alternative and is wrong here — `control-hover` is
+   * blue-300, and white-on-blue-300 is 2.9 against 5.67 at rest, so the affordance
+   * would arrive by making the icon harder to see.
+   *
+   * `outline` rather than `box-shadow` so it cannot collide with the focus ring
+   * below, which is a box-shadow and would replace it outright. Negative offset
+   * so the line hugs the pill instead of floating outside it.
+   */
+  input:not(:checked) + label:hover {
+    outline: var(--border-width-hairline) solid var(--color-border-on-accent);
+    outline-offset: calc(-1 * var(--border-width-hairline));
+  }
+
+  /*
+   * FOCUS: the ring pair SWAPPED from base.css's order, and this is the first
+   * component that genuinely needs it.
+   *
+   * DESIGN.md states the rule as a relationship — inner contrasts the control,
+   * outer contrasts the surface — and on this band the default order fails: the
+   * inner ring is `focus-offset`, which is white, and the selected pill is also
+   * white, so it would vanish into it. Swapped, the inner ring is `focus-ring`
+   * against the white pill and the outer is white against the blue band.
+   *
+   * On the two unselected segments the inner ring blends into the band instead
+   * and you get a white ring set 2px off the icon, which is legible and is what
+   * the masthead's nav links already do.
+   */
+  input:focus-visible + label {
+    box-shadow:
+      0 0 0 2px var(--color-focus-ring),
+      0 0 0 4px var(--color-focus-offset);
+
+    /* Lifted above its neighbours. A box-shadow paints outside the box but stays
+       in flow order, so once the gap closes at lg a later sibling's fill would
+       paint over the ring of the item before it. Harmless while there is a gap;
+       cheaper to state once than to make conditional. */
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── lg: one unified control ───────────────────────────────────────────── */
+  /*
+   * Same three targets, read as a single object rather than three. The gap closes
+   * and only the OUTER corners of the group stay round, so adjacent states meet
+   * flush — which is the segmented-control look without the enclosing stroke the
+   * Sanity reference uses to get it.
+   *
+   * Logical corner properties, not `border-top-left-radius` and friends: the round
+   * corners belong to the START and END of the group, so in RTL they should follow
+   * the group and swap sides. Physical corners would pin them to the left.
+   *
+   * The seam never doubles up. At most one item can be outlined at a time — hover
+   * is scoped to the unselected, and the selected one is filled instead of
+   * outlined — so two 1px inset lines never land against each other.
+   *
+   * TOUCH IS UNAFFECTED, deliberately. The base treatment keeps 20px icons, an
+   * 8px gap and all four corners round, so the 36px targets survive where fingers
+   * are. This is the pointer refinement only.
+   */
+  @container style(--breakpoint-lg: true) {
+    .mode {
+      gap: 0;
+    }
+
+    label {
+      border-radius: 0;
+    }
+
+    /* `label:first-of-type` rather than `:first-child` — the children alternate
+       input, label, so the first label is the second child. */
+    label:first-of-type {
+      border-start-start-radius: var(--radius-1);
+      border-end-start-radius: var(--radius-1);
+    }
+
+    label:last-of-type {
+      border-start-end-radius: var(--radius-1);
+      border-end-end-radius: var(--radius-1);
+    }
+
+    /*
+     * 16px, against the 20px `--icon-size` the base state uses. Not a token: one
+     * consumer, one state, so it stays here.
+     *
+     * This beats base.css's `svg.lucide` sizing on specificity, which is the only
+     * way to change a Lucide icon's size — its own `size` prop is silently
+     * overridden by that rule, as tokens.css records.
+     *
+     * The stroke is left alone and therefore renders ~20% lighter: `--icon-stroke`
+     * is in user units against Lucide's 24-unit box, so 2 renders 1.33px at 16
+     * where it rendered 1.67px at 20. If they read thin next to the 2px social
+     * marks, `stroke-width: 2.5` restores 1.67 — tokens.css carries that formula.
+     */
+    label svg {
+      inline-size: 1rem;
+      block-size: 1rem;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    label {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  /*
+   * Reflects the stored choice into the group, then keeps the two in step. This
+   * does NOT need to run before paint — BaseLayout's inline head script has
+   * already set `data-theme` — so an ordinary deferred module is right here, and
+   * cheaper.
+   *
+   * try/catch on every storage touch because reading localStorage THROWS rather
+   * than returning null when storage is blocked, which Safari does in some
+   * embedded contexts. The control still works for the page view; only the
+   * remembering is lost.
+   */
+  const root = document.documentElement
+  const radios = document.querySelectorAll<HTMLInputElement>('input[name="theme-mode"]')
+
+  let stored: string | null = null
+  try {
+    stored = localStorage.getItem('theme')
+  } catch {}
+
+  // Anything that is not one of the two explicit choices resolves to System,
+  // which also cleans up a junk value someone left in storage.
+  const current = stored === 'light' || stored === 'dark' ? stored : 'system'
+  radios.forEach((radio) => {
+    radio.checked = radio.value === current
+  })
+
+  radios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (!radio.checked) return
+      const choice = radio.value
+      // Apply first, so the page is correct even if storage refuses.
+      if (choice === 'system') delete root.dataset.theme
+      else root.dataset.theme = choice
+      try {
+        if (choice === 'system') localStorage.removeItem('theme')
+        else localStorage.setItem('theme', choice)
+      } catch {}
+    })
+  })
+</script>
