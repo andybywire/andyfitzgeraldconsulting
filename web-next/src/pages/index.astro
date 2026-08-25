@@ -14,7 +14,24 @@ import Grid from '../components/Grid.astro'
 import Logo from '../components/Logo.astro'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
+import SanityImage from '../components/SanityImage.astro'
+import SanityHero from '../components/SanityHero.astro'
 import {Search, Rss} from '@lucide/astro'
+
+/**
+ * Real assets from production-26, hardcoded because this page runs no query.
+ * `cs_hero` is 1262x840 and `NTD_after` is 3024x1890 — deliberately one source
+ * that CAPS the ladder below its top rung and one that does not.
+ */
+const HERO = {
+  asset: {_ref: 'image-015d1f2e51f8a01adf8cbdfba67a4a05ebd1ceb3-1262x840-jpg'},
+  hotspot: {x: 0.5, y: 0.35, width: 0.6, height: 0.6},
+  altText: 'Placeholder hero — a case study cover image',
+}
+const INLINE = {
+  asset: {_ref: 'image-01f937b46ee5229705238745f2c29dc12da6cd20-3024x1890-png'},
+  altText: 'Placeholder in-prose image',
+}
 ---
 
 <BaseLayout
@@ -22,6 +39,14 @@ import {Search, Rss} from '@lucide/astro'
   description="Throwaway page for verifying the global tier."
 >
   <Masthead />
+
+  {
+    /*
+    Full bleed, so it sits in the PAGE STACK and not inside a <Grid>. Resize
+    across 683px to watch 16:9 give way to the height cap.
+  */
+  }
+  <SanityHero image={HERO} />
 
   <Band space="none">
     <Grid>
@@ -131,6 +156,16 @@ import {Search, Rss} from '@lucide/astro'
           <code>padding-inline-start</code> rather than margin — a margin would put the gap outside the
           box and the bar would drift off the text block.
         </p>
+
+        <figure>
+          <SanityImage image={INLINE} />
+          <figcaption>
+            A real Sanity image in the prose column, lazy with <code>sizes="auto, 100vw"</code>. The
+            browser measures this box rather than being told about it, so no breakpoint appears in
+            the markup. Its <code>width</code> and <code>height</code> carry the ratio, which is what
+            reserves the box before the bytes land.
+          </figcaption>
+        </figure>
 
         <figure>
           <svg viewBox="0 0 640 300" role="img" aria-labelledby="fig-title">

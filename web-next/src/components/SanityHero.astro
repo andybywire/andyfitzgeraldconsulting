@@ -1,0 +1,178 @@
+---
+/**
+ * The full-bleed hero for article and case-study pages.
+ *
+ * ── THE PANORAMA IS A CONSEQUENCE, NOT A DECLARATION ─────────────────────────
+ *
+ * The brief reads as two designs — 16:9 on a phone, panoramic on a desktop — and
+ * it is one, expressed in three properties:
+ *
+ *     inline-size: 100%      full bleed at every width
+ *     aspect-ratio: 16/9     the shape while there is room for it
+ *     max-block-size: 24rem  the height it is not allowed to exceed
+ *
+ * Below 682.7px the ratio governs. Above it the height pins at 384px while the
+ * width keeps growing, so the box widens into 2.08:1 at 800, 3.75:1 at 1440 and
+ * 5:1 at 1920 — the panorama, arrived at rather than specified. Measured across
+ * all of those widths.
+ *
+ * THE SWITCH POINT IS DERIVED, which is the reason this needs no breakpoint and
+ * could not sensibly use one: 682.7 is wherever 16:9 happens to meet 24rem, so it
+ * moves if either constant does. A media query would have to be recomputed by hand
+ * every time; `max-block-size` simply cannot be wrong.
+ *
+ * `object-fit: cover` fills the widening box, and `object-position` aims the crop
+ * — see the hotspot note below.
+ *
+ * ── WHAT THIS COSTS, AND WHY IT IS ACCEPTED ──────────────────────────────────
+ *
+ * Fetching at a flat 16/9 and displaying at up to 5:1 meant the browser threw most
+ * of the file away — measured at 64% discarded on a real hero at a 1890px
+ * viewport, because `object-fit: cover` scales the file 1.5x to fill the width and
+ * crops the overflow.
+ *
+ * So the rungs are HEIGHT-CAPPED (`capHeight` in image.ts): each candidate comes
+ * back already close to the shape its box will have, instead of tall and mostly
+ * cropped. Same URLs, same breakpoint count — which is to say none — and roughly
+ * half the bytes on the widest rungs.
+ *
+ * The trade it accepts is that rungs are no longer all the same shape. That is
+ * safe HERE and nowhere else: this box is fixed by `aspect-ratio` and
+ * `max-block-size` without consulting the file, and `object-fit: cover` absorbs
+ * whatever arrives, so a candidate swap on resize cannot move the page. The same
+ * option on <SanityImage> would reintroduce layout shift.
+ *
+ * ── IT WILL UPSCALE ON WIDE SCREENS, AND THAT IS INTENDED ────────────────────
+ *
+ * The srcset ladder stops at the source's own width, so a 1262px-wide asset offers
+ * nothing above 1262w — and this element is full bleed, so on a 1890px viewport
+ * the browser stretches that file to 1890 and the result is soft. Confirmed in
+ * DevTools: rendered 1890x384 from an intrinsic 1262x710.
+ *
+ * THAT IS THE DESIGN, not a failure of the cap. Full bleed is not negotiable, so
+ * the only question is which way to be wrong when a source is too small, and
+ * stretching the largest REAL file is strictly better than asking Sanity to
+ * upscale it first: identical on screen, and fewer bytes. The cap governs what is
+ * requested; the CSS governs what is filled. They are not in tension.
+ *
+ * What it does buy is an authoring responsibility, Andy's by his own call
+ * (2026-08-25): HERO SOURCES SHOULD BE BIG. Roughly 2880px wide covers both a
+ * 2560px display at 1x and a 1440px laptop at 2x. Below that, wide screens get a
+ * soft hero — gracefully, but visibly.
+ *
+ * ── LOADING, AND WHY IT INVERTS SanityImage's DEFAULTS ───────────────────────
+ *
+ * `sizes` is a flat `100vw` with no `auto`: this is full bleed, so its box IS the
+ * viewport and a measured value could tell the browser nothing it does not
+ * already know. `auto` would be invalid here regardless — it requires a lazy
+ * image, and this one must not be.
+ *
+ * EAGER, against the default, with `fetchpriority="high"`. This is the largest
+ * element above the fold on an article page, which makes it the Largest
+ * Contentful Paint — lazy-loading it would defer the one image that metric is
+ * measuring, and the priority hint moves it ahead of everything else competing
+ * for the first connections.
+ *
+ * ── PLACEMENT ────────────────────────────────────────────────────────────────
+ *
+ * `inline-size: 100%` fills whatever contains it, so this belongs in the PAGE
+ * STACK, never inside <Grid> — a grid would inset it to the content columns and
+ * the full bleed would quietly disappear.
+ *
+ * At lg the hero swaps places with the page title. That is a reorder of the page
+ * stack rather than anything this component knows about, and it is the page
+ * template's job.
+ */
+import {imageAttrs, type SanityImageSource} from '../sanity/image'
+
+interface Props {
+  image: SanityImageSource
+  alt?: string
+  /** The shape at narrow widths, before the height cap takes over. */
+  aspect?: string
+  class?: string
+  [key: string]: unknown
+}
+
+const {image, alt, aspect = '16/9', class: className, ...rest}: Props = Astro.props
+
+/**
+ * 24rem at the nominal 16px root, DOUBLED for density — see `capHeight` in
+ * image.ts. This is the one number shared between the frontmatter and the
+ * stylesheet below, and they have to move together; there is no way to read a CSS
+ * value from here, and computing the CSS from this would put layout in JS.
+ *
+ * It is a hedge, not a measurement: a reader who has scaled their text up makes
+ * `24rem` larger than 384px, and the cap does not follow. The failure is a
+ * slightly soft hero for that reader, which is the same failure an undersized
+ * source already produces.
+ */
+const HERO_MAX_BLOCK_PX = 24 * 16
+const attrs = imageAttrs(image, {aspect, capHeight: HERO_MAX_BLOCK_PX * 2})
+
+/**
+ * THE HOTSPOT HAS TO WORK TWICE, because this image is cropped twice: once by
+ * Sanity, to the 16/9 file, and again by `object-fit: cover` as the box widens
+ * past it. The first is handled in the URL builder; this is the second.
+ *
+ * `object-position` takes the hotspot's centre, so the region an editor marked
+ * stays framed as the panorama tightens. Without it the browser crops to the
+ * middle and a subject that is not centred slides out of shot on wide screens —
+ * silently, and only for some viewers.
+ *
+ * A custom property rather than `object-position` inline, so the property name and
+ * its default stay in the stylesheet and only the DATA arrives from the document.
+ */
+const focus = image?.hotspot
+  ? `--hero-focus: ${(image.hotspot.x * 100).toFixed(2)}% ${(image.hotspot.y * 100).toFixed(2)}%`
+  : undefined
+
+const resolvedAlt = alt ?? image?.altText ?? ''
+if (alt === undefined && !image?.altText && attrs) {
+  console.warn(`[SanityHero] no altText on ${image?.asset?._ref} — rendering alt=""`)
+}
+---
+
+{
+  attrs && (
+    <img
+      class:list={['hero', className]}
+      src={attrs.src}
+      srcset={attrs.srcset}
+      sizes="100vw"
+      width={attrs.width}
+      height={attrs.height}
+      alt={resolvedAlt}
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+      style={focus}
+      {...rest}
+    />
+  )
+}
+
+<style>
+  .hero {
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+
+    /* 24rem = 384px. Component-local rather than a token: one consumer, and
+       DESIGN.md names no chrome height. In rem so it tracks a reader's text size,
+       like the rest of the type-derived spacing.
+
+       KEEP IN STEP WITH `HERO_MAX_BLOCK_PX` in the frontmatter, which caps the
+       srcset rungs against this number. */
+    max-block-size: 24rem;
+
+    /* Fills the box as it widens past 16/9. Without this the image would letterbox
+       or distort once the height caps. */
+    object-fit: cover;
+    object-position: var(--hero-focus, 50% 50%);
+
+    /* base.css sets `height: auto` on every image, which is what lets the
+       width/height attributes reserve a box from their ratio. Here the CSS
+       determines the box outright, so this component cannot shift the page at
+       all — the attributes are belt to its braces rather than the mechanism. */
+  }
+</style>
