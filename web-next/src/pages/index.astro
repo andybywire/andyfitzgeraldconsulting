@@ -26,12 +26,6 @@ import {Search, Rss} from '@lucide/astro'
   <Band space="none">
     <Grid>
       <form class="controls">
-        <label for="theme">Theme</label>
-        <select id="theme" name="theme">
-          <option value="system">System</option>
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-        </select>
         <label for="probe">Native control</label>
         <input id="probe" type="text" placeholder="checks color-scheme" />
         <button type="button" aria-label="Search"><Search /></button>
@@ -167,9 +161,9 @@ import {Search, Rss} from '@lucide/astro'
         </figure>
 
         <p>
-          Last paragraph. Switch the theme with the control at the top of the page and check all of
-          the above again — every token has three places it can be wrong, and the native form
-          controls should re-skin along with the page because <code>color-scheme</code> is set.
+          Last paragraph. Switch the theme with the mode selector in the footer and check all of the
+          above again — every token has three places it can be wrong, and the native form control
+          above should re-skin along with the page because <code>color-scheme</code> is set.
         </p>
       </article>
 
@@ -321,42 +315,3 @@ import {Search, Rss} from '@lucide/astro'
     font-size: 0.9em;
   }
 </style>
-
-<script>
-  /*
-   * The toggle's wiring, unlike the resolver in BaseLayout, does NOT need to run
-   * before paint — the head script has already set the theme. So this is an
-   * ordinary bundled module with defer semantics, which is the cheaper default.
-   *
-   * "System" REMOVES both the attribute and the stored value rather than storing
-   * the word "system", so following the OS is the absence of a choice rather
-   * than a third state to keep in sync.
-   */
-  const select = document.querySelector<HTMLSelectElement>('#theme')
-  const root = document.documentElement
-
-  if (select) {
-    try {
-      select.value = localStorage.getItem('theme') ?? 'system'
-    } catch {
-      select.value = 'system'
-    }
-
-    select.addEventListener('change', () => {
-      const choice = select.value
-      try {
-        if (choice === 'system') {
-          localStorage.removeItem('theme')
-          delete root.dataset.theme
-        } else {
-          localStorage.setItem('theme', choice)
-          root.dataset.theme = choice
-        }
-      } catch {
-        // Storage blocked — apply for this page view only.
-        if (choice === 'system') delete root.dataset.theme
-        else root.dataset.theme = choice
-      }
-    })
-  }
-</script>

@@ -32,6 +32,7 @@
  */
 import Band from './Band.astro'
 import Grid from './Grid.astro'
+import ThemeToggle from './ThemeToggle.astro'
 
 /**
  * Baked at build time, not evaluated in the browser. A static build means a site
@@ -191,7 +192,7 @@ const SOCIAL = [
 
     <div class="copyright">
       <p>© 2013–{year} Andy Fitzgerald</p>
-      {/* ThemeToggle lands here. */}
+      <ThemeToggle />
     </div>
   </Grid>
 </Band>
