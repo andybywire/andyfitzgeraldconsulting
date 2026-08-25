@@ -261,15 +261,6 @@ import {Search} from '@lucide/astro'
 
   /* ── Nav ────────────────────────────────────────────────────────────────── */
 
-  nav {
-    /* The `nav` role: Lato 400 at size/2, leading 1.5, no tracking. Set on the
-       container so the search BUTTON inherits it too via `font: inherit`. */
-    font-family: var(--font-heading);
-    font-size: var(--font-size-2);
-    font-weight: 400;
-    line-height: 1.5;
-  }
-
   ul {
     /* base.css's reset zeroes list margin but deliberately keeps the UA's
        padding-inline-start as a prose indent, so this list has to drop it. */
@@ -314,15 +305,20 @@ import {Search} from '@lucide/astro'
     margin-top: 0;
   }
 
-  /* Chrome, not prose: the underline is the hover affordance rather than the
-     resting state. */
-  :is(li a, .search-toggle) {
-    text-decoration: none;
-  }
-
-  :is(li a, .search-toggle):hover {
-    color: var(--color-text-on-accent-hover);
-    text-decoration: underline;
+  /*
+   * base.css draws the wipe-in underline in `--color-link-hover`, which is
+   * blue-500 — the band's own fill, so it would be invisible here. This is the
+   * band treatment's fourth declaration, alongside the fill and the two text
+   * colors above, and like them it is stated per state rather than re-pointed:
+   * re-pointing the token would have to be undone at lg, and undoing an inherited
+   * custom property from inside the block that overrode it needs `unset` and a
+   * paragraph explaining it.
+   *
+   * No hover COLOR change. The underline carries it alone, which is both quieter
+   * and what the live site does.
+   */
+  .slot :is(a, button)::after {
+    border-block-end-color: var(--color-text-on-accent-hover);
   }
 
   /* ── The two swapped labels ─────────────────────────────────────────────── */
@@ -383,6 +379,17 @@ import {Search} from '@lucide/astro'
     /* Containing block for the visually-hidden label in the inline state, so it
        cannot land somewhere that lengthens the page. */
     position: relative;
+  }
+
+  /* base.css hangs the nav underline 0.15em below its host box. That lands right
+     for the links, which are INLINE and whose boxes stop at the descent line —
+     but this button is block-level and fills the whole row, so its box bottom is
+     already a half-leading lower and the rule came out 2.5px below its
+     neighbours'. Anchoring it flush to its own bottom edge puts it back within
+     0.2px of theirs. The half-leading itself is not derivable — it needs the
+     font's content height — so this pins the box rather than computing the gap. */
+  .search-toggle::after {
+    inset-block-end: 0;
   }
 
   /* ── Row: md ────────────────────────────────────────────────────────────── */
@@ -479,8 +486,24 @@ import {Search} from '@lucide/astro'
       padding-inline: 0;
     }
 
-    :is(li a, .search-toggle):hover {
-      color: var(--color-link-hover);
+    /* The band is gone, so the underline goes back to the role base.css names —
+       and thickens. 3px is the live site's desktop weight; the footer and the
+       band both stay on base.css's 2px. Neither is a token: DESIGN.md has
+       `border-hairline` at 1px and the quote bar at 4/6, and nothing between. */
+    .slot :is(a, button)::after {
+      border-block-end-color: var(--color-link-hover);
+      border-block-end-width: 3px;
+    }
+
+    /* NO RULE UNDER THE MAGNIFIER. Search does not navigate — it replaces this
+       slot in place — so borrowing the nav items' hover would say it does. The
+       word "Search" on the band keeps the underline, because there it IS reading
+       as one of six labels; only the icon-only form drops it.
+       Left without a hover treatment on purpose rather than given a new one: the
+       theme toggle needs a selected/hover pattern of its own, and reusing that
+       once it exists beats inventing a second one here. */
+    .search-toggle::after {
+      content: none;
     }
 
     /* Content-width items with a real gap, rather than equal shares of the line.

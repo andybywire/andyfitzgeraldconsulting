@@ -3,10 +3,17 @@
  * tokens.css holds the values, this holds the rules that apply them.
  *
  * SCOPE: the theme's color-scheme, a minimal reset, h1–h4, body prose, links,
- * blockquote, figure, icons, the focus-ring default, and the vertical rhythm
- * mechanism. Nothing else. Every other typographic role in DESIGN.md
- * (display, lead, small, label, nav, masthead-*, chip, tag, body-compact) is
+ * NAVIGATION, blockquote, figure, icons, the focus-ring default, and the vertical
+ * rhythm mechanism. Nothing else. Every other typographic role in DESIGN.md
+ * (display, lead, small, label, masthead-*, chip, tag, body-compact) is
  * component-scoped and belongs to the component that owns it.
+ *
+ * `nav` WAS on that component-scoped list and was promoted out of it, which is a
+ * change worth naming rather than absorbing. The masthead and the footer had
+ * arrived at the same four type declarations and the same hover treatment
+ * independently, and a second consumer is this project's stated trigger for
+ * promotion. It stays element-level — `nav`, not a class — so it is a role style
+ * like h1, not a global component layer, which the project does not have.
  *
  * A semantic TEXT role is a bundle of applied properties, so in CSS it is a
  * rule — not a variable. That is why these are rules and tokens.css has no
@@ -181,6 +188,70 @@ a {
 
 a:hover {
   color: var(--color-link-hover);
+}
+
+/* ── Navigation ────────────────────────────────────────────────────────────── */
+/*
+ * DESIGN.md's `nav` role — Lato 400 at the body step, leading 1.5, no tracking —
+ * plus the treatment its links share.
+ *
+ * SET ON THE CONTAINER, NOT THE LINKS, and that is load-bearing rather than
+ * tidy. A link is inline, so each list item's line box is sized by the ITEM's
+ * inherited font and leading; styling only the anchor leaves the row on body's
+ * 1.8 and every row comes out 5px tall than it should with no rule saying so.
+ * It also means a <button> in a nav inherits the role through `font: inherit`.
+ *
+ * THE UNDERLINE WIPES IN FROM THE LEADING EDGE — ported from the live site,
+ * which is where this pattern comes from. A pseudo-element rather than
+ * `text-decoration`, because `text-decoration` cannot be animated from zero
+ * width; a border on a zero-width box can.
+ *
+ * It takes `--color-link-hover`, which is the role that means exactly this and
+ * gives the live site's two treatments from one declaration: blue-500 on a light
+ * ground, and white inside <Band tone="accent">, which re-points that token. A
+ * component faking a band re-points it too — see Masthead.
+ *
+ * `aria-current` rather than the live site's `data-state="active"`: the current
+ * page is a fact about the document, so the attribute that carries it to
+ * assistive technology should be the one that draws the indicator. Nothing sets
+ * it yet.
+ *
+ * A component whose nav links are not link-shaped — filter chips are the case
+ * coming — opts out with `::after { content: none }`.
+ */
+
+nav {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-2);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+nav :is(a, button) {
+  position: relative;
+  text-decoration: none;
+}
+
+nav :is(a, button)::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: -0.15em;
+  inline-size: 0;
+  border-block-end: 2px solid var(--color-link-hover);
+  transition: inline-size 0.3s;
+}
+
+nav :is(a, button):is(:hover, :focus-visible)::after,
+nav :is(a, button)[aria-current]::after {
+  inline-size: 100%;
+}
+
+/* The wipe is decoration; the underline still appears, it just stops traveling. */
+@media (prefers-reduced-motion: reduce) {
+  nav :is(a, button)::after {
+    transition: none;
+  }
 }
 
 /* ── Blockquote ────────────────────────────────────────────────────────────── */

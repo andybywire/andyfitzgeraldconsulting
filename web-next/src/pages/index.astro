@@ -13,6 +13,7 @@ import Band from '../components/Band.astro'
 import Grid from '../components/Grid.astro'
 import Logo from '../components/Logo.astro'
 import Masthead from '../components/Masthead.astro'
+import Footer from '../components/Footer.astro'
 import {Search, Rss} from '@lucide/astro'
 ---
 
@@ -183,7 +184,7 @@ import {Search, Rss} from '@lucide/astro'
     </Grid>
   </Band>
 
-  <Band tone="accent" space="band">
+  <!-- <Band tone="accent" space="band">
     <Grid>
       <div class="band-demo">
         <h2>An accent band</h2>
@@ -195,7 +196,9 @@ import {Search, Rss} from '@lucide/astro'
         </p>
       </div>
     </Grid>
-  </Band>
+  </Band> -->
+
+  <Footer />
 </BaseLayout>
 
 <style>

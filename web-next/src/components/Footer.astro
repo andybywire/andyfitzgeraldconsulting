@@ -1,0 +1,466 @@
+---
+/**
+ * The site footer. An accent band carrying an identity statement, the full site
+ * index, social marks, and the copyright.
+ *
+ * ── AUTHORED IN MOBILE ORDER, PLACED WITH GRID ───────────────────────────────
+ *
+ * DESIGN.md asks for this of the footer specifically, and the footer is the case
+ * that needs it: at lg the social marks sit BELOW the identity statement in the
+ * left column while the site index runs down the right, which means `social` is
+ * visually above `index` on one axis and after it in source. Source order is the
+ * reading order — and the stacked order — so it wins, and grid does the moving.
+ *
+ *   base   about → index → social → copyright, one column
+ *   lg     about | index      (index spans both rows)
+ *          social| index
+ *          copyright, full width
+ *
+ * ── THIS IS A <Band>, WHERE THE MASTHEAD IS NOT ──────────────────────────────
+ *
+ * The masthead avoids <Band> because its accent treatment has to disappear at lg.
+ * The footer's never does — it is an accent band at every width — so it gets the
+ * real component and the whole role bundle it re-points for free. Nothing below
+ * names an on-accent color; `--color-text` and `--color-icon` already mean the
+ * right thing inside here.
+ *
+ * `space="none"` and the block padding on the GRID rather than the band, because
+ * Band offers band/section/none and the footer's 48 is `chrome-pad-footer`, which
+ * is none of them. Putting it on the grid also sidesteps a specificity fight:
+ * Band's own `.band[data-space='none']` rule outranks a class this file could put
+ * on the same element.
+ */
+import Band from './Band.astro'
+import Grid from './Grid.astro'
+
+/**
+ * Baked at build time, not evaluated in the browser. A static build means a site
+ * left unbuilt across New Year shows last year until it is rebuilt — acceptable,
+ * since publishing anything rebuilds it. 2013 is the first article.
+ */
+const year = new Date().getFullYear()
+
+/**
+ * Hardcoded, like the masthead nav and for the same reason: site structure is not
+ * content. Alphabetical, and laid out COLUMN-MAJOR at lg — down the first column,
+ * then down the second, the way an index reads — which `grid-auto-flow: column`
+ * gives while leaving DOM order alphabetical, so reading order and visual order
+ * agree without a second list.
+ *
+ * Five of these have no page yet: About, Apologia, Colophon, Reviews and RSS
+ * Feeds. The paths are the obvious guesses and are NOT recorded in
+ * docs/urls-and-filtering.md — settle them there before anything links here.
+ */
+const INDEX = [
+  {href: '/about/', label: 'About'},
+  {href: '/apologia/', label: 'Apologia'},
+  {href: '/colophon/', label: 'Colophon'},
+  {href: '/consulting/', label: 'Consulting'},
+  {href: '/contact/', label: 'Contact'},
+  {href: '/insights/', label: 'Insights'},
+  {href: '/presentations/', label: 'Presentations'},
+  {href: '/projects/', label: 'Projects'},
+  {href: '/reviews/', label: 'Reviews'},
+  {href: '/feeds/', label: 'RSS Feeds'},
+]
+
+/**
+ * Andy's Bluesky handle is the ONE thing in this file that is a placeholder. The
+ * mark, its path length and its wiring are all final; only this is a guess-free
+ * blank. Fill it in and the entry is done.
+ */
+const BLUESKY_HANDLE = 'HANDLE.bsky.social'
+
+/**
+ * Brand marks. NOT Lucide, and not ours to restyle — DESIGN.md carves them out of
+ * the icon system for exactly that reason. GitHub, LinkedIn and Medium are copied
+ * from web/_includes/icons/; Bluesky is the official butterfly, fetched
+ * 2026-08-24 from bsky.social/about/support/icons, which offers it in blue, white
+ * and black. The four color variants are geometrically identical — diffed — so
+ * `currentColor` renders it white on the light band and near-black on the dark
+ * one, which are their two approved mono variants, reached without shipping two
+ * files.
+ *
+ * The path here is NO LONGER that asset. Andy redrew and rescaled it in Figma onto
+ * a 100-unit artboard to match the other three, which also retired a real problem
+ * the official file had: path length scales with the viewBox, so on its native
+ * 568x501 board the outline measured 2593 units and drew four times faster than
+ * everything else in the same 0.33s. On 100x88 it measures 456, in the same range
+ * as 564, 597 and 791.
+ *
+ * `length` IS A TUNED VALUE, NOT A MEASUREMENT — worth stating plainly, because
+ * it looks like one and the live site's equivalents were meant to be.
+ *
+ * It sets `stroke-dasharray`, and the hover animates `stroke-dashoffset` from
+ * `length` to twice it. So one dash of `length` travels around the path by its
+ * own length. Set it to the path's TRUE length and the outline draws on once and
+ * closes; set it lower and you get an arc that sweeps around instead, its
+ * leading edge advancing while its tail retreats. These are all the second
+ * thing, eyeballed per mark:
+ *
+ *              declared   true   inked
+ *     GitHub        270    564    48%
+ *     LinkedIn      170    597    28%
+ *     Bluesky       219    456    48%
+ *     Medium        325    791    41%
+ *
+ * LinkedIn is the outlier because it is THREE subpaths — the dot, the stem and
+ * the n — where the others are one. A dash pattern walks them in sequence rather
+ * than around a single perimeter, so the same fraction reads as more motion and
+ * it wants a shorter dash. Worth knowing before tuning a new mark.
+ *
+ * To add one: measure the true length as the ceiling, then come down by eye.
+ *
+ *     document.querySelector('.social path').getTotalLength()
+ */
+const SOCIAL = [
+  {
+    name: 'GitHub',
+    href: 'https://github.com/andybywire',
+    viewBox: '0 0 100 100',
+    length: 270,
+    d: 'M50,2.69A48.52,48.52,0,0,0,34.65,97.23c2.46.44,3.35-1.07,3.35-2.34s-.06-5-.06-9c0,0-13.51,2.9-16.36-5.75,0,0-2.21-5.62-5.37-7.07,0,0-4.42-3,.32-3a10.17,10.17,0,0,1,7.45,5c4.23,7.45,11.3,5.3,14.08,4a10.49,10.49,0,0,1,3.09-6.5c-10.8-1.2-22.1-5.37-22.1-23.93a18.67,18.67,0,0,1,5-13c-.51-1.26-2.15-6.19.44-12.88,4.1-1.26,13.39,5,13.39,5a45.59,45.59,0,0,1,24.25,0s9.28-6.25,13.32-5c2.65,6.69,1,11.62.51,12.88a18.67,18.67,0,0,1,5,13c0,18.63-11.37,22.73-22.17,23.93,1.77,1.52,3.28,4.42,3.28,9V94.89c0,1.26.82,2.78,3.28,2.34A48.52,48.52,0,0,0,50,2.69Z',
+  },
+  {
+    name: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/andyfitzgerald',
+    viewBox: '0 0 100 100',
+    length: 170,
+    d: 'M13.31,24.54h0c-7,0-11.61-5-11.61-11.27C1.7,6.8,6.27,2,13.31,2S24.75,6.8,24.93,13.27c.18,6.28-4.4,11.27-11.61,11.27ZM23.69,98.82H2.93V33.41H23.69V98.82Zm74.61,0H77.54V63.9c0-8.87-3-14.78-10.56-14.78-5.63,0-9.15,4.06-10.56,7.94a16.38,16.38,0,0,0-.7,5.36V99H35.13c.18-59.31,0-65.59,0-65.59H55.89v9.42h-.18c2.64-4.43,7.57-11.09,18.83-11.09,13.73,0,23.76,9.42,23.76,29.38V98.82Z',
+  },
+  {
+    name: 'Bluesky',
+    href: `https://bsky.app/profile/${BLUESKY_HANDLE}`,
+
+    viewBox: '0 0 100 88',
+    length: 219,
+    d: 'M21.6762 5.92342C33.141 14.5259 45.472 31.9684 50 41.328C54.528 31.9684 66.859 14.5259 78.3238 5.92342C86.5961 -0.283614 100 -5.08633 100 10.1962C100 13.2482 98.2491 35.8356 97.2222 39.5029C93.6526 52.2516 80.6456 55.5034 69.0752 53.5353C89.2996 56.9754 94.4444 68.3705 83.3333 79.7656C62.2312 101.407 53.0037 74.3357 50.6393 67.399C50.2058 66.1274 50.003 65.5325 50 66.0384C49.997 65.5325 49.7942 66.1274 49.3607 67.399C46.9963 74.3357 37.7688 101.407 16.6667 79.7656C5.55556 68.3705 10.7003 56.9754 30.9248 53.5353C19.3544 55.5034 6.34745 52.2516 2.77778 39.5029C1.75092 35.8356 0 13.2482 0 10.1962C0 -5.08633 13.404 -0.283614 21.6762 5.92342Z',
+  },
+  {
+    name: 'Medium',
+    href: 'https://medium.com/@andybywire',
+    viewBox: '0 0 117 94',
+    length: 325,
+    d: 'M5.06783 0L15.2035 12.9311V74.3726L0 93.9653H35.4748L20.2713 74.3726V19.6819L53.2122 93.9653L53.2072 94L83.6191 19.1611V83.8069L73.4835 93.9653H116.56L106.424 83.8069L106.355 11.4381L116.214 0.0347211H85.7621L62.3481 57.7611L36.7318 0H5.06783Z',
+  },
+]
+---
+
+<Band as="footer" tone="accent" space="none">
+  <Grid class="footer-grid">
+    <p class="about">
+      Andy Fitzgerald Consulting, LLC is the independent information architecture and content
+      strategy practice of Andy Fitzgerald, PhD.
+    </p>
+
+    <nav class="site-index" aria-label="Site index">
+      <ul role="list">
+        {
+          INDEX.map((item) => (
+            <li>
+              <a href={item.href}>{item.label}</a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    {
+      /*
+      `role="img"` plus a <title> gives each mark an accessible name, so the link
+      around it is announced as "GitHub" with no `aria-label` and no
+      visually-hidden text. Real content in the DOM rather than an attribute —
+      the same preference as the masthead's search label, reached differently
+      because nothing here is ever visible as text.
+    */
+    }
+    <ul class="social" role="list">
+      {
+        SOCIAL.map((mark) => (
+          <li>
+            <a href={mark.href} rel="me noopener" target="_blank">
+              <svg viewBox={mark.viewBox} role="img" style={`--mark-length: ${mark.length}`}>
+                <title>{mark.name}</title>
+                <path d={mark.d} />
+              </svg>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="copyright">
+      <p>© 2013–{year} Andy Fitzgerald</p>
+      {/* ThemeToggle lands here. */}
+    </div>
+  </Grid>
+</Band>
+
+<style>
+  /* ── The band ───────────────────────────────────────────────────────────── */
+
+  .footer-grid {
+    padding-block: var(--chrome-pad-footer);
+
+    /* <Grid> defaults its row gap to `rhythm-heading-major`, on the stated
+       premise that "what lands below always starts with a heading". Nothing in
+       the footer does, so it takes the block gap instead — the same 48 the boards
+       show between every one of these rows, at both widths. */
+    row-gap: var(--rhythm-block);
+  }
+
+  /* ── Placement ──────────────────────────────────────────────────────────── */
+  /*
+   * NO PLACEMENT TOKENS. The 6 + skip-2 + 4 split is DESIGN.md's, but the footer
+   * is its only consumer, so it belongs here for the same reason `--logo-size`
+   * belongs in Logo: a value with one consumer is not a token. Promote it to
+   * tokens.css the day a second layout wants the same split, not before.
+   *
+   * At the base every child spans the full grid; `--col-full` is a real token
+   * because several components share it. Stating it is not optional — a child of
+   * a 12-column grid with no `grid-column` occupies ONE column.
+   */
+  .about,
+  .site-index,
+  .social,
+  .copyright {
+    grid-column: var(--col-full);
+  }
+
+  /* ── Identity statement ─────────────────────────────────────────────────── */
+  /* `body` from base.css, unchanged: Noto Serif at the prose size and leading.
+     The 6-column span measures about 50 characters, comfortably inside the cap,
+     so no `max-width` is needed. */
+
+  /* ── Site index ─────────────────────────────────────────────────────────── */
+
+  .site-index ul {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+
+    /* The first consumer of `grid-gutter-content`, and the one that makes its
+       "larger on mobile, not smaller" value read as deliberate rather than a
+       typo: 32 stacked, 24 at md. These are real gaps between content columns,
+       which is exactly what DESIGN.md reserves that token for. */
+    column-gap: var(--grid-gutter-content);
+    row-gap: var(--rhythm-item);
+
+    /* base.css keeps the UA's list indent for prose; a nav is not prose. */
+    padding: 0;
+    list-style: none;
+    text-align: center; /* -> start at lg */
+  }
+
+  .site-index li + li {
+    /* base.css's prose `li + li` margin would land on nine of ten items here,
+       including the ones already starting a row. `row-gap` does it correctly. */
+    margin-top: 0;
+  }
+
+  /* No type role and no link treatment here: `.site-index` IS a <nav>, so
+     base.css supplies both. And because this footer is a real <Band tone="accent">,
+     Band has already re-pointed `--color-link-hover` to `text-on-accent-hover`,
+     so the underline comes out white without this file naming a color at all. */
+
+  /* ── Social marks ───────────────────────────────────────────────────────── */
+
+  .social {
+    display: flex;
+    justify-content: center; /* -> start at lg */
+
+    /* The four marks are not the same height — 48 square for GitHub and LinkedIn,
+       48x42 for Bluesky, 48x39 for Medium, because each brand's artboard is its
+       own shape. Flex's default `stretch` leaves the shorter two hanging from the
+       top of the row, so they read as sitting higher than the other two. Optical
+       centering is the only alignment that works across four unrelated artboards;
+       there is no shared baseline to hang them from. */
+    align-items: center;
+    gap: var(--space-5);
+    padding: 0;
+    list-style: none;
+  }
+
+  .social li + li {
+    margin-top: 0;
+  }
+
+  .social a {
+    display: block;
+    text-decoration: none;
+  }
+
+  .social svg {
+    inline-size: 3rem;
+    block-size: auto;
+
+    /*
+     * ── WHY THE VIEWPORT MUST NOT CLIP ──────────────────────────────────────
+     *
+     * A stroke is CENTERED on its path, so half of it falls outside the geometry
+     * — and the UA stylesheet gives every SVG `overflow: hidden`, clipping to the
+     * viewBox. At rest that costs nothing, because these marks are pure fill. On
+     * hover the outline appears and gets shaved.
+     *
+     * It is not one mark's problem, it is all four: no artboard leaves room for a
+     * stroke, because none was drawn expecting one.
+     *
+     * The slack an artboard needs is HALF THE SCREEN STROKE DIVIDED BY THE RENDER
+     * SCALE, because `non-scaling-stroke` fixes the width in screen px while the
+     * viewBox is in user units. At `stroke-width: 2px` and 3rem that is 2.08 user
+     * units for the 100-unit boards and 2.44 for Medium's 117 — and not one of
+     * the four has it. What each would lose at its tightest edge, in rendered
+     * pixels:
+     *
+     *     GitHub    0.28    slack 1.50u
+     *     LinkedIn  0.52    slack 1.00u, at the bottom only
+     *     Bluesky   1.00    slack 0 on every edge
+     *     Medium    1.00    slack 0 on three edges
+     *
+     * Bluesky reads worst because its wing tips sit in the exact corners of its
+     * box AND its outline runs parallel to the edge there, so the clip shows as a
+     * flat cut rather than a softened corner. Raising `stroke-width` makes every
+     * row of that table worse — it went 1.5 -> 3 -> 2 while the weight was being
+     * matched to the footer links' underline — which is why this is a rule rather
+     * than a per-mark nudge.
+     *
+     * `overflow: visible` rather than padding each viewBox, for three reasons: the
+     * padding differs per artboard; it would need recomputing if `inline-size`
+     * ever changed, because the stroke is screen-fixed so the user-unit padding
+     * depends on the render scale; and growing a viewBox shrinks the drawing
+     * inside the same box, so all four optical sizes would shift. One declaration
+     * here is independent of both artboard and size.
+     *
+     * The ink now reaches half a stroke past each mark's box — 1px today. The gap
+     * between them is `space-5`, so nothing can collide.
+     */
+    overflow: visible;
+
+    /*
+     * ── DRAW-ON-HOVER ──────────────────────────────────────────────────────
+     *
+     * Ported deliberately from the live site — the one interaction carried over
+     * rather than rebuilt, at Andy's request. At rest the mark is a solid fill
+     * with an invisible stroke; on hover the fill drops out and the stroke draws
+     * itself around the perimeter, so the mark empties into an outline.
+     *
+     * `fill: transparent` rather than the band's own color, which is what the
+     * live site uses. Transparent lets whatever is behind show through, so it
+     * stays correct in dark mode and would survive the band changing fill —
+     * where a hardcoded blue would quietly stop matching.
+     *
+     * The stroke is hidden by offsetting a single dash the full length of the
+     * path, then animated to twice that length to walk it around. `--mark-length`
+     * comes from the element, measured per mark; see the SOCIAL note above for
+     * why it cannot be one shared number.
+     *
+     * STROKE WIDTH IS IN USER UNITS, so it is scaled by the viewBox — the same
+     * fact tokens.css records about Lucide. The artboards are 100, 100, 100 and
+     * 117 units wide, so at a shared 3rem one `stroke-width: 2px` would render
+     * 0.96, 0.96, 0.96 and 0.82px, leaving Medium ~15% light.
+     *
+     * That gap used to be far worse, which is worth remembering: Bluesky first
+     * arrived on its official 568-unit artboard and rendered 0.25px — nearly six
+     * times thinner than GitHub, with nothing at the call site to suggest why.
+     * Normalizing the artboard fixed that instance; this property is what stops
+     * the next one.
+     *
+     * `vector-effect: non-scaling-stroke` fixes that by taking the width out of
+     * user space — but it is NOT AN INHERITED PROPERTY, so it has to sit on the
+     * element that draws the stroke. Declared here on the <svg> it computed to
+     * `none` on every path, silently, while `stroke` and `stroke-width` inherited
+     * down as expected and got scaled. See the `path` rule below.
+     */
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 2px;
+    stroke-dasharray: var(--mark-length);
+    stroke-dashoffset: var(--mark-length);
+    transition:
+      fill 0.25s,
+      stroke-dashoffset 0.5s;
+  }
+
+  /* On the PATH, deliberately. `vector-effect` does not inherit, so this is the
+     only place it can do its job — and it is what lets four brand artboards of
+     three different scales read as one stroke weight. Any future mark works
+     without its viewBox being normalized first. */
+  .social svg path {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .social a:hover svg,
+  .social a:focus-visible svg {
+    fill: transparent;
+    stroke-dashoffset: calc(var(--mark-length) * 2);
+    transition:
+      fill 0.33s,
+      stroke-dashoffset 0.33s cubic-bezier(1, 0, 1, 1);
+  }
+
+  /* The draw is decoration, and a half-second of motion on hover is exactly what
+     this setting asks to be spared. The mark still empties on hover, so the
+     affordance survives without the animation. */
+  @media (prefers-reduced-motion: reduce) {
+    .social svg,
+    .social a:hover svg,
+    .social a:focus-visible svg {
+      transition: none;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* ── copyright ───────────────────────────────────────────────────────────── */
+
+  .copyright {
+    display: grid;
+    justify-items: center;
+    gap: var(--rhythm-paragraph);
+    text-align: center;
+  }
+
+  /* ── lg ─────────────────────────────────────────────────────────────────── */
+  /*
+   * The two-column split arrives HERE rather than at md, deliberately. At md the
+   * index would have 229px to hold two columns, against "Presentations" needing
+   * about 105 of it — tight enough to break. A three-column single-row index at
+   * md is the likely next move, once there is a real page to judge it against.
+   */
+  @container style(--breakpoint-lg: true) {
+    .about {
+      grid-column: 1 / span 6;
+      grid-row: 1;
+    }
+
+    /* Spans both rows, so its own column reads as one block against the two
+       stacked beside it. */
+    .site-index {
+      grid-column: 9 / span 4;
+      grid-row: 1 / span 2;
+    }
+
+    .social {
+      grid-column: 1 / span 6;
+      grid-row: 2;
+      justify-content: start;
+
+      /* The index spans both rows, so when it is the taller column it stretches
+         them and leaves slack under the marks. Pinning them to the end of their
+         row lands them level with the bottom of the index, which is how the board
+         draws it — the two columns finishing together. */
+      align-self: end;
+    }
+
+    .copyright {
+      grid-row: 3;
+    }
+
+    .site-index ul {
+      /* Column-major: down the first column, then down the second, the way an
+         index reads. DOM order stays alphabetical, so this changes the visual
+         arrangement without changing the reading order. */
+      grid-auto-flow: column;
+      grid-template-rows: repeat(5, auto);
+      text-align: start;
+    }
+  }
+</style>
