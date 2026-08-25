@@ -235,7 +235,13 @@ spacing:
   card-gap: "{spacing.space-1}"
   card-pad: "{spacing.space-2}"
   card-media: "{spacing.space-3}"
-  chrome-pad-header: "{spacing.space-4}"
+  # space-4 until 2026-08-25, when the masthead was built and 32px top and bottom
+  # made the header taller than the page wanted to give it. Reduced to shorten the
+  # header's vertical footprint so it competes less with page content — a call made
+  # against the real thing rather than the board, and expected to be revisited once
+  # actual pages sit under it. The footer keeps space-5: it has nothing below it to
+  # crowd, so the two chrome paddings are no longer a matched pair.
+  chrome-pad-header: "{spacing.space-3}"
   chrome-pad-footer: "{spacing.space-5}"
   chrome-inset: "{spacing.space-5}"
   field-height: "{spacing.space-5}"
