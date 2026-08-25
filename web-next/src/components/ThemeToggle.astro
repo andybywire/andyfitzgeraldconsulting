@@ -34,9 +34,9 @@ import {Monitor, Sun, Moon} from '@lucide/astro'
  * the ends. Ours leads with the default. Worth a look side by side.
  */
 const MODES = [
-  {value: 'system', label: 'Follow system setting', Icon: Monitor},
-  {value: 'light', label: 'Light', Icon: Sun},
-  {value: 'dark', label: 'Dark', Icon: Moon},
+  {value: 'system', label: 'Follow system setting', tip: 'System Theme', Icon: Monitor},
+  {value: 'light', label: 'Light', tip: 'Light Mode', Icon: Sun},
+  {value: 'dark', label: 'Dark', tip: 'Dark Mode', Icon: Moon},
 ]
 ---
 
@@ -54,7 +54,7 @@ const MODES = [
 }
 <fieldset class="mode" aria-label="Color theme">
   {
-    MODES.map(({value, label, Icon}) => (
+    MODES.map(({value, label, tip, Icon}) => (
       <>
         <input
           type="radio"
@@ -64,7 +64,7 @@ const MODES = [
           aria-label={label}
           checked={value === 'system'}
         />
-        <label for={`theme-${value}`}>
+        <label for={`theme-${value}`} title={tip}>
           <Icon />
         </label>
       </>
