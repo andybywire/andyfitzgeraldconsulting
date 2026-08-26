@@ -527,6 +527,12 @@ Two faces. **Noto Serif** for running prose, leads, captions, pull-quotes and th
 statement; **Lato** for h1–h4 and all metadata and UI. Reasoning in
 [docs/decisions/typography.md](docs/decisions/typography.md).
 
+**A third family arrived for code (2026-08-26) and is a system stack, not a face we serve** —
+`ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`, declared as `--font-mono` in tokens.css.
+It ships no webfont, which is why it does not really breach "two faces": Noto Serif and Lato are ours,
+subset and preloaded, and this one is whatever the reader's platform calls monospace. See
+Components → Code.
+
 **Scale: 18px base, ratio 1.25 (major third).** Step 1 is a clamped floor at 16px, off the ratio —
 don't add a step below it for reading text. `size/0` (14px) is chrome only. The odd values
 (`2.746582031rem`) are exact on purpose; reference them by name and never retype them.
@@ -1116,6 +1122,46 @@ a revision history that does not exist.
 **Removing a decorator from the schema does not remove it from the data.** Sanity keeps
 marks it no longer offers, so an old document can still carry one. The renderer is not
 the place to fix that — the document is.
+
+### Code
+
+Settled 2026-08-26. Both roles take `--font-mono`, the system stack described under Typography.
+
+| | Treatment |
+|---|---|
+| inline `code` | mono at **0.9em**, no tinted ground |
+| `pre` block | mono at size 1 (16px), leading 1.5, `surface-muted` ground, `radius-1`, `overflow-x: auto` |
+
+**0.9em is an optical match, not a size step.** A monospace face carries a larger x-height and a wider
+advance than Noto Serif at the same em, so inline code at 1em reads visibly bigger than the sentence
+holding it. 0.9em of the 18px body is 16.2px — above the legibility floor, and matched to its
+surroundings rather than smaller than them. This is not the size step below 16px that the Typography
+do's and don'ts forbid.
+
+**Inline code takes no background.** The family change already carries the distinction, and a tinted
+chip is louder than this page wants — the quieter option wins. The block gets one because a block is
+a panel.
+
+> **Code blocks scroll; they do not wrap.**
+
+The longest line in the content is 117 characters, and a wrapped shell command breaks across two
+visual lines with nothing marking the break — which reads as *two commands*. That is wrong rather
+than merely awkward, where a scrollbar is only awkward. **Measured: 6 of 21 blocks in the
+self-hosting article overflow, the widest at 1344px against a 656px column.**
+
+Scrolling brings an obligation: **the `<pre>` carries `tabindex="0"`**, because a scroll region that
+a pointer can drag and a keyboard cannot reach fails WCAG 2.1.1. No `role`/`aria-label` with it —
+21 landmarks in one article would bury the page's real ones.
+
+**A per-language wrap policy is possible and not taken.** `data-language` is on every block, so yaml
+and JavaScript could wrap — their lines are indented, so a break is far less ambiguous — while `sh`
+kept scrolling. Worth it only if the scrollbars prove annoying in practice.
+
+**Syntax highlighting is not built.** If it lands, Shiki with `createCssVariablesTheme` keeps the
+colors bound to `tokens.css` instead of importing a VS Code palette, and dark mode then comes from
+the existing theme blocks rather than a second mechanism. The loudness of the scheme is the real
+decision, not the engine: comments in `text-muted` and strings in `accent` with everything else at
+body color would stay inside the one-accent rule.
 
 ### Navigation — a global role, not a component one
 
