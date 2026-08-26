@@ -62,6 +62,7 @@ export type Figure = {
   caption?: string
   altText?: string
   outline?: boolean
+  thumbnail?: boolean
 }
 
 export type ClientReference = {
@@ -189,7 +190,7 @@ export type Singleton = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -281,7 +282,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -299,7 +300,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -317,7 +318,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -345,7 +346,7 @@ export type CaseStudy = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -359,16 +360,6 @@ export type CaseStudy = {
     | ({
         _key: string
       } & Figure)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        altText?: string
-        _type: 'image'
-        _key: string
-      }
   >
   projectOutcome?: Array<
     | {
@@ -378,7 +369,7 @@ export type CaseStudy = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -392,16 +383,6 @@ export type CaseStudy = {
     | ({
         _key: string
       } & Figure)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        altText?: string
-        _type: 'image'
-        _key: string
-      }
   >
   afterImage?: {
     asset?: SanityImageAssetReference
@@ -433,7 +414,7 @@ export type Review = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -451,7 +432,7 @@ export type Review = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -545,7 +526,7 @@ export type Article = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -559,16 +540,6 @@ export type Article = {
     | ({
         _key: string
       } & Figure)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        altText?: string
-        floatLeft?: boolean
-        _type: 'image'
-        _key: string
-      }
     | ({
         _key: string
       } & Code)
@@ -858,7 +829,7 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
               _type: 'span'
               _key: string
             }>
-            style?: 'blockquote' | 'h1' | 'h2' | 'h3' | 'h4' | 'normal'
+            style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
             listItem?: 'bullet' | 'number'
             markDefs?: Array<{
               href?: string
@@ -867,16 +838,6 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
             }>
             level?: number
             _type: 'block'
-            _key: string
-          }
-        | {
-            asset?: SanityImageAssetReference
-            media?: unknown
-            hotspot?: SanityImageHotspot
-            crop?: SanityImageCrop
-            altText?: string
-            floatLeft?: boolean
-            _type: 'image'
             _key: string
           }
       > | null
@@ -912,6 +873,40 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
   | null
 
 // Source: ../web-next/src/sanity/queries/insights.ts
+// Variable: INSIGHTS_REVIEW_QUERY
+// Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {		_type,		"slug": slug.current,		title,		pubDate,		"genre": genre->prefLabel,		"blocks": coalesce(count(bodyText), 0),		"blockTypes": array::unique(bodyText[]._type),		"styles": array::unique(bodyText[_type == "block"].style),		"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,		"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,		"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,		"hasHero": defined(heroImage.asset)	}
+export type INSIGHTS_REVIEW_QUERY_RESULT = Array<
+  | {
+      _type: 'article'
+      slug: string | null
+      title: string | null
+      pubDate: string | null
+      genre: string | null
+      blocks: number | 0
+      blockTypes: Array<'block' | 'code' | 'figure' | 'table'> | null
+      styles: Array<'blockquote' | 'h2' | 'h3' | 'h4' | 'normal' | null> | null
+      hasNestedList: boolean | false
+      hasUnderline: boolean | false
+      hasInlineCode: boolean | false
+      hasHero: false | true
+    }
+  | {
+      _type: 'caseStudy'
+      slug: string | null
+      title: string | null
+      pubDate: string | null
+      genre: string | null
+      blocks: 0
+      blockTypes: null
+      styles: null
+      hasNestedList: false
+      hasUnderline: false
+      hasInlineCode: false
+      hasHero: false | true
+    }
+>
+
+// Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHT_SLUGS_QUERY
 // Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] {		"params": {"slug": slug.current}	}
 export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
@@ -926,6 +921,7 @@ declare module '@sanity/client' {
   interface SanityQueries {
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tlede,\n\t\tbodyText,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
   }
 }

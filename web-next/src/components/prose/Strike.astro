@@ -1,0 +1,42 @@
+---
+/**
+ * The `strike-through` decorator.
+ *
+ * ── `<s>`, NOT THE LIBRARY'S `<del>` — AND THAT IS A SEMANTIC CHOICE ─────────
+ *
+ * astro-portabletext's default mark component renders `strike-through` as
+ * `<del>`, which is the one thing about its otherwise-correct defaults worth
+ * overriding. The two elements are not interchangeable:
+ *
+ *   <del>  "a removal from the document" — an EDITORIAL REVISION. It is the
+ *          counterpart to <ins>, and it carries optional `cite` and `datetime`
+ *          attributes because the claim it makes is that this text was taken out
+ *          of the document at some point, by someone.
+ *   <s>    "content that is no longer accurate or no longer relevant."
+ *
+ * A prose decorator an author reaches for from a toolbar means the second. There
+ * is no revision being tracked, no `<ins>` to pair with, and no date to cite — so
+ * `<del>` would assert a document history that does not exist. This matters more
+ * here than on most sites: semantics and structured markup are first-class
+ * concerns in this project, and a wrong element is a wrong statement, not a
+ * styling detail.
+ *
+ * IF THAT READING IS WRONG, this is a one-word change — swap `s` for `del` below
+ * and delete the `mark` entry in Prose.astro to fall back to the library default.
+ *
+ * ── NO PROPS ARE READ, DELIBERATELY ──────────────────────────────────────────
+ *
+ * A decorator carries no data. It is a bare string in a span's `marks` array,
+ * with no `markDef` behind it — unlike an annotation such as `link`, which is a
+ * `_key` pointing at a real object. So there is nothing to read: the component's
+ * entire job is to wrap its children in the right element. `<slot />` is the
+ * content, already assembled by the library's marks tree, which is what makes
+ * nested marks (`strong` inside `strike-through`) work without anything here.
+ *
+ * The styling lives in base.css as an element role, next to `blockquote` and
+ * `figcaption`, because that is what `<s>` is — an element with a role, not a
+ * component.
+ */
+---
+
+<s><slot /></s>

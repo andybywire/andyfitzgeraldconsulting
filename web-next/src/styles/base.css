@@ -289,6 +289,29 @@ nav :is(a, button)[aria-current]::after {
   }
 }
 
+/* ── Struck text ───────────────────────────────────────────────────────────── */
+/*
+ * The `strike-through` decorator, rendered as `<s>` — "no longer accurate or
+ * relevant" — rather than `<del>`, which would claim an editorial revision that
+ * never happened. See components/prose/Strike.astro.
+ *
+ * THE THICKNESS IS THE POINT OF THIS RULE. Without it a struck word takes the
+ * UA's own line weight, which does not match the 0.06em this file gives every
+ * inline link — so two horizontal strokes in the same paragraph would read as two
+ * different systems. `text-underline-offset` has no equivalent for line-through
+ * and none is needed: the line sits on the x-height by definition.
+ *
+ * NOT MUTED, though the argument for it is real: "no longer relevant" is close to
+ * what `text-muted` means, and dimming struck text would say the same thing twice.
+ * Left at `currentColor` because DESIGN.md assigns this no color role, and struck
+ * text inside an already-muted caption would then mute twice over. Worth revisiting
+ * if it ever reads too loud on the page.
+ */
+
+s {
+  text-decoration-thickness: 0.06em;
+}
+
 /* ── Blockquote ────────────────────────────────────────────────────────────── */
 /*
  * An element rule, not a component.
@@ -430,6 +453,86 @@ article.detail > * + h2 {
 
 article.detail > :is(h2, h3, h4) + * {
   margin-top: var(--rhythm-heading-close);
+}
+
+/* ── The floated thumbnail, and what flows around it ───────────────────────── */
+/*
+ * A `figure` marked `thumbnail` in the Studio renders small and, in an article
+ * body, floats left with the prose wrapping around it — the book-cover treatment.
+ * The figure's own appearance (its width, its border) belongs to the component;
+ * what lives here is the FLOW, because that is `article.detail`'s business and
+ * because these are amendments to the rhythm ramp above.
+ *
+ * ── THE CONTEXT OPTS IN, THE COMPONENT DOES NOT DECIDE ───────────────────────
+ *
+ * `--thumb-float` is declared here and read by Figure.astro. Two things fall out
+ * of that direction, and both are the reason for it:
+ *
+ *   - A CASE STUDY GETS THE THUMBNAIL WITHOUT THE FLOAT, for free, by simply not
+ *     declaring this. `figure` is shared with caseStudy's projectApproach and
+ *     projectOutcome, where the layout differs and the float is untested — so the
+ *     flag sizes the image there and stops. No opt-out to remember.
+ *   - The component needs no ancestor selector. A scoped style in Figure.astro
+ *     cannot see `article.detail` without `:global()`, and reaching up out of a
+ *     component to find its context is the thing custom properties exist to avoid.
+ *
+ * ── FROM md, AND THE MEASURE IT COSTS ────────────────────────────────────────
+ *
+ * The prose column is 8 of 12 columns. A 150px thumbnail plus its 24px gutter
+ * takes 174px out of every line it overlaps:
+ *
+ *     768  (md)   482px prose - 174  =  308px  ->  ~31 characters
+ *     1024 (lg)   653px prose - 174  =  479px  ->  ~48 characters
+ *
+ * IT WAS WRITTEN AT lg AND MOVED TO md (2026-08-26, Andy's call, judged on screen
+ * against the real article). This comment argued for lg on the arithmetic — 31
+ * characters is a very short line — and the eye disagreed, which is the tie-break
+ * this project uses. Recorded rather than silently swapped, because the number is
+ * worth knowing: it is the shortest measure anywhere in the build.
+ *
+ * ONE THING THAT FOLLOWS, unresolved: DESIGN.md's leading ramp indexes by MEASURE,
+ * and ~29-33 characters is precisely the `body-compact` register at 1.5. Text
+ * beside a thumbnail at md is 31 characters set at body's 1.8, which is the exact
+ * mismatch `body-compact` exists to name. Whether the wrapped lines want the
+ * tighter leading is a real question and a small rule; it is not made here.
+ *
+ * Below md the thumbnail is simply a small block above the text, which is also
+ * what it does on a phone.
+ */
+
+@container style(--breakpoint-md: true) {
+  article.detail {
+    --thumb-float: left;
+  }
+}
+
+/*
+ * WHAT MUST NOT WRAP. Only paragraphs and the minor headings should sit beside a
+ * cover; everything with its own left-edge furniture has to clear it:
+ *
+ *   h2          opens a section, so it starts against the margin, not beside the
+ *               previous entry's cover
+ *   ul, ol      MARKERS ARE THE REASON. A float shortens LINE BOXES, not boxes —
+ *               the list's own box still starts at the container's left edge, so
+ *               `list-style-position: outside` would put the bullets underneath
+ *               the thumbnail while the text moved right
+ *   figure      including the next thumbnail, which is what stops two consecutive
+ *               book covers from stacking side by side when an entry runs short
+ *   blockquote  its bar sits at the box edge, so it would land under the float
+ *   pre         does not wrap, so it would simply overlap
+ *
+ * `clear` with no preceding float is a no-op, so this rule is inert on every page
+ * that has no thumbnail. It costs nothing to leave switched on.
+ *
+ * ONE KNOWN EDGE CASE, not designed around: if a theme paragraph is short enough
+ * that a following h4 still wraps beside the cover while its list clears, that
+ * heading is left stranded next to the image with its list below. The richer fix
+ * is `display: flow-root` on the lists, which makes each one a block that sits
+ * BESIDE the float at a reduced width with its markers intact, rather than
+ * clearing it. Worth reaching for only if the stranding actually shows.
+ */
+article.detail > :is(h2, ul, ol, blockquote, figure, pre) {
+  clear: left;
 }
 
 /* ── Measure ───────────────────────────────────────────────────────────────── */

@@ -55,6 +55,37 @@ export const INSIGHT_DETAIL_QUERY = defineQuery(`
 	}
 `)
 
+/**
+ * THROWAWAY — delete with `src/pages/index.astro`, its only consumer.
+ *
+ * A review index for the specimen page. It exists because the interesting question while
+ * reviewing phase 4 is not "what are the 42 documents" but "which ones exercise a serializer
+ * that is not written yet" — so it reports the block types, block styles and decorators each
+ * document actually uses, and the page turns those into badges.
+ *
+ * Computed live rather than hardcoded from a one-off query, so it cannot go stale as the data
+ * or the serializer coverage changes. That is the whole reason it is a query and not a list.
+ *
+ * `coalesce(count(...), 0)` throughout: a caseStudy has no `bodyText` field at all, so
+ * `count()` returns null there and `null > 0` would not be the false it looks like.
+ */
+export const INSIGHTS_REVIEW_QUERY = defineQuery(`
+	*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {
+		_type,
+		"slug": slug.current,
+		title,
+		pubDate,
+		"genre": genre->prefLabel,
+		"blocks": coalesce(count(bodyText), 0),
+		"blockTypes": array::unique(bodyText[]._type),
+		"styles": array::unique(bodyText[_type == "block"].style),
+		"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,
+		"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,
+		"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,
+		"hasHero": defined(heroImage.asset)
+	}
+`)
+
 /** Slugs only, for `getStaticPaths`. Kept separate so the build does not fetch bodies twice. */
 export const INSIGHT_SLUGS_QUERY = defineQuery(`
 	*[_type in ["article", "caseStudy"] && defined(slug.current)] {

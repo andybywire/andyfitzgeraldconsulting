@@ -17,11 +17,75 @@ import Footer from '../components/Footer.astro'
 import SanityImage from '../components/SanityImage.astro'
 import SanityHero from '../components/SanityHero.astro'
 import {Search, Rss} from '@lucide/astro'
+import {loadQuery} from '../sanity/load-query'
+import {INSIGHTS_REVIEW_QUERY} from '../sanity/queries/insights'
 
 /**
- * Real assets from production-26, hardcoded because this page runs no query.
- * `cs_hero` is 1262x840 and `NTD_after` is 3024x1890 — deliberately one source
- * that CAPS the ladder below its top rung and one that does not.
+ * THROWAWAY REVIEW INDEX — goes when this page goes.
+ *
+ * Every insight, with a badge for anything on the phase 4 open list, so reviewing
+ * the serializers means clicking the flagged ones rather than opening 42 pages to
+ * find out which are interesting.
+ */
+const insights = await loadQuery(INSIGHTS_REVIEW_QUERY)
+
+/**
+ * COMPARED AS `string`, AND THAT IS A FINDING RATHER THAN A SHORTCUT.
+ *
+ * TypeGen derives its unions from the SCHEMA, so it cannot describe data the schema
+ * no longer allows — and it disagrees with the stored data twice here:
+ *
+ *   - `styles` comes back typed without 'h5'. Phase 1 dropped h5 from the schema;
+ *     it did not remove it from 27 published blocks. `includes('h5')` against the
+ *     generated union is a type error, and an exhaustive switch would skip it.
+ *   - `blockTypes` comes back typed 'code' where the data says 'pre'. The schema
+ *     declares that member as `{name: 'pre', type: 'code'}` and the stored `_type`
+ *     is 'pre' — confirmed against the dataset and by the renderer's own
+ *     `missing "pre"` warning. TypeGen reports the underlying type instead.
+ *
+ * So the widening is deliberate: the generated types are wrong about this data, and
+ * matching them would mean the badges quietly failed to flag the two documents
+ * this index exists to find.
+ */
+const typesOf = (d: {blockTypes: readonly (string | null)[] | null}) =>
+  (d.blockTypes ?? []).filter(Boolean) as string[]
+const stylesOf = (d: {styles: readonly (string | null)[] | null}) =>
+  (d.styles ?? []).filter(Boolean) as string[]
+
+type Flag = {label: string; why: string}
+
+const flagsFor = (d: (typeof insights)[number]): Flag[] => {
+  const types = typesOf(d)
+  const styles = stylesOf(d)
+  const flags: Flag[] = []
+  if (types.includes('pre')) flags.push({label: 'pre', why: 'no serializer — renders nothing'})
+  if (types.includes('image')) flags.push({label: 'image', why: 'no serializer — renders nothing'})
+  if (types.includes('table')) flags.push({label: 'table', why: 'no serializer'})
+  if (styles.includes('h5')) flags.push({label: 'h5', why: 'dropped from schema, unstyled'})
+  if (d.hasUnderline) flags.push({label: 'underline', why: 'inline text-decoration'})
+  if (d.hasInlineCode) flags.push({label: 'inline code', why: 'no code rule in base.css'})
+  if (d.hasNestedList) flags.push({label: 'nested list', why: 'level 2 — untested'})
+  if (d._type === 'caseStudy') flags.push({label: 'case study', why: 'body fields not built'})
+  return flags
+}
+
+const rows = insights.map((d) => ({...d, flags: flagsFor(d)}))
+const flagged = rows.filter((r) => r.flags.length > 0)
+
+const when = (iso: string | null) =>
+  iso
+    ? new Date(iso).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})
+    : '—'
+
+/**
+ * Real assets from production-26, hardcoded so the two image components can be
+ * exercised against CHOSEN sources rather than whatever a document happens to
+ * carry: `cs_hero` is 1262x840 and `NTD_after` is 3024x1890 — deliberately one
+ * source that caps the ladder below its top rung and one that does not.
+ *
+ * (This note used to say "because this page runs no query". It does now — the
+ * review index above is one — so the reason is the choice of asset, not the
+ * absence of a data layer.)
  */
 const HERO = {
   asset: {_ref: 'image-015d1f2e51f8a01adf8cbdfba67a4a05ebd1ceb3-1262x840-jpg'},
@@ -39,6 +103,64 @@ const INLINE = {
   description="Throwaway page for verifying the global tier."
 >
   <Masthead />
+
+  {
+    /*
+    THROWAWAY REVIEW INDEX. First thing on the page so it is reachable without
+    scrolling past the specimen. Goes with the rest of this file.
+  */
+  }
+  <Band space="band">
+    <Grid>
+      <section class="review">
+        <h2>Insights — review index</h2>
+        <p class="review__lede">
+          All {rows.length} insight documents, rendered by the phase 4 stub route.{' '}
+          <strong>{flagged.length}</strong> exercise something on the open list.
+        </p>
+
+        {
+          flagged.length > 0 && (
+            <>
+              <h3>Flagged</h3>
+              <ul class="review__list" role="list">
+                {flagged.map((d) => (
+                  <li>
+                    <a href={`/insights/${d.slug}/`}>{d.title}</a>
+                    <span class="review__meta">
+                      {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
+                    </span>
+                    <span class="review__flags">
+                      {d.flags.map((f) => (
+                        <span class="review__flag" title={f.why}>
+                          {f.label}
+                        </span>
+                      ))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )
+        }
+
+        <h3>Everything, newest first</h3>
+        <ul class="review__list" role="list">
+          {
+            rows.map((d) => (
+              <li>
+                <a href={`/insights/${d.slug}/`}>{d.title}</a>
+                <span class="review__meta">
+                  {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
+                  {!d.hasHero && ' · no hero'}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </Grid>
+  </Band>
 
   {
     /*
@@ -357,5 +479,73 @@ const INLINE = {
   code {
     font-family: ui-monospace, 'SF Mono', Menlo, monospace;
     font-size: 0.9em;
+  }
+
+  /* ── Throwaway review index ─────────────────────────────────────────────── */
+  /* Local styles, not components. The badges LOOK like DESIGN.md's `tag` and are
+     deliberately not it: the real tag is a phase 4 component with its own file,
+     and building it inside a page that is scheduled for deletion would mean
+     writing it twice. */
+
+  .review {
+    grid-column: var(--col-main);
+  }
+
+  .review__lede {
+    margin-block: var(--rhythm-heading-close) var(--rhythm-block);
+  }
+
+  .review h3 {
+    margin-block: var(--rhythm-heading-minor) var(--rhythm-heading-close);
+  }
+
+  .review__list {
+    padding: 0;
+    list-style: none;
+  }
+
+  .review__list li + li {
+    margin-top: var(--rhythm-paragraph);
+    padding-top: var(--rhythm-paragraph);
+    border-top: var(--border-width-hairline) solid var(--color-border);
+  }
+
+  .review__list a {
+    display: block;
+    color: var(--color-text-title);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .review__list a:hover {
+    text-decoration: underline;
+  }
+
+  .review__meta {
+    display: block;
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-0);
+  }
+
+  .review__flags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    margin-top: var(--rhythm-tight);
+  }
+
+  /* `help` rather than the default, because the `why` is on a title attribute and
+     nothing else signals it is there. */
+  .review__flag {
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-1);
+    background-color: var(--color-surface-muted);
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-0);
+    font-weight: 700;
+    cursor: help;
   }
 </style>

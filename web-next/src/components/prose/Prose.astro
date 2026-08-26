@@ -1,0 +1,104 @@
+---
+/**
+ * Portable Text, rendered. The one place the serializer map lives.
+ *
+ * ── IT IS TRANSPARENT, AND THAT IS THE WHOLE DESIGN ──────────────────────────
+ *
+ * This emits a FLAT SEQUENCE OF BLOCKS and no container. Two reasons, and both
+ * would break if it wrapped:
+ *
+ *   - The vertical rhythm ramp in base.css is `article.detail > * + *` — DIRECT
+ *     children. A wrapper here would put every block one level too deep and the
+ *     entire ramp would stop matching, silently, leaving uniform default spacing
+ *     that reads as a design choice rather than a bug.
+ *   - `article.detail` also holds page-level siblings that are not Portable Text
+ *     at all — the podcast embed, the topics nav. They need the same ramp, so the
+ *     container belongs to the page, which is the only thing that knows about
+ *     them.
+ *
+ * Verified rather than assumed: `<PortableText>` renders `nodes.map(...)` with
+ * nothing around it, so its blocks land as children of whatever contains this.
+ *
+ * ── WHY THERE IS ALMOST NO MAP ───────────────────────────────────────────────
+ *
+ * astro-portabletext's defaults already emit the HTML this design wants:
+ * `normal` -> <p>, h1-h6 -> the matching heading, `blockquote` -> <blockquote>,
+ * `bullet` -> <ul>, `number` -> <ol>, list items -> <li>, `em` -> <em>,
+ * `strong` -> <strong>, `link` -> <a href>. base.css styles all of those as
+ * element roles, so there is nothing to override.
+ *
+ * So the map carries the CUSTOM TYPES the schema adds that have no HTML
+ * equivalent for a library to guess at — `figure` is the first — plus the ONE
+ * default whose element is semantically wrong for this content: `strike-through`,
+ * which the library renders as `<del>` and which is `<s>` here. See Strike.astro
+ * for why those are not interchangeable.
+ *
+ * Resist adding an override that restates a default; the default is the same
+ * markup with less to keep in step. `strike-through` earns its place because it
+ * changes the element, not the styling.
+ *
+ * ── STILL TO COME, WITH THE PAGE TYPES THAT NEED THEM ────────────────────────
+ *
+ * The `article` schema also allows `image` (a bare inline image with a
+ * `floatLeft` flag), `pre` (a `code` block) and `table`. The first real article
+ * uses none of the three, so they are not built here on spec — a serializer
+ * written against no content is a guess. `onMissingComponent` stays at its
+ * default, which prints a warning naming the type, so the first document that
+ * uses one says so at build time instead of rendering nothing.
+ *
+ * ── TWO THINGS THE DEFAULTS GET RIGHT THAT ARE WORTH KNOWING ─────────────────
+ *
+ *   - `marks` on a span is a MIXED array: decorator names (`em`, `strong`) and
+ *     `_key`s pointing into the block's own `markDefs` (`af2d9c8a74bd`). The
+ *     library resolves the two through `buildMarksTree` and hands a `link` mark
+ *     its resolved `markDef`, which is the part of a hand-written serializer most
+ *     likely to be wrong.
+ *   - Nested lists are handled by `nestLists` in `html` mode, so a deeper list
+ *     becomes a child of the last <li> — the nesting HTML actually allows. The
+ *     first real article is single-level, so this is untested against content.
+ *
+ * ── THE `underline` PROBLEM WAS FIXED UPSTREAM, NOT HERE ────────────────────
+ *
+ * The library renders `underline` as `<span style="text-decoration: underline">`,
+ * and an inline `text-decoration` collides with the underline that carries link
+ * affordance in base.css — an underlined word would be indistinguishable from a
+ * link. Two published articles had one.
+ *
+ * There is deliberately NO override for it. The decorator was removed from every
+ * Portable Text field in the schema instead (studio-next/schemas/portableText.ts),
+ * on the rule that THE UNDERLINE SHOULD ONLY EVER MEAN "LINK", and the two
+ * articles were corrected. Styling it here would have been the wrong fix: it would
+ * make a mark legitimate that the design has no room for, and every future
+ * document could then carry one.
+ *
+ * If an `underline` ever reaches this renderer it means content predates that
+ * schema change — Sanity keeps marks it no longer offers — and the fix is the
+ * document, not this file.
+ */
+import {PortableText} from 'astro-portabletext'
+/* From `astro-portabletext/types`, NOT from `@portabletext/types` — which is where
+   it originates but is only a TRANSITIVE dependency here. pnpm does not hoist, so
+   importing it directly fails to resolve, and adding it to package.json would
+   declare a dependency this project does not actually have. The library re-exports
+   it for precisely this case. */
+import type {TypedObject} from 'astro-portabletext/types'
+import Figure from './Figure.astro'
+import Strike from './Strike.astro'
+
+interface Props {
+  /** A Portable Text array. Null and empty both render nothing, which is what a
+      caseStudy — with no `bodyText` field at all — needs. */
+  value?: TypedObject[] | null
+}
+
+const {value} = Astro.props
+---
+
+{
+  value && value.length > 0 && (
+    <PortableText
+      value={value}
+      components={{type: {figure: Figure}, mark: {'strike-through': Strike}}}
+    />
+  )
+}

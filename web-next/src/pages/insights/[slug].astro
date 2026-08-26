@@ -1,0 +1,75 @@
+---
+/**
+ * STUB — the prose column only, so the serializers can be verified against real
+ * content. NOT the article page.
+ *
+ * What is deliberately absent, because it is page composition rather than data
+ * plumbing and belongs with the flex page stack: the title band, the full-bleed
+ * hero and its `order` swap at lg, the rail, the RSS CTA band and Related
+ * Insights. This renders the masthead, the body, and the footer.
+ *
+ * What it IS good for: `Band > Grid > article.detail[--col-main]` is the real
+ * context the prose lives in, so the measure, the rhythm ramp and every
+ * serializer can be judged here exactly as they will behave on the finished page.
+ *
+ * It builds EVERY insight, because the slug list comes from the dataset — which
+ * makes it a free early run at the phase 5 parity check. A caseStudy has no
+ * `bodyText` field, so those pages come out with a title and nothing else, which
+ * is correct rather than broken: the case-study body is a different set of fields
+ * and its own page type, item 4 in the phase 4 order.
+ */
+import {loadQuery} from '../../sanity/load-query'
+import {INSIGHT_DETAIL_QUERY, INSIGHT_SLUGS_QUERY} from '../../sanity/queries/insights'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Band from '../../components/Band.astro'
+import Grid from '../../components/Grid.astro'
+import Masthead from '../../components/Masthead.astro'
+import Footer from '../../components/Footer.astro'
+import Prose from '../../components/prose/Prose.astro'
+
+export async function getStaticPaths() {
+  const rows = await loadQuery(INSIGHT_SLUGS_QUERY)
+  /* The query already filters on `defined(slug.current)`, so nothing should be
+     dropped here — but TypeGen types a projected slug as `string | null` because
+     it cannot see the filter, and a null would become the literal path
+     `/insights/null`. Narrowing rather than asserting. */
+  return rows
+    .filter((row): row is {params: {slug: string}} => Boolean(row.params.slug))
+    .map((row) => ({params: row.params}))
+}
+
+const {slug} = Astro.params
+const insight = await loadQuery(INSIGHT_DETAIL_QUERY, {slug})
+
+/* Loud rather than quiet. Every slug here came out of the dataset a moment ago,
+   so a miss means the two queries disagree — which should fail the build, not
+   ship a page with an empty body. */
+if (!insight) throw new Error(`[insights/[slug]] no document for slug "${slug}"`)
+---
+
+<BaseLayout
+  title={insight.title ?? 'Untitled'}
+  description={insight.description ?? insight.shortDescription ?? undefined}
+>
+  <Masthead />
+
+  <Band space="section">
+    <Grid>
+      <article class="detail">
+        <h1>{insight.title}</h1>
+        <Prose value={insight.bodyText} />
+      </article>
+    </Grid>
+  </Band>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* Placement only. The h1 sits inside `article.detail` HERE and will not on the
+     finished page — it belongs to the title band, which is a separate band above
+     the hero. It is inline for now so there is a heading to read the page by. */
+  .detail {
+    grid-column: var(--col-main);
+  }
+</style>
