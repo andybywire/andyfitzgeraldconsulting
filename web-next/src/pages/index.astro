@@ -43,7 +43,7 @@ const INLINE = {
   {
     /*
     Full bleed, so it sits in the PAGE STACK and not inside a <Grid>. Resize
-    across 683px to watch 16:9 give way to the height cap.
+    across 569px to watch 16:9 give way to the height cap.
   */
   }
   <SanityHero image={HERO} />
@@ -253,10 +253,19 @@ const INLINE = {
     margin-block-end: var(--rhythm-paragraph);
   }
 
+  /* DESIGN.md's `label` role, in full: Lato 700 at the 16px step with +2% tracking,
+     in `text-muted`. The WEIGHT is the part that was wrong — this read 400 until
+     2026-08-26, which made it a small muted line rather than the small bold label
+     the Article board shows. `label` is one of the two Lato roles that takes
+     positive tracking, and at this size the tracking is what keeps 700 from
+     reading as cramped. */
   .eyebrow {
     color: var(--color-text-muted);
     font-family: var(--font-heading);
     font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
     margin-block-end: var(--rhythm-tight);
   }
 

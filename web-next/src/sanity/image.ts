@@ -43,11 +43,28 @@ const builder = createImageUrlBuilder({
  *
  * `altText` and `caption` are fields on the image object in this schema rather
  * than on the asset, so they arrive with it.
+ *
+ * ── EVERY MEMBER IS OPTIONAL, AND THAT IS NOT LAXNESS ────────────────────────
+ *
+ * TypeGen emits `SanityImageCrop` and `SanityImageHotspot` with all four members
+ * optional, because Sanity stores them that way. Declaring them REQUIRED here —
+ * which this type did until phase 4 — made the generated types unassignable to it,
+ * so the first page to hand a queried image to <SanityImage> failed `astro check`:
+ *
+ *     Type 'number | undefined' is not assignable to type 'number'.
+ *
+ * The specimen page hid it by hand-writing its image literals and omitting `crop`
+ * altogether. Only the TYPE was ever wrong: every read below already defaults
+ * (`crop?.left ?? 0`), so nothing about the arithmetic changes.
+ *
+ * A CONSUMER MUST DEFAULT TOO. `hotspot.x` is `number | undefined` now, so reading
+ * it for an `object-position` needs a fallback rather than an assertion — see
+ * SanityHero.
  */
 export type SanityImageSource = {
   asset?: {_ref?: string | null} | null
-  crop?: {top: number; bottom: number; left: number; right: number} | null
-  hotspot?: {x: number; y: number; width: number; height: number} | null
+  crop?: {top?: number; bottom?: number; left?: number; right?: number} | null
+  hotspot?: {x?: number; y?: number; width?: number; height?: number} | null
   altText?: string | null
   caption?: string | null
 }

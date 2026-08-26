@@ -768,7 +768,7 @@ export type AllSanitySchemaTypes =
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHTS_INDEX_QUERY
-// Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription	}
+// Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		heroImage { 	asset,	crop,	hotspot,	altText,	caption }	}
 export type INSIGHTS_INDEX_QUERY_RESULT = Array<
   | {
       _id: string
@@ -780,6 +780,13 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
     }
   | {
       _id: string
@@ -791,12 +798,19 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
     }
 >
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHT_DETAIL_QUERY
-// Query: *[_type in ["article", "caseStudy"] && slug.current == $slug][0] {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		lede,		bodyText	}
+// Query: *[_type in ["article", "caseStudy"] && slug.current == $slug][0] {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		description,		lede,		bodyText,		heroImage { 	asset,	crop,	hotspot,	altText,	caption }	}
 export type INSIGHT_DETAIL_QUERY_RESULT =
   | {
       _id: string
@@ -808,6 +822,7 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      description: string | null
       lede: Array<{
         children?: Array<{
           marks?: Array<string>
@@ -865,6 +880,13 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
             _key: string
           }
       > | null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
     }
   | {
       _id: string
@@ -876,8 +898,16 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      description: string | null
       lede: null
       bodyText: null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
     }
   | null
 
@@ -894,8 +924,8 @@ export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
 import '@sanity/client'
 declare module '@sanity/client' {
   interface SanityQueries {
-    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
-    '\n\t*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tlede,\n\t\tbodyText\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tlede,\n\t\tbodyText,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
   }
 }
