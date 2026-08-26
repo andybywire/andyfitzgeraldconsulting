@@ -4,6 +4,7 @@ import {
   ReferenceHierarchyInput,
   ArrayHierarchyInput,
 } from 'sanity-plugin-taxonomy-manager'
+import {BODY_STYLES, MARKS} from '../portableText'
 
 export default {
   name: 'caseStudy',
@@ -144,14 +145,8 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
+          styles: BODY_STYLES,
+          marks: MARKS,
         },
       ],
     },
@@ -162,14 +157,8 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
+          styles: BODY_STYLES,
+          marks: MARKS,
         },
       ],
     },
@@ -180,14 +169,8 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
+          styles: BODY_STYLES,
+          marks: MARKS,
         },
       ],
     },
@@ -218,34 +201,13 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
+          styles: BODY_STYLES,
+          marks: MARKS,
         },
+        /* A bare inline `image` sat beside this and was removed 2026-08-26 — see
+           the note in article.tsx. Free here: no case study ever used one, so
+           `figure` was already carrying every image in these two fields. */
         {type: 'figure'},
-        {
-          type: 'image',
-          options: {
-            hotspot: true,
-          },
-          fields: [
-            {
-              name: 'caption',
-              type: 'string',
-              title: 'Caption',
-            },
-            {
-              name: 'altText',
-              type: 'string',
-              title: 'Alt Text',
-            },
-          ],
-        },
       ],
     },
     {
@@ -255,34 +217,13 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
+          styles: BODY_STYLES,
+          marks: MARKS,
         },
+        /* A bare inline `image` sat beside this and was removed 2026-08-26 — see
+           the note in article.tsx. Free here: no case study ever used one, so
+           `figure` was already carrying every image in these two fields. */
         {type: 'figure'},
-        {
-          type: 'image',
-          options: {
-            hotspot: true,
-          },
-          fields: [
-            {
-              name: 'caption',
-              type: 'string',
-              title: 'Caption',
-            },
-            {
-              name: 'altText',
-              type: 'string',
-              title: 'Alt Text',
-            },
-          ],
-        },
       ],
     },
     {

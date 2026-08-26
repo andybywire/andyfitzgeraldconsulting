@@ -4,6 +4,7 @@ import {
   ReferenceHierarchyInput,
   ArrayHierarchyInput,
 } from 'sanity-plugin-taxonomy-manager'
+import {BODY_STYLES, PLAIN_STYLES, MARKS} from '../portableText'
 
 export default {
   name: 'article',
@@ -135,7 +136,8 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: PLAIN_STYLES,
+          marks: MARKS,
         },
       ],
     },
@@ -146,38 +148,24 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
+          styles: BODY_STYLES,
+          marks: MARKS,
         },
+        /**
+         * A bare inline `image` used to sit here too, carrying a `floatLeft`
+         * boolean. Removed 2026-08-26: `figure` now has a `thumbnail` flag that
+         * does that job, so there is one image type in a body and one serializer
+         * rather than two near-identical ones — and a book cover gains the
+         * `caption` field the bare image never had.
+         *
+         * Safe to remove because the data went first. The one document using it —
+         * cognitive-science-for-designers, 11 book covers — was converted by hand,
+         * and a scan of every Portable Text field on every type, drafts included,
+         * found zero remaining `image` blocks. Removing a type from an array does
+         * NOT remove it from stored documents; had any survived they would have
+         * become unknown blocks in the editor.
+         */
         {type: 'figure'},
-        {
-          type: 'image',
-          options: {
-            hotspot: true,
-          },
-          fields: [
-            {
-              name: 'altText',
-              type: 'string',
-              title: 'Alt Text',
-            },
-            {
-              name: 'floatLeft',
-              type: 'boolean',
-              title: 'Float Left',
-              initialValue: false,
-              options: {
-                layout: 'checkbox',
-              },
-            },
-          ],
-        },
         {
           name: 'pre',
           title: 'Pre',

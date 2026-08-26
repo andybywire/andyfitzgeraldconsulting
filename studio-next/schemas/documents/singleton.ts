@@ -1,4 +1,5 @@
 import {GrDocumentText} from 'react-icons/gr'
+import {BODY_STYLES, PLAIN_STYLES, MARKS} from '../portableText'
 
 export default {
   name: 'singleton',
@@ -28,8 +29,12 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: PLAIN_STYLES,
           lists: [],
+          /* Keeps its OWN narrower decorator set rather than the shared MARKS —
+             strong and em only, no code and no strike. This field is a single
+             sentence of intro prose, not a document, so the shared set would be
+             offering tools with nowhere to be used. Deliberately not consolidated. */
           marks: {
             decorators: [
               {title: 'Strong', value: 'strong'},
@@ -61,14 +66,8 @@ export default {
       of: [
         {
           type: 'block',
-          styles: [
-            {title: 'Normal', value: 'normal'},
-            {title: 'H1', value: 'h1'},
-            {title: 'H2', value: 'h2'},
-            {title: 'H3', value: 'h3'},
-            {title: 'H4', value: 'h4'},
-            {title: 'Quote', value: 'blockquote'},
-          ],
+          styles: BODY_STYLES,
+          marks: MARKS,
         },
         {
           type: 'image',
