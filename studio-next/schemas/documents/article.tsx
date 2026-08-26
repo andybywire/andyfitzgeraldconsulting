@@ -166,11 +166,29 @@ export default {
          * become unknown blocks in the editor.
          */
         {type: 'figure'},
-        {
-          name: 'pre',
-          title: 'Pre',
-          type: 'code',
-        },
+        /**
+         * NO `name`, DELIBERATELY. This was `{name: 'pre', title: 'Pre', type:
+         * 'code'}` until 2026-08-26, and dropping the name is the whole fix:
+         * Sanity stores an array member's NAME as its `_type`, so `name: 'pre'`
+         * made the data say `pre` while the type said `code`.
+         *
+         * `pre` was the wrong name twice over. It named the HTML element the block
+         * renders to rather than the thing it is — a presentational leak into the
+         * content model — and it did not even name it accurately, since the output
+         * is `<pre><code>`. The fields are `code`, `language`, `filename` and
+         * `highlightedLines`; it is a code block.
+         *
+         * It also explains a discrepancy recorded elsewhere as a TypeGen fault.
+         * TypeGen reported `code` because the TYPE is code; the `name` override is
+         * what made the stored `_type` disagree. TypeGen was right and the schema
+         * was inconsistent, so this rename aligns data, schema and generated types
+         * at once — see the comment in web-next/src/components/prose/Code.astro.
+         *
+         * The 25 existing blocks were migrated first, by setting `_type` on each
+         * keyed path so the `code` payloads were never rewritten: 5715 characters
+         * before, 5715 after.
+         */
+        {type: 'code'},
         {type: 'table'},
       ],
       components: {

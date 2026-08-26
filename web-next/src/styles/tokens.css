@@ -112,6 +112,30 @@
      Declaring them here too would shadow that, and the fallback is the point.
      base.css consumes them exactly as if they were local. */
 
+  /* ── ...except this one ────────────────────────────────────────────────── */
+  /* A THIRD FAMILY, and the only font stack this file declares. DESIGN.md's
+     Typography names two faces, so this is an addition rather than a
+     transcription — decided 2026-08-26, for `pre` blocks and the inline `code`
+     decorator, neither of which had any rule at all before.
+
+     IT SHIPS NO WEBFONT, which is why it does not really break the two-family
+     rule. Noto Serif and Lato are ours, subset and served; this is whatever the
+     reader's platform calls monospace. For code that is arguably the right
+     answer — a developer reading a shell command sees it in the face they read
+     code in every day — and it costs zero bytes and nothing in
+     scripts/subset-fonts.sh.
+
+     The trade is that the rendered width of a code line varies by OS: SF Mono on
+     macOS, Consolas on Windows, whatever `monospace` resolves to on Linux. So the
+     exact point at which a block starts scrolling is not ours to know. That is
+     accepted; the alternative is a third subset file to maintain for content that
+     is 25 blocks in four documents.
+
+     Declared HERE rather than in base.css because it is a value, not a rule —
+     which is the whole division these two files are built on. Astro owns the two
+     families it serves; this one has no provider to own it. */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
   /* ── Type scale — 18px base, ratio 1.25, fluid 375 → 1200px ────────────── */
   /* Steps 0 and 1 are static: 1 is the legibility floor, 0 is chrome only.
      Every preferred value is rem-dominant on purpose — a vw-dominant value

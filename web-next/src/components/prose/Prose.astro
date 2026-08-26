@@ -28,7 +28,7 @@
  * element roles, so there is nothing to override.
  *
  * So the map carries the CUSTOM TYPES the schema adds that have no HTML
- * equivalent for a library to guess at — `figure` is the first — plus the ONE
+ * equivalent for a library to guess at — `figure` and `code` — plus the ONE
  * default whose element is semantically wrong for this content: `strike-through`,
  * which the library renders as `<del>` and which is `<s>` here. See Strike.astro
  * for why those are not interchangeable.
@@ -37,14 +37,17 @@
  * markup with less to keep in step. `strike-through` earns its place because it
  * changes the element, not the styling.
  *
- * ── STILL TO COME, WITH THE PAGE TYPES THAT NEED THEM ────────────────────────
+ * ── ONE TYPE LEFT UNBUILT ────────────────────────────────────────────────────
  *
- * The `article` schema also allows `image` (a bare inline image with a
- * `floatLeft` flag), `pre` (a `code` block) and `table`. The first real article
- * uses none of the three, so they are not built here on spec — a serializer
- * written against no content is a guess. `onMissingComponent` stays at its
- * default, which prints a warning naming the type, so the first document that
- * uses one says so at build time instead of rendering nothing.
+ * `table`, which the `article` schema allows and which NO published document
+ * uses. It is not built on spec: a serializer written against no content is a
+ * guess at what the content would have looked like. `onMissingComponent` stays at
+ * its default, which prints a warning naming the type at build time, so the first
+ * document to use one announces itself instead of rendering nothing.
+ *
+ * The other two that were listed here are done. `image` was folded into `figure`
+ * and removed from the schema; `pre` was renamed to `code` — schema and data both
+ * — and is built. Neither is coming back.
  *
  * ── TWO THINGS THE DEFAULTS GET RIGHT THAT ARE WORTH KNOWING ─────────────────
  *
@@ -83,6 +86,7 @@ import {PortableText} from 'astro-portabletext'
    it for precisely this case. */
 import type {TypedObject} from 'astro-portabletext/types'
 import Figure from './Figure.astro'
+import Code from './Code.astro'
 import Strike from './Strike.astro'
 
 interface Props {
@@ -98,7 +102,13 @@ const {value} = Astro.props
   value && value.length > 0 && (
     <PortableText
       value={value}
-      components={{type: {figure: Figure}, mark: {'strike-through': Strike}}}
+      components={{
+        /* Keyed by the stored `_type`, which now matches the generated union —
+           this member was named `pre` until 2026-08-26 and both the schema and the
+           25 existing blocks were corrected. See Code.astro. */
+        type: {figure: Figure, code: Code},
+        mark: {'strike-through': Strike},
+      }}
     />
   )
 }

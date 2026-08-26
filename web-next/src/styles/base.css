@@ -289,6 +289,74 @@ nav :is(a, button)[aria-current]::after {
   }
 }
 
+/* ── Code ──────────────────────────────────────────────────────────────────── */
+/*
+ * Two roles, one family. Neither had a rule before 2026-08-26, so inline `code`
+ * was rendering in Noto Serif — indistinguishable from the prose around it — in
+ * the seven documents that use it.
+ *
+ * `--font-mono` is a system stack and the only font variable tokens.css declares;
+ * see the note there for why a third family is an addition rather than a breach.
+ *
+ * ── 0.9em IS AN OPTICAL MATCH, NOT A SIZE STEP ───────────────────────────────
+ *
+ * DESIGN.md forbids a size step below 16px for reading text, and this is not one:
+ * it is a per-family correction. A monospace face carries a larger x-height and a
+ * wider advance than Noto Serif at the same em, so inline code set at 1em reads
+ * visibly bigger than the sentence holding it and disturbs the line. 0.9em of the
+ * 18px body is 16.2px — still above the legibility floor, and matched to its
+ * surroundings rather than smaller than them. It is `em`, not a token, so it
+ * tracks whatever it is nested in.
+ *
+ * NO TINTED GROUND ON INLINE CODE, deliberately. A background chip is the common
+ * treatment and it is louder than this page wants: the family change already
+ * carries the distinction, and DESIGN.md's rule is that when two options are
+ * equally defensible the quieter one wins. Easy to add if it reads too faint.
+ */
+
+:is(pre, code) {
+  font-family: var(--font-mono);
+}
+
+code {
+  font-size: 0.9em;
+}
+
+/*
+ * ── The block ──────────────────────────────────────────────────────────────
+ *
+ * A tinted ground here, where inline code gets none: a block is a panel, and
+ * `surface-muted` is the role for a quiet inset plane in both themes.
+ *
+ * SIZE 1 (16px), NOT the body step. Code lines are long — the longest in the
+ * content is 117 characters — so the step down buys about 12% more of them before
+ * the block scrolls, and a block already reads as apparatus rather than prose.
+ * Leading 1.5 for the same reason DESIGN.md indexes leading by measure: nothing
+ * here is running prose.
+ *
+ * `overflow-x: auto` RATHER THAN WRAPPING. 117 monospace characters needs roughly
+ * 1264px against a 656px prose column, so something has to give. Wrapping would
+ * break a shell command across two visual lines with no marker saying so, which
+ * reads as two commands — worse than a scrollbar, because it is wrong rather than
+ * merely awkward. The `tabindex="0"` that makes the scroll region keyboard
+ * reachable is in the component, since it is markup.
+ *
+ * `pre code` RESETS THE SIZE. `code` above sets 0.9em, which would compound
+ * against the block's own step and land at 14.4px.
+ */
+pre {
+  padding: var(--space-3);
+  border-radius: var(--radius-1);
+  background-color: var(--color-surface-muted);
+  font-size: var(--font-size-1);
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+pre code {
+  font-size: inherit;
+}
+
 /* ── Struck text ───────────────────────────────────────────────────────────── */
 /*
  * The `strike-through` decorator, rendered as `<s>` — "no longer accurate or

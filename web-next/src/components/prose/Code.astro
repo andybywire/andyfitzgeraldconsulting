@@ -1,0 +1,126 @@
+---
+/**
+ * A code block. `@sanity/code-input`'s type, rendered as `<pre><code>`.
+ *
+ * ── IT WAS CALLED `pre`, AND THAT WAS WRONG ─────────────────────────────────
+ *
+ * Renamed 2026-08-26, data and all. The schema declared the array member as
+ * `{name: 'pre', title: 'Pre', type: 'code'}`, and Sanity stores an array member's
+ * NAME as its `_type` — so the stored blocks said `pre`.
+ *
+ * `pre` named the HTML element this renders to rather than the thing it is, which
+ * is a presentational leak into the content model, and it named it inaccurately
+ * anyway: the output is `<pre><code>`. The fields are `code`, `language`,
+ * `filename` and `highlightedLines`. It is a code block.
+ *
+ * THIS ALSO RETIRES A FINDING. The mismatch was reported here as TypeGen
+ * describing the schema rather than the data — TypeGen said `code` where the data
+ * said `pre`. TypeGen had it right: `code` was always the type, and the `name`
+ * override was the inconsistency. Data, schema and generated types now agree.
+ *
+ * The 25 existing blocks were migrated by setting `_type` on each keyed path, so
+ * the `code` payloads were never rewritten — 5715 characters before, 5715 after.
+ *
+ * ── THE WHITESPACE TRAP, INVERTED ────────────────────────────────────────────
+ *
+ * Phase 3 recorded that Astro TRIMS whitespace before an element on a new line,
+ * which is why `{' '}` appears throughout the masthead. Inside `<pre>` the same
+ * mechanism bites the other way round: `<pre>` preserves whitespace, so any
+ * newline and indent Astro leaves between the tags becomes a blank first line and
+ * a leading indent on every subsequent one.
+ *
+ *     <pre>              ->  renders a blank line, then the code indented
+ *       <code>{code}</code>
+ *     </pre>
+ *
+ * ── AND WHY THE ELEMENT BELOW IS SELF-CLOSING ────────────────────────────────
+ *
+ * Writing it on one line does not survive: Prettier reformats the template on
+ * every `pnpm format`, and it broke exactly this element across three lines,
+ * putting `\n      ` inside the `<pre>` in the built HTML. `<!-- prettier-ignore -->`
+ * does not help either — it applies to elements, not to `{…}` expression blocks,
+ * and Prettier collapsed the comment onto the line and reformatted regardless.
+ * Both were tried and both were verified in dist/, not assumed.
+ *
+ * So the fix is structural rather than a convention anyone has to hold to: an
+ * element with NO CHILDREN has nothing for a formatter to break. `set:html` puts
+ * the `<code>` wrapper inside the attribute, where whitespace cannot be
+ * introduced, and the block is immune to reformatting by construction.
+ *
+ * ── `tabindex="0"` IS NOT DECORATION ─────────────────────────────────────────
+ *
+ * base.css gives the block `overflow-x: auto`, because the longest line in the
+ * content is 117 characters against a 656px column. A scrollable region that
+ * cannot be reached by keyboard fails WCAG 2.1.1 — a pointer user can drag it and
+ * a keyboard user cannot reach it at all. Making the `<pre>` focusable is the
+ * standard remedy and lets arrow keys scroll it.
+ *
+ * No `role="region"` and no `aria-label` to go with it. Those would make every
+ * code block a landmark, and 21 of them in one article would bury the page's real
+ * landmarks in noise. A focusable `<pre>` announces its own contents.
+ *
+ * ── TWO FIELDS DELIBERATELY UNRENDERED ───────────────────────────────────────
+ *
+ * `filename` and `highlightedLines` are on the type and set on NO block in the
+ * dataset. Rendering a filename header or a line-highlight treatment would be
+ * designing for content that does not exist; both are noted here instead so they
+ * are findable rather than forgotten. `language` IS emitted, as `data-language` —
+ * it has no visual consumer yet either, but it is the hook syntax highlighting
+ * would read, and an attribute makes the stored value inspectable in the markup.
+ *
+ * ── SYNTAX HIGHLIGHTING IS NOT HERE YET ──────────────────────────────────────
+ *
+ * Deliberately unhighlighted for now. Shiki with `createCssVariablesTheme` is the
+ * likely route — it keeps the colors bound to tokens.css rather than importing a
+ * VS Code palette, and runs at build time with no runtime JS — but the engine and
+ * the loudness of the scheme are open decisions. This component is the baseline
+ * either one layers onto: the change would be to the `<code>` contents, not to the
+ * block's own rules.
+ */
+import type {Props as NodeProps} from 'astro-portabletext/types'
+
+type CodeNode = {
+  _type: 'code'
+  _key?: string
+  code?: string
+  language?: string
+  filename?: string
+  highlightedLines?: number[]
+}
+
+type Props = NodeProps<CodeNode>
+
+const {node} = Astro.props
+
+/**
+ * An empty block renders nothing rather than an empty tinted panel. The schema
+ * makes `code` optional, so a block saved before anything was typed into it is a
+ * real state, and a bare 60px-tall rectangle in the middle of an article is worse
+ * than a gap.
+ */
+const code = node.code ?? ''
+
+/**
+ * Escaped by hand because `set:html` does not escape — that is what it is for.
+ * Normally the answer would be `set:text`, which escapes for you, but that needs a
+ * child element to sit on and a child element is the thing this component cannot
+ * have (see above). So the escaping moves here.
+ *
+ * THREE REPLACEMENTS ARE THE COMPLETE SET for element content, and the order is
+ * load-bearing. `&` must go first: doing `<` first would then re-escape the
+ * ampersand in its own `&lt;` and render `&amp;lt;` on the page. Inside a `<code>`
+ * element there is no attribute context and no comment context, so `"` and `'`
+ * cannot break out and are deliberately left alone rather than escaped for
+ * appearance's sake.
+ *
+ * This is the one place in the build where markup is assembled as a string, and it
+ * is worth being explicit that CMS prose is not a trusted input just because the
+ * CMS has one author.
+ */
+const html = `<code>${code
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')}</code>`
+---
+
+{code && <pre tabindex="0" data-language={node.language ?? undefined} set:html={html} />}

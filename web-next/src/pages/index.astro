@@ -30,22 +30,25 @@ import {INSIGHTS_REVIEW_QUERY} from '../sanity/queries/insights'
 const insights = await loadQuery(INSIGHTS_REVIEW_QUERY)
 
 /**
- * COMPARED AS `string`, AND THAT IS A FINDING RATHER THAN A SHORTCUT.
+ * COMPARED AS `string`, DELIBERATELY.
  *
  * TypeGen derives its unions from the SCHEMA, so it cannot describe data the schema
- * no longer allows — and it disagrees with the stored data twice here:
+ * no longer allows — and a badge whose whole job is to find content the schema has
+ * moved past therefore cannot be typed against those unions.
  *
- *   - `styles` comes back typed without 'h5'. Phase 1 dropped h5 from the schema;
- *     it did not remove it from 27 published blocks. `includes('h5')` against the
- *     generated union is a type error, and an exhaustive switch would skip it.
- *   - `blockTypes` comes back typed 'code' where the data says 'pre'. The schema
- *     declares that member as `{name: 'pre', type: 'code'}` and the stored `_type`
- *     is 'pre' — confirmed against the dataset and by the renderer's own
- *     `missing "pre"` warning. TypeGen reports the underlying type instead.
+ * `styles` is the live case: it comes back without 'h5', because phase 1 dropped
+ * that style. Dropping a style does not remove it from published blocks — 27
+ * survived until the data was corrected — so `includes('h5')` against the generated
+ * union is a type error even though the value can genuinely appear. The badge
+ * stays as a regression detector, and widening is the only way to write it.
  *
- * So the widening is deliberate: the generated types are wrong about this data, and
- * matching them would mean the badges quietly failed to flag the two documents
- * this index exists to find.
+ * ONE OF THE TWO CASES HAS BEEN RETIRED, which is worth recording because it was
+ * reported here as a TypeGen fault and was not one. `blockTypes` used to come back
+ * typed 'code' where the data said 'pre'; the schema declared that member as
+ * `{name: 'pre', type: 'code'}`, and Sanity stores an array member's NAME as its
+ * `_type`. TypeGen was reporting the type correctly and the SCHEMA was
+ * inconsistent. Both were renamed to `code` on 2026-08-26, data included, so that
+ * union now matches and needs no widening of its own.
  */
 const typesOf = (d: {blockTypes: readonly (string | null)[] | null}) =>
   (d.blockTypes ?? []).filter(Boolean) as string[]
@@ -58,8 +61,10 @@ const flagsFor = (d: (typeof insights)[number]): Flag[] => {
   const types = typesOf(d)
   const styles = stylesOf(d)
   const flags: Flag[] = []
-  if (types.includes('pre')) flags.push({label: 'pre', why: 'no serializer — renders nothing'})
-  if (types.includes('image')) flags.push({label: 'image', why: 'no serializer — renders nothing'})
+  /* `image` and `pre` were badges here until 2026-08-26. Both are gone from the
+     schema — image folded into figure, pre renamed to code — and both are now
+     built, so a document can no longer carry either. `table` is the only block
+     type left with no serializer. */
   if (types.includes('table')) flags.push({label: 'table', why: 'no serializer'})
   if (styles.includes('h5')) flags.push({label: 'h5', why: 'dropped from schema, unstyled'})
   if (d.hasUnderline) flags.push({label: 'underline', why: 'inline text-decoration'})
