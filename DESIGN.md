@@ -604,6 +604,21 @@ right rail is one skipped column away. Both ends close exactly, at 1440 and at t
 nudge the numbers. Grids stretch rather than center. Reasoning in
 [docs/decisions/layout.md](docs/decisions/layout.md).
 
+### The page stack is a flex column
+
+**The page is a vertical stack of bands, and that stack is a flex column — not a grid** (decided
+2026-08-26). One axis is all it has to express, so grid's second dimension would be unused
+machinery. `<Grid>` handles the horizontal, inside each band.
+
+**Its one job beyond stacking is reordering.** At `lg` the hero swaps places with the page title,
+sitting directly under the masthead — and since the two are sibling bands, that swap needs a shared
+flex parent and `order`. The DOM is authored in the **narrow** order, title before hero, matching the
+rule the footer already follows: source order is reading order, and the wide layout is the exception.
+
+**`order` moves visual position without moving focus or reading order**, which is normally the
+argument against it. It is safe here specifically because the hero is a non-interactive image —
+nothing focusable changes place. A band containing controls must not be reordered this way.
+
 ### Grid owns horizontal, rhythm owns vertical
 
 The rule that decides most spacing questions.
@@ -883,6 +898,57 @@ The same two colors in both contexts, order swapped. In CSS:
 rather than offered as flexibility. **The gap after the header belongs to the parent band**, not the
 component, so pages legitimately differ there.
 
+**Its band's padding is deliberately asymmetric — 64 above the title block, 16 below** (read off the
+Article board, confirmed intentional 2026-08-26). The title is bound to the prose that follows it the
+way a heading is bound to its paragraph, so the space below is `rhythm-heading-close`, not a matching
+`rhythm-band`. **This also settles what follows an h1**, which the rhythm ramp never covered:
+`heading-close` handles h2–h4 and the h1 was left out. Provisional in the sense every spacing value
+here is — judge it against real content, not the board.
+
+**The eyebrow above the title is the `label` role** — Lato **700** at the 16px step with +2% tracking,
+in `text-muted`. Not the 400 an earlier specimen used; it reads as a small bold label, which is what
+`label` is for.
+
+### The rail
+
+A `<nav>` on detail pages, carrying two groups — "On This Page" and "Topics". It sits at
+`10 / span 3`, one skipped column from the prose, which is the **sidebar** relationship in the skip
+family: set apart rather than belonging to the paragraph beside it.
+
+**It is a nav with its own link treatment, and it opts out of the wipe-in underline**
+(`::after { content: none }`, which Navigation already provides for). Rail links take a **plain
+underline on hover** instead. The wipe is a chrome gesture for the masthead and footer; a dense list
+of topic links animating one by one under a moving pointer is noise, not affordance.
+
+**Rail headings still have no role** — see [docs/open-questions.md](docs/open-questions.md). They are
+headings *and* apparatus, and the system has no role for a heading of apparatus. They currently take
+`text-heading`.
+
+#### Sticky, per child rather than per rail
+
+At desktop the rail's navigation **stays pinned to the top of the viewport** while a long article
+scrolls, so "On This Page" and "Topics" remain reachable. Three cases, one mechanism:
+
+| Page | Rail contents | Behavior |
+|---|---|---|
+| Article | the two nav groups | the groups pin |
+| Services | an image, then the nav | **the image scrolls away, the nav pins** |
+| Note | a source card or book reference | **nothing pins** — scrolls naturally |
+
+**Stickiness is a property of a child of the rail, never of the rail itself.** That is what makes the
+Services case free rather than special: anything above the sticky child is ordinary flow and leaves
+the viewport normally, and a rail that marks nothing sticky just scrolls.
+
+> **The rail must remain a stretched grid item. `align-self: start` silently breaks this.**
+
+A sticky element can only travel inside its containing block, which is the rail's box. A grid item
+stretches to its row's height by default, so the rail is as tall as the prose beside it and the
+sticky child has the whole article to travel down. Measured, at a 3000px prose column: stretched, the
+rail box is **3000px** and the sticky child pins at `top: 0`; with `align-self: start` the box is its
+own content height and the child scrolls out of view like anything else. No `overflow` other than
+`visible` may appear on any ancestor between the sticky child and the page, or it stops working with
+nothing to indicate why — `<Band>` and `<Grid>` set none, deliberately.
+
 ### The logo mark
 
 A 100×100 circular AF monogram, one `evenodd` path — so the letters are **holes**, not shapes. The disc
@@ -902,13 +968,19 @@ tracks a reader's text size rather than the viewport.
 Full bleed on article and case-study pages. It reads as two designs and is one:
 
 ```css
-inline-size: 100%;  aspect-ratio: 16/9;  max-block-size: 24rem;  object-fit: cover;
+inline-size: 100%;  aspect-ratio: 16/9;  max-block-size: 20rem;  object-fit: cover;
 ```
 
-Below about 683px the ratio governs. Above it the height pins at 24rem while the width keeps growing,
-so the box widens into 2.08:1 at 800, 3.75:1 at 1440 and 5:1 at 1920. **The panorama is a consequence,
-not a declaration** — and the switch point is wherever 16:9 happens to meet 24rem, so it moves if
+Below about 569px the ratio governs. Above it the height pins at 20rem while the width keeps growing,
+so the box widens into 2.5:1 at 800, 4.5:1 at 1440 and 6:1 at 1920. **The panorama is a consequence,
+not a declaration** — and the switch point is wherever 16:9 happens to meet 20rem, so it moves if
 either constant does. That is why it takes no breakpoint and could not sensibly use one.
+
+**The cap was 24rem until 2026-08-26**, which was a transcription error rather than a decision — the
+Figma Article board draws the hero at 320px against a 1440 frame, which is 20rem. Every number in the
+paragraph above is derived from it, so all four moved. **Expect this one to keep moving through fit
+and finish against real content**; it is a single constant in `SanityHero.astro` plus the `capHeight`
+hedge beside it, and nothing else in the build reads it.
 
 **The hotspot works twice**, because the image is cropped twice: Sanity crops to 16/9 using it, and
 `object-position` then aims `object-fit: cover` as the box flattens past that. Without the second, a
@@ -959,10 +1031,20 @@ live site: a pseudo-element animating `width: 0 → 100%`, because `text-decorat
 from zero width. It takes `link-hover`, which gives both of the live site's treatments from one
 declaration — blue on a light ground, white inside an accent band, which re-points that token.
 
-**The color holds still on hover.** The underline is the whole affordance, so the global inline-link
-rule has to be cancelled for nav. On an accent band that is not merely redundant: `link-hover` is the
-band's own fill, so a nav label turned exactly the color of the surface behind it and vanished under
-the pointer.
+**The label color moves to `link-hover` on a light ground and holds still on an accent band**
+(corrected 2026-08-26). The underline is the affordance in both cases; the color is a second signal
+that is only available off the band.
+
+On an accent band it is not merely redundant but wrong: `link-hover` is `blue-500`, which is also
+`surface-accent`, so a nav label turned exactly the color of the surface behind it and vanished under
+the pointer. **A real `<Band tone="accent">` makes this a non-issue by re-pointing `link-hover` to
+`text-on-accent-hover`** — so the footer needs no special handling. Only a component that paints an
+accent ground *without* `<Band>` has to cancel it, which today is the masthead, and only in the two
+states where its band exists.
+
+*Phase 3 read this as a nav-wide rule and cancelled the hover color globally, which also removed it
+from the masthead's inline desktop state, where there is no band and the label is meant to go blue.
+The scope is the accent ground, not the element.*
 
 **The current page is `aria-current`**, not a data attribute — the fact belongs to the document, so the
 attribute that carries it to assistive technology should also draw the indicator.
