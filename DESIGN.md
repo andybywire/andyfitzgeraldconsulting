@@ -995,6 +995,75 @@ and stretching the largest real file is strictly better than asking Sanity to up
 means sharpness is an authoring responsibility. 2880 covers a 2560px display at 1× and a 1440px laptop
 at 2×.
 
+### Figures — three shapes from two booleans
+
+Settled 2026-08-26. A `figure` in a Portable Text body renders one of three ways, chosen by two
+checkboxes in the Studio. They compose — a book cover photographed against white wants both.
+
+| | Treatment |
+|---|---|
+| default | full prose width, capped at the 66ch measure |
+| `outline` | the same, plus a hairline border and `radius-1` **on the image** |
+| `thumbnail` | 150px, floated left in an article body with the prose wrapping around it |
+
+**`outline` is not a new design decision.** Elevation already says depth is "tonal layering plus a
+hairline border" and Shapes already gives content images `radius-1`, so the flag's own purpose —
+keeping a white-background image from dissolving into the page — is served by the two tokens that
+already mean that. It goes on the **image**, not the figure, or the border would box in the caption
+along with the picture. **43 of 128 existing figures set it**, so this was a rendering gap rather
+than a pending choice.
+
+**The thumbnail floats from `md`.** A 150px cover plus its `grid-gutter-content` takes 174px out of
+every line it overlaps, against an 8-column prose measure:
+
+| | Prose | Wrapped line |
+|---|---|---|
+| `md` (768) | 482px | 308px ≈ **31 characters** |
+| `lg` (1024) | 653px | 479px ≈ **48 characters** |
+
+**Written at `lg` on that arithmetic and moved to `md` by eye** (2026-08-26), judged against the real
+article rather than the numbers. Worth recording both ways round: 31 characters is the shortest
+measure anywhere in the build, and it was accepted deliberately, the same call as the 8+3 split's 49.
+
+Below `md` the thumbnail stays 150px and sits above the text, which is also what it does on a phone.
+**Measured at 1200: the first line starts 24px right of the cover and runs 475px ≈ 48 characters**,
+and the cover's top aligns with the following block's top to the pixel.
+
+**One consequence is open, and it is smaller than the numbers suggest.** The leading ramp indexes by
+*measure*, and ~29–33 characters is exactly the `body-compact` register at 1.5 — so text beside a
+thumbnail at `md` sits in that register while set at body's 1.8, the precise mismatch `body-compact`
+exists to name.
+
+But only the lines that actually overlap the cover are short, and a 150px cover is 226px tall — about
+seven line boxes. Measured on the real reading-list article at 820: the theme paragraph runs **six
+lines, three beside the cover at 34 characters and three at full width** below it. So the question is
+whether three or four lines per entry want tighter leading, which is a much weaker case for a rule
+than "the prose is set at the wrong measure." Undecided, and cheap either way.
+
+**The context grants the float; the component never asks where it is.** `article.detail` declares
+`--thumb-float: left` at `lg` and the figure reads it, so a case study — which shares the `figure`
+type — gets the thumbnail size without the float by simply not declaring it. No opt-out to remember.
+
+> **Only paragraphs and minor headings wrap beside a cover.** `h2`, `ul`, `ol`, `blockquote`,
+> `figure` and `pre` all clear it.
+
+**Lists clear because of their markers.** A float shortens *line boxes*, not boxes — so a list's own
+box would still start at the column's left edge and `list-style-position: outside` would put the
+bullets underneath the image while the text moved right. `figure` clearing is what stops two
+consecutive book covers stacking side by side when an entry runs short, and `clear` with no preceding
+float is a no-op, so the rule is inert on every page without a thumbnail.
+
+**One edge case is accepted rather than designed around:** if a paragraph is short enough that a
+following `h4` still wraps beside the cover while its list clears, that heading is stranded next to
+the image. The richer fix is `display: flow-root` on the lists, which makes each a block sitting
+*beside* the float at reduced width with its markers intact. Reach for it only if the stranding shows.
+
+**Switching from a bare `image` block to `figure` fixed the top alignment for free** — worth knowing,
+because it looks like it should need a rule. The rhythm ramp gives a bare `<img>` the base `* + *`
+(24px) and a `<figure>` the block gap (48px), while the heading after it takes `* + h3` (48px) either
+way. A float sits where it would have sat in flow, so as an image the title started 24px below the
+cover and as a figure they align with nothing added.
+
 ### Search — specified 2026-08-21, built in phase 4
 
 Recorded ahead of the build so the masthead can leave the right seam. **Phase 3 ships the icon inert**
@@ -1017,6 +1086,36 @@ Recorded ahead of the build so the masthead can leave the right seam. **Phase 3 
 
 **Icons come from Lucide** (the Astro integration), for everything except the footer's social marks,
 which are brand assets rather than interface icons and are not ours to restyle.
+
+### Inline marks — what an editor can reach for
+
+Settled 2026-08-26, and recorded because the set is deliberately smaller than the CMS's default.
+
+| Mark | Element | Treatment |
+|---|---|---|
+| `strong` | `<strong>` | weight 700, from the variable `wght` axis |
+| `em` | `<em>` | Noto Serif italic |
+| `code` | `<code>` | **no rule yet** — see open questions |
+| `strike-through` | **`<s>`** | `line-through` at `0.06em`, matching the link underline |
+| ~~`underline`~~ | — | **removed from the schema** |
+
+> **The underline should only ever mean "link."**
+
+That is the rule the whole set turns on. Inline links carry a persistent underline
+and that underline *is* the affordance — which is what satisfies WCAG 1.4.1. A second
+meaning for the same mark makes an underlined word indistinguishable from a link, so
+`underline` is removed from every Portable Text field rather than styled. Two published
+articles had one; both were corrected.
+
+**`strike-through` is `<s>`, not `<del>`, and the distinction is a claim about the
+document.** `<del>` means "a removal from the document" — an editorial revision, paired
+with `<ins>` and carrying `cite`/`datetime`. `<s>` means "no longer accurate or
+relevant." A decorator reached from a toolbar means the second, so `<del>` would assert
+a revision history that does not exist.
+
+**Removing a decorator from the schema does not remove it from the data.** Sanity keeps
+marks it no longer offers, so an old document can still carry one. The renderer is not
+the place to fix that — the document is.
 
 ### Navigation — a global role, not a component one
 

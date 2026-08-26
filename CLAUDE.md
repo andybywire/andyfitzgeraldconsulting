@@ -338,6 +338,15 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
      `services.njk` iterates singletons, and no query fetches either type. So they are adopted into
      the schema or deleted — the choice is editorial, not structural.
    - **Shrink `hiddenDocTypes`** in `sanity.config.ts` to whatever survives the above.
+   - **Delete the serializer specimen** — `specimen-serializers` on `production-26`, at
+     `/insights/serializer-specimen/`. A phase 4 test fixture holding one instance of every
+     block style, inline mark, list shape and custom block the Portable Text serializers
+     handle, so a regression in any of them has somewhere to be seen. It is a **published**
+     article, deliberately — the static build reads the `published` perspective, so a draft
+     would not render — which means it is indexable and would otherwise go live. Delete it
+     once the serializers are covered by something that is not content, or keep it and
+     exclude it from the index, the sitemap and the feed. **Do not leave that choice to
+     launch day.**
 8. **Quality gates + POSSE.** Performance budgets, accessibility checks, link checking, HTML
    validation; per-taxonomy RSS feeds; **POSSE** (https://indieweb.org/POSSE) syndication to
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
