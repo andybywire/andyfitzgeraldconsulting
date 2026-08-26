@@ -78,6 +78,7 @@
  * block's own rules.
  */
 import type {Props as NodeProps} from 'astro-portabletext/types'
+import {highlight} from './highlighter'
 
 type CodeNode = {
   _type: 'code'
@@ -101,26 +102,18 @@ const {node} = Astro.props
 const code = node.code ?? ''
 
 /**
- * Escaped by hand because `set:html` does not escape — that is what it is for.
- * Normally the answer would be `set:text`, which escapes for you, but that needs a
- * child element to sit on and a child element is the thing this component cannot
- * have (see above). So the escaping moves here.
+ * Shiki returns a COMPLETE `<pre>` element, already escaped, with its own `<code>`
+ * inside and one span per token. So there is nothing to assemble here and nothing
+ * to escape by hand — which retires the hand-rolled escaping this component used
+ * to carry, and with it the only place in the build that built markup as a string.
  *
- * THREE REPLACEMENTS ARE THE COMPLETE SET for element content, and the order is
- * load-bearing. `&` must go first: doing `<` first would then re-escape the
- * ampersand in its own `&lt;` and render `&amp;lt;` on the page. Inside a `<code>`
- * element there is no attribute context and no comment context, so `"` and `'`
- * cannot break out and are deliberately left alone rather than escaped for
- * appearance's sake.
- *
- * This is the one place in the build where markup is assembled as a string, and it
- * is worth being explicit that CMS prose is not a trusted input just because the
- * CMS has one author.
+ * `<Fragment set:html>` injects it with NO WRAPPER, which is what keeps the `<pre>`
+ * a DIRECT child of `article.detail` — the rhythm ramp is `> * + *`, so a wrapper
+ * would drop the block out of it. It also sidesteps the `<pre>` whitespace trap
+ * entirely: there is no markup written in this template for a formatter to break
+ * across lines.
  */
-const html = `<code>${code
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')}</code>`
+const html = highlight(code, node.language)
 ---
 
-{code && <pre tabindex="0" data-language={node.language ?? undefined} set:html={html} />}
+{code && <Fragment set:html={html} />}

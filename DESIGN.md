@@ -1129,8 +1129,14 @@ Settled 2026-08-26. Both roles take `--font-mono`, the system stack described un
 
 | | Treatment |
 |---|---|
-| inline `code` | mono at **0.9em**, no tinted ground |
-| `pre` block | mono at size 1 (16px), leading 1.5, `surface-muted` ground, `radius-1`, `overflow-x: auto` |
+| inline `code` | mono at **0.9em**, `surface-muted` ground, `radius-1`, no border |
+| `pre` block | mono at size 1 (16px), leading 1.5, **`surface` + hairline border**, `radius-1`, `overflow-x: auto` |
+
+**The block is `surface` with a border, not `surface-muted` with none** — which is Elevation's model
+applied literally: a raised plane is the surface fill *plus* a hairline, "because the border carries
+the card boundary in both themes, not the fill difference." A muted fill with no boundary was the one
+combination Elevation says will not read. It also turned out to be what makes the syntax colors
+correct — see below.
 
 **0.9em is an optical match, not a size step.** A monospace face carries a larger x-height and a wider
 advance than Noto Serif at the same em, so inline code at 1em reads visibly bigger than the sentence
@@ -1138,9 +1144,19 @@ holding it. 0.9em of the 18px body is 16.2px — above the legibility floor, and
 surroundings rather than smaller than them. This is not the size step below 16px that the Typography
 do's and don'ts forbid.
 
-**Inline code takes no background.** The family change already carries the distinction, and a tinted
-chip is louder than this page wants — the quieter option wins. The block gets one because a block is
-a panel.
+**The chip takes `surface-muted`, not the block's `surface`** — chosen by eye against four candidates,
+and settled by a measurement that runs against intuition: against the page ground `surface-muted` is
+the **stronger** tint in both themes (1.153 light, 1.473 dark) where `surface` manages only 1.045 and
+1.169. Matching the block would have been both the option needing a border and the one harder to see
+without one.
+
+**And no border, which is the second reason.** An inline box that wraps across a line break fragments:
+`box-decoration-break: slice` — the default — leaves it open at the break, and `clone` closes both
+halves but draws a border mid-word. A fill has neither problem.
+
+**The block and the chip differing is not an inconsistency.** A block is a panel; a chip is a tint on
+a run of text. Different jobs, and the block additionally needs a white ground for GitHub's light
+palette to measure correctly.
 
 > **Code blocks scroll; they do not wrap.**
 
@@ -1157,11 +1173,53 @@ a pointer can drag and a keyboard cannot reach fails WCAG 2.1.1. No `role`/`aria
 and JavaScript could wrap — their lines are indented, so a break is far less ambiguous — while `sh`
 kept scrolling. Worth it only if the scrollbars prove annoying in practice.
 
-**Syntax highlighting is not built.** If it lands, Shiki with `createCssVariablesTheme` keeps the
-colors bound to `tokens.css` instead of importing a VS Code palette, and dark mode then comes from
-the existing theme blocks rather than a second mechanism. The loudness of the scheme is the real
-decision, not the engine: comments in `text-muted` and strings in `accent` with everything else at
-body color would stay inside the one-accent rule.
+#### Syntax highlighting — GitHub's themes, on our ground
+
+**Shiki at build time, with `github-light-default` and `github-dark-default`.** Nothing ships to the
+reader: production is static, so highlighting happens while pages are generated and the output is
+plain HTML with colored spans. No runtime JS, no client bundle.
+
+**The `-default` pair, not `github-light` / `github-dark`.** Those are the legacy themes; the
+`-default` pair is what github.com renders today — so it is both the more faithful choice and the
+better-measuring one. The legacy dark comment gray fails AA on our ground at **3.35**, and fails on
+GitHub's own background too, at 3.05.
+
+**Theme switching costs nothing, which is why this shape works.** Shiki's documented dual-theme
+pattern emits one theme inline and the other as a variable you override — with `!important`, because
+an inline style wins. `defaultColor: 'light-dark()'` avoids that entirely: each token comes out as
+`color: light-dark(light, dark)`, and CSS `light-dark()` resolves against `color-scheme`, which
+`base.css` already sets for all three theme states. **The code blocks follow the site's theme through
+the mechanism that already exists** — no second set of theme blocks, no `!important`, nothing for the
+theme toggle to keep in step. It also fails safe: where `light-dark()` is unsupported the color is
+invalid, so the token inherits the block's text color and the code is unhighlighted but readable.
+
+> **The block's ground is ours; only the token colors are GitHub's.**
+
+Shiki's own `background-color` is stripped in the transformer, so the panel stays inside this
+project's Elevation model rather than becoming GitHub's `#ffffff` or `#0d1117`.
+
+**That ground is what makes the palette legal, and getting it wrong was measurable.** GitHub's light
+theme is designed against `#ffffff`. On a `surface-muted` ground two of its seven colors dropped
+below AA — the keyword red to **3.79** and the comment gray to **3.99**. Moving the block to
+`surface` puts the palette back on the ground it was built for, and in dark moves it onto
+`neutral-850`, which is *darker* than GitHub's own background and so raises contrast rather than
+lowering it. Measured across every distinct token color the real content produces:
+
+| | Colors | Worst | Failing AA |
+|---|---|---|---|
+| light, on `surface` (`#ffffff`) | 7 | 4.55 | **0** |
+| dark, on `surface` (`neutral-850`) | 7 | 5.24 | **0** |
+
+**Languages are loaded explicitly**, in `components/prose/highlighter.ts`: `shellscript` — which also
+registers `bash`, `sh`, `shell` and `zsh` — plus `yaml`, `javascript`, `typescript`, `css`, `html` and
+`python`. The last three have no content behind them yet and were added as likely.
+
+**Pre-loading a grammar is not "building on spec", and the distinction is worth keeping straight.** A
+grammar is *data*: loading one costs a little build time and guesses at nothing. A *serializer*
+written against no content would be guessing at what the content looks like, which is why `table`
+stays unbuilt. Everything unlisted falls back to plain text with a build-time warning naming the
+grammar to add — Shiki **throws** on an unloaded language, so without that fallback a content edit
+could break the build.
 
 ### Navigation — a global role, not a component one
 

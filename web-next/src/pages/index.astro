@@ -481,11 +481,14 @@ const INLINE = {
     border-radius: var(--radius-1);
   }
 
-  code {
-    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-    font-size: 0.9em;
-  }
-
+  /* The local `code` rule that used to sit here is GONE. base.css now owns the
+     mono family and the 0.9em optical match, so it was dead — and it hardcoded a
+     font-family string, which this project forbids precisely because a literal
+     family name fails silently. It was also masking whether base.css worked. */
+  /* The local `code` rule that used to sit here is GONE. base.css now owns the
+     mono family, the 0.9em optical match and the chip's tinted ground, so it was
+     dead — and it hardcoded a font-family string, which this project forbids
+     precisely because a literal family name fails silently. */
   /* ── Throwaway review index ─────────────────────────────────────────────── */
   /* Local styles, not components. The badges LOOK like DESIGN.md's `tag` and are
      deliberately not it: the real tag is a phase 4 component with its own file,
