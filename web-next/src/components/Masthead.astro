@@ -314,11 +314,38 @@ import {Search} from '@lucide/astro'
    * custom property from inside the block that overrode it needs `unset` and a
    * paragraph explaining it.
    *
-   * No hover COLOR change. The underline carries it alone, which is both quieter
-   * and what the live site does.
+   * No hover COLOR change on the band either — the underline carries it alone. The
+   * two go together, so the cancel sits right here rather than in base.css.
    */
   .slot :is(a, button)::after {
     border-block-end-color: var(--color-text-on-accent-hover);
+  }
+
+  /*
+   * THE HOVER COLOR IS CANCELLED ON THE BAND AND RESTORED AT lg. base.css states no
+   * nav-hover rule at all, so the global `a:hover { color: var(--color-link-hover) }`
+   * reaches these links — and `link-hover` is blue-500, which is this band's own
+   * fill. Uncancelled, a label turns the color of the surface behind it and vanishes
+   * under the pointer.
+   *
+   * ADDITIVE, not a `not style(--breakpoint-lg: true)` query, and the difference is
+   * the fallback. One inverted query would say "hold the color still while on the
+   * band" in a single declaration — but an engine without style-query support
+   * matches NO @container block, so `not` would fail to match too and the bug would
+   * be the fallback state. Cancelling unconditionally and re-enabling at lg keeps
+   * the safe state as the base one, which is the pattern the whole file is built on.
+   *
+   * `inherit` rather than `text-on-accent`, because it means "whatever this already
+   * was" — which is correct in both themes without naming either.
+   *
+   * ANCHORS ONLY, NOT `:is(a, button)`. Two reasons, and the second is a real bug
+   * avoided: the global rule it cancels only ever matched anchors, so a button needs
+   * no cancel; and `.slot :is(a, button):hover` is (0,2,1), which would outrank
+   * `.search-toggle:hover` at (0,2,0) and override the knocked-out glyph color in
+   * the search button's fill treatment at lg.
+   */
+  .slot a:hover {
+    color: inherit;
   }
 
   /* ── The two swapped labels ─────────────────────────────────────────────── */
@@ -522,6 +549,14 @@ import {Search} from '@lucide/astro'
     .slot :is(a, button)::after {
       border-block-end-color: var(--color-link-hover);
       border-block-end-width: 3px;
+    }
+
+    /* And the LABEL goes blue with it. No band here, so there is nothing for
+       `link-hover` to collide with — this restores what the global rule in base.css
+       would have done, undoing the base-state cancel above. Same specificity as
+       that rule, so source order decides and this block is below it. */
+    .slot a:hover {
+      color: var(--color-link-hover);
     }
 
     /* NO RULE UNDER THE MAGNIFIER. Search does not navigate — it replaces this

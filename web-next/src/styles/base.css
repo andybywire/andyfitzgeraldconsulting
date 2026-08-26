@@ -248,22 +248,39 @@ nav :is(a, button)[aria-current]::after {
 }
 
 /*
- * AND THE COLOR HOLDS STILL. The underline is the whole affordance here, so the
- * global `a:hover` from the Links section above has to be cancelled for nav —
- * that rule is for INLINE PROSE LINKS, where moving to `link-hover` is the point.
+ * THE COLOR CHANGES ON HOVER, and there is deliberately NO RULE HERE saying so —
+ * the global `a:hover` from the Links section above already does it, and a nav on
+ * the page ground wants exactly that: the label moves to `link-hover` alongside
+ * the underline wiping in.
  *
- * On an accent band it is worse than redundant. `link-hover` is blue-500, which is
- * the band's own fill, so a nav label on the masthead's band turned exactly the
- * color of the surface behind it and disappeared under the pointer. A real <Band>
- * hides this by re-pointing the token; the masthead is not one, so it showed.
+ * ── WHAT USED TO BE HERE, AND WHY IT WAS WRONG ──────────────────────────────
  *
- * `inherit` rather than a named role, because the right value differs by context —
- * page text on a light ground, `text-on-accent` on a band — and inheriting is how
- * you say "whatever it already was" once rather than naming both.
+ * Phase 3 cancelled the hover color for every nav at every width:
+ *
+ *     nav :is(a, button):hover { color: inherit }
+ *
+ * It was fixing a real bug with the wrong scope. `link-hover` is blue-500, which
+ * is also `surface-accent`, so a nav label on the MASTHEAD's accent band turned
+ * exactly the color of the band behind it and vanished under the pointer. Killing
+ * the color change globally hid that — and took the desktop treatment with it,
+ * where the masthead has no band and the label is supposed to go blue.
+ *
+ * ── IT IS AN ACCENT-BAND PROBLEM, NOT A NAV PROBLEM ─────────────────────────
+ *
+ * A real <Band tone="accent"> re-points `--color-link-hover` to
+ * `text-on-accent-hover`, so inside one the global rule resolves to the color the
+ * text already is and changes nothing visible. The FOOTER is a real Band, so it was
+ * never affected and does not need this rule.
+ *
+ * The masthead is not a Band — its accent treatment has to disappear at lg — so it
+ * cancels the hover color itself, in the states where it is on the band, and
+ * restores it at lg. That sits beside the two declarations it already states per
+ * state for the fill and the underline color. See Masthead.astro → `.slot`.
+ *
+ * The general rule, for the next component that fakes a band: A COMPONENT THAT
+ * PAINTS AN ACCENT GROUND WITHOUT <Band> OWNS THE CONSEQUENCES OF NOT RE-POINTING
+ * THE ROLE TOKENS. Do not solve one of them here.
  */
-nav :is(a, button):hover {
-  color: inherit;
-}
 
 /* The wipe is decoration; the underline still appears, it just stops traveling. */
 @media (prefers-reduced-motion: reduce) {
