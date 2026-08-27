@@ -544,16 +544,31 @@ svg.lucide.icon-sm {
  * section wrappers, so there is no container to put a `gap` on, and `gap` could
  * not express "tighter after a heading" anyway.
  *
- * SOURCE ORDER DECIDES. Rules 2–6 all have identical specificity (0,1,2), so
+ * SOURCE ORDER DECIDES. Rules 2–6 all have identical specificity (0,1,1), so
  * the last matching one wins — which is why `heading-close` is last: a heading
  * binds to whatever follows it, whatever that is.
  *
- * The base rule is (0,1,1), one notch lower, so it is the fallback the others
+ * The base rule is (0,1,0), one notch lower, so it is the fallback the others
  * override. That is only true because the `.sidebar`/`.banner` exclusion is
  * written as `:where(:not(…))`. A bare `:not(.sidebar):not(.banner)` would add
- * two class weights and lift the base rule to (0,3,1) — beating every rule
+ * two class weights and lift the base rule to (0,3,0) — beating every rule
  * below it and silently flattening the whole ramp to one value. `:where()`
  * always contributes zero specificity regardless of what is inside it.
+ *
+ * ── THE SELECTOR WAS `article.detail` UNTIL 2026-08-26 ──────────────────────
+ *
+ * It became `.detail` when the article page moved the `<article>` element OUT to
+ * wrap the whole entry — title, hero and body — so that `h-entry` has one root
+ * holding both `p-name` and `e-content`, which webmentions need. The body is now
+ * `<div class="detail e-content">`, because two nested `<article>`s would claim an
+ * article within an article.
+ *
+ * EVERY RULE HERE LOST EXACTLY ONE TYPE SELECTOR, which is the property that makes
+ * the change safe: the numbers above all shifted down by (0,0,1) together, so the
+ * base rule is still one notch below the five overrides and the ramp is unchanged.
+ * Verified by measuring all 31 sibling gaps on a real article before and after —
+ * identical. Do not "restore" the element to the selector: nothing renders
+ * `<article class="detail">` any more except the throwaway specimen page.
  *
  * Both classes are excluded because they are explicitly grid-placed: a
  * margin-top would push them off their grid row.
@@ -561,27 +576,27 @@ svg.lucide.icon-sm {
  * No `margin-bottom` anywhere, so nothing collapses.
  */
 
-article.detail > * + *:where(:not(.sidebar, .banner)) {
+.detail > * + *:where(:not(.sidebar, .banner)) {
   margin-top: var(--rhythm-paragraph);
 }
 
-article.detail > * + :is(ul, ol, blockquote, figure, pre) {
+.detail > * + :is(ul, ol, blockquote, figure, pre) {
   margin-top: var(--rhythm-block);
 }
 
-article.detail > :is(ul, ol, blockquote, figure, pre) + * {
+.detail > :is(ul, ol, blockquote, figure, pre) + * {
   margin-top: var(--rhythm-block);
 }
 
-article.detail > * + h3 {
+.detail > * + h3 {
   margin-top: var(--rhythm-heading-minor);
 }
 
-article.detail > * + h2 {
+.detail > * + h2 {
   margin-top: var(--rhythm-heading-major);
 }
 
-article.detail > :is(h2, h3, h4) + * {
+.detail > :is(h2, h3, h4) + * {
   margin-top: var(--rhythm-heading-close);
 }
 
@@ -590,7 +605,7 @@ article.detail > :is(h2, h3, h4) + * {
  * A `figure` marked `thumbnail` in the Studio renders small and, in an article
  * body, floats left with the prose wrapping around it — the book-cover treatment.
  * The figure's own appearance (its width, its border) belongs to the component;
- * what lives here is the FLOW, because that is `article.detail`'s business and
+ * what lives here is the FLOW, because that is `.detail`'s business and
  * because these are amendments to the rhythm ramp above.
  *
  * ── THE CONTEXT OPTS IN, THE COMPONENT DOES NOT DECIDE ───────────────────────
@@ -603,7 +618,7 @@ article.detail > :is(h2, h3, h4) + * {
  *     projectOutcome, where the layout differs and the float is untested — so the
  *     flag sizes the image there and stops. No opt-out to remember.
  *   - The component needs no ancestor selector. A scoped style in Figure.astro
- *     cannot see `article.detail` without `:global()`, and reaching up out of a
+ *     cannot see `.detail` without `:global()`, and reaching up out of a
  *     component to find its context is the thing custom properties exist to avoid.
  *
  * ── FROM md, AND THE MEASURE IT COSTS ────────────────────────────────────────
@@ -631,7 +646,7 @@ article.detail > :is(h2, h3, h4) + * {
  */
 
 @container style(--breakpoint-md: true) {
-  article.detail {
+  .detail {
     --thumb-float: left;
   }
 }
@@ -661,7 +676,7 @@ article.detail > :is(h2, h3, h4) + * {
  * BESIDE the float at a reduced width with its markers intact, rather than
  * clearing it. Worth reaching for only if the stranding actually shows.
  */
-article.detail > :is(h2, ul, ol, blockquote, figure, pre) {
+.detail > :is(h2, ul, ol, blockquote, figure, pre) {
   clear: left;
 }
 
@@ -682,6 +697,6 @@ article.detail > :is(h2, ul, ol, blockquote, figure, pre) {
  * would be 66 characters of Lato.
  */
 
-article.detail :where(p, ul, ol, blockquote, figure) {
+.detail :where(p, ul, ol, blockquote, figure) {
   max-width: 66ch;
 }

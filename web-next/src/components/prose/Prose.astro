@@ -37,6 +37,11 @@
  * markup with less to keep in step. `strike-through` earns its place because it
  * changes the element, not the styling.
  *
+ * `h2` earns its place a third way: same element, same styling, plus an `id` the
+ * library cannot know is wanted. The rail's "On This Page" links target those ids,
+ * and the id function is shared with the page so the two cannot disagree. See
+ * Heading.astro and headingId.ts.
+ *
  * ── ONE TYPE LEFT UNBUILT ────────────────────────────────────────────────────
  *
  * `table`, which the `article` schema allows and which NO published document
@@ -87,6 +92,7 @@ import {PortableText} from 'astro-portabletext'
 import type {TypedObject} from 'astro-portabletext/types'
 import Figure from './Figure.astro'
 import Code from './Code.astro'
+import Heading from './Heading.astro'
 import Strike from './Strike.astro'
 
 interface Props {
@@ -107,6 +113,8 @@ const {value} = Astro.props
            this member was named `pre` until 2026-08-26 and both the schema and the
            25 existing blocks were corrected. See Code.astro. */
         type: {figure: Figure, code: Code},
+        /* Keyed by block STYLE, where `type` above is keyed by `_type`. */
+        block: {h2: Heading},
         mark: {'strike-through': Strike},
       }}
     />
