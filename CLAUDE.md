@@ -360,6 +360,38 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
    watch-mode generation is off and `pnpm typegen` is run by hand.
 
+   **The microformats remainder lands here, and it is a short list because most of mf2 is already
+   built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,
+   `u-url`/`u-uid`, `u-photo` and `p-category` (2026-08-26). What is left needs either a schema field
+   or a live syndication target, which is why none of it could be done with the markup:
+
+   - **`u-syndication`** — the property Bridgy's **backfeed** matches a social reply against, so
+     without it replies never find their way home. Needs an array-of-URLs field on `article`/`note`
+     **and** a way to populate it. Andy's inclination (2026-08-26) is a webhook writing back to
+     Sanity, which triggers a rebuild through the existing webhook path. A weekly `schedule:` trigger
+     was floated as an alternative or backstop — note that **GitHub disables scheduled workflows after
+     60 days of repo inactivity**, so it wants a fallback if it is the only mechanism.
+   - **`p-summary`, and a real question with it.** Bridgy uses it for the text on character-limited
+     platforms — Bluesky is 300 — so without it a long `e-content` gets truncated by someone else's
+     rule. `shortDescription` is the obvious source and is **card copy, which is not the same job**;
+     syndication text may want its own field. Decide the field before writing the markup.
+   - **`dt-updated`** from `_updatedAt`, which is already projected. Optional, and invisible markup,
+     so it goes with the two above rather than on its own.
+   - **`<link rel="webmention">`** advertising an endpoint — webmention.io is the usual answer — plus
+     a **build-time fetch of that endpoint's API** to render received mentions. Receiving is inert
+     without both.
+   - **`h-feed`** wrapping the entries on index pages, so a reader can subscribe by mf2. Index-page
+     work, but it belongs on this list.
+
+   **Not phase 8: the author `h-card`.** It lands with the **home page** (phase 4 item 3) as the
+   site's *representative* h-card, because that is where a `rel=author` lookup resolves. The detail
+   pages already emit `<link rel="author" href="/">` and it is **inert until that card exists** — the
+   design carries no byline, so an in-entry `p-author` would have to be invisible markup, and the
+   authorship algorithm is the way around that. **`settings` now carries `authorName` and
+   `authorImage`** (string; image with hotspot and `altText`, added 2026-08-26), so the data is
+   waiting. Note the property collision that is not one: `u-photo` on an `h-entry` is an image *of the
+   post* — the hero, already built — while `u-photo` on an `h-card` is the person's avatar.
+
    **The service worker decision lands here** (deferred from phase 2, 2026-08-21). Andy has shipped
    service workers on Jekyll and 11ty sites and runs one on `ux-methods`, which is also Astro, so
    read that one first rather than starting cold. Four things shape the decision:
