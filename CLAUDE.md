@@ -323,6 +323,20 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    `sanity-plugin-taxonomy-manager` is already installed. Taxonomy design may deserve its own branch.
 5. **Content parity check.** Render every document of every type; catch dangling references and
    fields that silently stopped rendering.
+
+   **Two content gaps to fix here, both enumerable rather than vague:**
+   - **16 of 42 heroes have no `altText`** (measured 2026-08-26) — `how-to-hire-an-ia`,
+     `earley-ia-knowledge-graphs-and-ia`, `structured-content-design`, `boutique-knowledge-graphs`,
+     `when-to-use-an-ia`, `cs-meetup`, `domain-modeling`, `what-is-information-architecture`,
+     `content-strategy-insights-data-stories-meaning`, `purpose-driven-taxonomy-design`,
+     `keyword-extraction-nlp`, `site-maps-connected-content`, `self-hosting-sanity-studio`,
+     `structured-content-design-22`, `conversations-with-robots`, `working-with-an-ia`. These are the
+     `[SanityHero] no altText` warnings the build already prints. **It costs twice now, not once:**
+     php-mf2 returns `u-photo` as `{value, alt}`, so the alt text travels into every syndicated copy —
+     verified against a real parse. Body figures are clean, 0 of 139.
+   - **`h5` residue.** Phase 1 dropped the style from `article`, `caseStudy` and `singleton`, but
+     dropping it from the schema does not remove it from published blocks. One query against
+     `production-26` settles whether any survive; they would render unstyled.
 6. **Cutover.** Rewrite CI for pnpm, Node 24 and the new build directory. **`mailhandler.php` must
    survive** — it stays PHP on the droplet, but becomes a backend endpoint called from JS rather
    than a form target with its own display pages, since mail forms now appear on several pages.
