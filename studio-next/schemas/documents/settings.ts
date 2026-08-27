@@ -34,6 +34,26 @@ export default {
       rows: 3,
     },
     {
+      name: 'authorName',
+      title: 'Author Name',
+      type: 'string',
+    },
+    {
+      name: 'authorImage',
+      title: 'Author Image',
+      type: 'image',
+      options: {
+        hotspot: true,
+      },
+      fields: [
+        {
+          name: 'altText',
+          type: 'string',
+          title: 'Alt Text',
+        },
+      ],
+    },
+    {
       name: 'homeLogos',
       title: 'Home Page Client Logos',
       description:

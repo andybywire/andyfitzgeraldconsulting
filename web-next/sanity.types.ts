@@ -97,6 +97,15 @@ export type Settings = {
   siteSubtitle?: string
   url?: string
   description?: string
+  authorName?: string
+  authorImage?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    altText?: string
+    _type: 'image'
+  }
   homeLogos?: Array<
     {
       _key: string
