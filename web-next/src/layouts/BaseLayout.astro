@@ -76,6 +76,37 @@ const {title, description} = Astro.props
 
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+
+    {
+      /*
+      ── rel=author, FOR MICROFORMATS AUTHORSHIP ──────────────────────────────
+
+      The design carries no byline — a detail page's eyebrow is genre and date, and
+      on a single-author site that is right. So an `h-entry` here has no visible
+      author to mark up, and an in-entry `p-author h-card` would have to be
+      invisible content, which microformats discourages.
+
+      The IndieWeb answer is the authorship algorithm: a consumer that finds no
+      `p-author` on the entry looks for a page-level `rel=author`, fetches it, and
+      takes the REPRESENTATIVE h-card it finds there. One attribute, no hidden
+      markup, no change to the design.
+
+      IT IS INERT UNTIL THE HOMEPAGE CARRIES THAT h-card, which is phase 4 item 3.
+      Harmless in the meantime — a consumer follows the link, finds no h-card and
+      reports no author, which is where it already was. Nothing consumes authorship
+      until syndication, and that is phase 8.
+
+      In <head> rather than on the masthead's identity link, which also points at
+      `/`. `rel` there means "this is the site's home"; overloading it with an
+      authorship claim would put a metadata concern on a nav element, and the two
+      would then have to be changed together. Site-wide because it is true
+      site-wide, not just on entries.
+
+      The h-card itself will need an author name and avatar. `settings` has neither
+      today — two fields Andy is adding.
+    */
+    }
+    <link rel="author" href="/" />
   </head>
   <body>
     <slot />

@@ -124,6 +124,23 @@ const contents = (insight.bodyText ?? []).flatMap((block) =>
 /* TypeGen types a dereferenced prefLabel as `string | null`, so the nulls are
    filtered rather than asserted away. All 42 documents carry at least one topic. */
 const topics = (insight.topics ?? []).filter((topic): topic is string => Boolean(topic))
+
+/**
+ * The canonical permalink, for `u-url` / `u-uid`.
+ *
+ * Built from `Astro.site` rather than from `Astro.url`, which in a static build is
+ * whatever path the page is being generated at and in the SSR preview is the
+ * REQUEST url — including any query string a visitor arrived with. A permalink has
+ * to be the one canonical address, so it is composed from the two things that
+ * define it: the configured origin and the slug.
+ *
+ * `Astro.site` is typed `URL | undefined` because the config field is optional. It
+ * is set in astro.config.mjs for both build modes, so the fallback is unreachable
+ * today — but a bare `!` here would emit the string "undefined/insights/…" into a
+ * property whose whole job is to be a stable identifier, so it fails loudly instead.
+ */
+if (!Astro.site) throw new Error('[insights/[slug]] `site` is unset in astro.config.mjs')
+const permalink = new URL(`/insights/${slug}/`, Astro.site).href
 ---
 
 <BaseLayout
@@ -216,6 +233,42 @@ const topics = (insight.topics ?? []).filter((topic): topic is string => Boolean
               }
             </p>
             <h1 class="p-name">{insight.title}</h1>
+
+            {
+              /*
+              ── THE PERMALINK, AND WHY IT IS A <data> ──────────────────────────
+
+              `u-url` is how a webmention receiver knows WHICH post a mention
+              targets, and what a syndicated copy links back to — so it is arguably
+              the most important property after name and content. It is also the one
+              with nothing on the page to hang on: there is no visible self-link,
+              and the implied-url rule does not fire, since that only applies when
+              the root contains exactly one `a[href]` and an article contains many.
+
+              `data[value]` is the mf2 parsing spec's own hook for a `u-*` with no
+              visible anchor, alongside `a[href]` and `img[src]`. It is valid flow
+              content anywhere, it renders nothing, and being empty it puts nothing
+              in the accessibility tree. A `<link rel>` here would NOT be valid —
+              `<link>` is metadata content and is only permitted in <body> when it
+              carries `itemprop`.
+
+              The alternative worth knowing is the classic blog pattern where the
+              DATE is the permalink link. That would make this visible markup rather
+              than invisible, at the cost of a link from a page to itself.
+
+              `u-uid` alongside it, on the same value: `u-url` says "where this
+              lives", `u-uid` says "this is its identity", and a consumer seeing the
+              same post at two URLs uses the uid to deduplicate. For a static site
+              with one canonical path they are the same string, and saying so is
+              cheaper than leaving the identity implicit.
+
+              PREVIEW BUILDS EMIT THE PREVIEW DOMAIN, because `Astro.site` differs
+              by build mode. That is correct rather than a bug — preview is
+              `noindex` and nothing syndicates from it — but it does mean this value
+              is not a stable identifier across the two environments.
+            */
+            }
+            <data class="u-url u-uid" value={permalink}></data>
           </div>
         </Grid>
       </Band>
@@ -245,7 +298,17 @@ const topics = (insight.topics ?? []).filter((topic): topic is string => Boolean
       {
         insight.heroImage?.asset && (
           <figure class="hero-figure">
-            <SanityHero image={insight.heroImage} />
+            {/*
+              `u-photo` reads the `src`, so it belongs on the <img> SanityHero emits
+              rather than on the <figure> around it. It is inside `h-entry` and
+              OUTSIDE `e-content`, which is what makes it a photo OF the post rather
+              than an image IN the body — a syndicated copy attaches it, and a card
+              preview uses it.
+
+              Same property name means something different on an h-card, where
+              `u-photo` is the person's avatar. Different root, different subject.
+            */}
+            <SanityHero image={insight.heroImage} class="u-photo" />
             {insight.heroImage.caption && <figcaption>{insight.heroImage.caption}</figcaption>}
           </figure>
         )
@@ -358,11 +421,17 @@ const topics = (insight.topics ?? []).filter((topic): topic is string => Boolean
                               resolved in the query, once the two SKOS vocabularies
                               are designed. `/insights/` does not exist yet either.
 
-                              `p-category` belongs on these links and is NOT here
-                              yet — it is part of the follow-on mf2 pass, with
-                              `u-url`, `p-author` and `u-syndication`.
+                              `p-category` and NOT `u-category`, which is the easy
+                              one to get wrong: `p-` takes the element's TEXT, so
+                              this publishes the topic's label, which is what a
+                              reader or a syndicated copy wants as a tag. `u-` would
+                              take the href and publish the provisional filter URL
+                              above — a link nobody outside this site can use, and
+                              one that is going to change.
                             */}
-                            <a href={`/insights/?topic=${slugify(topic)}`}>{topic}</a>
+                            <a class="p-category" href={`/insights/?topic=${slugify(topic)}`}>
+                              {topic}
+                            </a>
                           </li>
                         ))}
                       </ul>
