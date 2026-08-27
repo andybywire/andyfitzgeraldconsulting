@@ -531,6 +531,24 @@ import {Search} from '@lucide/astro'
       flex-direction: row;
       text-align: start;
       padding-inline: 0;
+
+      /*
+       * ASYMMETRIC HERE AND NOWHERE ELSE — 24 above, 32 below (2026-08-26, judged
+       * against the real article page, which is what DESIGN.md's note on
+       * `chrome-pad-header` said to wait for).
+       *
+       * The identity is the taller child at this width, so it sets the header's
+       * height and this padding IS the gap between the wordmark and whatever the
+       * page puts underneath. Symmetric 24 read too tight there. The top stays at
+       * the token: the space above the mark is against the viewport edge, which
+       * needs less than a boundary with content does.
+       *
+       * Not a token, and not in tokens.css, because it has one consumer and only
+       * one of its two ends varies. Bumping `--chrome-pad-header` itself was tried
+       * and is the wrong instrument: it would move the stacked and tablet states
+       * too, where the header is already tall and nothing was wrong.
+       */
+      padding-block: var(--chrome-pad-header) var(--space-4);
     }
 
     /* The band goes away. `padding-block` deliberately stays: the identity is the
