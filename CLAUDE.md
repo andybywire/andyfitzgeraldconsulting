@@ -138,7 +138,14 @@ Current direction → Deploy shape, and is written in phase 6.
 - Andy maintains a **parallel design system in Figma** (variables + text styles). CSS mirrors that
   two-layer idea: **primitive tokens** and **semantic role styles** that reference them.
 - Linked Data matters here. Semantics and structured markup are first-class concerns, not
-  nice-to-haves — JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2.
+  nice-to-haves — **JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2**.
+  **Both, and the reason is webmentions** (questioned and reaffirmed 2026-08-26): the two serve
+  different audiences and neither substitutes for the other. JSON-LD is what search engines read; mf2
+  is what the IndieWeb reads, and **Andy wants to support webmentions**, which makes mf2 load-bearing
+  rather than decorative. mf2 was briefly cut from this file on the grounds that one vocabulary is one
+  place to be wrong; that was wrong on the facts. See Branching → POSSE for what specifically depends
+  on it, and note the structural constraint it puts on detail pages: **`h-entry` needs one element
+  containing both the title and the body.**
 - **Two-space indentation everywhere, CSS included.** One Prettier style repo-wide — no semicolons,
   single quotes, 100 char width — configured at the root and mirrored in `web-next/` only to add the
   Astro plugin. The old rule here said tabs in CSS; that described `web/style/`, which is reference
@@ -550,8 +557,27 @@ subjects use conventional-commit prefixes (`feat:`, `chore:`). **Commit and push
 
 **Sequencing constraint from POSSE:** syndicated copies link to canonical permalinks permanently, so
 **URL design must land before notes go live** — which is why permalink design sits in phase 1 rather
-than emerging page by page. Microformats2 (`h-entry`/`h-card`) sits alongside the existing JSON-LD
-without conflict.
+than emerging page by page.
+
+**Microformats2 (`h-entry`/`h-card`) sits alongside the existing JSON-LD without conflict**, and
+**webmentions are why it is not optional** (2026-08-26). Worth being precise about what reads what,
+because "webmentions need mf2" is true in a roundabout way:
+
+- **Webmention itself is protocol-only** — an HTTP POST carrying `source` and `target`. It mandates no
+  vocabulary at either end.
+- **mf2 is how a mention is interpreted.** A receiver fetches the *source* page and parses its mf2 to
+  tell a reply from a like from a repost, and to get the sender's name and photo. So other people's
+  mf2 powers what shows up here, and **this site's mf2 is what lets its own mentions display properly
+  elsewhere.**
+- **Bridgy is the concrete dependency.** Bridgy Publish reads `h-entry` / `p-name` / `e-content` off
+  the page to build the syndicated copy, and Bridgy's backfeed matches replies to posts via
+  `u-syndication`. Both are mf2 only.
+
+**The structural consequence, and it is not free:** `h-entry` needs **one element containing both
+`p-name` (the h1) and `e-content` (the body)**. On the article page those sit in two different bands
+so that the hero can be reordered between them, and no element contains both — see
+`web-next/src/pages/insights/[slug].astro`. Resolving that is a real markup decision, not a class
+attribute.
 
 **Decided against:** the **domain change to andyfitzgerald.net is off** (2026-07-27). Also **against
 a separate v3 repository** (2026-08-17) — same site, same domain, and a single history running

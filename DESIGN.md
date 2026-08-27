@@ -247,6 +247,13 @@ spacing:
   # against the real thing rather than the board, and expected to be revisited once
   # actual pages sit under it. The footer keeps space-5: it has nothing below it to
   # crowd, so the two chrome paddings are no longer a matched pair.
+  #
+  # REVISITED 2026-08-26, against the real article page, exactly as that note asked.
+  # The value here is unchanged and still symmetric — what changed is that at `lg`
+  # ONLY, the identity block's padding goes ASYMMETRIC: this above, space-4 below.
+  # 24 top and bottom read too tight underneath, where the header meets the hero.
+  # It lives in Masthead.astro rather than here because it has one consumer and only
+  # one of its two ends varies — a value with one consumer is not a token.
   chrome-pad-header: "{spacing.space-3}"
   chrome-pad-footer: "{spacing.space-5}"
   chrome-inset: "{spacing.space-5}"
@@ -625,6 +632,16 @@ rule the footer already follows: source order is reading order, and the wide lay
 argument against it. It is safe here specifically because the hero is a non-interactive image —
 nothing focusable changes place. A band containing controls must not be reordered this way.
 
+**The flex column is the *entry's* stack, not `<main>`'s** (amended 2026-08-26, when the detail page
+wrapped its title, hero and body in one `<article class="h-entry">` so that microformats have a root —
+see CLAUDE.md → Branching → POSSE). That element is the flex column; `<main>` stacks it and the bands
+that follow — the RSS CTA, Related Insights — in normal block flow.
+
+Which is the correct home rather than an artifact of the nesting: **flex earns its place here only
+because of `order`, and the reorder is between the hero and the title**, both children of the entry.
+Bands that never reorder stack identically in block flow with no machinery. So the rule stands as
+written; what this pins down is *which* stack owns it.
+
 ### Grid owns horizontal, rhythm owns vertical
 
 The rule that decides most spacing questions.
@@ -768,16 +785,24 @@ So for the viewport-varying tokens, **the `@media` blocks are the side that matc
 not `:root`. Each token in `:root` carries an inline note naming its wide value, so the pair is
 readable without cross-referencing. Adding a third breakpoint is one more block, wider last.
 
-**48rem was arrived at by eye and is the one to move first.** It currently carries two unrelated
-decisions — the masthead nav going to a single row, and the content grid opening its 8+3 split — and
-only the nav is comfortable there. The split takes the prose from 66 characters at 767 to **49 at
-768**, recovering around 1028, and leaves the rail 166px wide. Both measured.
+**48rem was arrived at by eye and is now confirmed.** It carries two unrelated decisions — the masthead
+nav going to a single row, and the content grid opening its 8+3 split. The split takes the prose from
+66 characters at 767 to **49 at 768**, recovering around 1028, and leaves the rail 166px wide.
+Re-measured in the browser on a real article: **66 at 767, 49 at 768, 58 at 900, 66 again by 1023.**
 
-That is **accepted rather than overlooked** (2026-08-24): a short measure is the cheaper failure, since
+That was **accepted rather than overlooked** (2026-08-24): a short measure is the cheaper failure, since
 a long line loses the reader at the return where a short one only costs a few extra returns, and the
 rail is the likelier thing to force a change — `body-compact` already exists for "a column too narrow
-for `body`". Revisit against real content pages rather than against a specimen. It stays cheap to
-revisit precisely because no component hardcodes a width.
+for `body`".
+
+> **Settled 2026-08-26, judged against the real article page.** The 49-character measure reads fine in
+> practice, so 48rem stays and stops being "the one to move first" — the reasoning above is confirmed
+> rather than provisional.
+
+It stays cheap to revisit precisely because no component hardcodes a width. **One measurement worth
+keeping:** at 1023 the prose is 653 and the rail 230, not 656/231, because `--grid-margin` has already
+hit its 16px floor below ~1028 and the content band is 991 rather than 996. That is the fixed-222 hole
+in open-questions.md behaving as recorded, not a second fault.
 
 ### Outdenting
 
@@ -917,18 +942,45 @@ in `text-muted`. Not the 400 an earlier specimen used; it reads as a small bold 
 
 ### The rail
 
-A `<nav>` on detail pages, carrying two groups — "On This Page" and "Topics". It sits at
-`10 / span 3`, one skipped column from the prose, which is the **sidebar** relationship in the skip
-family: set apart rather than belonging to the paragraph beside it.
+**An `<aside>`, holding two `<nav>`s** — "On This Page" and "Topics". It sits at `10 / span 3`, one
+skipped column from the prose, which is the **sidebar** relationship in the skip family: set apart
+rather than belonging to the paragraph beside it.
 
-**It is a nav with its own link treatment, and it opts out of the wipe-in underline**
+*This said "a `<nav>` carrying two groups" until 2026-08-26, when the article page was built and the
+one-nav shape did not survive contact with the other two rails.* Two reasons it is inverted:
+
+- **Each group gets a real accessible name from a heading already on screen**, via `aria-labelledby`
+  pointing at its own h3. One nav around both would need an invented `aria-label`, because no single
+  visible heading covers "On This Page" and "Topics".
+- **It is the only shape all three rails fit.** The Services rail is an image *above* the nav, which a
+  `<nav>` cannot contain; a Note's rail is a source card with no nav at all. A container generalizes
+  where a nav does not.
+
+**`<aside>`, and nested inside the entry's `<article>`** — which is the documented meaning rather than
+a compromise: an `<aside>` scoped to an `<article>` is content tangentially related to *that article*,
+not to the site. (There is no `<sidebar>` element in HTML; it was proposed and never shipped.)
+
+> **Give it no `aria-label`.** An `<aside>` maps to the `complementary` landmark only when its nearest
+> sectioning ancestor is `<body>`, **or** when it carries an accessible name. Unnamed inside
+> `<article>` it maps to `generic` — so it adds no nameless landmark and the two named `<nav>`s stay
+> the landmarks. Naming it would promote it to a third landmark competing with them.
+
+**Rail links have their own treatment, and opt out of the wipe-in underline**
 (`::after { content: none }`, which Navigation already provides for). Rail links take a **plain
 underline on hover** instead. The wipe is a chrome gesture for the masthead and footer; a dense list
 of topic links animating one by one under a moving pointer is noise, not affordance.
 
-**Rail headings still have no role** — see [docs/open-questions.md](docs/open-questions.md). They are
-headings *and* apparatus, and the system has no role for a heading of apparatus. They currently take
-`text-heading`.
+> **Opting out means restating the underline's thickness.** base.css gives every anchor
+> `text-decoration-thickness: 0.06em` and then `nav :is(a, button)` resets it with the
+> `text-decoration` **shorthand**, which includes `-thickness`. Without restating it the rail's hover
+> underline returns at the UA's `auto` weight, and two underlines in one viewport read as two systems.
+> `text-underline-offset` is not in the shorthand and survives on its own.
+
+**Rail headings take `text-heading`, and that is now a decision rather than a default** (settled
+2026-08-26, judged on the article page in both themes). They are headings *and* apparatus, and the
+system has no role for a heading of apparatus — so the question was whether `text-muted` served them
+better. It does not: **dark is where the choice mattered and dark is where `text-heading` is clearly
+right**, at 15.64 against `text-muted`'s 6.78. No new role is needed.
 
 #### Sticky, per child rather than per rail
 
@@ -1314,5 +1366,8 @@ questioned rather than followed.
 
 Tracked in **[docs/open-questions.md](docs/open-questions.md)**. In brief: custom form-validation
 messaging blocks the error state; the fixed 222px margin does not survive intermediate widths; mobile
-prose leading is still at its desktop value; rail headings have no role; and dark has lost the
-heading-softer-than-body relationship. Five smaller taste calls sit alongside them.
+prose leading is still at its desktop value; and dark has lost the heading-softer-than-body
+relationship. Five smaller taste calls sit alongside them.
+
+**Rail headings are no longer on that list** — they keep `text-heading`, settled 2026-08-26 against the
+real article page, along with the 48rem measure and the sticky rail's `top`.
