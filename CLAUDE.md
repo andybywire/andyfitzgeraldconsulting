@@ -316,11 +316,81 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    masthead icon inert; the spec covers expand-in-place replacing the nav, results replacing the page
    content, Fuse.js, `cmd + k`, and the mobile treatment. Don't redesign it from scratch here.
 
-   The content model is iterated alongside, driven by what each page needs. **The `note` type and
-   the two SKOS vocabularies** land here rather than up front — a hierarchical topic vocabulary for
-   tag browsing and related content, and a **semantic type** vocabulary distinguishing kinds that
-   share one structural Sanity type (method vs. perspective vs. conference note).
-   `sanity-plugin-taxonomy-manager` is already installed. Taxonomy design may deserve its own branch.
+   The content model is iterated alongside, driven by what each page needs.
+   `sanity-plugin-taxonomy-manager` is already installed.
+
+   **Both SKOS vocabularies are now built** (2026-08-26), and the Genre scheme turned out to carry
+   more structure than "a semantic type vocabulary" suggested — it has **two top concepts**, and they
+   are the content model's own top-level division:
+
+   ```
+   Document                      Presentation
+     ├─ Perspective                ├─ Keynote
+     ├─ Method                     ├─ Talk
+     ├─ Case Study                 ├─ Workshop
+     ├─ Conference Themes          ├─ Panel
+     └─ Note                       └─ Interview
+          ├─ Clipping
+          └─ Book Note
+   ```
+
+   Topic is a separate 3-level scheme under **Engineering / Design / Discovery / Strategy**, and
+   `docs/urls-and-filtering.md` filters on **direct tags only** — no ancestor roll-up. Content is
+   tagged at leaf and mid level and **never at a top concept**, verified, which is what keeps that
+   rule from producing a "Design" chip that competes with an "Information Architecture" one.
+
+   **A consistency invariant falls out of the Genre hierarchy, and it is worth a build-time check:**
+   a document's genre should sit under the top concept matching its structural family. **Four
+   documents violate it today** — `earley-ia-knowledge-graphs-and-ia`,
+   `the-informed-life-structured-content` and `content-strategy-insights-data-stories-meaning` are
+   genre *Interview*, and `cs-meetup` is genre *Talk*, all four stored as `article`. They are
+   presentations, and they move when `presentation` exists. Until then the Insights index
+   over-collects by four.
+
+   ### The five content types, and what separates them
+
+   | Type | What it is | Layout |
+   |---|---|---|
+   | `singleton` | CMS-governed content with a **unique** layout | bespoke per page |
+   | `page` | website-**generic** scaffolding | one repeatable template |
+   | `article` / `caseStudy` / `note` | the Document branch — what gets published | detail templates |
+   | `presentation` | the Presentation branch — a delivered work | detail template |
+   | `event` | one **delivery occasion** of a presentation | no page of its own |
+
+   **Singletons:** Home, Insights, Reviews, Presentations (index), Contact.
+
+   **Pages:** About, Colophon, Apologia, Projects, Consulting. `page` is a repeatable main content
+   field, a responsive right rail, and a few below-content bands (provisionally just "Get in Touch").
+
+   > **`page` means generic to the medium "website", not generic in the Genre sense.** A contact page,
+   > a colophon, an About page — the bureaucratic furniture a website is expected to have. The
+   > **disqualifier is testable: a `page` carries no Topic or Genre concepts and never appears in
+   > article listings.** Anything that wants either belongs in the Document branch instead.
+
+   That is deliberately page-based thinking, and it is not in tension with the argument in *Content
+   Modeling in the Age of Flying Cars* — it is the other half of it. Medium-*independent* content is
+   modeled by Topic and Genre; medium-*dependent* scaffolding is what `page` is for. The risk is
+   drift, not the type: `page` must not become where things land that should have been modeled.
+
+   **Consulting is a `page` for now and will likely become a singleton** — an index drawing together
+   positions, methods and case studies per service. `page` buys room to work out the positioning
+   first. Note the 4 orphan `service` documents (Structured Content Design, Information Architecture,
+   Content Strategy, Knowledge Graph Engineering) are the obvious content for that, which is why
+   phase 7's "adopt or delete" call is really Consulting's call.
+
+   **`note` is ONE type, and the vocabulary decided that** — Note is a *branch* with Clipping and Book
+   Note beneath it, so `genre` discriminates the three. Built 2026-08-26 with two optional objects
+   rather than one polymorphic source: `clipRef` (url, publisher, title, image) and `bookRef` (url,
+   title, author, image, publisher, pubDate). Validation to stop a Clipping carrying Book Note fields
+   is deferred; **assume the types are consistent for now.** Three sample documents exist, one per
+   variant, kept thin so the shape can still move.
+
+   **`presentation` inverts `event`.** `event` records a date and location at which Andy spoke, with
+   the talk title subordinate; `presentation` makes the delivered work the organizing principle — one
+   presentation, many deliveries — and carries a description, takeaways, an optional deck link, and
+   the events at which it was given. Recordings and transcripts are a later iteration. **This is why
+   interviews are Presentations rather than Insights.** The 38 existing `event` documents are
+   deliveries, so they group under a smaller set of presentations; none carries a `genre` today.
 5. **Content parity check.** Render every document of every type; catch dangling references and
    fields that silently stopped rendering.
 
