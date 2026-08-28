@@ -5,56 +5,27 @@ import {
   ArrayHierarchyInput,
 } from 'sanity-plugin-taxonomy-manager'
 import {BODY_STYLES, PLAIN_STYLES, MARKS} from '../portableText'
+import {defineType, defineField} from 'sanity'
+import {slugField} from '../slug'
 
-export default {
+export default defineType({
   name: 'article',
   type: 'document',
   icon: GrArticle,
   title: 'Articles',
   fields: [
-    {
+    defineField({
       name: 'title',
       type: 'string',
       title: 'Title',
-    },
-    {
-      name: 'genre',
-      title: 'Genre',
-      type: 'reference',
-      to: [{type: 'skosConcept'}],
-      options: {
-        filter: schemeFilter({schemeId: 'sjEhF9', expanded: true}),
-      },
-      components: {field: ReferenceHierarchyInput},
-    },
-    {
-      name: 'insightType',
-      deprecated: {
-        reason: 'Use "Genre" for the 2026 rebuild instead.',
-      },
-      title: 'Insight Type',
-      type: 'reference',
-      to: [{type: 'skosConcept'}],
-      options: {
-        filter: schemeFilter({schemeId: 'c88ca3'}),
-      },
-      components: {field: ReferenceHierarchyInput},
-    },
-    {
-      title: 'Slug',
-      name: 'slug',
-      type: 'slug',
-      options: {
-        source: 'title',
-        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
-      },
-    },
-    {
+    }),
+    slugField(),
+    defineField({
       title: 'Date Published',
       name: 'pubDate',
       type: 'date',
-    },
-    {
+    }),
+    defineField({
       title: 'Hero Image',
       name: 'heroImage',
       type: 'image',
@@ -78,28 +49,22 @@ export default {
           description:
             'Lower the brightness on this image by .05% so that it displays more distinctly on a white background.',
           type: 'boolean',
-          default: false,
+          /* `initialValue`, not `default` — Sanity has no `default` property, so the
+             value this carried was silently ignored until defineField() flagged it
+             (2026-08-26). Harmless in practice, since undefined and false are both
+             falsy to every consumer, but it read as live configuration. */
+          initialValue: false,
         },
       ],
-    },
-    {
+    }),
+    defineField({
       name: 'podcastId',
       title: 'Podcast Id',
       description:
         'Embed link ID for podcast interviews. Currently supports Apple podcasts links. Grab the url after `/us/podcast/`.',
       type: 'string',
-    },
-    // {
-    //   name: 'genre',
-    //   title: 'Genre',
-    //   type: 'reference',
-    //   to: [{type: 'skosConcept'}],
-    //   options: {
-    //     filter: schemeFilter({schemeId: 'sjEhF9'}),
-    //   },
-    //   components: {field: ReferenceHierarchyInput},
-    // },
-    {
+    }),
+    defineField({
       name: 'topic',
       title: 'Topics',
       type: 'array',
@@ -108,27 +73,50 @@ export default {
           type: 'reference',
           to: [{type: 'skosConcept'}],
           options: {
-            filter: schemeFilter({schemeId: '0e0d68'}),
+            filter: schemeFilter({schemeId: '2e73674', expanded: true}),
           },
         },
       ],
       components: {field: ArrayHierarchyInput},
-    },
-    {
+    }),
+    defineField({
+      name: 'genre',
+      title: 'Genre',
+      type: 'reference',
+      to: [{type: 'skosConcept'}],
+      options: {
+        filter: schemeFilter({schemeId: 'sjEhF9'}),
+      },
+      components: {field: ReferenceHierarchyInput},
+    }),
+    defineField({
+      name: 'insightType',
+      deprecated: {
+        reason: 'Use "Genre" for the 2026 rebuild instead.',
+      },
+      title: 'Insight Type',
+      type: 'reference',
+      to: [{type: 'skosConcept'}],
+      options: {
+        filter: schemeFilter({schemeId: 'c88ca3'}),
+      },
+      components: {field: ReferenceHierarchyInput},
+    }),
+    defineField({
       name: 'shortDescription',
       type: 'text',
       title: 'Short Description',
       description: 'Used for related resources list item descriptions. Character count TBD.',
       rows: 3,
-    },
-    {
+    }),
+    defineField({
       name: 'description',
       type: 'text',
       title: 'Meta Description',
       description: 'Used for description meta tag. Up to 150 char, likely truncation @ 70',
       rows: 3,
-    },
-    {
+    }),
+    defineField({
       name: 'lede',
       title: 'Lede',
       type: 'array',
@@ -140,8 +128,8 @@ export default {
           marks: MARKS,
         },
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'Body',
       name: 'bodyText',
       type: 'array',
@@ -206,12 +194,12 @@ export default {
           },
         },
       },
-    },
-    {
+    }),
+    defineField({
       name: 'canonical',
       title: 'Canonical URL',
       type: 'url',
       description: 'External site URL if article was first published elsewhere.',
-    },
+    }),
   ],
-}
+})

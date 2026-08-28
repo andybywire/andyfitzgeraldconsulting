@@ -5,11 +5,13 @@ import event from './documents/event'
 import review from './documents/review'
 import settings from './documents/settings'
 import singleton from './documents/singleton'
+import note from './documents/note'
 
 import figure from './objects/figure'
 import table from './objects/table'
 
 export const schemaTypes = [
+  note,
   article,
   caseStudy,
   client,

@@ -5,19 +5,21 @@ import {
   ArrayHierarchyInput,
 } from 'sanity-plugin-taxonomy-manager'
 import {BODY_STYLES, MARKS} from '../portableText'
+import {defineType, defineField} from 'sanity'
+import {slugField} from '../slug'
 
-export default {
+export default defineType({
   name: 'caseStudy',
   type: 'document',
   title: 'Case Studies',
   icon: GrBriefcase,
   fields: [
-    {
+    defineField({
       name: 'title',
       type: 'string',
       title: 'Title',
-    },
-    {
+    }),
+    defineField({
       name: 'genre',
       title: 'Genre',
       type: 'reference',
@@ -28,8 +30,8 @@ export default {
         disableNew: true,
       },
       components: {field: ReferenceHierarchyInput},
-    },
-    {
+    }),
+    defineField({
       name: 'insightType',
       deprecated: {
         reason: 'Use "Genre" for the 2026 rebuild instead.',
@@ -42,22 +44,14 @@ export default {
         disableNew: true,
       },
       components: {field: ReferenceHierarchyInput},
-    },
-    {
-      title: 'Slug',
-      name: 'slug',
-      type: 'slug',
-      options: {
-        source: 'title',
-        slugify: (input: string) => input.toLowerCase().replace(/\s+/g, '-').slice(0, 200),
-      },
-    },
-    {
+    }),
+    slugField(),
+    defineField({
       title: 'Date Published',
       name: 'pubDate',
       type: 'date',
-    },
-    {
+    }),
+    defineField({
       title: 'Hero Image',
       name: 'heroImage',
       type: 'image',
@@ -81,10 +75,14 @@ export default {
           description:
             'Lower the brightness on this image by .05% so that it displays more distinctly on a white background.',
           type: 'boolean',
-          default: false,
+          /* `initialValue`, not `default` — Sanity has no `default` property, so the
+             value this carried was silently ignored until defineField() flagged it
+             (2026-08-26). Harmless in practice, since undefined and false are both
+             falsy to every consumer, but it read as live configuration. */
+          initialValue: false,
         },
       ],
-    },
+    }),
     // {
     //   name: 'genre',
     //   title: 'Genre',
@@ -97,7 +95,7 @@ export default {
     //   },
     //   components: {field: ReferenceHierarchyInput},
     // },
-    {
+    defineField({
       name: 'topic',
       title: 'Topics',
       type: 'array',
@@ -106,39 +104,40 @@ export default {
           type: 'reference',
           to: [{type: 'skosConcept'}],
           options: {
-            filter: schemeFilter({schemeId: '2e73674'}),
+            filter: schemeFilter({schemeId: '2e73674', expanded: true}),
+            disableNew: true,
           },
         },
       ],
       components: {field: ArrayHierarchyInput},
-    },
-    {
+    }),
+    defineField({
       name: 'client',
       type: 'reference',
       title: 'Client',
       to: [{type: 'client'}],
-    },
-    {
+    }),
+    defineField({
       name: 'shortDescription',
       type: 'text',
       title: 'Short Description',
       description: 'Used for related resources list item descriptions. Character count TBD.',
       rows: 3,
-    },
-    {
+    }),
+    defineField({
       name: 'description',
       type: 'text',
       title: 'Meta Description',
       description: 'Used for description meta tag. Up to 150 char, likely truncation @ 70',
       rows: 3,
-    },
-    {
+    }),
+    defineField({
       name: 'review',
       title: 'Project Review',
       type: 'reference',
       to: [{type: 'review'}],
-    },
-    {
+    }),
+    defineField({
       title: 'At a Glance',
       name: 'atGlance',
       type: 'array',
@@ -149,8 +148,8 @@ export default {
           marks: MARKS,
         },
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'What I Did',
       name: 'whatDid',
       type: 'array',
@@ -161,8 +160,8 @@ export default {
           marks: MARKS,
         },
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'Project Goal',
       name: 'projectGoal',
       type: 'array',
@@ -173,8 +172,8 @@ export default {
           marks: MARKS,
         },
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'Before Image',
       name: 'beforeImage',
       type: 'image',
@@ -193,8 +192,8 @@ export default {
           title: 'Alt Text',
         },
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'Project Approach',
       name: 'projectApproach',
       type: 'array',
@@ -209,8 +208,8 @@ export default {
            `figure` was already carrying every image in these two fields. */
         {type: 'figure'},
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'Project Outcome',
       name: 'projectOutcome',
       type: 'array',
@@ -225,8 +224,8 @@ export default {
            `figure` was already carrying every image in these two fields. */
         {type: 'figure'},
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'After Image',
       name: 'afterImage',
       type: 'image',
@@ -256,6 +255,6 @@ export default {
           },
         },
       ],
-    },
+    }),
   ],
-}
+})

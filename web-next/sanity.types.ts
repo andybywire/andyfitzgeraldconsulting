@@ -487,8 +487,6 @@ export type Article = {
   _updatedAt: string
   _rev: string
   title?: string
-  genre?: SkosConceptReference
-  insightType?: SkosConceptReference
   slug?: Slug
   pubDate?: string
   heroImage?: {
@@ -507,6 +505,8 @@ export type Article = {
       _key: string
     } & SkosConceptReference
   >
+  genre?: SkosConceptReference
+  insightType?: SkosConceptReference
   shortDescription?: string
   description?: string
   lede?: Array<{
@@ -557,6 +557,75 @@ export type Article = {
       } & Table)
   >
   canonical?: string
+}
+
+export type Note = {
+  _id: string
+  _type: 'note'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  slug?: Slug
+  shortDescription?: string
+  pubDate?: string
+  genre?: SkosConceptReference
+  topic?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+  bodyText?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Figure)
+  >
+  clipRef?: {
+    clipUrl?: string
+    publisher?: string
+    title?: string
+    img?: {
+      asset?: SanityImageAssetReference
+      media?: unknown
+      hotspot?: SanityImageHotspot
+      crop?: SanityImageCrop
+      altText?: string
+      _type: 'image'
+    }
+  }
+  bookRef?: {
+    bookUrl?: string
+    title?: string
+    author?: string
+    img?: {
+      asset?: SanityImageAssetReference
+      media?: unknown
+      hotspot?: SanityImageHotspot
+      crop?: SanityImageCrop
+      altText?: string
+      _type: 'image'
+    }
+    publisher?: string
+    pubDate?: string
+  }
 }
 
 export type Code = {
@@ -734,6 +803,7 @@ export type AllSanitySchemaTypes =
   | Review
   | Client
   | Article
+  | Note
   | Code
   | SkosConceptScheme
   | SkosConcept
