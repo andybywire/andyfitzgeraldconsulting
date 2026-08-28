@@ -372,6 +372,12 @@ components:
     borderColor: "{colors.border}"
     radius: "{radius.2}"
     padding: "{spacing.card-pad}"
+  # The hover highlight, shared by BOTH card types. A hard 2px offset down and to
+  # the right — no blur, no spread — so it reads as a sharp accent edge rather than
+  # as elevation. See Elevation & Depth for why that is not a breach of "no shadows".
+  card-hover:
+    highlightColor: "{colors.accent}"
+    highlightOffset: 2px
   card-title:
     textColor: "{colors.text-title}"
   note-card:
@@ -381,6 +387,8 @@ components:
     backgroundColor: "{colors.surface}"
     borderColor: "{colors.border}"
     radius: "{radius.2}"
+    highlightColor: "{colors.accent}"
+    highlightOffset: 2px
 
   # ── Input field ───────────────────────────────────────────────────────────
   input-field:
@@ -826,8 +834,21 @@ bleed, and on an index an unboxed card's hover should match the boxed cards besi
 
 ## Elevation & Depth
 
-**There are no shadows.** Depth is tonal layering plus a hairline border, which suits a
-typography-driven page where drop shadows would read as imported furniture.
+**There are no soft shadows.** Depth is tonal layering plus a hairline border, which suits a
+typography-driven page where blurred drop shadows would read as imported furniture.
+
+> **One hard-edged offset is the exception, and it is not a depth cue.** The card hover state adds
+> `box-shadow: 2px 2px 0 0 {colors.accent}` — no blur, no spread, no transparency. It reads as a
+> **sharp accent highlight** on the lower and right edges rather than as elevation, which is why it
+> does not breach the rule above: what is banned is the *soft* shadow used to fake height, not the
+> `box-shadow` property. Measured off the Figma card components (2026-08-26): 1px `border` on all four
+> edges, plus 2px of `accent` outboard of the right and bottom.
+
+**`box-shadow` is the right mechanism rather than a thicker border on two sides.** A border changes the
+box, so hovering would reflow the card's contents; a shadow is outside the box and costs no layout. It
+also inherits `radius-2` for free — with no spread, the offset rect is the same rounded rectangle
+shifted 2px, so the highlight tapers at the corners exactly as the board draws it. Same reason
+`box-shadow` draws the focus rings; see Shapes.
 
 | Layer | Token | Light | Dark |
 |---|---|---|---|
@@ -906,6 +927,21 @@ exist and shouldn't be added. If tags ever become links they need hover and focu
 **Note cards are unboxed at rest on desktop and boxed at rest on mobile, with no hover state on
 mobile at all.** Touch devices have no hover, so a permanently-hovered mobile card would encode a
 state that cannot occur.
+
+**The reason for the rest-state difference is relative weight, not decoration** (2026-08-26). Wherever
+article cards and note cards are seen **side by side** — desktop and tablet, any index — the article
+card keeps its outline at rest and the note card does not. That contrast is the message: articles are
+substantial, notes are lightweight. **On mobile nothing is juxtaposed** — the columns collapse and a
+note card has no article card beside it to be lighter *than* — so the contrast has nothing to carry
+and the outline's other job takes over: making it obvious that each element is tappable. Both card
+types are therefore boxed at rest below `md`.
+
+> **So the note card's resting border is viewport-dependent while the article card's is not.** That
+> asymmetry is the design, not an oversight — and it is why the Figma note card carries a `Viewport`
+> axis that the article card has no need for.
+
+**Both card types take the same hover treatment**: the accent highlight from `card-hover`, plus — for
+the note card only, since it starts without one — the border and radius appearing at the same moment.
 
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
 **not margin** — the bar sits at the box edge, so a margin would put the gap outside it.
