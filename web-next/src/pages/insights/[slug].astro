@@ -802,8 +802,26 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
     content: none;
   }
 
-  .rail a:hover {
+  /*
+   * ── THE UNDERLINE IS ALWAYS THERE, AND ONLY ITS COLOUR MOVES ───────────────
+   *
+   * `text-decoration-line` cannot be animated from `none` to `underline` — it is a
+   * discrete keyword, so the underline appeared instantly while everything else on
+   * the page eased. Declaring the line at rest and animating
+   * `text-decoration-color` from `transparent` gives the same appearance with a real
+   * transition. base.css's `nav :is(a, button)` reset is what removes it in the
+   * first place, so this restates the line as well as the thickness.
+   */
+  .rail a {
     text-decoration-line: underline;
     text-decoration-thickness: 0.06em;
+    text-decoration-color: transparent;
+    transition:
+      color 0.15s,
+      text-decoration-color 0.15s;
+  }
+
+  .rail a:hover {
+    text-decoration-color: currentColor;
   }
 </style>

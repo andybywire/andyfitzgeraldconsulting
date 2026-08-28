@@ -240,7 +240,10 @@ spacing:
   # ── Component internals ───────────────────────────────────────────────────
   card-gap: "{spacing.space-1}"
   card-pad: "{spacing.space-2}"
+  # The gap BESIDE media, in the horizontal card. Its block-axis counterpart is
+  # smaller — 24 inline, 16 block, both off the Figma card component.
   card-media: "{spacing.space-3}"
+  card-media-block: "{spacing.space-2}"
   # space-4 until 2026-08-25, when the masthead was built and 32px top and bottom
   # made the header taller than the page wanted to give it. Reduced to shorten the
   # header's vertical footprint so it competes less with page content — a call made
@@ -942,6 +945,55 @@ types are therefore boxed at rest below `md`.
 
 **Both card types take the same hover treatment**: the accent highlight from `card-hover`, plus — for
 the note card only, since it starts without one — the border and radius appearing at the same moment.
+
+**The whole card is the click target, and the accessible name is still the title.** The anchor stays on
+the title and a stretched pseudo-element covers the card:
+
+```css
+.card { position: relative }
+.card-title a::after { content: ''; position: absolute; inset: 0 }
+```
+
+Wrapping an anchor around the card instead would announce the title, genre, date and description as one
+link, and would put a heading inside a link rather than a link inside a heading. The costs are real but
+small: text in the card can no longer be drag-selected, and a second link inside a card would need
+lifting above the overlay with `z-index`. No card has one.
+
+### Card grids — the breakpoint ladder differs per index
+
+The card infers horizontal or vertical from its **own width**, so what each index page has to decide is
+only how many columns it hands out. That differs, and neither is a card concern.
+
+| | wide | middle | narrow |
+|---|---|---|---|
+| **Home** | article column + skip-1 + note column (571 / 316) | **6 + 6**, articles switch to vertical | 1 column, everything full width |
+| **Insights / Presentations index** | 3 columns at `span-3` | 2 columns | 1 column |
+
+**Cards stretch between breakpoints rather than sitting at a fixed width** — the ladder changes the
+column *count*, and a card fills whatever it is given. So a card at `span-3` on desktop spans all 12 on
+a phone. **Whether that wants a `max-width` is open**, and is a question for real content rather than
+for a specimen.
+
+Home's middle step is the one carrying two changes at once — the columns balancing at 6+6 *and* the
+article card going vertical — and the second falls out of the first, since a 6-column card is under the
+card's own 32rem threshold. Probably `md`; judge it on the real page.
+
+### Transitions — eased, not switched
+
+**Hover states ease.** Every hover in the build was binary until 2026-08-28, which reads as a state flip
+rather than as a response. The convention, now applied rather than merely stated:
+
+| | Duration | Where |
+|---|---|---|
+| affordances | **0.15s** | link colour, card hover highlight, card border and fill, the mode selector |
+| decoration | **0.3s** | the nav underline's wipe, the footer marks' draw |
+
+> **`text-decoration-line` cannot be transitioned.** It is a discrete keyword, so `none` -> `underline`
+> is always instant. Declare the line at rest and animate **`text-decoration-color`** from
+> `transparent` instead — which is what the rail's hover underline does.
+
+**`prefers-reduced-motion` turns all of it off**, not just the movement. The setting asks to be spared
+animation rather than to be spared 150ms of colour, so each of these degrades to an instant change.
 
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
 **not margin** — the bar sits at the box edge, so a margin would put the gap outside it.

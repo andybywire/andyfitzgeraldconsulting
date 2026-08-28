@@ -136,9 +136,11 @@ the ramp does not have. See [decisions/color.md](decisions/color.md).
   Both label pairings pass (4.62 and 6.17), so this is a legibility-of-state question, not a contrast
   one.
 - **Whether card titles get an underline.** Not required — see Links in DESIGN.md.
-- **Hover transition conventions have not converged**, though phase 3 built to the rule rather than
-  against it: 0.15s on the mode selector and the search button, 0.3s on the nav underline wipe and the
-  social marks' draw. That is controls-immediate, decoration-languid, which leaves only the note card
-  to check when it lands.
+- ~~**Hover transition conventions have not converged.**~~ **Converged 2026-08-28** — see DESIGN.md →
+  Transitions. Controls-immediate at 0.15s, decoration-languid at 0.3s, and now applied to the things
+  that had been binary: link colour, the rail's hover underline and both card hover states. The note
+  card, which this entry was waiting on, landed inside the convention rather than outside it. One
+  mechanism worth remembering: `text-decoration-line` is a discrete keyword and cannot be
+  transitioned, so the rail animates `text-decoration-color` from `transparent`.
 - **`rhythm-list` (32) between unboxed note cards may be too tight.** Their hover boxes bleed 16px
   each side, so two adjacent hover targets sit 32 apart with 16px of box between them.

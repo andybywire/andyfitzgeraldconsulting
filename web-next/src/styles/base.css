@@ -181,6 +181,12 @@ li + li {
 
 a {
   color: inherit;
+
+  /* Eased rather than switched (2026-08-28). Every hover in the build had been
+     binary — links, rail links, cards — which reads as a state flip rather than a
+     response. 0.15s is DESIGN.md's controls-immediate end of the convention. */
+  transition: color 0.15s;
+
   text-decoration-line: underline;
   text-decoration-thickness: 0.06em;
   text-underline-offset: 0.16em;
@@ -282,9 +288,17 @@ nav :is(a, button)[aria-current]::after {
  * THE ROLE TOKENS. Do not solve one of them here.
  */
 
-/* The wipe is decoration; the underline still appears, it just stops traveling. */
+/*
+ * The wipe is decoration; the underline still appears, it just stops traveling.
+ *
+ * The colour and box-shadow eases go with it. They are small, but this setting asks
+ * to be spared movement rather than to be spared 150ms of colour — so the honest
+ * reading is that anything animated should stop, and every one of these degrades to
+ * an instant change rather than to nothing.
+ */
 @media (prefers-reduced-motion: reduce) {
-  nav :is(a, button)::after {
+  nav :is(a, button)::after,
+  a {
     transition: none;
   }
 }

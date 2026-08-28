@@ -84,13 +84,13 @@ const {
   <div class="card-inner">
     {
       /*
-      THE LINK WRAPS THE TITLE, NOT THE CARD. A card-sized anchor would swallow the
-      whole block into one enormous link name, and DESIGN.md's Links rule already
-      says a block-level link title "is identified as a link by position" — so it
-      takes `text-title` and no underline. If the whole card should be clickable, the
-      way to do it is a pseudo-element stretched over the card from this anchor,
-      which keeps the accessible name to the title. Not built yet: the board draws no
-      affordance that says the media is clickable.
+      THE ANCHOR IS ON THE TITLE; THE WHOLE CARD IS THE TARGET. Those are not in
+      tension — a pseudo-element stretched from this anchor covers the card, so the
+      click area is the card while the accessible name stays the title. Wrapping an
+      anchor around the whole card would instead announce title, genre, date and
+      description as one link. `text-title` and no underline, per DESIGN.md's Links
+      rule: a block-level link title is identified as a link by position. See the
+      note on `.card-title a::after`.
     */
     }
     <Tag class="card-title"><a href={href}>{title}</a></Tag>
@@ -124,15 +124,31 @@ const {
        its contents. */
     container-type: inline-size;
 
+    /* The containing block for the full-card link overlay below. `container-type`
+       already implies layout containment, which would establish one on its own —
+       stated anyway, because relying on a side effect of an unrelated property is
+       how this stops working when the container query is someday removed. */
+    position: relative;
+
     padding: var(--card-pad);
     border: var(--border-width-hairline) solid var(--color-border);
     border-radius: var(--radius-2);
     background-color: var(--color-surface);
+    transition: box-shadow 0.15s;
   }
 
   .card-inner {
     display: grid;
     row-gap: var(--card-gap);
+
+    /*
+     * `start`, NOT the default. A grid container's `align-content` is `normal`,
+     * which behaves as `stretch` — so whenever the card is taller than its content,
+     * which is every equal-height row, the auto rows GREW and swallowed the extra
+     * height as gaps. The card looked correct in isolation and wrong beside a taller
+     * sibling, which is why it survived the first review.
+     */
+    align-content: start;
   }
 
   /*
@@ -141,10 +157,34 @@ const {
    * "no soft shadows". `box-shadow` rather than two thicker borders because a border
    * would change the box and reflow the card's contents; with no spread it inherits
    * `radius-2`, so the highlight tapers at the corners as the board draws it.
+   *
+   * EASED, NOT SWITCHED. 0.15s is the controls-immediate end of DESIGN.md's
+   * convention, which is where a hover affordance belongs; the languid 0.3s is for
+   * decoration like the nav underline's wipe. The transition sits on the resting
+   * rule so it eases both in and out.
    */
   .card:hover,
   .card:focus-within {
     box-shadow: 2px 2px 0 0 var(--color-accent);
+  }
+
+  /*
+   * ── THE WHOLE CARD IS THE TARGET, AND THE NAME IS STILL THE TITLE ──────────
+   *
+   * A stretched pseudo-element rather than an anchor wrapped around the card. Both
+   * make the card clickable; only this one keeps the accessible name to the title,
+   * where wrapping would announce the title, genre, date and description as one
+   * enormous link. It also keeps the markup honest — the heading stays a heading
+   * containing a link, rather than a link containing a heading.
+   *
+   * The cost is that text inside the card can no longer be selected by dragging, and
+   * any second link in a card would need lifting above this with `z-index`. Neither
+   * card has one today.
+   */
+  .card-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
   }
 
   /* ── Type ───────────────────────────────────────────────────────────────── */
@@ -208,8 +248,11 @@ const {
     object-fit: cover;
   }
 
-  .card-body {
-    margin-block-start: var(--card-gap);
+  /* The row gap already supplies `card-gap`; this tops it up to the block-axis
+     media gap. Written as the subtraction rather than as 8, so the relationship
+     survives either token moving. */
+  .card-inner:has(.card-media) .card-body {
+    margin-block-start: calc(var(--card-media-block) - var(--card-gap));
   }
 
   /* ── Horizontal: from 32rem of the CARD's own width ──────────────────────── */

@@ -91,6 +91,14 @@ const {
   .note-card {
     display: grid;
     row-gap: var(--card-gap);
+
+    /* See ArticleCard: `normal` behaves as `stretch`, so a card in an equal-height
+       row grew its gaps instead of leaving the slack at the bottom. */
+    align-content: start;
+
+    /* Containing block for the full-card link overlay. */
+    position: relative;
+
     padding: var(--card-pad);
     border: var(--border-width-hairline) solid var(--color-border);
     border-radius: var(--radius-2);
@@ -109,6 +117,13 @@ const {
 
     /* The box appears and the highlight with it — the only state where both arrive
        at once, since the article card already has its border at rest. */
+    .note-card {
+      transition:
+        border-color 0.15s,
+        background-color 0.15s,
+        box-shadow 0.15s;
+    }
+
     .note-card:hover,
     .note-card:focus-within {
       border-color: var(--color-border);
@@ -126,6 +141,14 @@ const {
 
   .card-title a:hover {
     color: var(--color-link-hover);
+  }
+
+  /* The whole card is the target; the accessible name stays the title. See the
+     longer note in ArticleCard. */
+  .card-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
   }
 
   .card-desc {

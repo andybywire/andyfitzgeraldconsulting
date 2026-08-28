@@ -185,7 +185,13 @@
   /* ── Component internals ───────────────────────────────────────────────── */
   --card-gap: var(--space-1);
   --card-pad: var(--space-2);
+  /* The gap BESIDE media — the horizontal card's image-to-text column gap. */
   --card-media: var(--space-3);
+  /* And the gap BELOW it, when the card stacks. Two different values for the
+     same relationship on the two axes: 24 inline, 16 block, both read off the
+     Figma card component. Added 2026-08-28 — it had been expressed as
+     `card-gap` twice, which was arithmetic standing in for a name. */
+  --card-media-block: var(--space-2);
   --chrome-pad-header: var(--space-3);
   --chrome-pad-footer: var(--space-5);
   --chrome-inset: var(--space-2); /* -> space-5 at md */
