@@ -19,6 +19,8 @@ import SanityHero from '../components/SanityHero.astro'
 import {Search, Rss} from '@lucide/astro'
 import {loadQuery} from '../sanity/load-query'
 import {INSIGHTS_REVIEW_QUERY} from '../sanity/queries/insights'
+import ArticleCard from '../components/cards/ArticleCard.astro'
+import NoteCard from '../components/cards/NoteCard.astro'
 
 /**
  * THROWAWAY REVIEW INDEX — goes when this page goes.
@@ -108,6 +110,87 @@ const INLINE = {
   description="Throwaway page for verifying the global tier."
 >
   <Masthead />
+
+  {
+    /* ── CARD SPECIMEN ─────────────────────────────────────────────────────────
+      Throwaway, and it goes when the real index pages land. Its job is to put the
+      whole variant matrix on one screen: the article card at BOTH of its real
+      widths, so the container query can be seen switching without resizing the
+      window, and the note card in all three of its shapes.
+
+      571 and 316 are the only widths the design actually produces — DESIGN.md's
+      computed wide column and `grid-span-4`. They are hardcoded here on purpose:
+      this is the one place that wants to defeat the layout and pin a card to a
+      known size.
+  */
+  }
+  <Band space="band">
+    <Grid>
+      <div class="card-spec">
+        <h2>Cards</h2>
+
+        <h3>Article card — 571 (horizontal, inferred)</h3>
+        <div style="inline-size: 571px; max-inline-size: 100%">
+          <ArticleCard
+            href="#"
+            title="Structured Content and the Headless CMS"
+            genre="Method"
+            date="2026-01-01"
+            description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
+            image={INLINE}
+          />
+        </div>
+
+        <h3>Article card — 316 (vertical, inferred)</h3>
+        <div style="inline-size: 316px; max-inline-size: 100%">
+          <ArticleCard
+            href="#"
+            title="Structured Content and the Headless CMS"
+            genre="Method"
+            date="2026-01-01"
+            description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
+            image={INLINE}
+          />
+        </div>
+
+        <h3>Article card — 316, no image (single column at any width)</h3>
+        <div style="inline-size: 571px; max-inline-size: 100%">
+          <ArticleCard
+            href="#"
+            title="A card whose document has no hero"
+            genre="Perspective"
+            date="2026-01-01"
+            description="The two-column form is guarded by :has(.card-media), so this stays single column instead of reserving an empty 145px track."
+          />
+        </div>
+
+        <h3>Note cards — 316. Unboxed at rest from md; hover for the box + highlight</h3>
+        <div class="note-spec">
+          <NoteCard
+            href="#"
+            title="Stability in Unstable Times"
+            genre="Note"
+            date="2026-02-28"
+            description="A short description to illustrate a short note."
+          />
+          <NoteCard
+            href="#"
+            title="Proust and the Squid"
+            genre="Book Note"
+            date="2026-02-28"
+            description="Learning to read creates physical changes in the brain that directly affect how we think."
+          />
+          <NoteCard
+            href="#"
+            title="Gall\u2019s Law When Complexity Comes Cheap"
+            genre="Clipping"
+            date="2026-02-28"
+            sourceDomain="jarango.com"
+          />
+        </div>
+      </div>
+    </Grid>
+  </Band>
 
   {
     /*
@@ -358,6 +441,22 @@ const INLINE = {
 </BaseLayout>
 
 <style>
+  /* ── Card specimen (throwaway) ────────────────────────────────────────────── */
+  .card-spec {
+    grid-column: var(--col-full);
+  }
+
+  .card-spec > * + * {
+    margin-top: var(--rhythm-block);
+  }
+
+  /* 316 columns, so note cards sit at the width they are drawn at. */
+  .note-spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(316px, 316px));
+    gap: var(--rhythm-block);
+  }
+
   /*
    * Page-local placement only — the grid itself lives in <Grid>. Every span is a
    * placement token, so there is no media query on this page at all: the tokens

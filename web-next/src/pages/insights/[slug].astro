@@ -58,6 +58,7 @@ import Masthead from '../../components/Masthead.astro'
 import Footer from '../../components/Footer.astro'
 import SanityHero from '../../components/SanityHero.astro'
 import Prose from '../../components/prose/Prose.astro'
+import Eyebrow from '../../components/Eyebrow.astro'
 import {headingId, headingText} from '../../components/prose/headingId'
 
 export async function getStaticPaths() {
@@ -78,26 +79,6 @@ const insight = await loadQuery(INSIGHT_DETAIL_QUERY, {slug})
    so a miss means the two queries disagree — which should fail the build, not
    ship a page with an empty body. */
 if (!insight) throw new Error(`[insights/[slug]] no document for slug "${slug}"`)
-
-/**
- * ── THE DATE, AND THE OFF-BY-ONE THAT ONLY SHOWS IN DEV ──────────────────────
- *
- * `timeZone: 'UTC'` is load-bearing. `pubDate` is a DATE-ONLY string ("2026-08-26"),
- * which `new Date()` parses as midnight UTC — so formatting it in a negative-offset
- * zone renders the PREVIOUS DAY. Andy is in Pacific and CI runs in UTC, which is
- * the worst possible shape for this bug: correct in the deployed build, one day
- * early on the machine where it would be noticed.
- *
- * Built once at module scope rather than per page: `Intl.DateTimeFormat` is the
- * expensive part and there are 42 pages.
- */
-const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
-  timeZone: 'UTC',
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-})
-const dateLabel = insight.pubDate ? DATE_FORMAT.format(new Date(insight.pubDate)) : null
 
 /* `genre` is defined on all 42 documents (verified 2026-08-26), so the fallback is
    for a future document mid-edit rather than for the corpus. */
@@ -218,20 +199,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
       <Band as="header" space="none" class="title-band">
         <Grid class="title-grid">
           <div class="title-block">
-            <p class="eyebrow">
-              <span>{genreLabel}</span>
-              {
-                /* `dt-published` reads the `datetime` attribute, which is why the
-                   machine-readable date had to be a real <time> rather than text. */
-              }
-              {
-                dateLabel && (
-                  <time class="dt-published" datetime={insight.pubDate}>
-                    {dateLabel}
-                  </time>
-                )
-              }
-            </p>
+            <Eyebrow genre={genreLabel} date={insight.pubDate} microformats />
             <h1 class="p-name">{insight.title}</h1>
 
             {
@@ -606,44 +574,6 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
 
   .title-block h1 {
     margin-top: var(--rhythm-tight);
-  }
-
-  /*
-   * DESIGN.md's `label` role — Lato 700 at the 16px step with +2% tracking, in
-   * `text-muted`. Not the 400 an earlier specimen used: it reads as a small bold
-   * label, which is what the role is for.
-   */
-  .eyebrow {
-    color: var(--color-text-muted);
-    font-family: var(--font-heading);
-    font-size: var(--font-size-1);
-    font-weight: 700;
-    line-height: 1.5;
-    letter-spacing: 0.02em;
-  }
-
-  /*
-   * THE SEPARATOR IS DRAWN, NOT TYPED, and that is a formatting-robustness fix
-   * rather than a style choice.
-   *
-   * A literal " | " between the two children would be a whitespace-sensitive text
-   * node in the template, and this project has already learned twice that Prettier
-   * reformats the template on every `pnpm format` while
-   * `<!-- prettier-ignore -->` does NOT apply to `{…}` expression blocks. Astro
-   * trims whitespace before an element on a new line, so a reformat could silently
-   * drop the spaces around the pipe.
-   *
-   * Generated content cannot be reformatted away, and it is correct under BOTH
-   * behaviors: if Astro leaves the newline as a space it collapses against this
-   * one, and if it trims it the content still carries its own. Verify in `dist/`
-   * after a `pnpm format`, not by reading the source.
-   *
-   * The pipe is exposed to assistive technology, which is arguable — it does mark a
-   * boundary. `aria-hidden` on a pseudo-element is not available, so hiding it
-   * would mean going back to a real element.
-   */
-  .eyebrow time::before {
-    content: ' | ';
   }
 
   /* ── Article band ───────────────────────────────────────────────────────── */

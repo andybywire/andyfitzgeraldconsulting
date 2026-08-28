@@ -1,0 +1,79 @@
+---
+/**
+ * The `Genre | Date` metadata line — DESIGN.md's `label` role.
+ *
+ * THREE CONSUMERS, which is what earned it a component: the article page's title
+ * band, the article card and the note card. All three draw the same thing at the
+ * same size, and the article page had it inline first.
+ *
+ * Not promoted to a global element rule, which is how `nav` went. There is no
+ * element to hang it on — a `<p>` of metadata is still a `<p>` — and the project
+ * deliberately has no global component layer, so a component is the only tier left.
+ *
+ * ── THE SEPARATOR IS DRAWN, NOT TYPED ────────────────────────────────────────
+ *
+ * A literal " | " between the two children would be a whitespace-sensitive text
+ * node, and this project has learned twice that Prettier reformats the template on
+ * every `pnpm format` while `<!-- prettier-ignore -->` does NOT apply to `{…}`
+ * expression blocks. Astro trims whitespace before an element on a new line, so a
+ * reformat could silently drop the spaces around the pipe.
+ *
+ * Generated content cannot be reformatted away, and it is correct under BOTH
+ * behaviours: if Astro leaves the newline as a space it collapses against this one,
+ * and if it trims it the content still carries its own. Verified in `dist/` at
+ * 11.94px against a " | " control, where "|" alone is 5.13.
+ *
+ * ── `microformats` IS OPT-IN, AND DELIBERATELY SO ────────────────────────────
+ *
+ * `dt-published` is only meaningful on an element inside an `h-entry`. That is true
+ * of the article page's eyebrow and false of a card, which sits in a listing — until
+ * index pages get an `h-feed`, at which point the cards become entries and will want
+ * it. Passing it rather than always emitting it keeps the property honest in the
+ * meantime; a `dt-published` outside any entry root is noise a parser has to ignore.
+ */
+import {formatDate} from '../lib/date'
+
+interface Props {
+  genre?: string | null
+  /** ISO date string, straight from `pubDate`. */
+  date?: string | null
+  /** Emit mf2 `dt-published`. Only inside an `h-entry`. */
+  microformats?: boolean
+  class?: string
+}
+
+const {genre, date, microformats = false, class: className}: Props = Astro.props
+const dateLabel = formatDate(date)
+---
+
+<p class:list={['eyebrow', className]}>
+  {genre && <span>{genre}</span>}
+  {
+    dateLabel && (
+      <time class:list={[microformats && 'dt-published']} datetime={date}>
+        {dateLabel}
+      </time>
+    )
+  }
+</p>
+
+<style>
+  /*
+   * DESIGN.md's `label` role — Lato 700 at the 16px step with +2% tracking, in
+   * `text-muted`. Not the 400 an earlier specimen used: it reads as a small bold
+   * label, which is what the role is for.
+   */
+  .eyebrow {
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+
+  /* Only between two children — a date with no genre gets no leading pipe. */
+  .eyebrow span + time::before {
+    content: ' | ';
+  }
+</style>
