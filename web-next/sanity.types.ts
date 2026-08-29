@@ -818,7 +818,7 @@ export type AllSanitySchemaTypes =
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHTS_INDEX_QUERY
-// Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		heroImage { 	asset,	crop,	hotspot,	altText,	caption }	}
+// Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		heroImage { 	asset,	crop,	hotspot,	altText,	caption },		clipRef { publisher }	}
 export type INSIGHTS_INDEX_QUERY_RESULT = Array<
   | {
       _id: string
@@ -837,6 +837,7 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
         altText: string | null
         caption: string | null
       } | null
+      clipRef: null
     }
   | {
       _id: string
@@ -854,6 +855,22 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
         hotspot: SanityImageHotspot | null
         altText: string | null
         caption: string | null
+      } | null
+      clipRef: null
+    }
+  | {
+      _id: string
+      _type: 'note'
+      slug: string | null
+      pubDate: string | null
+      _updatedAt: string
+      genre: string | null
+      topics: Array<string | null> | null
+      title: string | null
+      shortDescription: string | null
+      heroImage: null
+      clipRef: {
+        publisher: string | null
       } | null
     }
 >
@@ -994,13 +1011,41 @@ export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
   }
 }>
 
+// Source: ../web-next/src/sanity/queries/singletons.ts
+// Variable: SINGLETON_HEADER_QUERY
+// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy)	}
+export type SINGLETON_HEADER_QUERY_RESULT = {
+  _id: string
+  title: string | null
+  heroCopy: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  lede: string
+} | null
+
 // Query TypeMap
 import '@sanity/client'
 declare module '@sanity/client' {
   interface SanityQueries {
-    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tclipRef { publisher }\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tlede,\n\t\tbodyText,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
+    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
   }
 }

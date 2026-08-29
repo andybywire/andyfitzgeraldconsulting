@@ -53,6 +53,12 @@ interface Props {
   image?: SanityImageSource | null
   /** Heading level, so a card can sit under whatever precedes it. */
   as?: 'h2' | 'h3' | 'h4'
+  /**
+   * Visual position among its siblings, for a context whose DOM order is not its
+   * reading order — the Insights masonry, whose build-time partition reorders the DOM.
+   * See the note on `order` in the style block for what this does and does not fix.
+   */
+  order?: number
   class?: string
 }
 
@@ -64,11 +70,15 @@ const {
   description,
   image,
   as: Tag = 'h3',
+  order,
   class: className,
 }: Props = Astro.props
 ---
 
-<article class:list={['card', className]}>
+<article
+  class:list={['card', className]}
+  style={order === undefined ? undefined : `--card-order: ${order}`}
+>
   {
     /*
     THE INNER ELEMENT IS NOT GRATUITOUS. A container query evaluates against the
@@ -135,6 +145,31 @@ const {
     border-radius: var(--radius-2);
     background-color: var(--color-surface);
     transition: box-shadow 0.15s;
+
+    /*
+     * ── VISUAL POSITION ONLY, AND THAT IS THE WHOLE CAVEAT ─────────────────
+     *
+     * Set from the `order` prop, for the Insights masonry: its build-time partition
+     * reorders the DOM into columns, so at the rungs where those columns are erased
+     * the cards would otherwise read 0, 4, 6, 9 … rather than newest-first.
+     *
+     * `order` fixes the BOX TREE and nothing else. Focus order, screen-reader
+     * traversal and microformats parsing all follow the DOM, which stays in partition
+     * order — so this deliberately buys a visual-versus-focus MISMATCH in exchange for
+     * a correct reading order, which is the trade DESIGN.md's Responsive section warns
+     * about for bands containing controls. A card contains a link. Taken knowingly
+     * (Andy, 2026-08-28) because the alternative is a phone showing its second-newest
+     * item fifteen cards down.
+     *
+     * NO BREAKPOINT NEEDED, which is the one free thing here. At `lg` the cards sit
+     * inside their column wrapper where their order values are ALREADY ascending, so
+     * sorting by them is a no-op; below `lg` the wrappers are erased and the same
+     * values put the cards in date order. One declaration, correct at every rung.
+     *
+     * Defaults to 0, so every other consumer — the home page, related insights — is
+     * untouched: equal values leave DOM order alone.
+     */
+    order: var(--card-order, 0);
   }
 
   .card-inner {
@@ -188,6 +223,28 @@ const {
   }
 
   /* ── Type ───────────────────────────────────────────────────────────────── */
+  /*
+   * ── THE CARD OWNS ITS TYPE; `as` OWNS ONLY THE OUTLINE LEVEL ───────────────
+   *
+   * Without this the title takes whatever base.css gives the element it happened to
+   * be rendered as, so the Insights index passing `as="h2"` — which is the correct
+   * level under that page's single h1 — silently drew the board's 22.5/29.25 title
+   * at h2's 28.125/35.16 with -1.5% tracking. Measured, not noticed by eye.
+   *
+   * The prop exists so a card can sit under whatever precedes it, which is a document
+   * outline concern and should cost nothing visually. Pinned to the `h3` role, which
+   * is what both card boards draw.
+   *
+   * THIS IS A SECOND HOME FOR THE h3 ROLE, deliberately and with precedent — the
+   * article page's rail restates the same two declarations for the same reason. If
+   * the h3 role ever moves, this and NoteCard are the other two places.
+   */
+  .card-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+    letter-spacing: normal;
+  }
+
   /* `text-title` and no underline — DESIGN.md: a title in its own block at heading
      size is identified as a link by position. base.css gives every anchor an
      underline, so this is the opt-out. */

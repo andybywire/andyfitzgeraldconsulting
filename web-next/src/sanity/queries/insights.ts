@@ -2,11 +2,11 @@ import {defineQuery} from 'groq'
 import {DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
 
 /**
- * Insights — `article` and `caseStudy`.
+ * Insights — `article`, `caseStudy` and `note`.
  *
  * They are queried together because they are one thing to a reader and are distinguished by
  * `genre` rather than by structural type. That is also why `/insights/` can stay as the shared
- * path while the two Sanity types remain separate. (This said `insightType` until phase 4;
+ * path while the Sanity types remain separate. (This said `insightType` until phase 4;
  * `genre` replaced it in phase 1 and TAXONOMY has projected `genre` since — the comment was
  * describing a field the query no longer reads.)
  *
@@ -14,15 +14,38 @@ import {DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
  * silently overwrite a duplicate defined in another file.
  */
 
-/** Index listing, newest first. Every insight in the dataset has a slug and a shortDescription. */
+/**
+ * Index listing, newest first. Every document of all three types carries `slug`, `pubDate` and
+ * `shortDescription`, so nothing here is conditional except the two type-specific fields.
+ *
+ * ── IT OVER-COLLECTS BY FOUR, AND THAT IS DELIBERATE ─────────────────────────
+ *
+ * `earley-ia-knowledge-graphs-and-ia`, `the-informed-life-structured-content` and
+ * `content-strategy-insights-data-stories-meaning` carry genre *Interview*, and `cs-meetup`
+ * carries *Talk* — all four are Presentation-branch genres stored as `article`. They move when
+ * the `presentation` type exists. NOT filtered out here: a genre exclusion would hide the thing
+ * that needs migrating and would go stale the moment the migration happened.
+ *
+ * ── TWO TYPE-SPECIFIC PROJECTIONS ────────────────────────────────────────────
+ *
+ * `heroImage` exists on `article` and `caseStudy`; `clipRef` only on `note`. GROQ returns null
+ * for an attribute path a document does not have, so both are safe on every member of the union
+ * and TypeGen discriminates them on `_type`.
+ *
+ * `clipRef { publisher }` keeps the nesting rather than flattening to `"publisher": …`, because
+ * `bookRef` carries a `publisher` too — the book's, not the source's. A flat name would be one
+ * word away from projecting the wrong one. It stays inline rather than becoming a fragment: one
+ * consumer is not a fragment, the same rule tokens.css applies to values.
+ */
 export const INSIGHTS_INDEX_QUERY = defineQuery(`
-	*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {
+	*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {
 		${IDENTITY},
 		${DATES},
 		${TAXONOMY},
 		title,
 		shortDescription,
-		heroImage { ${IMAGE} }
+		heroImage { ${IMAGE} },
+		clipRef { publisher }
 	}
 `)
 

@@ -53,6 +53,8 @@ interface Props {
   /** A Clipping's source. Its presence, not the genre, selects the layout. */
   sourceDomain?: string | null
   as?: 'h2' | 'h3' | 'h4'
+  /** Visual position among siblings. See the longer note in ArticleCard. */
+  order?: number
   class?: string
 }
 
@@ -64,11 +66,15 @@ const {
   description,
   sourceDomain,
   as: Tag = 'h3',
+  order,
   class: className,
 }: Props = Astro.props
 ---
 
-<article class:list={['note-card', className]}>
+<article
+  class:list={['note-card', className]}
+  style={order === undefined ? undefined : `--card-order: ${order}`}
+>
   <Tag class="card-title"><a href={href}>{title}</a></Tag>
   <Eyebrow genre={genre} date={date} />
 
@@ -103,6 +109,10 @@ const {
     border: var(--border-width-hairline) solid var(--color-border);
     border-radius: var(--radius-2);
     background-color: var(--color-surface);
+
+    /* Visual position only — it does not move focus or screen-reader order. See the
+       longer note in ArticleCard for what that costs and why it is taken. */
+    order: var(--card-order, 0);
   }
 
   @container style(--breakpoint-md: true) {
@@ -133,6 +143,15 @@ const {
   }
 
   /* ── Type ───────────────────────────────────────────────────────────────── */
+
+  /* The card owns its type; `as` owns only the outline level. See the longer note in
+     ArticleCard — the short version is that `as="h2"` otherwise draws the title at
+     h2's size and tracking, which is not what the board draws. */
+  .card-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+    letter-spacing: normal;
+  }
 
   .card-title a {
     color: var(--color-text-title);

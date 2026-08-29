@@ -1,0 +1,395 @@
+---
+/**
+ * The Insights index — item 2 in the phase 4 order.
+ *
+ * ── THE MASONRY IS PARTITIONED HERE, NOT LAID OUT BY CSS ─────────────────────
+ *
+ * Native CSS masonry does not ship, and the two things that do work today each cost
+ * something. The full reasoning and the measurements are in src/lib/masonry.ts.
+ *
+ * ON BALANCE THE TWO ARE CLOSE, and an earlier version of this comment claimed
+ * otherwise. Measured on this page, at 1440, with the real 45 documents:
+ *
+ *   explicit columns   246px ragged (3.7%)   top row reads items 0, 1, 2
+ *   column-count: 3    340px ragged (5.1%)   top row reads items 0, 16, 30
+ *
+ * A "three times better" figure appeared here first and was an artefact of testing
+ * both against SYNTHETIC divs built from estimated heights. The real margin is about
+ * 1.4x, and even that owes something to luck: greedy fed the TRUE rendered heights
+ * would produce 420px. The residual is the granularity of ~400px indivisible cards,
+ * not estimator error, and no better estimator improves it.
+ *
+ * SO THE REASON FOR REAL COLUMNS IS READING ORDER, NOT BALANCE — 0, 1, 2 against
+ * 0, 16, 30 — plus the fact that revealing more cards appends to column ends instead
+ * of rebalancing the whole grid, which is what "show more" needs.
+ *
+ * ── WHICH MAKES THE BREAKPOINT LADDER THE INTERESTING PART ───────────────────
+ *
+ * One DOM can serve exactly ONE partition. The partition below is computed for three
+ * columns, so three columns is the only rung it can express — and every narrower rung
+ * has to get the cards back out of it. `display: contents` does that: it erases the
+ * column boxes while keeping their children, so the cards become grid items of
+ * `.masonry` itself. Same mechanism the article page's rail uses.
+ *
+ * ── SOURCE ORDER IS PARTITION ORDER, WHICH IS WHY `order` IS PASSED ─────────
+ *
+ * An earlier draft of this comment said the erased wrappers let the cards "fall into
+ * source order, which is date order". FALSE — the partition physically reorders the
+ * DOM. Measured at 400px, the cards rendered in this date-index sequence:
+ *
+ *     0, 4, 6, 9, 12 … 42,   1, 3, 7, 10 … 43,   2, 5, 8 … 44
+ *
+ * So the single-column rung read down column one and then jumped back to the
+ * second-newest item — the exact top-to-bottom-then-across flaw that ruled
+ * `column-count` out in the first place, reappearing at the narrow rungs.
+ *
+ * FIXED VISUALLY by handing each card its date index as CSS `order`. One declaration
+ * in each card, no breakpoint: at `lg` the values inside a column wrapper are already
+ * ascending so sorting by them changes nothing, and below `lg` the same values put the
+ * erased cards back in date order.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  WHAT `order` DOES NOT FIX, AND IT IS NOT FIXABLE HERE.                  │
+ * │                                                                          │
+ * │  It reorders the BOX TREE only. Focus order, screen-reader traversal and  │
+ * │  microformats parsing all follow the DOM, which stays in partition order  │
+ * │  at every width. So this trades a consistent-but-wrong order for a        │
+ * │  correct visual order and a visual-versus-FOCUS MISMATCH — the trade      │
+ * │  DESIGN.md's Responsive section warns about for bands containing          │
+ * │  controls, and a card contains a link. Taken knowingly (Andy, 2026-08-28).│
+ * │                                                                          │
+ * │  There is no third option while the columns are real elements. For        │
+ * │  wrapper one to hold DOM items 0-14, the top row must read 0, 15, 30 —    │
+ * │  contiguous DOM grouping and row-major visual order are the SAME          │
+ * │  constraint inverted. Row-major requires either DOM != date order, or     │
+ * │  `order`. It is a property of the structure, not a gap in the build.      │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * The consequence, and it is a real one: the two-column rung is a ROW GRID, not a
+ * second masonry, because source order into two tracks is what `display: contents`
+ * leaves behind. A card that is shorter than its row-mate leaves empty space below
+ * itself rather than stretching — which is what `align-items: start` is for, and it is
+ * load-bearing rather than tidy. Without it an unboxed note card beside a tall article
+ * card would reveal a box the article's height on hover.
+ *
+ * ── AND WHY NO SCRIPT RESCUES THE MIDDLE RUNG ────────────────────────────────
+ *
+ * Re-partitioning in the browser on a breakpoint crossing sounds like the fix and is
+ * not: someone LOADING the page at 800px would get the three-column partition painted
+ * into a two-track grid before any script ran. The CSS has to be correct at every
+ * width on its own, so the middle rung is a row grid and that is the design.
+ *
+ * Filtering is the different case, and the one where a client re-partition IS wanted —
+ * a build-time partition balances against the whole set, and 400 random filter
+ * selections left it 800-1300px ragged at the median against ~300 when re-partitioned
+ * live. That lands with the chips, not here.
+ */
+import {loadQuery} from '../../sanity/load-query'
+import {INSIGHTS_INDEX_QUERY} from '../../sanity/queries/insights'
+import {SINGLETON_HEADER_QUERY} from '../../sanity/queries/singletons'
+import {partitionColumns, estimateCardHeight} from '../../lib/masonry'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Band from '../../components/Band.astro'
+import Grid from '../../components/Grid.astro'
+import Masthead from '../../components/Masthead.astro'
+import Footer from '../../components/Footer.astro'
+import Prose from '../../components/prose/Prose.astro'
+import ArticleCard from '../../components/cards/ArticleCard.astro'
+import NoteCard from '../../components/cards/NoteCard.astro'
+
+/** The rung the partition is computed for. See the ladder in the style block. */
+const MASONRY_COLUMNS = 3
+
+/* Both fetches are independent, so they go together rather than in series. */
+const [page, insights] = await Promise.all([
+  loadQuery(SINGLETON_HEADER_QUERY, {slug: 'insights'}),
+  loadQuery(INSIGHTS_INDEX_QUERY),
+])
+
+/* Loud rather than quiet, matching `[slug].astro`. The singleton is content, so it can
+   be unpublished or re-slugged in the Studio — and a page that silently lost its own
+   title and lead would look like a styling bug rather than a missing document. */
+if (!page) throw new Error('[insights/index] no singleton with slug "insights"')
+
+/**
+ * One flat shape per card, resolved BEFORE the partition rather than inside the
+ * template.
+ *
+ * Two reasons it happens here. The estimator wants the strings the card will actually
+ * render — a Clipping shows its source domain where a Note shows its description — so
+ * resolving them once means the height model and the markup cannot disagree about what
+ * is on the card. And the template then does no data work at all beyond choosing a
+ * component.
+ *
+ * The query filters on `defined(slug.current)`, but TypeGen types a projected slug as
+ * `string | null` because it cannot see the filter — so this narrows rather than
+ * asserting, exactly as `[slug].astro` does for `getStaticPaths`.
+ */
+const ordered = insights.flatMap((item) => {
+  if (!item.slug) return []
+
+  const isNote = item._type === 'note'
+  const sourceDomain = isNote ? (item.clipRef?.publisher ?? null) : null
+
+  return [
+    {
+      id: item._id,
+      isNote,
+      href: `/insights/${item.slug}/`,
+      title: item.title ?? 'Untitled',
+      genre: item.genre,
+      date: item.pubDate,
+      description: item.shortDescription,
+      image: item.heroImage,
+      sourceDomain,
+      /* What the estimator measures: the body a Clipping renders is its domain, not
+         its description, and a note never carries media. */
+      body: sourceDomain ?? item.shortDescription,
+      hasMedia: Boolean(item.heroImage?.asset),
+    },
+  ]
+})
+
+/**
+ * The date index, assigned AFTER the slug filter so it is dense — 0..n-1 with no
+ * holes. It is what each card hands to CSS `order`, so a hole would leave a gap in
+ * the sort rather than an error, which is the kind of thing nothing would report.
+ *
+ * Taken from this array and not from the query result's index for the same reason.
+ */
+const cards = ordered.map((card, index) => ({...card, order: index}))
+
+/**
+ * Greedy, shortest-column-first, walking newest to oldest.
+ *
+ * Prefix-balanced by construction — the columns are approximately level after EVERY
+ * placement, not just the last — which is what will make "show more" free when it
+ * arrives: revealing the tail of each column keeps the balance without a second
+ * partition. Measured on the real corpus: 105-157px ragged at most prefix lengths
+ * against a 6000px column.
+ *
+ * ONE ARITHMETIC TRAP FOR THAT LATER WORK. A reveal count that is not a multiple of
+ * MASONRY_COLUMNS lands the remainder on one column and undoes the balance — the first
+ * 20 measured 413px ragged where the first 18 and first 21 measured 105 and 134. The
+ * increment wants to be a multiple of the column count.
+ */
+const columns = partitionColumns(cards, MASONRY_COLUMNS, estimateCardHeight)
+---
+
+<BaseLayout title={page.title ?? 'Insights'} description={page.lede ?? undefined}>
+  <Masthead />
+
+  <main>
+    <Band as="section" class="index-band">
+      <Grid>
+        {
+          /*
+          ── STILL INLINE, NOT YET A <PageHeader> ─────────────────────────────
+
+          DESIGN.md calls the page header "one component with an optional lead", and
+          this is the first thing to render the optional half. It stays inline anyway,
+          for the reason the project promotes on: a SECOND CONSUMER is the trigger, and
+          there is not one yet. The article page's title block looks like it, but it is
+          an eyebrow above an h1 with no lead — a different shape, and extracting a
+          component around both today would be guessing at what they share.
+
+          Reviews, Presentations and Home all want exactly this pair. Whichever lands
+          first is the second consumer, and that is when it moves.
+
+          A <div> around the lead rather than a bare <Prose>: the component is
+          deliberately TRANSPARENT — it emits a flat sequence of blocks and no
+          container — so `heroCopy`'s paragraphs would otherwise become children of
+          <header> with nothing to scope the lead role to.
+        */
+        }
+        <header class="page-header">
+          <h1>{page.title ?? 'Insights'}</h1>
+          {
+            page.heroCopy && (
+              <div class="page-lede">
+                <Prose value={page.heroCopy} />
+              </div>
+            )
+          }
+        </header>
+
+        {
+          /*
+          Filters land between the header and the masonry, at `1 / span 7` and
+          `9 / span 4` — the same asymmetric split as Home, measured off the board.
+          <Grid>'s own `rhythm-heading-major` row gap is the 64 the board draws
+          between all three blocks, so nothing here sets vertical spacing.
+        */
+        }
+
+        <div class="masonry">
+          {
+            columns.map((column) => (
+              <div class="masonry-column">
+                {column.map((card) =>
+                  card.isNote ? (
+                    <NoteCard
+                      as="h2"
+                      order={card.order}
+                      href={card.href}
+                      title={card.title}
+                      genre={card.genre}
+                      date={card.date}
+                      description={card.description}
+                      sourceDomain={card.sourceDomain}
+                    />
+                  ) : (
+                    <ArticleCard
+                      as="h2"
+                      order={card.order}
+                      href={card.href}
+                      title={card.title}
+                      genre={card.genre}
+                      date={card.date}
+                      description={card.description}
+                      image={card.image}
+                    />
+                  ),
+                )}
+              </div>
+            ))
+          }
+        </div>
+      </Grid>
+    </Band>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* The header sits on the prose measure; the masonry spans the full content width.
+     They therefore cannot share a grid row, so <Grid>'s row gap separates them — which
+     is `rhythm-heading-major`, and correct here for the reason it is always correct:
+     what lands below starts with a heading. */
+  .page-header {
+    grid-column: var(--col-main);
+  }
+
+  /*
+   * ── DESIGN.md's `lead` ROLE, SCOPED HERE ON PURPOSE ───────────────────────
+   *
+   * base.css states its own scope: h1-h4, body prose, links, nav, blockquote, figure,
+   * icons and the rhythm mechanism, and "every other typographic role in DESIGN.md
+   * (display, lead, small, label, …) is component-scoped and belongs to the component
+   * that owns it." The page header owns the lead, so it lives here — and moves with it
+   * when the header becomes a real component.
+   *
+   * Noto Serif at the `font-size-3` step, weight 400, in `text-lead`. Family and weight
+   * are inherited from body rather than restated: `--font-prose` at 400 is already what
+   * a <p> gets, so declaring them again would be two more places to drift.
+   *
+   * LEADING 1.6 IS THE POINT OF THE ROLE, not the size. DESIGN.md indexes leading by
+   * MEASURE, not by size step — 1.5 at ~29-33 characters, 1.6 at ~54, 1.8 at ~67 — and
+   * a lead sits at the middle register. `body` at 1.8 here would be leading tuned for a
+   * line a third longer than this one actually runs.
+   */
+  .page-lede {
+    color: var(--color-text-lead);
+    font-size: var(--font-size-3);
+    line-height: 1.6;
+  }
+
+  /* What follows an h1, which base.css's ramp does not cover — it handles h2-h4 and
+     leaves the h1 out. DESIGN.md settled this on the article page: `heading-close`,
+     because the lead is bound to the title the way a paragraph is bound to a heading. */
+  .page-header h1 + .page-lede {
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  /*
+   * ── A LEAD IS ONE PARAGRAPH, AND NOTHING HERE SPACES A SECOND ──────────────
+   *
+   * A draft of this file carried `.page-lede :global(p + p)` giving a second paragraph
+   * `rhythm-paragraph`, on the grounds that `heroCopy` is an array and About currently
+   * holds two blocks. REMOVED DELIBERATELY (Andy, 2026-08-28): the second About
+   * paragraph is body copy that reads as body copy on the live site only because it was
+   * styled to, and it moves into `bodyText` when that page is built. A lead is one
+   * paragraph.
+   *
+   * The rule is not merely unnecessary — it is the mechanism by which the drift
+   * happened. Styling that makes a second paragraph look intentional is exactly what
+   * stops anyone noticing the content model has been worked around. Without it a second
+   * block butts against the first with no space, which is visibly wrong and is the
+   * signal we want.
+   *
+   * The right home for the invariant is a `validation: Rule.max(1)` on `heroCopy` in the
+   * Studio, so the editor cannot create the state at all. That is schema work and
+   * belongs with the About page, not here.
+   */
+
+  /*
+   * ── THE LADDER ──────────────────────────────────────────────────────────────
+   *
+   * DRAFT — this is the part CLAUDE.md puts in Andy's column, written to be argued
+   * with rather than accepted. Three rungs, mobile-first, and the breakpoint numbers
+   * stay in tokens.css: these read the `--breakpoint-*` flags rather than restating
+   * `48rem` and `64rem`.
+   *
+   * Kept as style container queries rather than a `--masonry-columns` token because
+   * the rung changes TWO things that have to move together — the track count and
+   * whether the column boxes exist at all — and only the first is a value. Splitting
+   * it would put half the ladder in tokens.css and half here.
+   */
+  .masonry {
+    grid-column: var(--col-full);
+
+    display: grid;
+    grid-template-columns: 1fr;
+
+    /* Horizontal is grid, vertical is rhythm. The board draws 24 between columns and
+       32 between cards, which is exactly this pair. */
+    column-gap: var(--grid-gutter);
+    row-gap: var(--rhythm-list);
+
+    /*
+     * NOT DECORATIVE, AND IT APPLIES AT EVERY RUNG.
+     *
+     * At `lg` it stops the three column boxes stretching to the tallest. Below `lg`
+     * the column boxes are gone and the CARDS are the grid items, where stretching
+     * would equalise every row — and an unboxed note card stretched to a tall
+     * article card's height would reveal that whole box on hover.
+     *
+     * Set on the container rather than per card deliberately: `display: contents`
+     * changes the box tree and not the selector tree, so `.masonry > *` still matches
+     * the erased wrapper. `align-items` reaches whatever the real grid items are.
+     */
+    align-items: start;
+  }
+
+  /*
+   * Erased below `lg`, so the cards become grid items of `.masonry` in SOURCE ORDER —
+   * which is date order, and is why the narrow rungs need no second partition. The
+   * boxes come back at `lg`, where the build-time partition applies.
+   */
+  .masonry-column {
+    display: contents;
+  }
+
+  @container style(--breakpoint-md: true) {
+    .masonry {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .masonry {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* A flex column rather than block flow, so the 32 between cards is one `gap`
+       instead of a sibling-margin rule. Portable Text's flat-sequence constraint —
+       the reason the article body uses margins — does not apply to a list of
+       components we are emitting ourselves. */
+    .masonry-column {
+      display: flex;
+      flex-direction: column;
+      gap: var(--rhythm-list);
+    }
+  }
+</style>
