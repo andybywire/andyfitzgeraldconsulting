@@ -967,10 +967,14 @@ only how many columns it hands out. That differs, and neither is a card concern.
 | | wide | middle | narrow |
 |---|---|---|---|
 | **Home** | article column + skip-1 + note column (571 / 316) | **6 + 6**, articles switch to vertical | 1 column, everything full width |
-| **Insights / Presentations index** | 3 columns at `span-3` | 2 columns | 1 column |
+| **Insights / Presentations index** | 3 columns at `span-4` | 2 columns (**6 + 6**) | 1 column |
+
+**This row said `span-3` until 2026-08-28 and that was an error** — `span-3` is 231. The Insights board
+draws the three masonry columns at **316** (x 0 / 340 / 680), which is `span-4`, and 3 × 316 + 2 × 24
+closes the 996 content width exactly. `ArticleCard`'s own header had it right all along.
 
 **Cards stretch between breakpoints rather than sitting at a fixed width** — the ladder changes the
-column *count*, and a card fills whatever it is given. So a card at `span-3` on desktop spans all 12 on
+column *count*, and a card fills whatever it is given. So a card at `span-4` on desktop spans all 12 on
 a phone. **Whether that wants a `max-width` is open**, and is a question for real content rather than
 for a specimen.
 
