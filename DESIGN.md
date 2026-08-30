@@ -982,6 +982,32 @@ Home's middle step is the one carrying two changes at once — the columns balan
 article card going vertical — and the second falls out of the first, since a 6-column card is under the
 card's own 32rem threshold. Probably `md`; judge it on the real page.
 
+#### How the masonry is built — the rule, not the reasoning
+
+Native CSS masonry does not ship, so the Insights and Presentations indexes build theirs. **Three rules
+govern it, and the first is the one to protect:**
+
+- **The DOM stays in date order.** Cards are emitted flat, newest first — no column wrappers. Column
+  wrappers force a contiguous DOM slice per column, which puts DOM order out of date order and costs a
+  CSS `order` per card to disguise. **Don't reintroduce them.**
+- **Columns come from `nth-child`**, one rule per column per rung, so the ladder is a selector rather
+  than a partition and no card carries a baked column.
+- **Row heights come from `grid-auto-rows: 1px` plus a measured `grid-row: span`.** The measurement is
+  the browser's, taken before the spans exist. **Build-time height estimates cannot be made safe** — a
+  span one pixel short of its card overflows into its neighbour, and padding the estimate to guarantee
+  otherwise reproduces the un-enhanced gaps.
+
+**With no JavaScript this is therefore a row grid**, not a masonry: correct order, nearly flush at the
+bottom, and roughly 16% airier than intended. Accepted 2026-08-28 — the fallback is a legitimate layout
+and it never hides a card.
+
+**`grid-auto-flow: row dense`**, decided 2026-08-28. Sparse flow lets a card be held down by a taller
+one in a *previous* column — measured at a **288px** hole with one unusually tall card in the set, and a
+365px ragged bottom against dense's 168. So dense is better on balance *and* on gap fidelity, not a
+trade between them. The cost is that 21 of 45 positions differ from tab order, **none by more than two
+slots**, with DOM order untouched so screen readers and `h-feed` stay chronological. Reversible in one
+word — see [docs/open-questions.md](docs/open-questions.md).
+
 ### Transitions — eased, not switched
 
 **Hover states ease.** Every hover in the build was binary until 2026-08-28, which reads as a state flip

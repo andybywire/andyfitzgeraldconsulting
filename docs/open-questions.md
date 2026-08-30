@@ -144,3 +144,35 @@ the ramp does not have. See [decisions/color.md](decisions/color.md).
   transitioned, so the rail animates `text-decoration-color` from `transparent`.
 - **`rhythm-list` (32) between unboxed note cards may be too tight.** Their hover boxes bleed 16px
   each side, so two adjacent hover targets sit 32 apart with 16px of box between them.
+- ~~**The masonry's `grid-auto-flow`: sparse or `dense`.**~~ **Decided `dense` 2026-08-28, judged on
+  screen with a deliberately oversized card in the set.** Visually the better of the two, and for
+  anyone not navigating by keyboard it is strictly better. What is left open is not the choice but
+  whether its cost ever bites — see below.
+
+  Sparse packing moves the placement cursor forward only, which is what guarantees a card never
+  appears above an earlier one; the price is that a card can be held down by a taller card in a
+  *previous* column, leaving gaps well over the design's 32. **Measured against a corpus carrying one
+  unusually tall card — the case that settled it, since an even set of heights understates sparse
+  badly:**
+
+  | | worst gap | gaps > 33 | total excess | ragged bottom |
+  |---|---|---|---|---|
+  | sparse | **287.75px** | 3 | 511px | 365px |
+  | `dense` | 32.88px | 0 | 0px | **168px** |
+
+  So this was not a trade of balance for order — dense is better on **both** counts here, and a 288px
+  hole in a column is not a rounding error.
+
+  **The accepted cost: 21 of 45 positions differ from tab order — but no card moves more than two
+  slots.** That second number is the one to keep: it is a chain of small local shifts, not the
+  wholesale column-major jumbling that ruled `column-count` out, and the count is inflated by
+  construction, since one card rising past another displaces both. **DOM order is untouched**, so
+  screen-reader traversal and a future `h-feed` stay chronological; only the visual-to-focus
+  correspondence gives, and only locally. Judged minor, explicitly as a call about a real experience
+  rather than a measurement — so worth re-checking if the corpus grows several very tall cards.
+
+  **Reversible in one word.** Nothing structural depends on it — not the DOM order, the `nth-child`
+  column placement, the spans, or the filter scripts, which act on *which* column a card is in rather
+  than where it sits within one. The console snippet that produced the 6-of-45 figure badges every card
+  with its tab position against its visual position; it is in the phase 4 session notes and worth
+  keeping to hand for the re-check.

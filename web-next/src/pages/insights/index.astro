@@ -2,92 +2,60 @@
 /**
  * The Insights index — item 2 in the phase 4 order.
  *
- * ── THE MASONRY IS PARTITIONED HERE, NOT LAID OUT BY CSS ─────────────────────
+ * ── THE DOM IS IN DATE ORDER. EVERYTHING ELSE FOLLOWS FROM THAT ──────────────
  *
- * Native CSS masonry does not ship, and the two things that do work today each cost
- * something. The full reasoning and the measurements are in src/lib/masonry.ts.
+ * Native CSS masonry does not ship, so three columns have to be built by hand. The
+ * first build here used a greedy BUILD-TIME PARTITION into three column wrappers, and
+ * it worked, but wrappers force a contiguous DOM slice per column — which means DOM
+ * order becomes partition order, and a CSS `order` per card was needed to put the
+ * visual sequence back. That bought a correct visual order and paid for it with a
+ * visual-versus-focus mismatch, non-chronological screen-reader traversal, and a
+ * future `h-feed` out of date order.
  *
- * ON BALANCE THE TWO ARE CLOSE, and an earlier version of this comment claimed
- * otherwise. Measured on this page, at 1440, with the real 45 documents:
+ * REPLACED (Andy's design, 2026-08-28). Cards are emitted flat, in date order, into
+ * ONE grid. Columns are assigned by `nth-child`, and the masonry comes from
+ * `grid-auto-rows: 1px` plus a per-card `grid-row: span`. So:
  *
- *   explicit columns   246px ragged (3.7%)   top row reads items 0, 1, 2
- *   column-count: 3    340px ragged (5.1%)   top row reads items 0, 16, 30
+ *   - DOM order is date order at every width. `order` is gone, and with it the focus
+ *     mismatch and the DESIGN.md rule that mismatch was breaking.
+ *   - There is no height estimator. src/lib/masonry.ts is deleted; the browser
+ *     measures, which it can do exactly and a build cannot.
+ *   - Changing the column ladder is a `nth-child` rule, not a re-partition.
  *
- * A "three times better" figure appeared here first and was an artefact of testing
- * both against SYNTHETIC divs built from estimated heights. The real margin is about
- * 1.4x, and even that owes something to luck: greedy fed the TRUE rendered heights
- * would produce 420px. The residual is the granularity of ~400px indivisible cards,
- * not estimator error, and no better estimator improves it.
+ * ── MEASURED ON THE REAL 45 CARDS, ALL THREE RUNGS ───────────────────────────
  *
- * SO THE REASON FOR REAL COLUMNS IS READING ORDER, NOT BALANCE — 0, 1, 2 against
- * 0, 16, 30 — plus the fact that revealing more cards appends to column ends instead
- * of rebalancing the whole grid, which is what "show more" needs.
+ *                        ragged   wasted gap   height    DOM order
+ *   3 col, spans           219        0        6686      date
+ *   3 col, old wrappers    241        0        6686      partition
+ *   2 col, spans            89        0        9872      date
+ *   2 col, old wrappers    447      876       10489      partition
+ *   1 col, either            0        0       19687      date / partition
  *
- * ── WHICH MAKES THE BREAKPOINT LADDER THE INTERESTING PART ───────────────────
+ * The spans rows are with `grid-auto-flow: row dense`, which is what ships — sparse
+ * flow leaves 24px of excess gap on this corpus and a good deal more once one card is
+ * unusually tall. The style block has the full accounting, including what dense costs.
  *
- * One DOM can serve exactly ONE partition. The partition below is computed for three
- * columns, so three columns is the only rung it can express — and every narrower rung
- * has to get the cards back out of it. `display: contents` does that: it erases the
- * column boxes while keeping their children, so the cards become grid items of
- * `.masonry` itself. Same mechanism the article page's rail uses.
+ * The two-column rung is where it stops being close: the old approach could not serve
+ * a second partition from one DOM, so it fell back to a row grid there. This does not
+ * have that problem, which also retires the "tablet row gaps" question.
  *
- * ── SOURCE ORDER IS PARTITION ORDER, WHICH IS WHY `order` IS PASSED ─────────
+ * ── THE NO-JS STATE IS A ROW GRID, AND THAT IS THE DESIGN ────────────────────
  *
- * An earlier draft of this comment said the erased wrappers let the cards "fall into
- * source order, which is date order". FALSE — the partition physically reorders the
- * DOM. Measured at 400px, the cards rendered in this date-index sequence:
+ * The spans need MEASURED heights, and measuring has to happen before the spans
+ * exist: once `grid-auto-rows: 1px` is in effect a card's grid area IS its span, so
+ * measuring then returns the span rather than the content. Build-time estimates were
+ * tried and cannot be made safe — any under-estimate makes a card overflow into its
+ * neighbour, and padding the estimate to guarantee over-estimation lands back at the
+ * row grid's gaps with extra steps.
  *
- *     0, 4, 6, 9, 12 … 42,   1, 3, 7, 10 … 43,   2, 5, 8 … 44
- *
- * So the single-column rung read down column one and then jumped back to the
- * second-newest item — the exact top-to-bottom-then-across flaw that ruled
- * `column-count` out in the first place, reappearing at the narrow rungs.
- *
- * FIXED VISUALLY by handing each card its date index as CSS `order`. One declaration
- * in each card, no breakpoint: at `lg` the values inside a column wrapper are already
- * ascending so sorting by them changes nothing, and below `lg` the same values put the
- * erased cards back in date order.
- *
- * ┌──────────────────────────────────────────────────────────────────────────┐
- * │  WHAT `order` DOES NOT FIX, AND IT IS NOT FIXABLE HERE.                  │
- * │                                                                          │
- * │  It reorders the BOX TREE only. Focus order, screen-reader traversal and  │
- * │  microformats parsing all follow the DOM, which stays in partition order  │
- * │  at every width. So this trades a consistent-but-wrong order for a        │
- * │  correct visual order and a visual-versus-FOCUS MISMATCH — the trade      │
- * │  DESIGN.md's Responsive section warns about for bands containing          │
- * │  controls, and a card contains a link. Taken knowingly (Andy, 2026-08-28).│
- * │                                                                          │
- * │  There is no third option while the columns are real elements. For        │
- * │  wrapper one to hold DOM items 0-14, the top row must read 0, 15, 30 —    │
- * │  contiguous DOM grouping and row-major visual order are the SAME          │
- * │  constraint inverted. Row-major requires either DOM != date order, or     │
- * │  `order`. It is a property of the structure, not a gap in the build.      │
- * └──────────────────────────────────────────────────────────────────────────┘
- *
- * The consequence, and it is a real one: the two-column rung is a ROW GRID, not a
- * second masonry, because source order into two tracks is what `display: contents`
- * leaves behind. A card that is shorter than its row-mate leaves empty space below
- * itself rather than stretching — which is what `align-items: start` is for, and it is
- * load-bearing rather than tidy. Without it an unboxed note card beside a tall article
- * card would reveal a box the article's height on hover.
- *
- * ── AND WHY NO SCRIPT RESCUES THE MIDDLE RUNG ────────────────────────────────
- *
- * Re-partitioning in the browser on a breakpoint crossing sounds like the fix and is
- * not: someone LOADING the page at 800px would get the three-column partition painted
- * into a two-track grid before any script ran. The CSS has to be correct at every
- * width on its own, so the middle rung is a row grid and that is the design.
- *
- * Filtering is the different case, and the one where a client re-partition IS wanted —
- * a build-time partition balances against the whole set, and 400 random filter
- * selections left it 800-1300px ragged at the median against ~300 when re-partitioned
- * live. That lands with the chips, not here.
+ * So with no JavaScript this is a row grid: correct order, nearly flush at the bottom
+ * (29px), and airier than intended — a 59px median gap against the design's 32, about
+ * 16% of extra height. Accepted (Andy, 2026-08-28). Content is never hidden by it.
  */
 import {loadQuery} from '../../sanity/load-query'
 import {INSIGHTS_INDEX_QUERY} from '../../sanity/queries/insights'
 import {SINGLETON_HEADER_QUERY} from '../../sanity/queries/singletons'
-import {partitionColumns, estimateCardHeight} from '../../lib/masonry'
+import {slugify} from '../../lib/slug'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Band from '../../components/Band.astro'
 import Grid from '../../components/Grid.astro'
@@ -96,9 +64,6 @@ import Footer from '../../components/Footer.astro'
 import Prose from '../../components/prose/Prose.astro'
 import ArticleCard from '../../components/cards/ArticleCard.astro'
 import NoteCard from '../../components/cards/NoteCard.astro'
-
-/** The rung the partition is computed for. See the ladder in the style block. */
-const MASONRY_COLUMNS = 3
 
 /* Both fetches are independent, so they go together rather than in series. */
 const [page, insights] = await Promise.all([
@@ -112,20 +77,18 @@ const [page, insights] = await Promise.all([
 if (!page) throw new Error('[insights/index] no singleton with slug "insights"')
 
 /**
- * One flat shape per card, resolved BEFORE the partition rather than inside the
- * template.
+ * One flat shape per card, in date order — which is now also DOM order.
  *
- * Two reasons it happens here. The estimator wants the strings the card will actually
- * render — a Clipping shows its source domain where a Note shows its description — so
- * resolving them once means the height model and the markup cannot disagree about what
- * is on the card. And the template then does no data work at all beyond choosing a
- * component.
+ * Resolved here rather than in the template so the template does no data work beyond
+ * choosing a component. `body` and `hasMedia` no longer feed a height model — nothing
+ * predicts heights any more — but they still record which of the two strings a card
+ * actually renders, which the filter chips will want.
  *
  * The query filters on `defined(slug.current)`, but TypeGen types a projected slug as
  * `string | null` because it cannot see the filter — so this narrows rather than
  * asserting, exactly as `[slug].astro` does for `getStaticPaths`.
  */
-const ordered = insights.flatMap((item) => {
+const cards = insights.flatMap((item) => {
   if (!item.slug) return []
 
   const isNote = item._type === 'note'
@@ -142,38 +105,49 @@ const ordered = insights.flatMap((item) => {
       description: item.shortDescription,
       image: item.heroImage,
       sourceDomain,
-      /* What the estimator measures: the body a Clipping renders is its domain, not
-         its description, and a note never carries media. */
+      /* Which string the card actually renders: a Clipping shows its source domain
+         where a Note shows its description. */
       body: sourceDomain ?? item.shortDescription,
       hasMedia: Boolean(item.heroImage?.asset),
+
+      /*
+       * ── THE FACETS, AS SLUGS, ON THE CARD ITSELF ───────────────────────────
+       *
+       * There is no JSON facet index and there does not need to be one: every
+       * document renders, so the DOM already holds the complete topic and genre sets
+       * that live counts need. urls-and-filtering.md called for the index on the
+       * grounds that co-occurrence "requires the topic set of EVERY resource, not
+       * just those in the DOM" — true, and satisfied here by rendering all of them.
+       * It comes back when show-more stops rendering everything, around 150 items.
+       *
+       * SLUGIFIED FROM prefLabel, WITH NO altLabels. Rendering an altLabel as its own
+       * chip would put two controls with identical behaviour side by side; they are
+       * for eventual search support instead (Andy, 2026-08-28). Verified across the
+       * live vocabulary: 31 topics and 9 genres in use produce 40 distinct slugs with
+       * zero collisions, all clean kebab-case.
+       *
+       * `slugify` and not a stored slug because concepts have no slug field — and
+       * because this is the same transform the phase 6 nginx rule assumes when it
+       * rewrites `/insights/tag/{slug}/` to `?topic={slug}`.
+       *
+       * ── SPACE-SEPARATED, WHICH IS A REAL CHOICE ────────────────────────────
+       *
+       * `data-topics="a b c"` rather than a comma list, because `~=` matches one word
+       * of a space-separated attribute natively: `[data-topics~="knowledge-graphs"]`
+       * is a selector, not a parse. That keeps the option of filtering in pure CSS
+       * open, and it means the script never splits a string to test membership.
+       *
+       * It also sidesteps the stega problem urls-and-filtering.md flags — these are
+       * clean slugs in an attribute, never rendered text, so preview mode's encoded
+       * metadata cannot land in them.
+       */
+      genreSlug: item.genre ? slugify(item.genre) : null,
+      topicSlugs: (item.topics ?? [])
+        .filter((topic): topic is string => Boolean(topic))
+        .map(slugify),
     },
   ]
 })
-
-/**
- * The date index, assigned AFTER the slug filter so it is dense — 0..n-1 with no
- * holes. It is what each card hands to CSS `order`, so a hole would leave a gap in
- * the sort rather than an error, which is the kind of thing nothing would report.
- *
- * Taken from this array and not from the query result's index for the same reason.
- */
-const cards = ordered.map((card, index) => ({...card, order: index}))
-
-/**
- * Greedy, shortest-column-first, walking newest to oldest.
- *
- * Prefix-balanced by construction — the columns are approximately level after EVERY
- * placement, not just the last — which is what will make "show more" free when it
- * arrives: revealing the tail of each column keeps the balance without a second
- * partition. Measured on the real corpus: 105-157px ragged at most prefix lengths
- * against a 6000px column.
- *
- * ONE ARITHMETIC TRAP FOR THAT LATER WORK. A reveal count that is not a multiple of
- * MASONRY_COLUMNS lands the remainder on one column and undoes the balance — the first
- * 20 measured 413px ragged where the first 18 and first 21 measured 105 and 134. The
- * increment wants to be a multiple of the column count.
- */
-const columns = partitionColumns(cards, MASONRY_COLUMNS, estimateCardHeight)
 ---
 
 <BaseLayout title={page.title ?? 'Insights'} description={page.lede ?? undefined}>
@@ -222,37 +196,42 @@ const columns = partitionColumns(cards, MASONRY_COLUMNS, estimateCardHeight)
         */
         }
 
+        {
+          /*
+          FLAT, AND IN DATE ORDER. No column wrappers: the columns are `nth-child`
+          rules in the style block, so the DOM sequence is the reading sequence at
+          every width and there is nothing here for a partition to reorder.
+        */
+        }
         <div class="masonry">
           {
-            columns.map((column) => (
-              <div class="masonry-column">
-                {column.map((card) =>
-                  card.isNote ? (
-                    <NoteCard
-                      as="h2"
-                      order={card.order}
-                      href={card.href}
-                      title={card.title}
-                      genre={card.genre}
-                      date={card.date}
-                      description={card.description}
-                      sourceDomain={card.sourceDomain}
-                    />
-                  ) : (
-                    <ArticleCard
-                      as="h2"
-                      order={card.order}
-                      href={card.href}
-                      title={card.title}
-                      genre={card.genre}
-                      date={card.date}
-                      description={card.description}
-                      image={card.image}
-                    />
-                  ),
-                )}
-              </div>
-            ))
+            cards.map((card) =>
+              card.isNote ? (
+                <NoteCard
+                  as="h2"
+                  data-genre={card.genreSlug}
+                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  sourceDomain={card.sourceDomain}
+                />
+              ) : (
+                <ArticleCard
+                  as="h2"
+                  data-genre={card.genreSlug}
+                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  image={card.image}
+                />
+              ),
+            )
           }
         </div>
       </Grid>
@@ -326,15 +305,18 @@ const columns = partitionColumns(cards, MASONRY_COLUMNS, estimateCardHeight)
   /*
    * ── THE LADDER ──────────────────────────────────────────────────────────────
    *
-   * DRAFT — this is the part CLAUDE.md puts in Andy's column, written to be argued
-   * with rather than accepted. Three rungs, mobile-first, and the breakpoint numbers
-   * stay in tokens.css: these read the `--breakpoint-*` flags rather than restating
-   * `48rem` and `64rem`.
+   * Mobile-first, and the breakpoint widths stay in tokens.css alone: these read the
+   * `--breakpoint-*` flags rather than restating 48rem and 64rem.
    *
-   * Kept as style container queries rather than a `--masonry-columns` token because
-   * the rung changes TWO things that have to move together — the track count and
-   * whether the column boxes exist at all — and only the first is a value. Splitting
-   * it would put half the ladder in tokens.css and half here.
+   * COLUMNS COME FROM `nth-child`, NOT FROM A DATA ATTRIBUTE. Andy's sketch proposed
+   * cycling an A/B/C attribute per card, which works — but the cycle is exactly the
+   * card's position among its siblings, and `nth-child` reads that directly. Nothing
+   * to generate, nothing to ship in the markup, and it cannot drift out of step with
+   * source order the way a baked attribute could.
+   *
+   * The explicit column is what keeps the columns INDEPENDENT once the spans arrive:
+   * a card whose definite column sits left of the placement cursor pushes the cursor
+   * down a row, so each column stacks on its own instead of sharing a row height.
    */
   .masonry {
     grid-column: var(--col-full);
@@ -343,37 +325,31 @@ const columns = partitionColumns(cards, MASONRY_COLUMNS, estimateCardHeight)
     grid-template-columns: 1fr;
 
     /* Horizontal is grid, vertical is rhythm. The board draws 24 between columns and
-       32 between cards, which is exactly this pair. */
+       32 between cards, which is exactly this pair. `row-gap` applies in the no-JS
+       row-grid state; once spans arrive the gap is built into the span instead. */
     column-gap: var(--grid-gutter);
     row-gap: var(--rhythm-list);
 
     /*
-     * NOT DECORATIVE, AND IT APPLIES AT EVERY RUNG.
-     *
-     * At `lg` it stops the three column boxes stretching to the tallest. Below `lg`
-     * the column boxes are gone and the CARDS are the grid items, where stretching
-     * would equalise every row — and an unboxed note card stretched to a tall
-     * article card's height would reveal that whole box on hover.
-     *
-     * Set on the container rather than per card deliberately: `display: contents`
-     * changes the box tree and not the selector tree, so `.masonry > *` still matches
-     * the erased wrapper. `align-items` reaches whatever the real grid items are.
+     * REQUIRED, at every rung. In the row-grid state it stops cards stretching to
+     * their row's height — an unboxed note card stretched to a tall article card's
+     * height would reveal that whole box on hover. In the span state it stops a card
+     * stretching to fill its span, which is what leaves the trailing 32 as the gap.
      */
     align-items: start;
-  }
-
-  /*
-   * Erased below `lg`, so the cards become grid items of `.masonry` in SOURCE ORDER —
-   * which is date order, and is why the narrow rungs need no second partition. The
-   * boxes come back at `lg`, where the build-time partition applies.
-   */
-  .masonry-column {
-    display: contents;
   }
 
   @container style(--breakpoint-md: true) {
     .masonry {
       grid-template-columns: repeat(2, 1fr);
+    }
+
+    .masonry > :nth-child(2n + 1) {
+      grid-column: 1;
+    }
+
+    .masonry > :nth-child(2n) {
+      grid-column: 2;
     }
   }
 
@@ -382,14 +358,166 @@ const columns = partitionColumns(cards, MASONRY_COLUMNS, estimateCardHeight)
       grid-template-columns: repeat(3, 1fr);
     }
 
-    /* A flex column rather than block flow, so the 32 between cards is one `gap`
-       instead of a sibling-margin rule. Portable Text's flat-sequence constraint —
-       the reason the article body uses margins — does not apply to a list of
-       components we are emitting ourselves. */
-    .masonry-column {
-      display: flex;
-      flex-direction: column;
-      gap: var(--rhythm-list);
+    .masonry > :nth-child(3n + 1) {
+      grid-column: 1;
+    }
+
+    .masonry > :nth-child(3n + 2) {
+      grid-column: 2;
+    }
+
+    .masonry > :nth-child(3n) {
+      grid-column: 3;
     }
   }
+
+  /*
+   * ── THE JS-ENHANCED STATE ───────────────────────────────────────────────────
+   *
+   * Added by the script below once it has measured every card. 1px rows are small
+   * enough that no two cards can share one, so the shared-row height that makes the
+   * base state a row grid stops existing. `row-gap: 0` because the 32 is inside each
+   * span — see the script.
+   *
+   * ── `dense`, CHOSEN ON THE EYE AND PAID FOR IN TAB ORDER ────────────────────
+   *
+   * Sparse packing moves the placement cursor forward only, which guarantees a card
+   * never appears above an earlier one — but it also means a card can be held down by
+   * a taller card in a PREVIOUS column rather than by its own, leaving gaps well over
+   * the design's 32.
+   *
+   * MEASURED ON A CORPUS CARRYING ONE UNUSUALLY TALL CARD, which is the case that
+   * settled it — an even set of heights understates sparse badly:
+   *
+   *                     worst gap   gaps > 33   total excess   ragged
+   *   sparse             287.75px       3          511px        365px
+   *   dense               32.88px       0            0px        168px
+   *
+   * So dense is not a trade of balance for order — it is better on BOTH counts here,
+   * and a 288px hole in a column is not a rounding error. Judged on screen and chosen
+   * (Andy, 2026-08-28); for anyone not navigating by keyboard it is strictly better.
+   *
+   * WHAT IT COSTS, STATED PLAINLY. Dense can float a later card above an earlier one,
+   * so the visual sequence and the DOM sequence come apart: on this corpus 21 of 45
+   * positions differ — but NO CARD MOVES MORE THAN TWO SLOTS. That is the number worth
+   * keeping: it is a chain of small local shifts, not the wholesale column-major
+   * jumbling that ruled `column-count` out, and the count is inflated by construction
+   * because one card rising past another displaces both.
+   *
+   * DOM ORDER ITSELF IS UNTOUCHED, so screen-reader traversal and a future `h-feed`
+   * stay chronological. Only the visual-to-focus correspondence gives, and only
+   * locally. Accepted as minor, explicitly as a judgment about a real experience
+   * rather than a measurement.
+   *
+   * REVISITABLE IN ONE WORD. Nothing structural depends on it — not the DOM order, the
+   * nth-child placement, the spans, or the filter scripts, which act on WHICH column a
+   * card is in rather than where it sits within one. Drop `dense` and the ordering
+   * guarantee comes back at the cost of the gaps. Tracked in docs/open-questions.md,
+   * with the console snippet that produced the 6-of-45 figure.
+   */
+  .masonry.is-measured {
+    grid-auto-rows: 1px;
+
+    /* `row dense` rather than the equivalent bare `dense`, which is valid — the
+       grammar is `[row | column] || dense` — but leaves the axis implied. */
+    grid-auto-flow: row dense;
+    row-gap: 0;
+  }
+
+  .masonry.is-measured > * {
+    grid-row: span var(--card-span);
+  }
 </style>
+
+<script>
+  /**
+   * The masonry enhancement: measure every card, hand each one a row span.
+   *
+   * ── WHY THIS CANNOT HAPPEN AT BUILD TIME ─────────────────────────────────────
+   *
+   * A card's height depends on how its title and description wrap, which depends on
+   * the column width and the loaded font. Only the browser knows. An earlier build
+   * predicted heights from character counts and was accurate to a couple of pixels,
+   * but prediction is not good enough HERE: with `grid-auto-rows: 1px` a span is a
+   * hard track size, so any under-estimate makes a card overflow into its neighbour.
+   *
+   * ── AND WHY IT MEASURES BEFORE IT APPLIES ────────────────────────────────────
+   *
+   * Once the class is on, a card's grid area IS its span, so `offsetHeight` would
+   * return the span rather than the content. Hence the remove / measure / add
+   * sequence. `align-items: start` on the container is what keeps the measured height
+   * the natural one in the row-grid state rather than the row's height.
+   */
+  /* The grid is passed in rather than closed over, so it is non-null by TYPE rather
+     than by a check the compiler cannot see through: TypeScript will not narrow a
+     captured binding into a hoisted function declaration, since nothing proves the
+     function is not called before the check. A parameter settles it. */
+  function enhance(grid: HTMLElement) {
+    const cards = Array.from(grid.children) as HTMLElement[]
+
+    function measure() {
+      /* Back to the row grid so each card reports its own height. */
+      grid.classList.remove('is-measured')
+
+      /* The 32 is read from the cascade rather than hardcoded, so it follows
+         `--rhythm-list` if that ever moves. Read while the row gap still applies —
+         `is-measured` sets it to 0. */
+      const gap = Math.round(parseFloat(getComputedStyle(grid).rowGap)) || 0
+
+      /*
+       * `ceil` OF THE FRACTIONAL HEIGHT, not `offsetHeight`.
+       *
+       * `offsetHeight` is rounded to the nearest integer, so it rounds DOWN as often
+       * as up — and a span one pixel short of its card is the one error this mechanism
+       * cannot absorb, because with 1px rows the span is a hard track size and the
+       * card overflows into its neighbour. Measured at the 2-column rung with
+       * `offsetHeight`, the median gap came out at 30 rather than 32.
+       *
+       * `getBoundingClientRect().height` is fractional and `ceil` always errs long, so
+       * gaps land in [32, 33) and overlap is impossible.
+       *
+       * Two passes on purpose: read every height, THEN write every span. Interleaving
+       * them would invalidate layout on each write and force a reflow per card.
+       */
+      const spans = cards.map((card) => Math.ceil(card.getBoundingClientRect().height) + gap)
+      cards.forEach((card, i) => card.style.setProperty('--card-span', String(spans[i])))
+
+      grid.classList.add('is-measured')
+    }
+
+    /* Fonts first: the metric-matched fallback and the real face wrap differently, so
+       measuring before the swap would bake in spans for the wrong face. */
+    document.fonts.ready.then(measure)
+
+    /*
+     * Column width changes with the rung, and wrapping changes with width, so spans go
+     * stale on resize. ResizeObserver on the grid rather than a window listener: it
+     * catches a rung crossing and anything else that changes the grid's box.
+     *
+     * ── THE WIDTH GUARD IS NOT AN OPTIMISATION, IT BREAKS A FEEDBACK LOOP ──────
+     *
+     * ResizeObserver watches BOTH axES, and applying spans changes the grid's HEIGHT —
+     * so an unguarded callback re-triggers itself. It would settle rather than spin,
+     * since the second pass computes identical spans, but it costs a second full
+     * measure of every card and is exactly the shape that logs "ResizeObserver loop
+     * completed with undelivered notifications". Only a WIDTH change can alter
+     * wrapping, so only a width change needs a re-measure.
+     *
+     * rAF rather than a timeout because this is layout work that should land before a
+     * paint. It does not fire in a background tab, which is correct: the deferred
+     * measure runs when the tab becomes visible, so a stale span is never displayed.
+     */
+    let queued = 0
+    let lastWidth = 0
+    new ResizeObserver((entries) => {
+      const width = Math.round(entries[0].contentRect.width)
+      if (width === lastWidth) return
+      lastWidth = width
+      cancelAnimationFrame(queued)
+      queued = requestAnimationFrame(measure)
+    }).observe(grid)
+  }
+
+  const grid = document.querySelector<HTMLElement>('.masonry')
+  if (grid) enhance(grid)
+</script>

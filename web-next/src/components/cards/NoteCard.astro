@@ -53,9 +53,9 @@ interface Props {
   /** A Clipping's source. Its presence, not the genre, selects the layout. */
   sourceDomain?: string | null
   as?: 'h2' | 'h3' | 'h4'
-  /** Visual position among siblings. See the longer note in ArticleCard. */
-  order?: number
   class?: string
+  /* Forwarded to the root element. See the longer note in ArticleCard. */
+  [key: string]: unknown
 }
 
 const {
@@ -66,15 +66,12 @@ const {
   description,
   sourceDomain,
   as: Tag = 'h3',
-  order,
   class: className,
+  ...rest
 }: Props = Astro.props
 ---
 
-<article
-  class:list={['note-card', className]}
-  style={order === undefined ? undefined : `--card-order: ${order}`}
->
+<article class:list={['note-card', className]} {...rest}>
   <Tag class="card-title"><a href={href}>{title}</a></Tag>
   <Eyebrow genre={genre} date={date} />
 
@@ -109,10 +106,6 @@ const {
     border: var(--border-width-hairline) solid var(--color-border);
     border-radius: var(--radius-2);
     background-color: var(--color-surface);
-
-    /* Visual position only — it does not move focus or screen-reader order. See the
-       longer note in ArticleCard for what that costs and why it is taken. */
-    order: var(--card-order, 0);
   }
 
   @container style(--breakpoint-md: true) {
