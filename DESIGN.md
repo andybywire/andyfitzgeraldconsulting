@@ -1017,6 +1017,31 @@ govern it, and the first is the one to protect:**
 bottom, and roughly 16% airier than intended. Accepted 2026-08-28 — the fallback is a legitimate layout
 and it never hides a card.
 
+#### The page header spans all 12 on a masonry index
+
+**`--col-main` is 8 of 12, and those 8 exist to leave 10–12 for a rail.** An index built on the
+masonry-and-filters pattern has no rail, so a header constrained to `--col-main` reserves space for
+something that never arrives — and it costs a line: at 656px the Insights lede runs **three** lines
+where it runs **two** at 996, pushing the first row of cards a full line down the initial view.
+
+**So on these pages the header takes `--col-full`, and the lede takes `max-width: 66ch`.** The cap is
+not an extra rule — it is the safety net Measure already specifies for exactly this case, "anything
+wider" than a column span provides. Measured at 1440 on the real lede:
+
+| | box | capacity | longest line | lines |
+|---|---|---|---|---|
+| `--col-main` | 656px | 52ch | 42 | 3 |
+| `--col-full`, uncapped | 996px | **79ch** | 74 | 2 |
+| `--col-full` + `66ch` | 830px | 66ch | 60 | 2 |
+
+Uncapped clears the 60–75 target on capacity, which this particular string happens not to reach and
+the next one would. **Leading stays at the `lead` role's 1.6**: 66ch sits between the ramp's 1.6 (~54)
+and 1.8 (~67) rungs and the line actually renders at 60, so the role's own value is the closer of the
+two — this is not a case for overriding it.
+
+**Applies to Insights and Presentations**, which share the pattern. It does not generalize to pages
+that *do* carry a rail, where `--col-main` is doing its real job.
+
 **`grid-auto-flow: row dense`**, decided 2026-08-28. Sparse flow lets a card be held down by a taller
 one in a *previous* column — measured at a **288px** hole with one unusually tall card in the set, and a
 365px ragged bottom against dense's 168. So dense is better on balance *and* on gap fidelity, not a
