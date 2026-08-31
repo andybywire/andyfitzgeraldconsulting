@@ -924,6 +924,22 @@ not 48 and 24.
 selected is a filled accent pill. **The chip border is its own role, not the card hairline** — a card
 is not a control, a chip is, and form inputs take the same token.
 
+**Chip geometry: `3px 12px`, giving the board's 29px capsule** (added 2026-08-31, when the chips were
+built and the front matter turned out to specify fill, border, radius and typography but no box).
+29 = the `chip` role's 21px line box + 2px border + 3 + 3. **The block padding is deliberately off the
+space scale** — a 21px line box cannot be centered in a 29px capsule by a scale derived from a 32px
+one — and `field-height` is not the answer here: it is 48 and belongs to the input field.
+
+**Selected is drawn from `aria-current`, not a class.** Same rule as the nav's current page: the fact
+belongs to the document, so the attribute that carries it to assistive technology should also draw the
+indicator. `aria-pressed` is button-only and these are links.
+
+**And a chip row's controls are not all links.** The facet chips have a natural `href` — the URL of the
+state after the click — but a **"See all" disclosure goes nowhere and is a `<button>`**. That is the
+honest reading of "facet controls are links, not buttons" in
+[docs/urls-and-filtering.md](docs/urls-and-filtering.md): it is an argument about the things that change
+the URL, not about everything sitting in the row.
+
 **Tags are markers, deliberately not controls.** No hover, no pressed, no focus — those states don't
 exist and shouldn't be added. If tags ever become links they need hover and focus at 4.5.
 

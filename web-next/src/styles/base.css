@@ -74,6 +74,30 @@
   margin: 0;
 }
 
+/*
+ * ── `hidden` HAS TO WIN, AND IT DOES NOT WIN ON ITS OWN ──────────────────────
+ *
+ * The UA implements the attribute as `[hidden] { display: none }` — an ordinary
+ * declaration at (0,1,0). ANY author rule that sets `display` on the same element
+ * beats it on source order, so the element stays visible while the DOM says it is
+ * hidden. Nothing reports this: `el.hidden` is `true`, the attribute is in the
+ * markup, and the thing is on screen.
+ *
+ * Caught by the Insights filter chips (2026-08-31): `.chip { display: inline-flex }`
+ * left a `hidden` "See all genres" button rendering. Any component that sets
+ * `display` on something it also toggles has the same latent bug, which is why the
+ * fix belongs to the reset rather than to the chip.
+ *
+ * `!important` deliberately, and it is the one in this file. The attribute is not a
+ * styling hint, it is a statement that the element is not applicable — there is no
+ * legitimate case for a component overriding it, and `[hidden]` cannot outrank an
+ * arbitrary future selector any other way. Same reasoning every mainstream reset
+ * uses. Use `[hidden]` for "not applicable" and a class for "styled away".
+ */
+[hidden] {
+  display: none !important;
+}
+
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 
 body {
