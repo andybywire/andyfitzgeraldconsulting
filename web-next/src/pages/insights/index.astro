@@ -54,7 +54,7 @@
  */
 import {loadQuery} from '../../sanity/load-query'
 import {INSIGHTS_INDEX_QUERY} from '../../sanity/queries/insights'
-import {SINGLETON_HEADER_QUERY} from '../../sanity/queries/singletons'
+import {SINGLETON_WORK_BAND_QUERY} from '../../sanity/queries/singletons'
 import {slugify} from '../../lib/slug'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Band from '../../components/Band.astro'
@@ -64,10 +64,11 @@ import Footer from '../../components/Footer.astro'
 import Prose from '../../components/prose/Prose.astro'
 import ArticleCard from '../../components/cards/ArticleCard.astro'
 import NoteCard from '../../components/cards/NoteCard.astro'
+import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
 
 /* Both fetches are independent, so they go together rather than in series. */
 const [page, insights] = await Promise.all([
-  loadQuery(SINGLETON_HEADER_QUERY, {slug: 'insights'}),
+  loadQuery(SINGLETON_WORK_BAND_QUERY, {slug: 'insights'}),
   loadQuery(INSIGHTS_INDEX_QUERY),
 ])
 
@@ -495,6 +496,23 @@ const facets = [
         </div>
       </Grid>
     </Band>
+
+    {
+      /*
+      The band's content resolves in the query, not here — the page hands over what
+      SINGLETON_WORK_BAND_QUERY produced and never learns which of the three tiers it
+      came from. Insights sets its own, so today this is tier one.
+
+      Rendered only when the ladder produced something. There is a site default, so the
+      only way to reach null is Settings having no Work with Me band at all — in which
+      case a heading and a button over empty space would be worse than no band.
+    */
+    }
+    {
+      page.workBand && (
+        <WorkWithMeBand message={page.workBand.message} clientLogos={page.workBand.clientLogos} />
+      )
+    }
   </main>
 
   <Footer />

@@ -7,6 +7,26 @@ stale by construction.
 
 Design file: `pPZPGT6EpSaLkoUDK8HMMp`.
 
+## Where the mobile designs are — read this before looking for one
+
+**Every mobile design is a component VARIANT on the `⚒️ Components` page, not a frame on
+`💻 Desktop`.** This has now cost more than one session, because the obvious search fails in a way
+that looks conclusive: the Desktop page holds all sixteen page mocks, every one of them 1440 wide,
+so listing its frames and finding nothing under 1440 reads as "there are no mobile designs" rather
+than "you are looking on the wrong page."
+
+- **Page:** `⚒️ Components`, node `949:4650` —
+  [open it](https://www.figma.com/design/pPZPGT6EpSaLkoUDK8HMMp/AF-Consulting-2026?node-id=949-4649)
+- **The pattern:** a component frame holds two symbols named `Viewport=Desktop` and
+  `Viewport=Mobile`. Searching the page metadata for `Viewport=Mobile` finds all of them at once.
+- **Known mobile variants:** Connect/Work with me, Footer, Topics, Page Header, Contact, Top Bar,
+  note card, preso card. Widths vary — 375 mostly, 343 and 360 in places — so do not infer the
+  breakpoint from the frame width.
+
+`get_metadata` with no `nodeId` lists only the two top-level pages, which is the fastest way to
+confirm the Components page exists before drilling into it. It is large but returns whole, unlike
+the Desktop page, which exceeds the token cap and has to be read from the saved file.
+
 ## Collections and modes
 
 | Collection | Contents | Modes |

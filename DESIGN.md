@@ -920,6 +920,28 @@ not 48 and 24.
 `border-on-accent`. On a band the ghost cannot lighten while keeping its label legible, so it inverts:
 **outline → solid white → gray**.
 
+**Button geometry: `min-width: 231px`, `7px 24px`, giving the board's 43px control** (added
+2026-09-01, when the button was built and the front matter turned out to specify fill, text,
+typography and radius but no box — the same gap the filter chip had).
+
+- **231 is `span-3`, and the label is centered in it rather than padded.** "Learn more" is 90px wide
+  and "Subscribe via RSS" is 138px; both sit in 231, with 70.5 and 46.5 either side. So the horizontal
+  space is a consequence of the width, not a value to read off.
+- **`min-width`, not `width`.** A fixed pixel width clips the first label longer than it, and these
+  labels come from the CMS. The board is reproduced exactly up to 183px of label, and the control grows
+  beyond it.
+- **The block padding is 7, not the board's 8, because the stroke moves.** Figma draws the ghost's
+  border *inside* the box, which CSS cannot; both variants carry the hairline — transparent on the
+  primary, so the two match — and it lands outside the padding box. `7 + 27 + 7 + 2 = 43`. Off the
+  space scale by a pixel for the same reason the chip's 3px is.
+- **The ghost's resting fill is the accent itself, not `transparent`.** It reads as transparent
+  because the band matches it, and saying so explicitly is what makes the hover a color change rather
+  than an appearance from nothing.
+- **The ghost swaps the focus pair itself.** `<Band tone="accent">` does not re-point the focus ring —
+  see its note for why it cannot and should not — so the default offset-then-ring order would paint a
+  blue-500 ring onto a blue-500 ground. Reversed, the inner ring reads against the button and the outer
+  white one against the band. Same fix as the mode selector's pill.
+
 **Filter chips.** Rest is a surface with a control border; hover and pressed tint toward the accent;
 selected is a filled accent pill. **The chip border is its own role, not the card hairline** — a card
 is not a control, a chip is, and form inputs take the same token.
