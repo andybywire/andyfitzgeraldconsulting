@@ -26,5 +26,5 @@ export const schemaTypes = [
   table,
   bandRss,
   bandWorkWithMe,
-  bandGetInTouch
+  bandGetInTouch,
 ]

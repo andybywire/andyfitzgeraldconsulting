@@ -10,7 +10,7 @@ export default defineType({
       name: 'message',
       type: 'array',
       of: [{type: 'block', styles: PLAIN_STYLES, marks: MARKS}],
-      validation: rule => rule.required(),
+      validation: (rule) => rule.required(),
     }),
     defineField({
       name: 'clientLogos',
@@ -22,10 +22,12 @@ export default defineType({
           to: [{type: 'client'}],
         },
       ],
-      validation: rule => rule.required(),
+      validation: (rule) => rule.required(),
     }),
   ],
   preview: {
-    prepare() {return {title: 'Work with Me Band'}},
-  }  
+    prepare() {
+      return {title: 'Work with Me Band'}
+    },
+  },
 })

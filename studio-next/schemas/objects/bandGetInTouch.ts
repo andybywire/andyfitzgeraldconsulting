@@ -10,10 +10,12 @@ export default defineType({
       name: 'message',
       type: 'array',
       of: [{type: 'block', styles: PLAIN_STYLES, marks: MARKS}],
-      validation: rule => rule.required(),
+      validation: (rule) => rule.required(),
     }),
   ],
   preview: {
-    prepare() {return {title: 'Get in Touch Band'}},
-  }    
+    prepare() {
+      return {title: 'Get in Touch Band'}
+    },
+  },
 })

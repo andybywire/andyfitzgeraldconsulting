@@ -1,4 +1,5 @@
-import {defineType, defineField, type ObjectItem} from 'sanity'
+import {defineType, defineField} from 'sanity'
+import {uniqueBandTypes, uniqueDocumentTypes} from '../validation'
 
 export default defineType({
   name: 'settings',
@@ -62,37 +63,17 @@ export default defineType({
         'Default bands provide global messaging and titles for repeated bands across the site.',
       type: 'array',
       of: [{type: 'bandRss'}, {type: 'bandWorkWithMe'}, {type: 'bandGetInTouch'}],
-      validation: (rule) =>
-        rule.custom((items: ObjectItem[] | undefined) => {
-          if (!items) return true
-
-          const typesToCheck = ['bandRss', 'bandWorkWithMe', 'bandGetInTouch']
-          const invalidPaths: {_key: string}[][] = []
-
-          for (const typeName of typesToCheck) {
-            const matches = items.filter((item) => item._type === typeName && item._key)
-            if (matches.length > 1) {
-              matches.forEach((item) => {
-                invalidPaths.push([{_key: item._key}])
-              })
-            }
-          }
-
-          if (invalidPaths.length > 0) {
-            return {
-              paths: invalidPaths,
-              message: 'Each type may only appear once in this array',
-            }
-          }
-
-          return true
-        }),
+      validation: (rule) => rule.custom(uniqueBandTypes),
     }),
     defineField({
       name: 'bandOverrides',
       title: 'Page Type Band Overrides',
       type: 'array',
-      description: 'Customize bands for specific page types. These customizations supersede default bands, and are superseded by document level band customization',
+      description:
+        'Customize bands for specific page types. These customizations supersede default bands, and are superseded by document level band customization',
+      /* One entry per document type. Two entries naming the same type would make
+         resolution depend on array order, which the editor cannot see. */
+      validation: (rule) => rule.custom(uniqueDocumentTypes),
       of: [
         {
           name: 'bandOverride',
@@ -103,11 +84,12 @@ export default defineType({
               name: 'documentType',
               title: 'Document Type',
               type: 'string',
+              validation: (rule) => rule.required(),
               options: {
                 list: [
                   {title: 'Note', value: 'note'},
                   {title: 'Article', value: 'article'},
-                  {title: 'Case Study', value: 'caseStudy'}
+                  {title: 'Case Study', value: 'caseStudy'},
                 ],
               },
             }),
@@ -116,49 +98,26 @@ export default defineType({
               title: 'Page Type Bands',
               type: 'array',
               of: [{type: 'bandRss'}, {type: 'bandWorkWithMe'}, {type: 'bandGetInTouch'}],
-              validation: (rule) =>
-                rule.custom((items: ObjectItem[] | undefined) => {
-                  if (!items) return true
-        
-                  const typesToCheck = ['bandRss', 'bandWorkWithMe', 'bandGetInTouch']
-                  const invalidPaths: {_key: string}[][] = []
-        
-                  for (const typeName of typesToCheck) {
-                    const matches = items.filter((item) => item._type === typeName && item._key)
-                    if (matches.length > 1) {
-                      matches.forEach((item) => {
-                        invalidPaths.push([{_key: item._key}])
-                      })
-                    }
-                  }
-        
-                  if (invalidPaths.length > 0) {
-                    return {
-                      paths: invalidPaths,
-                      message: 'Each type may only appear once in this array',
-                    }
-                  }
-        
-                  return true
-                }),
+              validation: (rule) => rule.custom(uniqueBandTypes),
             }),
           ],
           preview: {
             select: {
               title: 'documentType',
-              bands: 'bands'
+              bands: 'bands',
             },
             prepare(selection) {
               const {title, bands} = selection
-              // expand this in the future to list the individual band types as a subtitle. 
+              // expand this in the future to list the individual band types as a subtitle.
               return {
                 title: `${title} band`,
-                subtitle: bands.length > 1 ? bands.length + ' overrides' : bands.length + ' override'
+                subtitle:
+                  bands.length > 1 ? bands.length + ' overrides' : bands.length + ' override',
               }
-            }
-          }
-        }
-      ]
+            },
+          },
+        },
+      ],
     }),
     defineField({
       name: 'homeLogos',
