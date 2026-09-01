@@ -5,7 +5,7 @@ import {
   ArrayHierarchyInput,
 } from 'sanity-plugin-taxonomy-manager'
 import {BODY_STYLES, PLAIN_STYLES, MARKS} from '../portableText'
-import {defineType, defineField} from 'sanity'
+import {defineType, defineField, type ObjectItem} from 'sanity'
 import {slugField} from '../slug'
 
 export default defineType({
@@ -200,6 +200,39 @@ export default defineType({
       title: 'Canonical URL',
       type: 'url',
       description: 'External site URL if article was first published elsewhere.',
+    }),
+    defineField({
+      name: 'bands',
+      title: 'Custom Bands',
+      description:
+        'Custom bands provide category-specific overrides for default bands defined in Settings.',
+      type: 'array',
+      of: [{type: 'bandRss'}],
+      validation: (rule) =>
+        rule.custom((items: ObjectItem[] | undefined) => {
+          if (!items) return true
+
+          const typesToCheck = ['bandRss', 'bandWorkWithMe', 'bandGetInTouch']
+          const invalidPaths: {_key: string}[][] = []
+
+          for (const typeName of typesToCheck) {
+            const matches = items.filter((item) => item._type === typeName && item._key)
+            if (matches.length > 1) {
+              matches.forEach((item) => {
+                invalidPaths.push([{_key: item._key}])
+              })
+            }
+          }
+
+          if (invalidPaths.length > 0) {
+            return {
+              paths: invalidPaths,
+              message: 'Each type may only appear once in this array',
+            }
+          }
+
+          return true
+        }),
     }),
   ],
 })

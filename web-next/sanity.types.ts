@@ -15,6 +15,86 @@
 export declare const internalGroqTypeReferenceTo: unique symbol
 
 // Source: schema.json
+export type BandGetInTouch = {
+  _type: 'bandGetInTouch'
+  message?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+}
+
+export type ClientReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'client'
+}
+
+export type BandWorkWithMe = {
+  _type: 'bandWorkWithMe'
+  message?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  clientLogos?: Array<
+    {
+      _key: string
+    } & ClientReference
+  >
+}
+
+export type BandRss = {
+  _type: 'bandRss'
+  title?: string
+  message?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  buttonTarget?: string
+}
+
 export type Table = {
   _type: 'table'
   headerRows?: number
@@ -65,13 +145,6 @@ export type Figure = {
   thumbnail?: boolean
 }
 
-export type ClientReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'client'
-}
-
 export type ReviewReference = {
   _ref: string
   _type: 'reference'
@@ -106,6 +179,33 @@ export type Settings = {
     altText?: string
     _type: 'image'
   }
+  bands?: Array<
+    | ({
+        _key: string
+      } & BandRss)
+    | ({
+        _key: string
+      } & BandWorkWithMe)
+    | ({
+        _key: string
+      } & BandGetInTouch)
+  >
+  bandOverrides?: Array<{
+    documentType?: 'note' | 'article' | 'caseStudy'
+    bands?: Array<
+      | ({
+          _key: string
+        } & BandRss)
+      | ({
+          _key: string
+        } & BandWorkWithMe)
+      | ({
+          _key: string
+        } & BandGetInTouch)
+    >
+    _type: 'bandOverride'
+    _key: string
+  }>
   homeLogos?: Array<
     {
       _key: string
@@ -220,6 +320,17 @@ export type Singleton = {
         _type: 'image'
         _key: string
       }
+  >
+  bands?: Array<
+    | ({
+        _key: string
+      } & BandRss)
+    | ({
+        _key: string
+      } & BandWorkWithMe)
+    | ({
+        _key: string
+      } & BandGetInTouch)
   >
 }
 
@@ -403,6 +514,11 @@ export type CaseStudy = {
     outline?: boolean
     _type: 'image'
   }
+  bands?: Array<
+    {
+      _key: string
+    } & BandWorkWithMe
+  >
 }
 
 export type Review = {
@@ -557,6 +673,11 @@ export type Article = {
       } & Table)
   >
   canonical?: string
+  bands?: Array<
+    {
+      _key: string
+    } & BandRss
+  >
 }
 
 export type Note = {
@@ -626,6 +747,11 @@ export type Note = {
     publisher?: string
     pubDate?: string
   }
+  bands?: Array<
+    {
+      _key: string
+    } & BandRss
+  >
 }
 
 export type Code = {
@@ -786,10 +912,13 @@ export type Geopoint = {
 }
 
 export type AllSanitySchemaTypes =
+  | BandGetInTouch
+  | ClientReference
+  | BandWorkWithMe
+  | BandRss
   | Table
   | SanityImageAssetReference
   | Figure
-  | ClientReference
   | ReviewReference
   | CaseStudyReference
   | Settings
