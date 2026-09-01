@@ -1,4 +1,5 @@
 import {defineQuery} from 'groq'
+import {BAND_WORK_WITH_ME} from '../fragments'
 
 /**
  * Singletons — CMS-governed pages with a UNIQUE layout, as opposed to `page`, which is
@@ -35,5 +36,28 @@ export const SINGLETON_HEADER_QUERY = defineQuery(`
 		title,
 		heroCopy,
 		"lede": pt::text(heroCopy)
+	}
+`)
+
+/**
+ * A singleton's header PLUS its Work with Me band — Insights today, and whichever of
+ * Home or Presentations lands next.
+ *
+ * Separate from SINGLETON_HEADER_QUERY rather than folded into it, for the reason that
+ * query's own note gives: a page should not be typed with fields it cannot use. Not every
+ * singleton carries this band, and the ones that do not would get a `workBand` that is
+ * always the site default whether or not anything renders it.
+ *
+ * The band resolves through the three-tier ladder in fragments.ts. For a singleton that
+ * is really two tiers — its own `bands` or the site default — because Settings offers no
+ * page-type override for singletons. Insights currently sets its own.
+ */
+export const SINGLETON_WORK_BAND_QUERY = defineQuery(`
+	*[_type == "singleton" && slug.current == $slug][0] {
+		_id,
+		title,
+		heroCopy,
+		"lede": pt::text(heroCopy),
+		${BAND_WORK_WITH_ME}
 	}
 `)
