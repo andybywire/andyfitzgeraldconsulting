@@ -1168,6 +1168,91 @@ export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
   }
 }>
 
+// Source: ../web-next/src/sanity/queries/related.ts
+// Variable: RELATED_POOL_QUERY
+// Query: {		"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {			"tops": topConcepts[]->{_id, prefLabel},			"concepts": concepts[]->{				_id,				prefLabel,				"parent": broader[0]._ref			}		},		"pool": *[			_type in ["article", "caseStudy", "note"]			&& defined(slug.current)			&& defined(pubDate)		] | order(pubDate desc) {				_id,	_type,	"slug": slug.current,				pubDate,	_updatedAt,			title,			shortDescription,			"genreId": genre._ref,			"genre": genre->prefLabel,			heroImage { 	asset,	crop,	hotspot,	altText,	caption },			"sourceDomain": clipRef.publisher,			"topics": topic[]->{				_id,				"parent": broader[0]._ref,				"parentIsTop": !defined(broader[0]->broader[0]._ref)			}		}	}
+export type RELATED_POOL_QUERY_RESULT = {
+  genres: {
+    tops: Array<{
+      _id: string
+      prefLabel: string | null
+    }> | null
+    concepts: Array<{
+      _id: string
+      prefLabel: string | null
+      parent: string | null
+    }> | null
+  } | null
+  pool: Array<
+    | {
+        _id: string
+        _type: 'article'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        title: string | null
+        shortDescription: string | null
+        genreId: string | null
+        genre: string | null
+        heroImage: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+          caption: string | null
+        } | null
+        sourceDomain: null
+        topics: Array<{
+          _id: string
+          parent: string | null
+          parentIsTop: false | true
+        }> | null
+      }
+    | {
+        _id: string
+        _type: 'caseStudy'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        title: string | null
+        shortDescription: string | null
+        genreId: string | null
+        genre: string | null
+        heroImage: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+          caption: string | null
+        } | null
+        sourceDomain: null
+        topics: Array<{
+          _id: string
+          parent: string | null
+          parentIsTop: false | true
+        }> | null
+      }
+    | {
+        _id: string
+        _type: 'note'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        title: string | null
+        shortDescription: string | null
+        genreId: string | null
+        genre: string | null
+        heroImage: null
+        sourceDomain: string | null
+        topics: Array<{
+          _id: string
+          parent: string | null
+          parentIsTop: false | true
+        }> | null
+      }
+  >
+}
+
 // Source: ../web-next/src/sanity/queries/singletons.ts
 // Variable: SINGLETON_HEADER_QUERY
 // Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy)	}
@@ -1260,6 +1345,7 @@ declare module '@sanity/client' {
     '\n\t*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {\n\t\t\n\t"rssBand": coalesce(\n\tbands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bands[_type == "bandRss"][0]\n){title, message, buttonTarget}\n\n\t}\n': INSIGHT_RSS_BAND_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
+    '\n\t{\n\t\t"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {\n\t\t\t"tops": topConcepts[]->{_id, prefLabel},\n\t\t\t"concepts": concepts[]->{\n\t\t\t\t_id,\n\t\t\t\tprefLabel,\n\t\t\t\t"parent": broader[0]._ref\n\t\t\t}\n\t\t},\n\n\t\t"pool": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t] | order(pubDate desc) {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\t"genreId": genre._ref,\n\t\t\t"genre": genre->prefLabel,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"sourceDomain": clipRef.publisher,\n\t\t\t"topics": topic[]->{\n\t\t\t\t_id,\n\t\t\t\t"parent": broader[0]._ref,\n\t\t\t\t"parentIsTop": !defined(broader[0]->broader[0]._ref)\n\t\t\t}\n\t\t}\n\t}\n': RELATED_POOL_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\tbands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
   }

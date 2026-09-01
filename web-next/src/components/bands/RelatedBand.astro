@@ -1,0 +1,155 @@
+---
+/**
+ * The "Related Insights" band — every detail page.
+ *
+ * Ranking happens in `lib/related.ts` and eligibility in the query; this component receives
+ * an ordered list and renders it. It does own one piece of logic, the heading, because that
+ * is presentation: the band says *Related* when the ranker found real matches and *Recent*
+ * when it fell through to the date fallback, and putting that split in the page would make
+ * every future consumer restate it.
+ *
+ * ── THE SAME CARDS AS THE INDEX, AT h3 ───────────────────────────────────────
+ *
+ * A detail page's h1 is the article title and this band's own heading is an h2, so the card
+ * titles sit at h3 — one level below the index, where they are h2 under the page h1.
+ */
+import type {SanityImageSource} from '../../sanity/image'
+import Band from '../Band.astro'
+import Grid from '../Grid.astro'
+import ArticleCard from '../cards/ArticleCard.astro'
+import NoteCard from '../cards/NoteCard.astro'
+
+export type RelatedItem = {
+  _id: string
+  _type?: string | null
+  slug?: string | null
+  title?: string | null
+  genre?: string | null
+  pubDate?: string | null
+  shortDescription?: string | null
+  heroImage?: SanityImageSource | null
+  sourceDomain?: string | null
+}
+
+interface Props {
+  /** Plural, as it appears in the heading — "Insights", "Notes", "Presentations". */
+  noun: string
+  /** The ranker found nothing, so these are simply the most recent eligible documents. */
+  isFallback?: boolean
+  items: RelatedItem[]
+}
+
+const {noun, isFallback = false, items}: Props = Astro.props
+
+const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
+---
+
+{
+  /*
+  `space="section"` for the board's 96, clamping to 64 at 375 — both measured. The tone is
+  the default `page`: the board draws this band on the page ground with white cards, the
+  same figure-on-ground the index masonry uses, so it sets no background of its own.
+*/
+}
+<Band space="section" aria-labelledby="related-band">
+  <Grid class="related-grid">
+    <h2 id="related-band" class="related-title">{heading}</h2>
+
+    <ul class="related-cards" role="list">
+      {
+        items.map((item) => (
+          <li>
+            {item._type === 'note' ? (
+              <NoteCard
+                as="h3"
+                href={`/insights/${item.slug}/`}
+                title={item.title ?? 'Untitled'}
+                genre={item.genre}
+                date={item.pubDate}
+                description={item.shortDescription}
+                sourceDomain={item.sourceDomain ?? null}
+              />
+            ) : (
+              <ArticleCard
+                as="h3"
+                href={`/insights/${item.slug}/`}
+                title={item.title ?? 'Untitled'}
+                genre={item.genre}
+                date={item.pubDate}
+                description={item.shortDescription}
+                image={item.heroImage}
+              />
+            )}
+          </li>
+        ))
+      }
+    </ul>
+  </Grid>
+</Band>
+
+<style>
+  /*
+   * 48 between the heading and the cards, measured identically on the desktop and mobile
+   * boards — and NOT the 16 the other two bands use. The difference is real rather than
+   * drift: Work with Me and RSS put a heading directly above its own copy, where this one
+   * introduces a grid of separate things.
+   */
+  .related-grid {
+    row-gap: var(--rhythm-block);
+  }
+
+  .related-title,
+  .related-cards {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * ── THE CARDS ARE THEIR OWN GRID, NOT GRID ITEMS ────────────────────────────
+   *
+   * Three at `span-4` would place identically on the page grid, but a list of related
+   * documents wants to BE a list — so the <ul> takes the full width and lays its own
+   * columns out inside it. 996 across three columns with the 24 gutter gives 316 each,
+   * which is the card width the board draws and the same one the index masonry uses.
+   *
+   * `role="list"` because `list-style: none` drops list semantics in Safari.
+   */
+  .related-cards {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    display: grid;
+    grid-template-columns: 1fr;
+    column-gap: var(--grid-gutter);
+    /* 32 between stacked cards, measured off the mobile board — `rhythm-list`, the same
+       gap the masonry leaves between cards. */
+    row-gap: var(--rhythm-list);
+
+    /*
+     * REQUIRED, and for the reason the masonry documents: without it every card stretches
+     * to its row's height, which on a note card would reveal its whole hover box at rest.
+     * It is also what Andy asked for directly — the cards take the height they need and
+     * the bottom edge rags, matching what the masonry above already does.
+     */
+    align-items: start;
+  }
+
+  /* base.css gives every `li + li` 16px of prose rhythm, which would fight `row-gap`. */
+  .related-cards li + li {
+    margin-top: 0;
+  }
+
+  /* The index ladder, so a related card and an index card behave the same at every width.
+     With exactly three cards the middle rung is a row of two and then one. */
+  @container style(--breakpoint-md: true) {
+    .related-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .related-cards {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+</style>

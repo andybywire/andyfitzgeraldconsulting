@@ -64,6 +64,9 @@ import SanityHero from '../../components/SanityHero.astro'
 import Prose from '../../components/prose/Prose.astro'
 import Eyebrow from '../../components/Eyebrow.astro'
 import RssBand from '../../components/bands/RssBand.astro'
+import RelatedBand from '../../components/bands/RelatedBand.astro'
+import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
+import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
 import {headingId, headingText} from '../../components/prose/headingId'
 
 export async function getStaticPaths() {
@@ -81,9 +84,10 @@ export async function getStaticPaths() {
    INSIGHT_DETAIL_QUERY silently untypes it. See INSIGHT_RSS_BAND_QUERY for the mechanism.
    They are independent, so they go together rather than in series. */
 const {slug} = Astro.params
-const [insight, bands] = await Promise.all([
+const [insight, bands, related] = await Promise.all([
   loadQuery(INSIGHT_DETAIL_QUERY, {slug}),
   loadQuery(INSIGHT_RSS_BAND_QUERY, {slug}),
+  loadQuery(RELATED_POOL_QUERY),
 ])
 
 /* Loud rather than quiet. Every slug here came out of the dataset a moment ago,
@@ -94,6 +98,32 @@ if (!insight) throw new Error(`[insights/[slug]] no document for slug "${slug}"`
 /* `genre` is defined on all 42 documents (verified 2026-08-26), so the fallback is
    for a future document mid-edit rather than for the corpus. */
 const genreLabel = insight.genre ?? 'Insight'
+
+/*
+ * ── RELATED CONTENT ──────────────────────────────────────────────────────────
+ *
+ * The pool arrives unfiltered with the Genre tree beside it, and everything downstream is
+ * decided here: which branch this page draws from, which genres that admits, and how the
+ * pool ranks against this document's topics. See lib/related.ts for the rule.
+ *
+ * The Sanity `_type` picks the branch — an article draws from the Document branch minus the
+ * Note subtree, a note from the Note subtree. Genre then filters, and it is doing real work
+ * rather than restating the type: four documents stored as `article` carry a Presentation
+ * genre, and this is what keeps those interviews out of an article's related list.
+ *
+ * `topic` is projected by the pool query but not by INSIGHT_DETAIL_QUERY in the shape the
+ * ranker needs, so this document's own row is taken FROM THE POOL. It is in there — the
+ * pool is every publishable document — which also means one source for the topic shape
+ * rather than two projections to keep in step.
+ */
+const branch = branchForType(insight._type)
+const eligibleGenres = genresForBranch(branch, related.genres?.tops, related.genres?.concepts)
+const self = related.pool.find((row) => row._id === insight._id)
+const {items: relatedItems, isFallback} = rankRelated(
+  {_id: insight._id, topics: self?.topics},
+  related.pool,
+  eligibleGenres,
+)
 
 /**
  * The rail's "On This Page" list — h2 blocks only, matching what the board draws.
@@ -442,6 +472,20 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
           title={bands.rssBand.title}
           message={bands.rssBand.message}
           buttonTarget={bands.rssBand.buttonTarget}
+        />
+      )
+    }
+
+    {
+      /* Omitted entirely when the pool yields nothing — a heading over no cards is worse
+         than no band. Measured on the current corpus this cannot happen, since the thinnest
+         document still has five sibling matches, but a first-published document would hit
+         it. The noun follows the branch, so a note page reads "Related Notes". */
+      relatedItems.length > 0 && (
+        <RelatedBand
+          noun={branch === 'note' ? 'Notes' : 'Insights'}
+          isFallback={isFallback}
+          items={relatedItems}
         />
       )
     }
