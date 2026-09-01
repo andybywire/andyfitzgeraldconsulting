@@ -49,7 +49,11 @@
  * rather than `text-muted` in dark.
  */
 import {loadQuery} from '../../sanity/load-query'
-import {INSIGHT_DETAIL_QUERY, INSIGHT_SLUGS_QUERY} from '../../sanity/queries/insights'
+import {
+  INSIGHT_DETAIL_QUERY,
+  INSIGHT_RSS_BAND_QUERY,
+  INSIGHT_SLUGS_QUERY,
+} from '../../sanity/queries/insights'
 import {slugify} from '../../lib/slug'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Band from '../../components/Band.astro'
@@ -59,6 +63,7 @@ import Footer from '../../components/Footer.astro'
 import SanityHero from '../../components/SanityHero.astro'
 import Prose from '../../components/prose/Prose.astro'
 import Eyebrow from '../../components/Eyebrow.astro'
+import RssBand from '../../components/bands/RssBand.astro'
 import {headingId, headingText} from '../../components/prose/headingId'
 
 export async function getStaticPaths() {
@@ -72,8 +77,14 @@ export async function getStaticPaths() {
     .map((row) => ({params: row.params}))
 }
 
+/* Two queries rather than one projection, and not by preference — folding the band into
+   INSIGHT_DETAIL_QUERY silently untypes it. See INSIGHT_RSS_BAND_QUERY for the mechanism.
+   They are independent, so they go together rather than in series. */
 const {slug} = Astro.params
-const insight = await loadQuery(INSIGHT_DETAIL_QUERY, {slug})
+const [insight, bands] = await Promise.all([
+  loadQuery(INSIGHT_DETAIL_QUERY, {slug}),
+  loadQuery(INSIGHT_RSS_BAND_QUERY, {slug}),
+])
 
 /* Loud rather than quiet. Every slug here came out of the dataset a moment ago,
    so a miss means the two queries disagree — which should fail the build, not
@@ -412,6 +423,28 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
         </Grid>
       </Band>
     </article>
+
+    {
+      /*
+      OUTSIDE `</article>`, deliberately. The board puts it here — article band, then RSS,
+      then Related, then the footer — and the markup agrees for a second reason: this is
+      site apparatus, not part of the entry. When the `h-entry` wrapper lands it must not
+      swallow a subscribe prompt as `e-content`.
+
+      Rendered only if the ladder produced a band. There is a site default, so null means
+      Settings carries no RSS band at all, and a heading over an empty band is worse than
+      no band.
+    */
+    }
+    {
+      bands?.rssBand && (
+        <RssBand
+          title={bands.rssBand.title}
+          message={bands.rssBand.message}
+          buttonTarget={bands.rssBand.buttonTarget}
+        />
+      )
+    }
   </main>
 
   <Footer />

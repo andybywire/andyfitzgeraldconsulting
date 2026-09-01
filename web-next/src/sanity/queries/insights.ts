@@ -1,5 +1,5 @@
 import {defineQuery} from 'groq'
-import {DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
+import {BAND_RSS, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
 
 /**
  * Insights — `article`, `caseStudy` and `note`.
@@ -63,6 +63,17 @@ export const INSIGHTS_INDEX_QUERY = defineQuery(`
  * images — are deliberately NOT here. It has its own Figma board and its own page type, which
  * is item 4 in the phase 4 order; adding them now would type every article result with five
  * null fields it can never use.
+ *
+ * The RSS band is NOT projected here — see INSIGHT_RSS_BAND_QUERY below, which exists
+ * because folding it in silently untypes this one.
+ *
+ * ── KEEP COMMENTS OUT OF THE QUERY STRING ────────────────────────────────────
+ *
+ * This note started inside the template literal and broke the build twice over. Backticks
+ * around field names closed the JS string, and once those were removed a block comment
+ * still left TypeGen unable to parse the query — which does not error. It silently emits no
+ * result type, so `insight` becomes `any` and the only symptom is a scatter of
+ * implicit-any complaints in the PAGE that consumes it. Annotate the query from out here.
  */
 export const INSIGHT_DETAIL_QUERY = defineQuery(`
 	*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {
@@ -75,6 +86,37 @@ export const INSIGHT_DETAIL_QUERY = defineQuery(`
 		lede,
 		bodyText,
 		heroImage { ${IMAGE} }
+	}
+`)
+
+/**
+ * The RSS band for a detail page, fetched SEPARATELY — and the separation is forced.
+ *
+ * ── A FRAGMENT CAN SILENTLY UNTYPE THE QUERY IT IS ADDED TO ──────────────────
+ *
+ * Interpolating BAND_RSS into INSIGHT_DETAIL_QUERY produced a correct query, correct
+ * results, and a correctly generated `INSIGHT_DETAIL_QUERY_RESULT` carrying `rssBand`.
+ * It still broke the build — because `loadQuery` is typed as `ClientReturn<Q>`, a lookup
+ * into TypeGen's `SanityQueries` map keyed by the query's literal text, and that
+ * resolution has a complexity ceiling. Past it the lookup yields `any` instead of failing.
+ *
+ * The symptom points nowhere near the cause: `insight` becomes `any`, so the page reports
+ * four `implicit any` errors on unrelated callback parameters — `block`, `topic`,
+ * `heading` — and the query file itself looks clean. Verified by bisection: removing the
+ * fragment restored the type and every one of those errors at once, leaving only the
+ * expected "Property 'rssBand' does not exist".
+ *
+ * The article's `bodyText` union is already large enough that TypeScript truncates it when
+ * printing; a second Portable Text array is what tips it over. **The key matched exactly**
+ * — checked byte for byte against the generated file — so this is not the usual
+ * stale-typegen mismatch, and re-running typegen does not help.
+ *
+ * Splitting it costs one small query and buys the type back. It also generalises: note and
+ * presentation detail pages can reuse this without touching their own detail queries.
+ */
+export const INSIGHT_RSS_BAND_QUERY = defineQuery(`
+	*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {
+		${BAND_RSS}
 	}
 `)
 

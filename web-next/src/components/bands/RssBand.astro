@@ -1,0 +1,117 @@
+---
+/**
+ * The RSS call to action — every detail page, and the Presentations index.
+ *
+ * Content resolves through the three-tier ladder in sanity/fragments.ts, so this receives
+ * one object and never learns which tier produced it. See WorkWithMeBand for the shape of
+ * that argument; the difference here is that `title` IS content: it reads "Follow along
+ * with RSS" on an article and "Follow presentations with RSS" on a presentation, which is
+ * exactly the variation `bandRss` carries a field for and `bandWorkWithMe` does not.
+ *
+ * `buttonTarget` is content too, defaulting to /feed.xml in the schema. That matters more
+ * than it looks: per-taxonomy feeds arrive in phase 8, and this band is how a page points
+ * at one without a code change.
+ */
+import type {TypedObject} from 'astro-portabletext/types'
+import Band from '../Band.astro'
+import Grid from '../Grid.astro'
+import Prose from '../prose/Prose.astro'
+import Button from '../Button.astro'
+
+interface Props {
+  title?: string | null
+  message?: TypedObject[] | null
+  buttonTarget?: string | null
+}
+
+const {title, message, buttonTarget}: Props = Astro.props
+
+/* The schema requires all three, so a missing one means the ladder found no band at all
+   rather than a half-filled one. Falling back keeps a broken render impossible; the page
+   decides whether to show the band at all. */
+const href = buttonTarget ?? '/feed.xml'
+---
+
+{
+  /*
+  ── AN ACCENT BAND, AND THE ONLY ONE OF THE THREE ────────────────────────────
+
+  `tone="accent"` re-points the whole text-role bundle, so the heading and copy move to
+  `text-on-accent` without this component naming a colour. The button is the matching
+  half: `variant="ghost"` is the inversion DESIGN.md specifies for exactly this ground,
+  and it swaps its own focus pair because <Band> deliberately does not.
+
+  `space="section"` for the board's 96, not the default `band`, which is 64 — the same
+  as the other two repeated bands.
+*/
+}
+<Band tone="accent" space="section" aria-labelledby="rss-band">
+  <Grid class="rss-grid">
+    <h2 id="rss-band" class="rss-title">{title}</h2>
+
+    <div class="rss-message"><Prose value={message} /></div>
+
+    {/* An <a>, because it goes somewhere — Button renders one whenever it has an href. */}
+    <Button href={href} variant="ghost" class="rss-cta">Subscribe via RSS</Button>
+  </Grid>
+</Band>
+
+<style>
+  /* Same override, same reasoning, as the Work with Me band: <Grid>'s 64 exists "because
+     what lands below always starts with a heading", and what lands below this h2 is body
+     copy. The board draws 16. */
+  .rss-grid {
+    row-gap: var(--rhythm-heading-close);
+  }
+
+  .rss-title,
+  .rss-message,
+  .rss-cta {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * ── THE MOBILE LAYOUT, TAKEN FROM THE MOBILE PAGE ───────────────────────────
+   *
+   * Everything full width, the button last and stretched, 48 between the copy and it —
+   * 16 of row gap plus this 32.
+   *
+   * Measured off the 📱 Mobile page rather than guessed: content inset 16 to 343 wide,
+   * band padding 64, title to copy 16, copy to button 48, button 343. Note the RSS CTA
+   * has no `Viewport=Mobile` VARIANT on the Components page — it is a lone symbol that
+   * adapts — so the absence of a variant is not the absence of a mobile design. That
+   * mistake was made here first; docs/figma-notes.md now records where to look.
+   */
+  .rss-cta {
+    margin-top: var(--rhythm-list);
+  }
+
+  .rss-message :global(p + p) {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  /*
+   * ── THE DESKTOP SPLIT IS main + rail, WHICH IS NOT A COINCIDENCE ────────────
+   *
+   * The board puts the copy at 656 and the button at x=765 width 231. On the 996 grid a
+   * column is 61 and column 10 starts at 9 x 85 = 765, with span-3 measuring exactly 231
+   * — so those are `--col-main` and `--col-rail`, the same pair the article page uses,
+   * and the button's 231 min-width is span-3 rather than an arbitrary size.
+   *
+   * `align-self: center` reproduces the board's 26.5px offset without naming it: the
+   * button is 43 in a 96-tall row, and (96 - 43) / 2 is 26.5. Stating the centring rather
+   * than the offset means it stays right when the copy runs to two lines or four.
+   */
+  @container style(--breakpoint-md: true) {
+    .rss-message {
+      grid-column: var(--col-main);
+    }
+
+    .rss-cta {
+      grid-column: var(--col-rail);
+      align-self: center;
+      justify-self: stretch;
+      margin-top: 0;
+    }
+  }
+</style>
