@@ -1,0 +1,375 @@
+---
+/**
+ * An entry's header — the eyebrow, the title, the permalink, and the optional
+ * full-bleed hero beneath them.
+ *
+ * ── EXTRACTED, NOT WRITTEN (2026-09-02) ──────────────────────────────────────
+ *
+ * Every line of this file already existed: the markup and CSS come from the article
+ * page, and the note entry had independently written the title half. Case studies
+ * would have been the THIRD title band and the SECOND hero treatment, which is well
+ * past DESIGN.md's promotion trigger, so it moved here before that copy was made
+ * rather than after.
+ *
+ * The move is meant to be behaviour-neutral and was verified as such — see the note
+ * at the end of this comment.
+ *
+ * ── THE ONE THING THAT DIFFERS BETWEEN CONSUMERS, AND IT IS DERIVED ──────────
+ *
+ * The gap below the title. It is 16 when the title is bound to the prose that
+ * follows it, the way a heading is bound to its paragraph, and a full band gap when
+ * something sits between them. What sits between them is THE HERO — so:
+ *
+ *   no hero      the title is always adjacent to the prose   ->  16 at every width
+ *   with a hero  adjacent only at lg, where the hero moves   ->  band gap, 16 at lg
+ *                above the title
+ *
+ * That is one rule seen twice, not two rules, which is why `data-hero` derives it
+ * instead of a `titleGap` prop. The note page reached 16-at-every-width by its own
+ * reasoning and this reproduces it exactly.
+ *
+ * MOBILE-FIRST HOLDS THROUGH THE DERIVATION. The base case is the no-hero value,
+ * and a hero page below lg takes the band gap — which is the phone layout, where the
+ * hero really is between the title and the prose. An engine that never evaluates the
+ * lg query is left with something correct rather than with a desktop remnant.
+ *
+ * ── THE FLEX COLUMN LIVES HERE NOW ───────────────────────────────────────────
+ *
+ * It was on the article page's `.entry` (the <article> element). It moved down with
+ * the reorder, which is the correct home rather than an accident of nesting: flex
+ * earns its place ONLY because of `order`, and the two items that reorder are the
+ * title band and the hero — both children of this component. The <article> above it
+ * stacks its children in ordinary block flow, which produces an identical result
+ * with no machinery.
+ *
+ * Bands stay full bleed for free: the cross axis of a column flex container is
+ * horizontal, and `align-items` defaults to `stretch`.
+ *
+ * ── WHAT THE MOVE ACTUALLY CHANGED, AND WHAT IT DID NOT ──────────────────────
+ *
+ * Not byte-identical output, which is what an extraction usually aims for — so it is
+ * worth writing down exactly what moved. Enumerated across all 47 built pages by
+ * diffing the normalised HTML and collecting every distinct changed token; there were
+ * only these:
+ *
+ *   1. `<article class="entry h-entry">` -> `<article class="h-entry">`  (42 pages)
+ *   2. a `<div class="entry-header">` wrapper appears, with `data-hero` on 42 of the
+ *      45 that have one — the 3 without are the notes
+ *   3. the inline <style> blocks come out in a DIFFERENT ORDER
+ *
+ * (1) and (2) are the intended cost: the flex column moved down a level, so it needs
+ * an element to sit on.
+ *
+ * (3) WAS NOT INTENDED AND IS WORTH KNOWING. Astro emits component styles in an order
+ * derived from the import graph, and moving `SanityHero`'s import out of the article
+ * page and into this file reordered it — `Figure`'s rules now precede the hero's. The
+ * RULE SET is unchanged: 24 rules before, 24 after, identical content. Only the
+ * sequence differs.
+ *
+ * That is benign here but not benign in general, because sequence decides ties. Every
+ * rule is scoped by its own `data-astro-cid`, so two components' rules can only meet
+ * on one element through the cid pass-down — a parent styling a child's root — and
+ * then only conflict if they set the same property. **So an extraction that moves an
+ * import can silently reorder the cascade.** Checked by measurement rather than by
+ * reasoning: at 1280 and at 375, on both consumers, every gap this file owns matches
+ * what was measured before the move — 8 eyebrow-to-h1, 16 or 32 below the title per
+ * the rule above, a 320 hero, an out-of-flow caption at lg and an in-flow one below,
+ * and the rail's top still level with the body's.
+ */
+import type {SanityImageSource} from '../sanity/image'
+import Band from './Band.astro'
+import Grid from './Grid.astro'
+import Eyebrow from './Eyebrow.astro'
+import SanityHero from './SanityHero.astro'
+
+interface Props {
+  title?: string | null
+  genre?: string | null
+  /** ISO date string, straight from `pubDate`. */
+  date?: string | null
+  /** The canonical permalink, for `u-url` / `u-uid`. Built by the page from `Astro.site`. */
+  permalink: string
+  /**
+   * The entry's hero. Absent on a note, present on an article or case study — and its
+   * presence is what selects the title gap above, so this is a layout input and not
+   * only content.
+   */
+  hero?: (SanityImageSource & {caption?: string | null}) | null
+}
+
+const {title, genre, date, permalink, hero} = Astro.props as Props
+
+/* `hero.asset` and not `hero`, matching the article page's own guard: the field is an
+   object on every document that has the field at all, so only the asset says whether
+   there is an image. */
+const hasHero = Boolean(hero?.asset)
+---
+
+<div class="entry-header" data-hero={hasHero ? '' : undefined}>
+  {
+    /*
+    <header>, not Band's `section` default and not a <div>. Inside an <article>,
+    <header> is precisely "introductory or navigational aids for that article",
+    which is what an eyebrow and a title are. A <section> would claim a thematic
+    grouping and put a nameless entry in the document outline; <div> would say
+    nothing.
+
+    AND IT IS NOT A SECOND `banner`. Because its nearest sectioning ancestor is
+    <article>, it maps to `sectionheader` — a real role added in ARIA 1.3, which
+    replaced the older `generic` mapping for a scoped <header>. So the masthead
+    stays the page's only banner, and this carries meaning rather than nothing.
+    Confirmed in Chrome's accessibility pane, 2026-08-26: `article > sectionheader`.
+
+    The same scoping rule lands the other way for the site footer, which sits
+    outside <main> and so maps to `contentinfo`. Moving a <footer> inside an
+    <article> or <main> silently demotes it to `sectionfooter` — worth knowing,
+    because it looks like a harmless move.
+
+    `space="none"` with the padding on the inner <Grid> — the Footer's precedent,
+    and not a style preference. `.band[data-space='band']` is (0,2,0) and a
+    consumer's `.title-band` is (0,1,0), so the padding cannot be overridden from
+    outside without escalating; putting it on the Grid, which sets no
+    `padding-block` at all, sidesteps the fight entirely.
+  */
+  }
+  <Band as="header" space="none" class="title-band">
+    <Grid class="title-grid">
+      <div class="title-block">
+        {
+          /* `microformats` and `genreLink` are always on, because this component only
+             ever renders a detail page's own entry — which is exactly the context
+             where `dt-published` is meaningful and where a genre link has room to
+             live. Both are opt-in on Eyebrow for the CARDS' sake, not for this. */
+        }
+        <Eyebrow genre={genre} date={date} microformats genreLink />
+        <h1 class="p-name">{title}</h1>
+
+        {
+          /*
+          ── THE PERMALINK, AND WHY IT IS A <data> ──────────────────────────
+
+          `u-url` is how a webmention receiver knows WHICH post a mention
+          targets, and what a syndicated copy links back to — so it is arguably
+          the most important property after name and content. It is also the one
+          with nothing on the page to hang on: there is no visible self-link,
+          and the implied-url rule does not fire, since that only applies when
+          the root contains exactly one `a[href]` and an article contains many.
+
+          `data[value]` is the mf2 parsing spec's own hook for a `u-*` with no
+          visible anchor, alongside `a[href]` and `img[src]`. It is valid flow
+          content anywhere, it renders nothing, and being empty it puts nothing
+          in the accessibility tree. A `<link rel>` here would NOT be valid —
+          `<link>` is metadata content and is only permitted in <body> when it
+          carries `itemprop`.
+
+          The alternative worth knowing is the classic blog pattern where the
+          DATE is the permalink link. That would make this visible markup rather
+          than invisible, at the cost of a link from a page to itself.
+
+          `u-uid` alongside it, on the same value: `u-url` says "where this
+          lives", `u-uid` says "this is its identity", and a consumer seeing the
+          same post at two URLs uses the uid to deduplicate. For a static site
+          with one canonical path they are the same string, and saying so is
+          cheaper than leaving the identity implicit.
+
+          PREVIEW BUILDS EMIT THE PREVIEW DOMAIN, because `Astro.site` differs
+          by build mode. That is correct rather than a bug — preview is
+          `noindex` and nothing syndicates from it — but it does mean this value
+          is not a stable identifier across the two environments.
+        */
+        }
+        <data class="u-url u-uid" value={permalink}></data>
+      </div>
+    </Grid>
+  </Band>
+
+  {
+    /*
+    THE IMAGE IS OUTSIDE <Grid>, deliberately — a grid would inset it to the
+    content columns and the full bleed would quietly disappear. SanityHero's own
+    header says so; this is the call site that has to honor it.
+
+    THE CAPTION IS NOT IN A <Grid> EITHER — it aligns to the VIEWPORT edge, not
+    the content column, matching the live site (Andy, 2026-08-26). A <figure> is an
+    ordinary full-width block, so wrapping costs the bleed nothing, and the caption
+    right-aligns inside it.
+
+    An earlier draft put the caption in its own <Grid> at `--col-main`, on the
+    reasoning that a caption is reading matter and belongs on the text measure.
+    That is the wrong model for this one: it is a photo credit hanging off the
+    corner of a full-bleed image, not prose.
+
+    19 of 42 heroes carry a caption and several are photo credits ("Photo by
+    Devin Avery on Unsplash"), so this is an attribution obligation rather than a
+    nicety. 6 of the 7 case studies carry one too. The Figma Article board draws
+    the hero as 320px of image and nothing else, which is why it was left out of
+    the first draft; Andy's call, 2026-08-26.
+  */
+  }
+  {
+    hasHero && hero && (
+      <figure class="hero-figure">
+        {/*
+          `u-photo` reads the `src`, so it belongs on the <img> SanityHero emits
+          rather than on the <figure> around it. It is inside `h-entry` and
+          OUTSIDE `e-content`, which is what makes it a photo OF the post rather
+          than an image IN the body — a syndicated copy attaches it, and a card
+          preview uses it.
+
+          Same property name means something different on an h-card, where
+          `u-photo` is the person's avatar. Different root, different subject.
+        */}
+        <SanityHero image={hero} class="u-photo" />
+        {hero.caption && <figcaption>{hero.caption}</figcaption>}
+      </figure>
+    )
+  }
+</div>
+
+<style>
+  /*
+   * One axis is all this has to express, so grid's second dimension would be unused
+   * machinery. <Grid> handles the horizontal, inside the band.
+   *
+   * DESIGN.md's "the page stack is a flex column" is still the right rule; this is a
+   * note about WHICH stack owns the reorder — see the header.
+   */
+  .entry-header {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /*
+   * The whole reorder. At lg the hero sits directly under the masthead; below it, it
+   * sits between the title and the prose, which is the DOM order.
+   *
+   * ON THE <figure>, NOT THE <img>. The caption travels with the picture, so the flex
+   * item that moves has to be the thing that holds both — ordering the image alone
+   * would leave its credit stranded below the title.
+   *
+   * The DOM is authored NARROW-FIRST — title, then hero — the rule the footer already
+   * follows: source order is reading order, and the wide layout is the exception.
+   * `order` is safe only because the hero is a non-interactive image, so nothing
+   * focusable changes place. A band with controls must not be reordered this way.
+   */
+  @container style(--breakpoint-lg: true) {
+    .hero-figure {
+      order: -1;
+    }
+  }
+
+  /* ── Title band ─────────────────────────────────────────────────────────── */
+  /*
+   * `rhythm-heading-close` for the bottom rather than a typed 16, and the NAME is the
+   * reason: the title is bound to the paragraph that follows it exactly the way a
+   * heading is bound to its prose. That also settles what follows an h1, which the
+   * rhythm ramp in base.css never covered — it handles h2-h4 and leaves h1 out.
+   *
+   * See the header for why the no-hero value is the base and `[data-hero]` opens the
+   * gap back up. The two numbers are read off the boards: the Article board draws
+   * 64/16 at 1440 and "Insight Detail — Mobile" draws 32/32 at 375, both of which
+   * `--rhythm-band`'s own 32 -> 64 clamp supplies without a breakpoint.
+   */
+  .title-grid {
+    padding-block-start: var(--rhythm-band);
+    padding-block-end: var(--rhythm-heading-close);
+  }
+
+  .entry-header[data-hero] .title-grid {
+    padding-block-end: var(--rhythm-band);
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .entry-header[data-hero] .title-grid {
+      padding-block-end: var(--rhythm-heading-close);
+    }
+  }
+
+  /*
+   * One wrapper rather than two grid children. <Grid>'s row gap is
+   * `rhythm-heading-major` (64), so an eyebrow and an h1 placed as siblings on the
+   * grid would sit 64 apart with no way to say 8 — the gap between them is inside a
+   * block, not between grid rows.
+   */
+  .title-block {
+    grid-column: var(--col-main);
+  }
+
+  .title-block h1 {
+    margin-top: var(--rhythm-tight);
+  }
+
+  /* ── The credit hangs off the image's corner ─────────────────────────────── */
+  /*
+   * From md, right-aligned against the VIEWPORT edge rather than the content column,
+   * which is what the live site does and what a photo credit wants: it belongs to the
+   * picture, not to the prose. base.css supplies the `caption` role — Noto Serif
+   * italic at the 16px step in `text-muted` — and the 8px above it.
+   *
+   * `--space-2` rather than `--chrome-inset`, which is the token that otherwise means
+   * "distance from the viewport edge". `chrome-inset` steps to 48 at md, and 48px of
+   * clearance reads as pulled INTO the page — the opposite of the intent. 16 at every
+   * width keeps it hugging the corner. Symmetric so a caption long enough to wrap
+   * cannot touch the left edge either.
+   *
+   * ── AND IT GOES LEFT ONCE THE RAIL IS GONE ─────────────────────────────────
+   *
+   * Below md the page has one column and everything in it is left-aligned, so a
+   * right-hung credit is the only thing on the page pulled to that edge and reads as
+   * a mistake (Andy, on screen, 2026-08-26). It hangs off a corner only while there
+   * is a layout with corners.
+   *
+   * The left edge lands on the prose without being told to: `--grid-margin` floors at
+   * 16px for any viewport under ~1028, and `--space-2` is 16, so below md the two
+   * agree by construction rather than by coincidence. They part company above that —
+   * which is fine, because that is exactly where this switches to `end`.
+   */
+  .hero-figure figcaption {
+    padding-inline: var(--space-2);
+    text-align: start;
+  }
+
+  @container style(--breakpoint-md: true) {
+    .hero-figure figcaption {
+      text-align: end;
+    }
+  }
+
+  /*
+   * ── AND AT lg IT COSTS NO VERTICAL SPACE ───────────────────────────────────
+   *
+   * THE REQUIREMENT: the page title sits at the same height whether a hero has a
+   * caption or not, so someone moving between articles does not see it jump. 19 of 42
+   * heroes have one, so in flow it would move the title on nearly half the pages.
+   *
+   * Taking it out of flow is the only way to say that — hence `position: absolute`,
+   * with `.hero-figure` as the containing block. `inset-block-start: 100%` puts it at
+   * the image's bottom edge and base.css's `margin-top: var(--rhythm-tight)` still
+   * applies as an offset, so it lands 8px below.
+   *
+   * WHERE IT LANDS is the title band's top padding — 64px of it, against a ~24px
+   * line. That is why this works rather than colliding: the caption sits in space the
+   * title band was already reserving. It also means the title band MUST NOT GAIN A
+   * `tone`: Band paints tone as a background on the band itself, which would be
+   * painted over the caption. Nothing here can catch that.
+   *
+   * ── lg ONLY, AND THE REASON IS THE ORDER SWAP ──────────────────────────────
+   *
+   * Below lg the title is ALREADY above the hero, so a caption in flow has nothing to
+   * push — the requirement cannot be violated there, and in-flow is the simpler,
+   * safer thing. Only at lg does the caption sit between the hero and the title. So
+   * this is not "desktop gets the fancy version"; it is the one arrangement where the
+   * problem exists.
+   */
+  @container style(--breakpoint-lg: true) {
+    .hero-figure {
+      position: relative;
+    }
+
+    .hero-figure figcaption {
+      position: absolute;
+      inset-block-start: 100%;
+      inset-inline-end: 0;
+    }
+  }
+</style>

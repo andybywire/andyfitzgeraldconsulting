@@ -1,0 +1,651 @@
+---
+/**
+ * The case study entry — article band 1 only, so far.
+ *
+ * ── THE BOARD, AND WHAT IS BUILT ─────────────────────────────────────────────
+ *
+ * Read off `261:2107` at its 1440 frame. This file covers the first two rows; the
+ * rest is the next pieces, in this order:
+ *
+ *   hero + title              -> <EntryHeader>            BUILT (shared)
+ *   atGlance | client logo    -> row 1                    BUILT
+ *   "Work I Did" + list       -> row 2, 48 below          BUILT
+ *   three project sections    -> article band 2           NEXT
+ *   before/after images       -> with band 2
+ *   testimonial band          -> after that
+ *   Work with Me + Related    -> last
+ *
+ * ── IT COMPOSES <EntryHeader> RATHER THAN RESTATING IT ───────────────────────
+ *
+ * The hero, the title band and the `order` swap that lifts the hero above the title
+ * at lg were extracted for exactly this page (2026-09-02) — a case study would have
+ * been the third copy. Passing `hero` is what selects the title's bottom gap: a band
+ * gap below lg where the hero sits between title and prose, 16 at lg where it does
+ * not. See that component's header.
+ */
+import type {TypedObject} from 'astro-portabletext/types'
+import type {SanityImageSource} from '../sanity/image'
+import Band from './Band.astro'
+import Grid from './Grid.astro'
+import Prose from './prose/Prose.astro'
+import EntryHeader from './EntryHeader.astro'
+import SanityImage from './SanityImage.astro'
+
+interface Props {
+  title?: string | null
+  genre?: string | null
+  /** ISO date string, straight from `pubDate`. */
+  date?: string | null
+  /** The canonical permalink, for `u-url` / `u-uid`. */
+  permalink: string
+  hero?: (SanityImageSource & {caption?: string | null}) | null
+  /** The summary paragraph beside the client logo. One block on all seven documents. */
+  atGlance?: TypedObject[] | null
+  /** A bullet list of project activities, 5–8 items. */
+  whatDid?: TypedObject[] | null
+  client?: {name?: string | null; image?: SanityImageSource | null} | null
+  /** The three project sections. Each carries its own title as its first block. */
+  projectGoal?: TypedObject[] | null
+  projectApproach?: TypedObject[] | null
+  projectOutcome?: TypedObject[] | null
+  /** Sits beside Project Goal. The board reserves the column in the other two. */
+  beforeImage?: (SanityImageSource & {caption?: string | null}) | null
+  /** Full content width, after the last section. `outline` is an editor flag. */
+  afterImage?: (SanityImageSource & {caption?: string | null; outline?: boolean | null}) | null
+}
+
+const {
+  title,
+  genre,
+  date,
+  permalink,
+  hero,
+  atGlance,
+  whatDid,
+  client,
+  projectGoal,
+  projectApproach,
+  projectOutcome,
+  beforeImage,
+  afterImage,
+} = Astro.props as Props
+
+/* Only the asset says whether there is a logo to draw — the reference exists on all
+   seven, so a missing image would otherwise render an empty card. */
+const logo = client?.image?.asset ? client.image : null
+
+/**
+ * ── EACH SECTION'S TITLE IS THE FIRST BLOCK OF ITS OWN ARRAY ─────────────────
+ *
+ * There is no heading field: `projectGoal` opens with a heading block carrying
+ * "Align Navigation and Home Page with User and Business Needs", and the board's
+ * "Project Goal" above it is a static label. Verified across all seven documents.
+ *
+ * ── AND IT HAS TO BE SPLIT OUT, WHICH IS A LAYOUT REQUIREMENT ────────────────
+ *
+ * Not tidiness. The board aligns the figure beside the body with the body's FIRST
+ * PARAGRAPH, not with the heading above it — heading block at y=0, body row at y=118,
+ * and the figure at y=0 *of the body row*. Rendering the array whole would put the
+ * heading inside the same grid item as the prose, and the figure would align to the
+ * top of that item, i.e. to the heading. So the split is what buys the alignment.
+ *
+ * GUARDED, because slicing by index is a silent data dependency. If a document's
+ * first block is ever a paragraph, `head` is null and the whole array renders as body
+ * — one section without its title rather than a paragraph promoted into the heading
+ * slot and drawn at h2.
+ *
+ * `h[1-6]` rather than `h2` exactly: `content-review-approval-workflow-integration`
+ * currently opens its three sections with h3 (a Studio slip Andy is fixing), and this
+ * still splits it correctly — it simply draws a step small until the data changes,
+ * which is visible rather than broken.
+ */
+const HEADING_STYLE = /^h[1-6]$/
+
+function splitSection(blocks?: TypedObject[] | null) {
+  const list = blocks ?? []
+  const [first, ...rest] = list
+  const style = (first as (TypedObject & {style?: unknown}) | undefined)?.style
+  const isHeading =
+    first?._type === 'block' && typeof style === 'string' && HEADING_STYLE.test(style)
+  return isHeading ? {head: [first], body: rest} : {head: null, body: list}
+}
+
+/*
+ * The three labels live here rather than in the template, so the shape of a section is
+ * stated once and the band is a map over data. `figure` is on Project Goal alone —
+ * the board gives the other two "rail — reserved (span-4)", an empty column.
+ *
+ * Empty sections drop out. All seven documents carry all three today, so this is for a
+ * document mid-edit rather than for the corpus.
+ */
+const sections = [
+  {label: 'Project Goal', ...splitSection(projectGoal), figure: beforeImage},
+  {label: 'Project Approach', ...splitSection(projectApproach), figure: null},
+  {label: 'Project Outcome', ...splitSection(projectOutcome), figure: null},
+].filter((section) => section.head || section.body.length > 0)
+
+const after = afterImage?.asset ? afterImage : null
+---
+
+<article class="h-entry">
+  <EntryHeader title={title} genre={genre} date={date} permalink={permalink} hero={hero} />
+
+  {
+    /*
+    ── NO `e-content` HERE YET, AND THAT IS DELIBERATE ─────────────────────────
+
+    An article and a note each have ONE body field, so `e-content` has an obvious
+    home. A case study's prose is spread across five — atGlance, whatDid, and the
+    three project fields — with a testimonial band between them, so where the
+    syndicated body starts and stops is a real question rather than a class
+    attribute. Marking `atGlance` alone would publish the summary as the whole post.
+
+    Left unmarked until band 2 exists and the whole shape is visible. `h-entry`,
+    `p-name`, `dt-published`, `u-url`/`u-uid` and `u-photo` all work already —
+    `e-content` is the one property that needs the decision.
+  */
+  }
+  <Band as="div" space="none" class="content-band">
+    {
+      /*
+      ── TWO GRIDS IN ONE BAND, FOR A 48 ────────────────────────────────────
+
+      The board's "content stack" is two rows 48 apart (the glance row ends at 165,
+      the Work I Did section starts at 213). <Grid>'s row gap is
+      `rhythm-heading-major` (64) and is not per-row, so two rows of ONE grid cannot
+      be 48 apart — the same wall the note's title/body gap hit.
+
+      Two grids, with `rhythm-block` between them, says it in one declaration and
+      keeps both rows on the same 12 columns. `rhythm-block` rather than
+      `heading-minor` — both are 48, and DESIGN.md's rule is to pick by name: what
+      follows is a section, not a heading in a ramp.
+    */
+    }
+    <Grid class="glance-grid">
+      {
+        /* `.detail` for the flow role from base.css — the rhythm ramp and the 66ch
+           measure cap. One block today on all seven, so the ramp is inert, but the
+           cap is not and this is prose. */
+      }
+      <div class="glance detail">
+        <Prose value={atGlance} />
+      </div>
+
+      {
+        /*
+        ── THE LOGO IS A FIXED BOX WITH `contain`, NEVER `cover` ──────────────
+
+        Client tiles are NOT a uniform aspect, which the board hides by drawing one
+        placeholder: measured across the seven documents they run 1000x450 (four
+        clients), 500x278 (Shoreline) and 1262x840 (UW Medicine) — 2.22 down to 1.50.
+        Rendered at natural aspect in a 231 column that is a card between 104 and 154
+        tall, so the logo would sit at a different height on every case study.
+
+        So the box is fixed and the image fits inside it. `7 / 5` is the board's
+        231x165 exactly, and it is taller than any of the three natural aspects at
+        this width — which is what the board was drawing: a lockup inset in
+        whitespace, not an image cropped to a frame. **`cover` would crop a client's
+        logo**, which is the one thing this element must never do.
+
+        `--color-surface-logo-band` is the token whose whole job is "a ground a client
+        mark reads correctly against, in both themes" — white on light, neutral-900 on
+        dark. These marks have white or transparent backgrounds, so without it they
+        vanish in dark mode. It is the same token WorkWithMeBand reaches for, there as
+        a whole-band tone because the band holds nothing else.
+
+        NO PADDING. A `tile` is a 5:3-ish lockup carrying its own whitespace — not a
+        cropped mark — so `card-pad` would add the padding twice. WorkWithMeBand's gap
+        note records the same reasoning.
+      */
+      }
+      {
+        logo && (
+          <div class="client-card">
+            {/*
+              Alt falls back to the client's NAME, not to empty. The card's claim is
+              who the work was for, so the name is the content — WorkWithMeBand makes
+              the same call.
+            */}
+            <SanityImage
+              image={logo}
+              alt={logo.altText ?? client?.name ?? ''}
+              sizes="(min-width: 48rem) 231px, 100vw"
+            />
+          </div>
+        )
+      }
+    </Grid>
+
+    {
+      whatDid && whatDid.length > 0 && (
+        <Grid class="work-grid">
+          {/*
+            A <section> with a real accessible name from the heading already on
+            screen, which is what `aria-labelledby` is for — this is a named region of
+            the entry rather than a generic block.
+
+            AN <h2> DRAWN AT THE h3 ROLE. The board sets it at 29px, which is
+            `font-size-3` at 1.3 — a step below the project-section titles in band 2,
+            which are h2s at 35. But the outline cannot skip: the page's h1 is the
+            title, and an h3 here with no h2 before it would invent a level. So the
+            element carries the level and the component carries the type, the split
+            the cards and TopicList already use.
+
+            `letter-spacing: normal` is the declaration that hides — base.css gives h2
+            `-0.015em` and h3 none, so borrowing h3's size without its tracking would
+            draw a subtly tighter heading. The same trap TopicList's label documents.
+          */}
+          <section class="work" aria-labelledby="work-i-did">
+            <h2 id="work-i-did" class="work-title">
+              Work I Did
+            </h2>
+            <div class="work-list">
+              <Prose value={whatDid} />
+            </div>
+          </section>
+        </Grid>
+      )
+    }
+  </Band>
+
+  {
+    /*
+    ── ARTICLE BAND 2 ─────────────────────────────────────────────────────────
+
+    Symmetric 64/64, so `space="band"` supplies it directly — `--rhythm-band`'s own
+    32 -> 64 clamp, no override and no breakpoint. Band 1 needed `space="none"`
+    because its top padding collapses at lg where the hero moves above the title;
+    nothing here does that.
+
+    THE TESTIMONIAL BAND GOES BETWEEN THIS AND BAND 1, and is not built yet. It is a
+    separate <Band> on the board (accent tone, 1106-1522), so it slots in as a
+    sibling without either band moving.
+  */
+  }
+  {
+    sections.length > 0 && (
+      <Band as="div" space="band" class="project-band">
+        {sections.map((section) => (
+          <div class="project">
+            {/*
+              A <div>, not a <section>. A <section> WITH a name would add a `region`
+              landmark per project — three of them, named "Align Navigation and Home
+              Page with User and Business Needs" and friends, which is landmark noise
+              rather than navigation. A <section> WITHOUT a name puts a nameless entry
+              in the outline, which this project objects to elsewhere. The h2 inside
+              already does the structural work.
+
+              TWO GRIDS, and the 16 between them is why. The heading block and the body
+              row are separate rows on the board (102 -> 118), and <Grid>'s row gap is
+              `rhythm-heading-major` (64) with no per-row control — the same wall band
+              1's 48 hit. Two grids say it in one declaration and keep both rows on the
+              same 12 columns.
+            */}
+            <Grid class="project-head-grid">
+              <div class="project-heading">
+                <p class="project-label">{section.label}</p>
+                {/*
+                  Rendered through <Prose> rather than as text, so a title carrying a
+                  link or emphasis keeps it, and so the heading gets the anchor id
+                  Heading.astro generates. `headingText` would have flattened it.
+                */}
+                <Prose value={section.head} />
+              </div>
+            </Grid>
+
+            <Grid class="project-body-grid">
+              {/*
+                `.detail` for the prose flow role — the rhythm ramp, the measure cap
+                and `--thumb-float`, which matters here: `projectApproach` and
+                `projectOutcome` allow inline `figure` blocks and eight of them exist
+                across the corpus, so a thumbnail floats in these sections exactly as
+                it does in an article body.
+              */}
+              <div class="project-body detail">
+                <Prose value={section.body} />
+              </div>
+
+              {section.figure?.asset && (
+                <figure class="project-figure">
+                  {/*
+                    NO `aspect` — natural shape. The board draws 316x178 (16:9), which
+                    is incidental to whichever screen capture was pasted in: measured
+                    across the seven, before-images run 1.128 (Elemeno, near-square) to
+                    1.767. Cropping to 16:9 would cut a third of the height off a
+                    SCREENSHOT, which is content rather than framing. Same call as the
+                    client logo, for the same reason.
+                  */}
+                  <SanityImage image={section.figure} sizes="(min-width: 48rem) 316px, 100vw" />
+                  {section.figure.caption && <figcaption>{section.figure.caption}</figcaption>}
+                </figure>
+              )}
+            </Grid>
+          </div>
+        ))}
+
+        {after && (
+          <Grid class="after-grid">
+            {/*
+              FULL CONTENT WIDTH — the board draws it at 996, closing the band. Natural
+              aspect again: afters run 1.497 to 2.735, the widest being a flow diagram
+              at 22420x8196, so any fixed ratio would crop one badly.
+
+              `data-outline` mirrors Figure.astro's flag exactly, including putting the
+              border on the IMAGE and not the figure — a figure also holds the caption,
+              and a border there would box the text in with the picture. Three of the
+              seven set it.
+            */}
+            <figure class="after-figure" data-outline={after.outline === true ? '' : undefined}>
+              <SanityImage image={after} sizes="(min-width: 48rem) 996px, 100vw" />
+              {after.caption && <figcaption>{after.caption}</figcaption>}
+            </figure>
+          </Grid>
+        )}
+      </Band>
+    )
+  }
+</article>
+
+<style>
+  /* ── Content band ───────────────────────────────────────────────────────── */
+  /*
+   * NO TOP PADDING AT lg, and the inversion is the article page's, for the article
+   * page's reason: at lg the hero has moved above the title, so the title band's own
+   * 16 is the whole gap between the title and the prose. Below lg the hero sits
+   * BETWEEN them, so that 16 binds the title to the hero and there is nothing holding
+   * the hero off the first paragraph — hence the base case needs the padding and lg
+   * drops it. Ordinary mobile-first, not an exception to it.
+   *
+   * This is the third page type to write these two rules (article, note, case study),
+   * and the note's differs — it has no hero, so it never needs the top padding at
+   * all. Worth watching: if a fourth arrives with a hero, the pair wants extracting
+   * the way the title band was.
+   */
+  /*
+   * `padding-block-START`, longhand and deliberately not the two-value shorthand.
+   * `padding-block: var(--rhythm-band)` was here first and set the END too, which put
+   * 64 INSIDE this grid on top of the 48 between the grids — a 112 gap where the board
+   * draws 48. It measured as 48 box-to-box and 112 on screen, which is exactly the
+   * kind of thing only a measurement from the CONTENT edge catches.
+   */
+  .glance-grid {
+    padding-block-start: var(--rhythm-band);
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .glance-grid {
+      padding-block-start: 0;
+    }
+  }
+
+  /* The band's bottom padding belongs to the LAST grid in it, wherever that is. */
+  .glance-grid:last-child {
+    padding-block-end: var(--rhythm-band);
+  }
+
+  .work-grid {
+    margin-block-start: var(--rhythm-block);
+    padding-block-end: var(--rhythm-band);
+  }
+
+  /* When there is no `whatDid` the glance grid is the last thing in the band and has
+     to supply the bottom padding itself. `:last-child` rather than a template flag,
+     so the rule cannot disagree with the markup. */
+  .glance-grid:last-child {
+    padding-block-end: var(--rhythm-band);
+  }
+
+  /* ── Row 1: the glance and the logo ─────────────────────────────────────── */
+
+  .glance {
+    grid-column: var(--col-main);
+  }
+
+  /*
+   * `--col-rail` at md, full width below it — the placement token does that on its
+   * own. The logo is the only thing in the column, so nothing needs the note's
+   * `display: contents` dispersal here: one item collapsing to one row is what the
+   * base token already gives.
+   */
+  .client-card {
+    grid-column: var(--col-rail);
+    aspect-ratio: 7 / 5;
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface-logo-band);
+
+    /* Centres the mark in both axes with no magic numbers, and works whichever axis
+       the tile's aspect makes the constraining one. */
+    display: grid;
+    place-items: center;
+
+    /*
+     * ── CAPPED AND CENTRED BELOW md, WHERE THE COLUMN IS WIDER THAN THE CARD ──
+     *
+     * `--col-rail` is `1 / -1` below md, so without this the 7:5 box scales with the
+     * column — measured 343x245 at 375, which is a large empty white panel holding a
+     * mark drawn 154 tall. A logo is a fixed-size thing; unlike prose it gains
+     * nothing from more width.
+     *
+     * 231px is not an arbitrary cap: it is the width the board gives this card at
+     * 1440, i.e. the size the design says the element is. Above md the column is
+     * already 231 or less, so the cap is inert and this rule costs nothing there —
+     * which is why it is unconditional rather than sitting in a query.
+     *
+     * Centred because the live site's mobile case study centres it (read off Andy's
+     * screenshot, 2026-09-02 — there is no Case Study mobile board). `margin-inline:
+     * auto` centres a grid item inside its track once `max-inline-size` has stopped
+     * it stretching.
+     *
+     * ┌──────────────────────────────────────────────────────────────────────────┐
+     * │  THE `100%` IS LOAD-BEARING. `max-inline-size: 231px` alone OVERFLOWS    │
+     * │  THE VIEWPORT between md and lg. Do not simplify it back.                │
+     * └──────────────────────────────────────────────────────────────────────────┘
+     *
+     * `margin-inline: auto` stops the item stretching to its track, so it is sized by
+     * its own content instead — and for an `aspect-ratio` box holding a 1000x450
+     * image that content size is 311px. The 231 cap brought it down but not to the
+     * TRACK, which is only 199 at a 900px viewport, so the card hung 16px past the
+     * page edge and `documentElement.scrollWidth` came out 916 against 900.
+     *
+     * Measured, and bisected by toggling each property in the page: removing EITHER
+     * `aspect-ratio` or `margin-inline: auto` also fixed it, which is what identified
+     * the interaction rather than either one alone.
+     *
+     * `min()` keeps both behaviours and adds no breakpoint: the percentage resolves
+     * against the grid area, so the card can never exceed its track, and the 231 caps
+     * it where the track is wider — 199 at 900, 231 at 1280, 231 centred in 343 at
+     * 375.
+     */
+    max-inline-size: min(231px, 100%);
+    margin-inline: auto;
+  }
+
+  /*
+   * base.css gives every image `max-width: 100%` and `height: auto`, which fits the
+   * WIDTH and lets the height run — so a 1.50 tile would overflow a 1.4 box. Capping
+   * BOTH axes lets the browser scale to whichever constraint bites first while the
+   * width/height attributes keep the aspect. `:global` because the <img> carries
+   * SanityImage's scope, not this component's.
+   */
+  .client-card :global(img) {
+    max-inline-size: 100%;
+    max-block-size: 100%;
+
+    /*
+     * `radius-1`, the same 3px the Work with Me tiles take, and for the identical
+     * reason recorded there: a tile whose artwork has no dark variant sits as a light
+     * rectangle on the dark ground, and a hard 90-degree corner is what makes that
+     * read as a pasted-on box. Invisible in light, where the mark's own white matches
+     * the card beneath it; doing real work in dark. (Andy, 2026-09-02.)
+     *
+     * Tighter than the card's `radius-2` around it, which is the inner-corner rule
+     * both card components already follow.
+     */
+    border-radius: var(--radius-1);
+  }
+
+  /* ── Row 2: Work I Did ──────────────────────────────────────────────────── */
+  /*
+   * FULL CONTENT WIDTH, not the prose measure: the board draws this section at 996
+   * and splits it 6 + 6, where the glance above it is 8 + 3. A list of short activity
+   * labels is scanned rather than read, so it does not want the 66ch measure.
+   */
+  .work {
+    grid-column: var(--col-full);
+  }
+
+  .work-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+    letter-spacing: normal;
+  }
+
+  /*
+   * `rhythm-heading-close` — 16, which the board draws (the heading ends at 29, the
+   * list starts at 45) and which is what the base.css ramp gives a heading and the
+   * thing bound to it. The ramp itself does not reach here: it is scoped to `.detail`
+   * and this section is not prose flow.
+   */
+  .work-list {
+    margin-block-start: var(--rhythm-heading-close);
+  }
+
+  /*
+   * NO PER-ITEM MARGIN HERE, AND NOTHING TO CANCEL ANY MORE. base.css carried a
+   * global `li + li` margin, which made this list read far too airy — 16px between
+   * one-line activity labels being scanned in two columns. The board agreed all
+   * along: 160px for five items is 32 apiece, one body line box at 1.8 leading with
+   * no margin, where `rhythm-item` would have made it 226.
+   *
+   * That rule is gone as of 2026-09-02 (base.css → Prose), so the cancellation that
+   * used to sit here is gone with it. Item spacing is the leading alone.
+   */
+
+  /*
+   * TWO COLUMNS FROM md, one below it. `columns` on the WRAPPER rather than on the
+   * <ul>: the list is rendered by <Prose>, so its elements carry Prose's scope and
+   * cannot be selected from here without `:global`. A multicol container fragments
+   * its content, so the list flows across the columns from the wrapper just as well.
+   *
+   * `--grid-gutter` for the gap, because these are grid columns — 6 + 6 of the same
+   * 12 the band is on, and 486 + 24 + 486 closes 996 exactly.
+   *
+   * Single column below md, matching the live site's mobile case study. Mobile-first,
+   * so the one-column form is the base and md adds the split; there is no Case Study
+   * mobile board to read, and this is the arrangement that needs no design.
+   */
+  @container style(--breakpoint-md: true) {
+    .work-list {
+      columns: 2;
+      column-gap: var(--grid-gutter);
+    }
+  }
+
+  /* ── Article band 2: the three project sections ─────────────────────────── */
+  /*
+   * 64 between sections. `rhythm-heading-major` and not `rhythm-band`: both are 64 at
+   * this width, and DESIGN.md's rule is to pick by name — what follows IS a heading,
+   * which is precisely what `heading-major` describes. `rhythm-band` would also drift,
+   * since it clamps and this gap should not.
+   */
+  .project + .project {
+    margin-block-start: var(--rhythm-heading-major);
+  }
+
+  /* The heading block to the body row: 16 on the board (102 -> 118). The same
+     `heading-close` that binds any heading to the prose under it. */
+  .project-body-grid {
+    margin-block-start: var(--rhythm-heading-close);
+  }
+
+  .project-heading,
+  .project-body {
+    grid-column: var(--col-main);
+  }
+
+  /*
+   * ── THE `label` ROLE, WRITTEN A SECOND TIME ────────────────────────────────
+   *
+   * DESIGN.md's `label` — Lato 700 at the 16px step with +2% tracking, in
+   * `text-muted`. Eyebrow is the first place it is written and its header explains
+   * why it was not promoted to a global element rule: there is no element to hang it
+   * on, and the project has no global component layer.
+   *
+   * This is the second consumer, which is DESIGN.md's promotion trigger. Not
+   * extracted yet because the two are not independent enough to be sure of the
+   * boundary — Eyebrow's version is a `Genre | Date` pair with a drawn separator and
+   * an optional link, where this is a bare word. A `<Label>` component wrapping five
+   * declarations is the kind of abstraction that looks right and pays nothing. Worth
+   * revisiting if a third appears.
+   *
+   * The 8 below is `rhythm-tight`, and it sits on the LABEL rather than on the
+   * heading after it on purpose: the heading is rendered by <Prose>, so it may be an
+   * h2 or (until the data is fixed) an h3, and a margin keyed to the element would
+   * have to name both.
+   */
+  .project-label {
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    margin-block-end: var(--rhythm-tight);
+  }
+
+  /*
+   * ── `9 / span 4`, WHICH IS NOT `--col-rail` ────────────────────────────────
+   *
+   * The rail token is `10 / span 3` — 231 wide, one skipped column from the prose.
+   * This is 316 wide and gutter-adjacent, closing 996 with no skip. That difference
+   * is deliberate and local to this page: the column exists to hold the BEFORE image,
+   * a screen capture that needs the extra width to be legible (Andy, 2026-09-02). It
+   * is the only place in the build with an 8 + 4 split, which is why it is written
+   * literally here rather than added to tokens.css — a value with one consumer is not
+   * a token, the same rule that took `--logo-size` out.
+   *
+   * FULL WIDTH IS THE BASE, and that is not optional: Grid.astro's own header warns
+   * that hardcoding a placement token leaves an item narrow on mobile, "visibly wrong
+   * but recoverable". So the base is `--col-full` and md opens the split, which is
+   * what every other placement in the build does via its token.
+   *
+   * NO `grid-row` NEEDED, and it is worth saying because the figure is the third item
+   * in a grid whose first two occupy columns 1-8. Auto-placement gets it right: all
+   * three have a definite column, so they are placed in DOM order with a cursor that
+   * never moves backwards — heading is not in this grid, so body takes row 1 cols 1-8
+   * and the figure lands row 1 cols 9-12, level with the body's first line. Which is
+   * exactly the alignment the array split above exists to produce.
+   */
+  .project-figure {
+    grid-column: var(--col-full);
+  }
+
+  @container style(--breakpoint-md: true) {
+    .project-figure {
+      grid-column: 9 / span 4;
+    }
+  }
+
+  /* ── The after image ────────────────────────────────────────────────────── */
+  /*
+   * 48 below the last section, which the board draws (sections end 1599, image at
+   * 1647). `rhythm-block` rather than `heading-minor` — both are 48, and what follows
+   * is a figure, not a heading.
+   */
+  .after-grid {
+    margin-block-start: var(--rhythm-block);
+  }
+
+  .after-figure {
+    grid-column: var(--col-full);
+  }
+
+  /* Figure.astro's flag, reproduced because that component only serves Portable Text
+     `figure` blocks and this is a named image FIELD. On the image and not the figure:
+     the figure also holds the caption, and a border there would box the text in with
+     the picture. */
+  .after-figure[data-outline] :global(img) {
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-1);
+  }
+</style>

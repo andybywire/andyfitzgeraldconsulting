@@ -69,7 +69,7 @@ import type {TypedObject} from 'astro-portabletext/types'
 import type {INSIGHT_DETAIL_QUERY_RESULT} from '../../sanity.types'
 import Band from './Band.astro'
 import Grid from './Grid.astro'
-import Eyebrow from './Eyebrow.astro'
+import EntryHeader from './EntryHeader.astro'
 import Prose from './prose/Prose.astro'
 import TopicList from './TopicList.astro'
 import SanityImage from './SanityImage.astro'
@@ -176,39 +176,12 @@ const hasCard = Boolean(sourceCard?.href && sourceCard.title)
 }
 <article class="h-entry">
   {
-    /*
-    <Band as="header">, matching the article page exactly — inside an <article>,
-    <header> is precisely "introductory aids for that article", which is what an
-    eyebrow and a title are, and it maps to `sectionheader` rather than to a second
-    `banner`. The longer reasoning is at the article page's title band.
-
-    `space="none"` with the padding on the inner <Grid>, and that is a specificity
-    fact rather than a preference: `.band[data-space='band']` is (0,2,0) where a
-    consumer's `.title-band` is (0,1,0), so the padding cannot be overridden from
-    out here without escalating. <Grid> sets no `padding-block` at all, which
-    sidesteps the fight.
-  */
+    /* The title half moved to <EntryHeader> in 2026-09-02's extraction. A note
+       passes NO hero, which is what makes its title gap 16 at every width rather
+       than only at lg — see that component's header. This file had reasoned its
+       way to the same value independently, which is what triggered the move. */
   }
-  <Band as="header" space="none" class="title-band">
-    <Grid class="title-grid">
-      <div class="title-block">
-        <Eyebrow genre={genre} date={date} microformats genreLink />
-        <h1 class="p-name">{title}</h1>
-
-        {
-          /*
-          The permalink as an empty <data>, which is the mf2 spec's own hook for
-          a `u-*` with no visible anchor. There is no self-link on the page and
-          the implied-url rule does not fire, since it only applies when the root
-          holds exactly one `a[href]`. `u-uid` alongside it says "this is its
-          identity" where `u-url` says "this is where it lives". Full reasoning
-          on the article page, which emits the same pair.
-        */
-        }
-        <data class="u-url u-uid" value={permalink}></data>
-      </div>
-    </Grid>
-  </Band>
+  <EntryHeader title={title} genre={genre} date={date} permalink={permalink} />
 
   <Band as="div" space="none" class="content-band">
     <Grid class="content-grid">
@@ -312,35 +285,6 @@ const hasCard = Boolean(sourceCard?.href && sourceCard.title)
 </article>
 
 <style>
-  /* ── Title band ─────────────────────────────────────────────────────────── */
-  /*
-   * 64 above, 16 below, at every width — see the header for why there is no
-   * breakpoint here where the article page has one.
-   *
-   * `rhythm-heading-close` for the 16 rather than a typed length, and the NAME is
-   * the reason: the title is bound to the paragraph that follows it exactly the way
-   * a heading is bound to its prose. That also settles what follows an h1, which
-   * base.css's rhythm ramp never covered — it handles h2-h4 and leaves h1 out.
-   */
-  .title-grid {
-    padding-block-start: var(--rhythm-band);
-    padding-block-end: var(--rhythm-heading-close);
-  }
-
-  /*
-   * One wrapper rather than two grid children, and the same reason as on the article
-   * page: <Grid>'s row gap is `rhythm-heading-major` (64), so an eyebrow and an h1
-   * placed as siblings ON the grid would sit 64 apart with no way to say 8. The gap
-   * between them is inside a block, not between rows.
-   */
-  .title-block {
-    grid-column: var(--col-main);
-  }
-
-  .title-block h1 {
-    margin-top: var(--rhythm-tight);
-  }
-
   /* ── Content band ───────────────────────────────────────────────────────── */
   /*
    * No top padding — the title band's 16 is the entire gap, which is what puts the
