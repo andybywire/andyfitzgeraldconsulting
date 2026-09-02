@@ -53,6 +53,58 @@
  */
 import Logo from './Logo.astro'
 import {Search} from '@lucide/astro'
+
+/**
+ * ── WHICH SECTION THE PAGE IS IN, DRAWN AS A RESTING UNDERLINE ───────────────
+ *
+ * Ported from the live site: the section's nav item carries its underline at rest,
+ * with the LABEL at its ordinary resting colour. The underline alone says where you
+ * are; a coloured label would read as a permanent hover.
+ *
+ * base.css already draws it — `nav :is(a, button)[aria-current]::after` sets the
+ * same `inline-size: 100%` that hover does, and its comment ends "Nothing sets it
+ * yet." This is what sets it. Nothing about the colour needed changing, because only
+ * `:hover` moves a nav label's colour and `aria-current` is not a hover.
+ *
+ * COMPUTED HERE, NOT PASSED IN. Every page renders this component, so deriving the
+ * section from the URL means no page can forget to declare it — and a page type
+ * added later is correct before anyone thinks about it.
+ *
+ * ── `page` vs `true`, AND WHY BOTH ARE USED ──────────────────────────────────
+ *
+ * ARIA has no `section` token. On `/insights/` the item IS the current page, so it
+ * takes `page`; on `/insights/some-note/` it is the current item in a set but not
+ * the page itself, which is what the generic `true` means. Both match the
+ * `[aria-current]` selector, so the indicator is identical and only what is
+ * announced differs.
+ *
+ * NEVER `aria-current="false"`. `[aria-current]` is an ATTRIBUTE-PRESENCE selector,
+ * so the string "false" would draw the underline on every item that is not current —
+ * the exact inverse of the feature. Returning `undefined` omits the attribute, which
+ * is what Astro does with `undefined`, `null` and `false`.
+ *
+ * ── ROOT-LEVEL PAGES MATCH NOTHING, BY CONSTRUCTION ──────────────────────────
+ *
+ * About, Colophon and Apologia sit at the root and belong to no section, so no item
+ * underlines (Andy, 2026-09-01). That needs no special case: `/about/` is not a
+ * prefix match for any of the five hrefs, and neither is `/`. The prefix test only
+ * works because every section href is itself a directory ending in `/` — without the
+ * trailing slash, a future `/insight-search/` would light up Insights.
+ */
+const here = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`
+
+/* Returned as props and spread, so the href is written ONCE per item. Passing it
+   twice — to `href` and to a checker — is a drift the indicator would fail silently
+   on, since a mismatched section simply never lights up. */
+/* The return type is annotated rather than inferred, and it is not decoration:
+   without it the ternary's two string literals widen to `string`, and Astro types
+   `aria-current` as the ARIA token union — so every call site fails to typecheck.
+   Naming the union here keeps the literals narrow and makes a typo in one of the two
+   tokens an error rather than a silently inert attribute. */
+const navLink = (href: string): {href: string; 'aria-current'?: 'page' | 'true'} => ({
+  href,
+  'aria-current': here === href ? 'page' : here.startsWith(href) ? 'true' : undefined,
+})
 ---
 
 {
@@ -88,9 +140,9 @@ import {Search} from '@lucide/astro'
       */
       }
       <ul role="list">
-        <li><a href="/insights/">Insights</a></li>
-        <li><a href="/projects/">Projects</a></li>
-        <li><a href="/presentations/">Presentations</a></li>
+        <li><a {...navLink('/insights/')}>Insights</a></li>
+        <li><a {...navLink('/projects/')}>Projects</a></li>
+        <li><a {...navLink('/presentations/')}>Presentations</a></li>
         <li>
           {
             /*
@@ -113,12 +165,12 @@ import {Search} from '@lucide/astro'
             after writing it the other way first.
           */
           }
-          <a href="/consulting/">
+          <a {...navLink('/consulting/')}>
             <span class="label-stacked">Consulting</span>
             <span class="label-inline">{' '}Work with me</span>
           </a>
         </li>
-        <li><a href="/contact/">Contact</a></li>
+        <li><a {...navLink('/contact/')}>Contact</a></li>
         <li>
           {
             /*
