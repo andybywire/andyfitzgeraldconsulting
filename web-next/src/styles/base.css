@@ -128,16 +128,22 @@ body {
  * family, weight and tracking alone. If it ever reads as bold body text, the
  * levers are uppercase, small caps, color or a rule. NOT a smaller size.
  *
- * `text-wrap: balance` is NOT in DESIGN.md — it evens out the rag on a wrapped
- * heading and is capped by the UA at a handful of lines. Drop it if you'd
- * rather headings break naturally.
+ * ── NO `text-wrap: balance`, AND IT IS NOT COMING BACK ──────────────────────
+ *
+ * It was on this rule until 2026-09-02, with a comment already admitting it was
+ * "NOT in DESIGN.md" and offering to drop it. Dropped: it is not doing the job
+ * in this design and was never specified (Andy, on screen).
+ *
+ * Headings break naturally now. This was the only instance in the build —
+ * verified by grep across `src/`, not assumed — so there is nothing else to
+ * unwind. Do not reintroduce it on a component heading either; if a particular
+ * heading's rag needs help, that is a content or measure decision.
  */
 
 :is(h1, h2, h3, h4) {
   color: var(--color-text-heading);
   font-family: var(--font-heading);
   font-weight: 700;
-  text-wrap: balance;
 }
 
 h1 {
@@ -173,17 +179,39 @@ h4 {
  * serves. DESIGN.md defines no bold-prose weight; its only Noto Serif 500 is
  * the `display` role.
  *
- * `--rhythm-item` here is an INFERENCE, not a transcription. DESIGN.md never
- * says where `rhythm-item` (16px) or `rhythm-tight` (8px) are consumed, and its
- * own guidance is to pick a spacing token "by prefix first, then by name, never
- * by value" — which points a list item at the role literally called `item`.
- * Note `rhythm-list` (32px) is NOT the token for this: open-questions.md shows
- * it sitting between unboxed note cards, so the name misleads.
+ * ── THERE IS NO `li + li` RULE, AND THERE USED TO BE ────────────────────────
+ *
+ * `li + li { margin-top: var(--rhythm-item) }` lived here until 2026-09-02.
+ * Removed, not rescoped, on the evidence of its own consumers.
+ *
+ * Its comment admitted it was "an INFERENCE, not a transcription" — DESIGN.md
+ * names `rhythm-item` as a token and never says a list consumes it. What settled
+ * it is that EIGHT places had written `li + li { margin-top: 0 }` purely to
+ * cancel it:
+ *
+ *   TopicList   CaseStudyEntry   Footer (x2)   Masthead
+ *   RelatedBand   WorkWithMeBand   insights/index (facet chips)
+ *
+ * Every one of those is a nav, card or chip list, where the item spacing comes
+ * from a flex or grid `gap` that a stray margin fights. And the ONE family the
+ * rule was written for — Portable Text prose lists — turned out not to want it
+ * either: 16px between one-line items reads far too airy, judged on screen on
+ * the case study's "Work I Did" and its project sections (Andy, 2026-09-02).
+ *
+ * TWO places set a list's item spacing on purpose, and both still do, locally:
+ * `TopicList`'s stacked rail form asks for `rhythm-item`, and the home page's
+ * review list takes `rhythm-paragraph` plus a divider border. Those are the shape
+ * this should always have had — asked for where wanted, not cancelled everywhere
+ * else.
+ *
+ * So a list's items are separated by their leading and nothing else. A list that
+ * ever does want a gap should say so locally, which is now the cheap direction
+ * rather than the expensive one.
+ *
+ * `.detail`'s ramp still puts `--rhythm-block` (48) ABOVE and BELOW a list as a
+ * block — that is a different rule, it is still here, and it was not part of
+ * this. See Vertical rhythm below.
  */
-
-li + li {
-  margin-top: var(--rhythm-item);
-}
 
 /* ── Links ─────────────────────────────────────────────────────────────────── */
 /*
@@ -582,7 +610,7 @@ svg.lucide.icon-sm {
  * section wrappers, so there is no container to put a `gap` on, and `gap` could
  * not express "tighter after a heading" anyway.
  *
- * SOURCE ORDER DECIDES. Rules 2–6 all have identical specificity (0,1,1), so
+ * SOURCE ORDER DECIDES. Every override has identical specificity (0,1,1), so
  * the last matching one wins — which is why `heading-close` is last: a heading
  * binds to whatever follows it, whatever that is.
  *
@@ -592,6 +620,12 @@ svg.lucide.icon-sm {
  * two class weights and lift the base rule to (0,3,0) — beating every rule
  * below it and silently flattening the whole ramp to one value. `:where()`
  * always contributes zero specificity regardless of what is inside it.
+ *
+ * THE RAMP IS THREE OVERRIDES NOW, NOT FIVE. The two `rhythm-block` rules for
+ * lists, quotes, figures and code were removed 2026-09-02 — see the note where
+ * they used to sit. Nothing about the ordering changed: the survivors were
+ * already the last three, and they still read heading-opens, heading-opens,
+ * heading-binds.
  *
  * ── THE SELECTOR WAS `article.detail` UNTIL 2026-08-26 ──────────────────────
  *
@@ -618,13 +652,28 @@ svg.lucide.icon-sm {
   margin-top: var(--rhythm-paragraph);
 }
 
-.detail > * + :is(ul, ol, blockquote, figure, pre) {
-  margin-top: var(--rhythm-block);
-}
-
-.detail > :is(ul, ol, blockquote, figure, pre) + * {
-  margin-top: var(--rhythm-block);
-}
+/*
+ * ── THERE IS NO `rhythm-block` PAIR HERE ANY MORE ───────────────────────────
+ *
+ * Two rules gave `ul, ol, blockquote, figure, pre` 48px above AND below, as a
+ * block-level tier of the ramp:
+ *
+ *   .detail > * + :is(ul, ol, blockquote, figure, pre) { margin-top: 48 }
+ *   .detail > :is(ul, ol, blockquote, figure, pre) + * { margin-top: 48 }
+ *
+ * Removed 2026-09-02: too much vertical space in running text, in ALL of those
+ * cases and not just lists (Andy, on screen). Like the `li + li` margin above,
+ * `--rhythm-block`'s use here was an inference — DESIGN.md names the token and
+ * never says these five elements consume it.
+ *
+ * They now fall through to the base rule and take `--rhythm-paragraph` (24), the
+ * same as any two adjacent blocks. That is the whole change: a special case
+ * removed, not a new number introduced.
+ *
+ * TWO OVERRIDES REMAIN, both at (0,1,1), and the source-order note above still
+ * governs them: `* + h3` and `* + h2` open a section, and `:is(h2,h3,h4) + *`
+ * binds a heading to whatever follows. `heading-close` stays last for that reason.
+ */
 
 .detail > * + h3 {
   margin-top: var(--rhythm-heading-minor);

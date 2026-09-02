@@ -176,12 +176,6 @@ const {
     content: ':';
   }
 
-  /* base.css's `li + li` is 16px of prose rhythm. As flex items that would fight
-     `row-gap`, so it is zeroed here and restored in the stacked form. */
-  .topic-list li + li {
-    margin-top: 0;
-  }
-
   /* Inside the <li>, after the <a> — so the comma is not part of the link's text and
      does not take the hover underline with it. */
   .topic-list li:not(:last-child)::after {
@@ -208,7 +202,12 @@ const {
     }
 
     /* The rhythm ramp from base.css restated for a context it does not reach: 16 from
-       a heading to its list, and `rhythm-item` between items. */
+       a heading to its list, and `rhythm-item` between items.
+
+       THE ITEM GAP IS ASKED FOR HERE, not inherited. base.css carried a global
+       `li + li` margin until 2026-09-02, when it was removed because eight places
+       cancelled it and none wanted it; this stacked rail list is the one that did, so
+       it now says so locally. See base.css → Prose. */
     .topic-list-label + ul {
       margin-top: var(--rhythm-heading-close);
     }

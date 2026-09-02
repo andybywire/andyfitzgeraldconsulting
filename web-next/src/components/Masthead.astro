@@ -350,11 +350,6 @@ const navLink = (href: string): {href: string; 'aria-current'?: 'page' | 'true'}
        base rule rather than the md block keeps one declaration instead of two,
        at the cost of looking dead where it is written. */
     flex: 1 1 6.5rem;
-
-    /* base.css puts `margin-top: var(--rhythm-item)` on `li + li` for prose
-       lists, which would land on items 2–6 here — including the ones already on
-       the first row. `row-gap` above does the job correctly. */
-    margin-top: 0;
   }
 
   /*

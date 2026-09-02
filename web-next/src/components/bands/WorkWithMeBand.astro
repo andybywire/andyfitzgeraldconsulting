@@ -194,12 +194,6 @@ const logos = (clientLogos ?? []).filter((client) => client?.image?.asset)
     gap: var(--space-2);
   }
 
-  /* Cancels base.css's `li + li` prose rhythm, which would fight the flex gap. Same
-     correction the facet chip rows make. */
-  .work-logos li + li {
-    margin-top: 0;
-  }
-
   /*
    * 200px, JUDGED ON SCREEN (Andy, 2026-09-01) rather than taken from the board, which
    * draws each mark at 175 inside the 316 column. The board's 175 is the extent of the
