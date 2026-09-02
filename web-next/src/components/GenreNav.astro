@@ -1,0 +1,191 @@
+---
+/**
+ * Previous / next within a genre — two chips at the foot of a Genre-labeled detail
+ * page.
+ *
+ * ── THE BOARD ────────────────────────────────────────────────────────────────
+ *
+ * Drawn as a frame named *Card display controls*, which is a stale name for what it
+ * holds; it appears on three boards and they agree:
+ *
+ *   Case Study desktop      261:2107   pad 0 / 222 / 0  / 222   row 996, SPACE_BETWEEN
+ *   Presentation Interview  874:4109   pad 0 / 222 / 64 / 222   row 996, SPACE_BETWEEN
+ *   Insight Detail mobile   674:5455   pad 0 / 16  / 32 / 16    row 343, + WRAP
+ *
+ * So: never a top margin, the page margin inline, and a bottom margin only before a
+ * contrasting band. Chips are 29 tall with a 16 gap — the same `filter` component the
+ * Insights facet chips instantiate, which is why <Chip> exists.
+ *
+ * ── `space-between` + `wrap` IS THE WHOLE RESPONSIVE BEHAVIOR ────────────────
+ *
+ * No breakpoint, and none is needed. Two chips that fit are pushed to opposite edges;
+ * two that do not each take a line, and `space-between` on a single-item line puts
+ * that item at flex-start — so they stack at the LEFT edge, which is what the mobile
+ * board draws and what Andy asked for. One property does both jobs.
+ *
+ * ── ONE CHIP IS A CASE THE BOARD DOES NOT DRAW ───────────────────────────────
+ *
+ * And it is not rare: every genre with more than one document has exactly two
+ * boundary documents, so on the current corpus 10 of 45 pages show a single chip.
+ *
+ * Left alone, `space-between` would put a lone "Next" at the LEFT edge — where
+ * "Previous" lives on every other page, which reads as the wrong button. So the
+ * no-previous case switches to `flex-end` and sends it to the right, keeping forward
+ * on the right throughout. A lone "Previous" needs nothing: flex-start is already
+ * where it belongs.
+ *
+ * This cannot fight the wrap requirement, because a single chip never wraps.
+ * **Andy's call if a lone Next should sit left instead** — it is one rule.
+ *
+ * ── WHY IT IS NOT A <Band> ───────────────────────────────────────────────────
+ *
+ * It carries no tone and no band padding; it is content inset to the grid, which is
+ * exactly <Grid> and nothing more. Being a direct child of <main> also matters for
+ * the `:has()` rule below: the row and the band it reacts to have to be siblings.
+ */
+import Grid from './Grid.astro'
+import Chip from './Chip.astro'
+
+interface Props {
+  /** The genre prefLabel, which is the chip copy: "Previous Case Study". */
+  genre: string
+  /** From GENRE_NAV_QUERY. Either may be null — the oldest and newest in a genre. */
+  prev?: {slug: string | null; title: string | null} | null
+  next?: {slug: string | null; title: string | null} | null
+  /**
+   * URL base for a sibling, with both slashes — `/insights/`.
+   *
+   * A prop rather than derived from the result's `_type`, because the mapping is the
+   * ROUTE's knowledge: every type this serves today lives at `/insights/`, and
+   * `presentation` will pass `/presentations/` from its own page.
+   */
+  base: string
+}
+
+const {genre, prev, next, base} = Astro.props as Props
+
+/* A sibling is only usable with a slug to link to. The query already filters on
+   `defined(slug.current)`, so this narrows the type rather than guarding real data —
+   TypeGen types a projected slug as `string | null` because it cannot see the filter. */
+const prevLink = prev?.slug ? prev : null
+const nextLink = next?.slug ? next : null
+---
+
+{
+  /*
+  NOTHING AT ALL WHEN A GENRE HAS ONE DOCUMENT. Four genres are in that position today
+  — Talk, Note, Web Clipping and Book Note — so all three note pages and `cs-meetup`
+  render no nav rather than an empty row.
+
+  <nav>, because this is navigation between siblings in a set, and it takes an
+  `aria-label` because an unnamed landmark is worse than none. The label repeats the
+  genre deliberately: a landmark list gives no surrounding context, so "Previous and
+  next Case Study" is legible where "Previous and next" is not.
+*/
+}
+{
+  (prevLink || nextLink) && (
+    <Grid as="nav" class="genre-nav" aria-label={`Previous and next ${genre}`}>
+      <div class="genre-nav-row" data-lone={!prevLink && nextLink ? 'next' : undefined}>
+        {/*
+          `rel="prev"` / `rel="next"` — the HTML relationship for exactly this, which
+          costs nothing and says what two links called "Previous" and "Next" mean.
+
+          THE `aria-label` ADDS THE TITLE, which the visible chip cannot show: "Previous
+          Case Study" does not say WHICH one, and the entry title is already fetched. It
+          keeps the visible text as its prefix, so WCAG 2.5.3's Label in Name is
+          satisfied rather than broken by the override.
+        */}
+        {prevLink && (
+          <Chip
+            href={`${base}${prevLink.slug}/`}
+            rel="prev"
+            aria-label={prevLink.title ? `Previous ${genre}: ${prevLink.title}` : undefined}
+          >
+            Previous {genre}
+          </Chip>
+        )}
+
+        {nextLink && (
+          <Chip
+            href={`${base}${nextLink.slug}/`}
+            rel="next"
+            aria-label={nextLink.title ? `Next ${genre}: ${nextLink.title}` : undefined}
+          >
+            Next {genre}
+          </Chip>
+        )}
+      </div>
+    </Grid>
+  )
+}
+
+<style>
+  /*
+   * ── THE BOTTOM MARGIN ANSWERS TO WHAT FOLLOWS ──────────────────────────────
+   *
+   * `--rhythm-band` before a contrasting band, nothing before the page ground — 64 at
+   * 1440 and 32 at 375, from the clamp, matching all three boards without a
+   * breakpoint.
+   *
+   * `:has()` with a next-sibling combinator rather than a prop, so the row reads its
+   * own context and a page cannot wire it wrong. <Band> renders its tone as
+   * `data-tone`, and `page` is the only tone that paints nothing — so "contrasting" is
+   * "any tone that is not page", which is one selector rather than a list to keep in
+   * step with Band's props.
+   *
+   * ┌──────────────────────────────────────────────────────────────────────────┐
+   * │  THE WHOLE SELECTOR IS `:global()`, AND IT HAS TO BE. `:global()` NESTED  │
+   * │  INSIDE `:has()` DOES NOT WORK — Astro emits it verbatim and the browser  │
+   * │  discards the rule as invalid.                                           │
+   * └──────────────────────────────────────────────────────────────────────────┘
+   *
+   * Two facts collide here. Astro appends this component's scope attribute to every
+   * compound selector it sees, INCLUDING inside `:has()` — and the band being tested
+   * is rendered by the PAGE, so it carries the page's scope, not this one's. The
+   * obvious fix is `:has(+ :global([data-tone]))`, which Astro strips at the top level
+   * of a selector but NOT when nested; it emitted
+   *
+   *     .genre-nav[data-astro-cid-…]:has(+:global([data-tone]:not([data-tone="page"])))
+   *
+   * verbatim. `:global()` is not a real selector, so the browser threw the whole rule
+   * away — silently, since an unparseable selector is simply dropped. Measured as a
+   * `margin-bottom` of 0 against an accent band; nothing in the build would have said
+   * so, which is why it is written up rather than just fixed.
+   *
+   * Wrapping the ENTIRE selector works, because that form Astro does understand. The
+   * cost is that the rule is unscoped — acceptable here, since `.genre-nav` belongs to
+   * this component and this component is its only source.
+   *
+   * Degradation without `:has()` support is a tight gap against the band rather than a
+   * broken layout, and `:has()` is baseline in every browser this build targets.
+   *
+   * NO TOP MARGIN, deliberately and on all three boards: the band above supplies its
+   * own bottom padding, so the space is already there.
+   */
+  :global(.genre-nav:has(+ [data-tone]:not([data-tone='page']))) {
+    margin-block-end: var(--rhythm-band);
+  }
+
+  /*
+   * FULL WIDTH — Andy's "the left and right edges of the full 12 column block", and
+   * the board's 996 at 1440. `--col-full` rather than `1 / -1` typed out, so it says
+   * the same thing every other placement in the build says.
+   *
+   * `gap` covers both axes at 16, which is the board's number for the row and for the
+   * space between the two chips once they stack.
+   */
+  .genre-nav-row {
+    grid-column: var(--col-full);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+
+  /* See the header: a lone "Next" goes to the right rather than sitting where
+     "Previous" does on every other page. A lone "Previous" needs no rule. */
+  .genre-nav-row[data-lone='next'] {
+    justify-content: flex-end;
+  }
+</style>

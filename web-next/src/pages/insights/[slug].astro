@@ -55,6 +55,7 @@ import {
   INSIGHT_SLUGS_QUERY,
 } from '../../sanity/queries/insights'
 import {CASE_STUDY_BAND_QUERY, CASE_STUDY_DETAIL_QUERY} from '../../sanity/queries/case-studies'
+import {GENRE_NAV_QUERY, INSIGHT_NAV_TYPES} from '../../sanity/queries/genre-nav'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Band from '../../components/Band.astro'
 import Grid from '../../components/Grid.astro'
@@ -65,6 +66,7 @@ import EntryHeader from '../../components/EntryHeader.astro'
 import TopicList from '../../components/TopicList.astro'
 import NoteEntry from '../../components/NoteEntry.astro'
 import CaseStudyEntry from '../../components/CaseStudyEntry.astro'
+import GenreNav from '../../components/GenreNav.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import RelatedBand from '../../components/bands/RelatedBand.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
@@ -150,6 +152,29 @@ const [caseStudy, caseStudyBands] = isCaseStudy
 if (isCaseStudy && !caseStudy) {
   throw new Error(`[insights/[slug]] no caseStudy projection for slug "${slug}"`)
 }
+
+/**
+ * ── PREVIOUS / NEXT WITHIN THE GENRE ─────────────────────────────────────────
+ *
+ * Joined to the case study's serial await rather than the `Promise.all` above, for the
+ * same reason: it needs `insight.genre` and `insight.pubDate`, which only exist once
+ * the detail query has resolved. One round trip, and it runs for every document type
+ * on this route rather than only for case studies.
+ *
+ * SKIPPED WHEN EITHER KEY IS MISSING. A document mid-edit with no genre or no pubDate
+ * cannot be placed in a sequence, and `genreLabel`'s 'Insight' fallback must not leak
+ * in here — it would query for a genre no concept has and return two nulls, which is
+ * the right answer reached the wrong way.
+ */
+const canSequence = Boolean(insight.genre && insight.pubDate)
+const genreNav = canSequence
+  ? await loadQuery(GENRE_NAV_QUERY, {
+      types: INSIGHT_NAV_TYPES,
+      genre: insight.genre,
+      pubDate: insight.pubDate,
+      id: insight._id,
+    })
+  : null
 
 /*
  * ── RELATED CONTENT ──────────────────────────────────────────────────────────
@@ -410,6 +435,30 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
             </Grid>
           </Band>
         </article>
+      )
+    }
+
+    {
+      /*
+      ── PREVIOUS / NEXT WITHIN THE GENRE ──────────────────────────────────────
+
+      IMMEDIATELY AFTER THE ENTRY AND BEFORE THE BANDS, which is where all three
+      boards draw it and which is also what makes its own bottom margin work: the
+      component decides that with `:has(+ [data-tone]...)`, so it has to be a SIBLING
+      of whichever band follows. Wrapping it in anything, or putting it inside
+      </article>, would break that silently.
+
+      Outside <article> for the same reason the two bands below are: sequence controls
+      are site apparatus, not part of the entry, and nothing here should be readable as
+      `e-content`.
+
+      The component renders nothing when a genre holds one document, so the three notes
+      and `cs-meetup` emit no nav at all rather than an empty row.
+    */
+    }
+    {
+      genreNav && (
+        <GenreNav genre={genreLabel} prev={genreNav.prev} next={genreNav.next} base="/insights/" />
       )
     }
 
