@@ -25,6 +25,7 @@
  */
 import type {TypedObject} from 'astro-portabletext/types'
 import type {SanityImageSource} from '../sanity/image'
+import type {CASE_STUDY_DETAIL_QUERY_RESULT} from '../../sanity.types'
 import Band from './Band.astro'
 import Grid from './Grid.astro'
 import Prose from './prose/Prose.astro'
@@ -52,6 +53,14 @@ interface Props {
   beforeImage?: (SanityImageSource & {caption?: string | null}) | null
   /** Full content width, after the last section. `outline` is an editor flag. */
   afterImage?: (SanityImageSource & {caption?: string | null; outline?: boolean | null}) | null
+  /**
+   * The testimonial. Taken from the generated query type rather than hand-declared,
+   * so a field added to the projection cannot silently be typed as absent here —
+   * NoteEntry's refs do the same.
+   *
+   * Null on `who-ntd` and `uw-medicine`, which is why the band is conditional.
+   */
+  review?: NonNullable<CASE_STUDY_DETAIL_QUERY_RESULT>['review']
 }
 
 const {
@@ -68,6 +77,7 @@ const {
   projectOutcome,
   beforeImage,
   afterImage,
+  review,
 } = Astro.props as Props
 
 /* Only the asset says whether there is a logo to draw — the reference exists on all
@@ -125,6 +135,19 @@ const sections = [
 ].filter((section) => section.head || section.body.length > 0)
 
 const after = afterImage?.asset ? afterImage : null
+
+/*
+ * The band renders only with a quotation to show. `condensedBody` is the field the
+ * board draws — the shorter cut of `body`, and the one whose paragraph breaks the
+ * editor sets deliberately (see the note on the columns). An author with no quote
+ * would otherwise produce an accent band holding nothing but an attribution.
+ */
+const quote = review?.condensedBody?.length ? review : null
+
+/* "Vanessa Casavant, Senior Digital Content Strategist" — the title is optional, so
+   the comma is composed rather than typed into the template, where a missing title
+   would leave it dangling. */
+const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
 ---
 
 <article class="h-entry">
@@ -250,16 +273,74 @@ const after = afterImage?.asset ? afterImage : null
 
   {
     /*
+    ── THE TESTIMONIAL BAND ───────────────────────────────────────────────────
+
+    Between band 1 and band 2, where the board puts it (1106-1522), and omitted
+    entirely when there is no review — `who-ntd` and `uw-medicine`, 2 of 7. Not
+    hidden, not an empty accent stripe: absent.
+
+    `tone="accent"` is the board's fill, and it does more than paint. Band re-points
+    the whole text-role bundle for accent AND re-points `--color-link-hover` to
+    `text-on-accent-hover`, which is exactly what the attribution link below needs:
+    the default `link-hover` is blue-500, which IS this band's fill, so an
+    uncancelled link would turn the colour of the surface behind it on hover. That
+    trap is already handled one level down; this band inherits the fix.
+
+    64/64 from `space="band"`, matching the board with no override.
+
+    ── <figure> + <blockquote> + <figcaption> ────────────────────────────────
+
+    WHATWG's own pattern for a quotation with attribution, and the reason it is not
+    just a <div>: the attribution MUST sit outside the <blockquote>, because anything
+    inside is part of the quoted text. A <figure> is what gives the two a common
+    parent without claiming the attribution is quoted.
+
+    NO <cite> around the name. The spec is explicit that `cite` is the title of a
+    work and that a person's name is not one — the most commonly copied mistake in
+    this pattern. The organisation is not a work either.
+  */
+  }
+  {
+    quote && (
+      <Band as="div" space="band" tone="accent" class="testimonial-band">
+        <Grid>
+          <figure class="testimonial">
+            <blockquote class="quote">
+              <Prose value={quote.condensedBody} />
+            </blockquote>
+
+            {/*
+              ONE LINK AROUND BOTH LINES, so the accessible name is the whole
+              attribution — "Vanessa Casavant, Senior Digital Content Strategist
+              Seattle Children's" — rather than a bare name with the employer
+              stranded outside the target.
+
+              PROVISIONAL HREF, and it 404s today by agreement (Andy, 2026-09-02).
+              Reviews is a SINGLETON in the content model — one page carrying every
+              review — so a fragment is the shape that addresses one of them, and
+              `review.slug` already exists for the purpose. Built now so the link is
+              not forgotten when the page lands.
+            */}
+            <figcaption class="attribution">
+              <a href={`/reviews/#${quote.slug}`}>
+                <span class="attribution-name">{attribution}</span>
+                {quote.employer && <span class="attribution-org">{quote.employer}</span>}
+              </a>
+            </figcaption>
+          </figure>
+        </Grid>
+      </Band>
+    )
+  }
+
+  {
+    /*
     ── ARTICLE BAND 2 ─────────────────────────────────────────────────────────
 
     Symmetric 64/64, so `space="band"` supplies it directly — `--rhythm-band`'s own
     32 -> 64 clamp, no override and no breakpoint. Band 1 needed `space="none"`
     because its top padding collapses at lg where the hero moves above the title;
     nothing here does that.
-
-    THE TESTIMONIAL BAND GOES BETWEEN THIS AND BAND 1, and is not built yet. It is a
-    separate <Band> on the board (accent tone, 1106-1522), so it slots in as a
-    sibling without either band moving.
   */
   }
   {
@@ -539,6 +620,111 @@ const after = afterImage?.asset ? afterImage : null
       columns: 2;
       column-gap: var(--grid-gutter);
     }
+  }
+
+  /* ── The testimonial band ───────────────────────────────────────────────── */
+
+  .testimonial {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * ── NO QUOTE BAR, AND IT HAS TO BE CANCELLED ───────────────────────────────
+   *
+   * base.css gives every `blockquote` the 4px bar plus its indent, which is right
+   * for a pull quote inside running prose and wrong here: this quotation IS the
+   * band, sitting alone on an accent fill, and the board draws no bar. The indent
+   * goes with it — a 6-column split measured off `--grid-gutter` cannot also carry
+   * `--quote-indent` and still close 996.
+   *
+   * `border-inline-start: 0` rather than `border: 0`, so this cancels exactly the
+   * declaration base.css made and nothing it might add later.
+   */
+  .quote {
+    border-inline-start: 0;
+    padding-inline-start: 0;
+  }
+
+  /*
+   * ── TWO COLUMNS, AND THE EDITOR CONTROLS WHERE THE CUT FALLS ───────────────
+   *
+   * The board draws the quote as 6 + 6 (486 + 24 + 486, closing 996), and the
+   * requirement behind it is specific (Andy, 2026-09-02): with TWO paragraphs they
+   * sit side by side, because the paragraph break is how he says where the cut
+   * goes; with ONE, the break between columns happens automatically.
+   *
+   * `columns: 2` alone gives the second behaviour. `break-before: column` on the
+   * SECOND paragraph gives the first, and the two compose — with a single paragraph
+   * there is no second child, so nothing forces a break and the text balances.
+   *
+   * ── `:nth-child(2)` AND NOT `p + p`, WHICH IS THE SAFER OF THE TWO ─────────
+   *
+   * `p + p { break-before: column }` reads more naturally and breaks on a third
+   * paragraph: it would force p3 into a third column, and a 2-column container
+   * asked for a third column overflows horizontally. Targeting the second child
+   * only means p3 flows on under p2 in column two, which is the sane reading.
+   *
+   * No review has three today — `condensedBody` runs 1 block on three of the four
+   * and 2 on Vanessa's — so this is guarding a shape an editor could reach, not one
+   * in the corpus.
+   *
+   * The paragraph margin is stated at the base because base.css's ramp is scoped to
+   * `.detail` and this is not prose flow; it is then cancelled on the second
+   * paragraph inside the split, where a top margin would push a column-start off the
+   * top edge. `:global` throughout, because <Prose> renders these and they carry its
+   * scope.
+   *
+   * ── ONE COLUMN BELOW md, AND THAT IS NOT OPTIONAL ─────────────────────────
+   *
+   * `columns: 2` was unconditional in the first draft and measured **168px per
+   * column at 375** — roughly 18 characters, which is unreadable. There is no Case
+   * Study mobile board to read, but nothing in the design wants an 18-character
+   * measure.
+   *
+   * So the single column is the base and md opens the split, which is also the
+   * fallback that tokens.css asks for: an engine that never evaluates the query is
+   * left with the readable arrangement rather than the narrow one.
+   */
+  .quote :global(p + p) {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  @container style(--breakpoint-md: true) {
+    .quote {
+      columns: 2;
+      column-gap: var(--grid-gutter);
+    }
+
+    .quote :global(p:nth-child(2)) {
+      break-before: column;
+      margin-top: 0;
+    }
+  }
+
+  /*
+   * ── THE ATTRIBUTION ────────────────────────────────────────────────────────
+   *
+   * Right-aligned: the board ends both lines flush at 996 (x=610 w=386, x=841
+   * w=155). 48 above it, which the board draws (the quote ends at 192, this starts
+   * at 240) and which is `rhythm-block`.
+   *
+   * base.css's `caption` role is most of the way there already — `--font-size-1` at
+   * 1.5 is exactly the board's 24px line box, and `text-muted` re-points to
+   * `text-on-accent` inside this band, so the colour is right without a word. Only
+   * two things need saying: it is NOT italic here, and the 8px `rhythm-tight` the
+   * role gives a figure caption becomes 48.
+   */
+  .attribution {
+    margin-top: var(--rhythm-block);
+    font-style: normal;
+    text-align: end;
+  }
+
+  /* Two lines from two spans rather than a <br>: the line break is layout, not
+     content, and a <br> would be read out as part of the name. */
+  .attribution-name,
+  .attribution-org {
+    display: block;
   }
 
   /* ── Article band 2: the three project sections ─────────────────────────── */

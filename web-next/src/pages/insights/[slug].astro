@@ -54,7 +54,7 @@ import {
   INSIGHT_RSS_BAND_QUERY,
   INSIGHT_SLUGS_QUERY,
 } from '../../sanity/queries/insights'
-import {CASE_STUDY_DETAIL_QUERY} from '../../sanity/queries/case-studies'
+import {CASE_STUDY_BAND_QUERY, CASE_STUDY_DETAIL_QUERY} from '../../sanity/queries/case-studies'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Band from '../../components/Band.astro'
 import Grid from '../../components/Grid.astro'
@@ -67,6 +67,7 @@ import NoteEntry from '../../components/NoteEntry.astro'
 import CaseStudyEntry from '../../components/CaseStudyEntry.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import RelatedBand from '../../components/bands/RelatedBand.astro'
+import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
 import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
 import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
 import {headingId, headingText} from '../../components/prose/headingId'
@@ -133,9 +134,16 @@ const isCaseStudy = insight._type === 'caseStudy'
  * know it earlier — is not reliable across BOTH build modes, since the preview
  * environment builds with `output: "server"` where those props may not be produced.
  *
- * The cost is one serial round trip on seven pages of a forty-seven page build.
+ * The cost is one serial round trip on seven pages of a forty-seven page build. The
+ * two case-study queries go together inside that trip — they are independent of each
+ * other and both need only the slug, so only the FIRST await is serial.
  */
-const caseStudy = isCaseStudy ? await loadQuery(CASE_STUDY_DETAIL_QUERY, {slug}) : null
+const [caseStudy, caseStudyBands] = isCaseStudy
+  ? await Promise.all([
+      loadQuery(CASE_STUDY_DETAIL_QUERY, {slug}),
+      loadQuery(CASE_STUDY_BAND_QUERY, {slug}),
+    ])
+  : [null, null]
 
 /* Loud rather than quiet, matching the guard above: the type came out of the first
    query, so a miss means the two queries disagree about the same document. */
@@ -274,6 +282,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
           projectOutcome={caseStudy.projectOutcome}
           beforeImage={caseStudy.beforeImage}
           afterImage={caseStudy.afterImage}
+          review={caseStudy.review}
         />
       ) : isNote ? (
         <NoteEntry
@@ -443,6 +452,38 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
           noun={branch === 'note' ? 'Notes' : 'Insights'}
           isFallback={isFallback}
           items={relatedItems}
+        />
+      )
+    }
+
+    {
+      /*
+      ── WORK WITH ME, ON A CASE STUDY ONLY ─────────────────────────────────────
+
+      AFTER Related, which is where the board puts it: article band 2, then the
+      hidden RSS CTA, then Related, then Connect/Work with me, then the footer
+      (verified against the board's own child order, 2026-09-02).
+
+      A case study is the one page type here that takes this band instead of the RSS
+      one, and the schema says so rather than the template guessing: `caseStudy.bands`
+      accepts only `bandWorkWithMe`, where `article` and `note` accept only `bandRss`.
+      That is also why the RSS band above is suppressed for it.
+
+      Resolved through the same three-tier ladder as every repeated band — document,
+      then page-type override, then Settings default — inside the GROQ, so this knows
+      nothing about precedence. All seven case studies currently fall through to the
+      site default; none carries its own.
+
+      Rendered only if the ladder produced one, matching RssBand's guard. There is a
+      site default today, so null would mean Settings carries no Work with Me band at
+      all, and an empty band is worse than none.
+    */
+    }
+    {
+      isCaseStudy && caseStudyBands?.workBand && (
+        <WorkWithMeBand
+          message={caseStudyBands.workBand.message}
+          clientLogos={caseStudyBands.workBand.clientLogos}
         />
       )
     }
