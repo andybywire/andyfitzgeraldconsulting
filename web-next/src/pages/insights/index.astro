@@ -65,6 +65,7 @@ import Prose from '../../components/prose/Prose.astro'
 import ArticleCard from '../../components/cards/ArticleCard.astro'
 import NoteCard from '../../components/cards/NoteCard.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
+import Chip from '../../components/Chip.astro'
 
 /* Both fetches are independent, so they go together rather than in series. */
 const [page, insights] = await Promise.all([
@@ -327,8 +328,7 @@ const facets = [
                         on load, so that navigation resolves correctly rather than being
                         swallowed.
                       */}
-                      <a
-                        class="chip"
+                      <Chip
                         href={`/insights/?${group.key}=${facet.slug}`}
                         data-facet={group.key}
                         data-slug={facet.slug}
@@ -337,7 +337,7 @@ const facets = [
                       >
                         <span class="chip-label">{facet.label}</span>
                         <span class="chip-count">{facet.count}</span>
-                      </a>
+                      </Chip>
                     </li>
                   ))}
 
@@ -353,15 +353,15 @@ const facets = [
                     built in JS so the chip's shape is written once.
                   */}
                   <li hidden>
-                    <button class="chip chip-more" type="button">
+                    <Chip as="button" class="chip-more" type="button">
                       {group.more}
-                    </button>
+                    </Chip>
                   </li>
 
                   <li hidden>
-                    <button class="chip chip-fewer" type="button">
+                    <Chip as="button" class="chip-fewer" type="button">
                       {group.fewer}
-                    </button>
+                    </Chip>
                   </li>
                 </ul>
               </div>
@@ -488,8 +488,8 @@ const facets = [
           */
           }
           <div class="result-controls">
-            <button class="chip show-more" type="button" hidden>Show more</button>
-            <button class="chip show-all" type="button" hidden>Show all</button>
+            <Chip as="button" class="show-more" type="button" hidden>Show more</Chip>
+            <Chip as="button" class="show-all" type="button" hidden>Show all</Chip>
           </div>
 
           <div class="result-status" role="status"></div>
@@ -684,72 +684,21 @@ const facets = [
   }
 
   /*
-   * ── THE CHIP ────────────────────────────────────────────────────────────────
+   * ── THE CHIP'S SHAPE MOVED TO <Chip> (2026-09-02) ───────────────────────────
    *
-   * DESIGN.md's `filter-chip`: surface fill, the CONTROL border rather than the card
-   * hairline — a card is not a control, a chip is — `radius-full`, and the `chip` type
-   * role, which is Lato at the 14px step with no tracking.
+   * The pill, the type role, `:hover`, `:active` and the wipe-in opt-out now live in
+   * `components/Chip.astro`, because the genre prev/next nav became a second consumer
+   * and the Figma boards instantiate the same `filter` component for both.
    *
-   * `inline-flex` because an anchor is inline by default: without it the pill has no
-   * box, and a chip that wrapped a line would have its focus ring split into two
-   * fragments. It also makes the label and count share a baseline row.
+   * WHAT STAYED IS THE FILTER'S OWN, and the seam is what the second consumer lacks:
+   * `aria-current` (selected), `aria-disabled`, the count and `.is-zero` below. A
+   * prev/next chip is never selected, and when there is no previous entry it is absent
+   * rather than dimmed — so hoisting those would have generalised from one case.
    *
-   * The button and the anchor are styled together on purpose — "See all" has to be
-   * visually a chip while being semantically a disclosure, so the one thing that must
-   * not diverge is the appearance.
+   * These rules still reach the component: Astro passes this page's scope attribute to
+   * a child component's root element. The script is untouched for the same reason —
+   * `.chip` still lands on the rendered element.
    */
-  .chip {
-    display: inline-flex;
-    align-items: baseline;
-    gap: var(--space-1);
-
-    /*
-     * MEASURED OFF THE BOARD, BECAUSE DESIGN.md DOES NOT SPECIFY IT. The `filter-chip`
-     * entry carries fill, border, radius and typography but no padding and no height —
-     * `field-height` is 48 and belongs to the input field, not to this. The board draws
-     * the chip 29 tall, and 29 = 21 line box + 2 border + 3 + 3, so the block padding
-     * is 3px. Off the 8px space scale of necessity: a 21px line box cannot be centred
-     * in a 29px capsule by a scale derived from a 32px one.
-     *
-     * Now recorded in DESIGN.md → Filter chips, so the next consumer derives it from
-     * the spec instead of re-measuring the board.
-     */
-    padding: 3px 0.75rem;
-    border: var(--border-width-hairline) solid var(--color-border-control);
-    border-radius: var(--radius-full);
-    background-color: var(--color-surface);
-
-    color: var(--color-text);
-    font-family: var(--font-heading);
-    font-size: var(--font-size-0);
-    font-weight: 400;
-    line-height: 1.5;
-
-    /* Eased, not switched — the 0.15s affordance end of DESIGN.md's convention. */
-    transition:
-      background-color 0.15s,
-      border-color 0.15s,
-      color 0.15s;
-  }
-
-  /*
-   * NOT LINK-SHAPED, AND DESIGN.md ANTICIPATED THIS ONE BY NAME: "a nav whose links
-   * are not link-shaped — filter chips are the case coming — opts out with
-   * `::after { content: none }`." The wipe-in underline is a chrome gesture; a row of
-   * pills animating under a moving pointer is noise. base.css's nav reset already
-   * removes the resting underline, so this only cancels the hover wipe.
-   */
-  .chip::after {
-    content: none;
-  }
-
-  .chip:hover {
-    background-color: var(--color-control-hover);
-  }
-
-  .chip:active {
-    background-color: var(--color-control-pressed);
-  }
 
   /*
    * SELECTED IS `aria-current`, not a class — DESIGN.md: "the fact belongs to the
