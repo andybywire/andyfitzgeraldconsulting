@@ -32,6 +32,7 @@
  * meantime; a `dt-published` outside any entry root is noise a parser has to ignore.
  */
 import {formatDate} from '../lib/date'
+import {slugify} from '../lib/slug'
 
 interface Props {
   genre?: string | null
@@ -39,15 +40,42 @@ interface Props {
   date?: string | null
   /** Emit mf2 `dt-published`. Only inside an `h-entry`. */
   microformats?: boolean
+  /**
+   * Link the genre to the Insights index filtered to it.
+   *
+   * ── OPT-IN, AND THE CARDS ARE WHY ────────────────────────────────────────
+   *
+   * A detail page's eyebrow is loose text and can hold a link. A CARD's cannot:
+   * both cards stretch their title anchor over the whole card with
+   * `::after { inset: 0 }`, so a second link inside sits UNDER that overlay and
+   * is unclickable. ArticleCard's own note says as much — "any second link in a
+   * card would need lifting above this with `z-index`". Rather than lift it and
+   * give a card two competing targets, the cards simply do not opt in; the index
+   * already has genre chips doing this job.
+   */
+  genreLink?: boolean
   class?: string
 }
 
-const {genre, date, microformats = false, class: className}: Props = Astro.props
+const {genre, date, microformats = false, genreLink = false, class: className}: Props = Astro.props
 const dateLabel = formatDate(date)
+
+/**
+ * `?genre=` carries a slugified prefLabel, which is the settled filter contract —
+ * docs/urls-and-filtering.md, and the same shape the index's own chips and
+ * `data-genre` attributes use. Composed HERE rather than taken as an href, matching
+ * TopicList: one place owns the URL shape, so a change to it is one edit.
+ *
+ * The caveat, recorded rather than designed around: this hardcodes `/insights/`, and
+ * a Presentation's genre may eventually want `/presentations/`. At that point this
+ * becomes an href prop. It is not one now because a second base does not exist yet
+ * and inventing the seam early would put the URL shape in two files.
+ */
+const genreHref = genre ? `/insights/?genre=${slugify(genre)}` : null
 ---
 
 <p class:list={['eyebrow', className]}>
-  {genre && <span>{genre}</span>}
+  {genre && <span>{genreLink && genreHref ? <a href={genreHref}>{genre}</a> : genre}</span>}
   {
     dateLabel && (
       <time class:list={[microformats && 'dt-published']} datetime={date}>
@@ -75,5 +103,41 @@ const dateLabel = formatDate(date)
   /* Only between two children — a date with no genre gets no leading pipe. */
   .eyebrow span + time::before {
     content: ' | ';
+  }
+
+  /*
+   * ── THE GENRE LINK KEEPS THE LABEL ROLE, AND ONLY GAINS A HOVER ────────────
+   *
+   * Nothing here touches font, weight, size or tracking: the <a> is inside
+   * `.eyebrow`, so it inherits all four, and base.css already gives every anchor
+   * `color: inherit` — which is what keeps it in `text-muted` at rest rather than
+   * jumping to a link colour. The label reads exactly as it did before it became
+   * a link.
+   *
+   * The treatment is the rail's: no underline at rest, `link-hover` plus an
+   * underline on hover. That is deliberately NOT this project's default inline-link
+   * treatment, which underlines at rest — an eyebrow is apparatus, and a permanent
+   * rule under a metadata line reads as emphasis it has not earned.
+   *
+   * ── ONLY THE COLOUR MOVES, AND THAT IS WHY IT ANIMATES ─────────────────────
+   *
+   * `text-decoration-line` is a discrete keyword and cannot be animated from
+   * `none`, so an underline switched on at hover would appear instantly while the
+   * colour eased. Declaring the line at rest in `transparent` and animating
+   * `text-decoration-color` gives the same appearance with a real transition.
+   *
+   * base.css's thickness and offset carry through untouched, because this is NOT a
+   * <nav> — the `nav :is(a, button)` reset that forces TopicList to restate them
+   * never reaches here. One less thing to keep in step.
+   */
+  .eyebrow a {
+    text-decoration-color: transparent;
+    transition:
+      color 0.15s,
+      text-decoration-color 0.15s;
+  }
+
+  .eyebrow a:hover {
+    text-decoration-color: currentColor;
   }
 </style>

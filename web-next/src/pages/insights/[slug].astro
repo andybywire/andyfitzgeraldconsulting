@@ -273,7 +273,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
           <Band as="header" space="none" class="title-band">
             <Grid class="title-grid">
               <div class="title-block">
-                <Eyebrow genre={genreLabel} date={insight.pubDate} microformats />
+                <Eyebrow genre={genreLabel} date={insight.pubDate} microformats genreLink />
                 <h1 class="p-name">{insight.title}</h1>
 
                 {/*
