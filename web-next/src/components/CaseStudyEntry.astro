@@ -1,19 +1,23 @@
 ---
 /**
- * The case study entry — article band 1 only, so far.
+ * The case study entry — the whole page.
  *
- * ── THE BOARD, AND WHAT IS BUILT ─────────────────────────────────────────────
+ * ── THE BOARD, AND WHERE EACH PART LIVES ─────────────────────────────────────
  *
- * Read off `261:2107` at its 1440 frame. This file covers the first two rows; the
- * rest is the next pieces, in this order:
+ * Read off `261:2107` at its 1440 frame, whose own child order settles the
+ * sequence — including that the RSS CTA sits there marked `visible=false`:
  *
- *   hero + title              -> <EntryHeader>            BUILT (shared)
- *   atGlance | client logo    -> row 1                    BUILT
- *   "Work I Did" + list       -> row 2, 48 below          BUILT
- *   three project sections    -> article band 2           NEXT
- *   before/after images       -> with band 2
- *   testimonial band          -> after that
- *   Work with Me + Related    -> last
+ *   hero + title            <EntryHeader>, shared with the article and the note
+ *   atGlance | client logo  article band 1, row 1
+ *   "Work I Did" + list     article band 1, row 2, 48 below
+ *   testimonial             its own accent band, between the two article bands
+ *   three project sections  article band 2, each label + content-supplied h2
+ *   before image            beside Project Goal, at 9 / span 4
+ *   after image             full content width, closing band 2
+ *   Related, Work with Me   `[slug].astro`, in that order, outside the entry
+ *
+ * The RSS band is suppressed for this type in `[slug].astro`, and the schema is
+ * why rather than the board: `caseStudy.bands` accepts only `bandWorkWithMe`.
  *
  * ── IT COMPOSES <EntryHeader> RATHER THAN RESTATING IT ───────────────────────
  *
@@ -155,17 +159,51 @@ const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
 
   {
     /*
-    ── NO `e-content` HERE YET, AND THAT IS DELIBERATE ─────────────────────────
+    ── NO `e-content`, AND THE REASON IS THAT NOTHING READS IT YET ─────────────
 
-    An article and a note each have ONE body field, so `e-content` has an obvious
-    home. A case study's prose is spread across five — atGlance, whatDid, and the
-    three project fields — with a testimonial band between them, so where the
-    syndicated body starts and stops is a real question rather than a class
-    attribute. Marking `atGlance` alone would publish the summary as the whole post.
+    A DECISION, NOT A GAP (Andy, 2026-09-02). Everything else on the entry works:
+    `h-entry`, `p-name`, `dt-published`, `u-url`/`u-uid`, `u-photo`, `p-category`.
+    `e-content` is the one property held back, and the case study is the only page
+    type where it is — an article and a note each have ONE body field, so their
+    boundary is obvious and free.
 
-    Left unmarked until band 2 exists and the whole shape is visible. `h-entry`,
-    `p-name`, `dt-published`, `u-url`/`u-uid` and `u-photo` all work already —
-    `e-content` is the one property that needs the decision.
+    ── WHAT IT WOULD TAKE, SO NOBODY HAS TO WORK IT OUT AGAIN ─────────────────
+
+    ONE WRAPPER, and only one. mf2 properties are all multi-valued, so five
+    `e-content` elements — one per prose field — parse perfectly well into
+    `content: [{html, value} x 5]`. But Bridgy goes through granary, whose
+    `to_as1()` reads `first_props(props)`, i.e. `get_first()` on each array, and
+    takes `content[0]` with no concatenation (read from granary's source,
+    2026-09-02; `summary` and `name` are read the same way).
+
+    So five would be VALID MARKUP THAT SILENTLY SYNDICATES ONLY `atGlance` — a
+    case study posted as its one-paragraph summary with nothing to say the other
+    four fields existed. If it is ever wanted it has to be a single element around
+    the three bands below, which are already siblings; a `<div class="e-content">`
+    there costs one element and nothing else, since bands are full-width blocks and
+    wrapping does not touch the accent band's bleed.
+
+    ── AND WHY IT IS NOT BEING ADDED NOW ──────────────────────────────────────
+
+    Because the boundary is DETERMINED BY a consumer that does not exist. The only
+    things that read `e-content` are Bridgy Publish (phase 8), an outbound
+    webmention where a case study is the SOURCE of a mention (rare for this type),
+    and `h-feed` subscription (phase 8, and RSS is built elsewhere).
+
+    NOT SEARCH ENGINES AND NOT AGENTS, which is the reason someone would most
+    plausibly add it reflexively. Google's structured-data support is JSON-LD,
+    microdata and RDFa; mf2 is not in it, and classic microformats' rich-snippet
+    support is long gone. CLAUDE.md draws the same line — JSON-LD is what search
+    engines read, mf2 is what the IndieWeb reads — so this page's SEO surface is
+    its JSON-LD and `e-content` adds nothing to it. No demonstrable benefit to LLM
+    crawlers either: they get the prose from the markup regardless, and several
+    strip class attributes outright.
+
+    The open decision it waits on is what a syndicated case study SHOULD be. The
+    working answer is title + `p-summary` + link, not a body — granary reads
+    `summary` first as well, so that is the property that would actually control a
+    character-limited platform. Which in turn waits on phase 8's own open question:
+    whether `shortDescription` is the right source, given it is card copy.
   */
   }
   <Band as="div" space="none" class="content-band">
