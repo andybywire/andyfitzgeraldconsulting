@@ -67,6 +67,30 @@ export const INSIGHTS_INDEX_QUERY = defineQuery(`
  * The RSS band is NOT projected here — see INSIGHT_RSS_BAND_QUERY below, which exists
  * because folding it in silently untypes this one.
  *
+ * ── `clipRef` AND `bookRef` ARE HERE, AND caseStudy's FIELDS ARE NOT ──────────
+ *
+ * That looks like the same situation twice with two answers, so the difference is worth
+ * naming: it is not about field count, it is about whether the type is in the UNION.
+ *
+ * `note` IS one of the three types this query matches, so its body has to come from here
+ * — there is nowhere else to get it — and once the type is in the union TypeGen
+ * discriminates the projection on `_type`. The note member carries the object; the
+ * article and caseStudy members carry `null`. Nothing is typed with a field it can never
+ * use, which is precisely the objection to caseStudy's `atGlance` / `projectGoal` set:
+ * caseStudy's own PAGE is item 4 in the phase 4 order and will have its own query, so
+ * projecting those fields here would add five permanent nulls to every article for a page
+ * that is not this one.
+ *
+ * The two refs discriminate the three note variants between them — Note has neither,
+ * Clipping has `clipRef`, Book Note has `bookRef`. The page branches on which one is
+ * present rather than on the genre label, matching NoteCard: genre is a SKOS prefLabel
+ * and can be renamed in the Studio, and a ref either exists or it does not.
+ *
+ * `img` is projected INLINE rather than through IMAGE, following BAND_WORK_WITH_ME's
+ * precedent — both refs' images carry `altText` but no `caption`, so the shared fragment
+ * would add a permanently-null field. (IMAGE's claim that every image field in this schema
+ * carries all five does not hold here either.)
+ *
  * ── KEEP COMMENTS OUT OF THE QUERY STRING ────────────────────────────────────
  *
  * This note started inside the template literal and broke the build twice over. Backticks
@@ -76,7 +100,7 @@ export const INSIGHTS_INDEX_QUERY = defineQuery(`
  * implicit-any complaints in the PAGE that consumes it. Annotate the query from out here.
  */
 export const INSIGHT_DETAIL_QUERY = defineQuery(`
-	*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {
+	*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {
 		${IDENTITY},
 		${DATES},
 		${TAXONOMY},
@@ -85,7 +109,21 @@ export const INSIGHT_DETAIL_QUERY = defineQuery(`
 		description,
 		lede,
 		bodyText,
-		heroImage { ${IMAGE} }
+		heroImage { ${IMAGE} },
+		clipRef {
+			clipUrl,
+			publisher,
+			title,
+			img { asset, crop, hotspot, altText }
+		},
+		bookRef {
+			bookUrl,
+			title,
+			author,
+			publisher,
+			pubDate,
+			img { asset, crop, hotspot, altText }
+		}
 	}
 `)
 
@@ -115,7 +153,7 @@ export const INSIGHT_DETAIL_QUERY = defineQuery(`
  * presentation detail pages can reuse this without touching their own detail queries.
  */
 export const INSIGHT_RSS_BAND_QUERY = defineQuery(`
-	*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {
+	*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {
 		${BAND_RSS}
 	}
 `)
@@ -153,7 +191,7 @@ export const INSIGHTS_REVIEW_QUERY = defineQuery(`
 
 /** Slugs only, for `getStaticPaths`. Kept separate so the build does not fetch bodies twice. */
 export const INSIGHT_SLUGS_QUERY = defineQuery(`
-	*[_type in ["article", "caseStudy"] && defined(slug.current)] {
+	*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {
 		"params": {"slug": slug.current}
 	}
 `)

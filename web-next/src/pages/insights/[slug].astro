@@ -54,7 +54,6 @@ import {
   INSIGHT_RSS_BAND_QUERY,
   INSIGHT_SLUGS_QUERY,
 } from '../../sanity/queries/insights'
-import {slugify} from '../../lib/slug'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Band from '../../components/Band.astro'
 import Grid from '../../components/Grid.astro'
@@ -63,6 +62,8 @@ import Footer from '../../components/Footer.astro'
 import SanityHero from '../../components/SanityHero.astro'
 import Prose from '../../components/prose/Prose.astro'
 import Eyebrow from '../../components/Eyebrow.astro'
+import TopicList from '../../components/TopicList.astro'
+import NoteEntry from '../../components/NoteEntry.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import RelatedBand from '../../components/bands/RelatedBand.astro'
 import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
@@ -98,6 +99,23 @@ if (!insight) throw new Error(`[insights/[slug]] no document for slug "${slug}"`
 /* `genre` is defined on all 42 documents (verified 2026-08-26), so the fallback is
    for a future document mid-edit rather than for the corpus. */
 const genreLabel = insight.genre ?? 'Insight'
+
+/**
+ * ── ONE ROUTE, TWO ENTRY SHAPES ──────────────────────────────────────────────
+ *
+ * `note` joins `article` and `caseStudy` on this route rather than getting a file
+ * of its own, because everything AROUND the entry is shared: the slug paths, all
+ * three queries, the permalink, the related ranking and both bands below. What
+ * differs is only what sits between <main> and the RSS band.
+ *
+ * Branching on `_type` and not on `genre`. Genre is a SKOS prefLabel and can be
+ * renamed in the Studio — it was "Clipping" until 2026-09-01 and is now "Web
+ * Clipping" — where `_type` is structural. NoteCard already branches this way for
+ * the same reason.
+ *
+ * The three note VARIANTS are NoteEntry's business, not the route's.
+ */
+const isNote = insight._type === 'note'
 
 /*
  * ── RELATED CONTENT ──────────────────────────────────────────────────────────
@@ -210,249 +228,230 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
       this way.
     */
     }
-    <article class="entry h-entry">
-      {
-        /*
-        <header>, not Band's `section` default and not a <div>. Inside an <article>,
-        <header> is precisely "introductory or navigational aids for that article",
-        which is what an eyebrow and a title are. A <section> would claim a thematic
-        grouping and put a nameless entry in the document outline; <div> would say
-        nothing.
+    {
+      /* THE BRANCH. The two shapes share no markup — one band against two, no hero,
+         no rail nav, topics in the main column — so they are two arms rather than one
+         tree with conditionals in it. NoteEntry owns the note's markup AND its CSS;
+         the article's stay here, where they already were. */
+      isNote ? (
+        <NoteEntry
+          title={insight.title}
+          genre={genreLabel}
+          date={insight.pubDate}
+          body={insight.bodyText}
+          topics={topics}
+          permalink={permalink}
+          clip={insight.clipRef}
+          book={insight.bookRef}
+        />
+      ) : (
+        <article class="entry h-entry">
+          {/*
+            <header>, not Band's `section` default and not a <div>. Inside an <article>,
+            <header> is precisely "introductory or navigational aids for that article",
+            which is what an eyebrow and a title are. A <section> would claim a thematic
+            grouping and put a nameless entry in the document outline; <div> would say
+            nothing.
 
-        AND IT IS NOT A SECOND `banner`. Because its nearest sectioning ancestor is
-        <article>, it maps to `sectionheader` — a real role added in ARIA 1.3, which
-        replaced the older `generic` mapping for a scoped <header>. So the masthead
-        stays the page's only banner, and this carries meaning rather than nothing.
-        Confirmed in Chrome's accessibility pane, 2026-08-26: `article > sectionheader`.
+            AND IT IS NOT A SECOND `banner`. Because its nearest sectioning ancestor is
+            <article>, it maps to `sectionheader` — a real role added in ARIA 1.3, which
+            replaced the older `generic` mapping for a scoped <header>. So the masthead
+            stays the page's only banner, and this carries meaning rather than nothing.
+            Confirmed in Chrome's accessibility pane, 2026-08-26: `article > sectionheader`.
 
-        The same scoping rule lands the other way for the site footer, which sits
-        outside <main> and so maps to `contentinfo`. Moving a <footer> inside an
-        <article> or <main> silently demotes it to `sectionfooter` — worth knowing,
-        because it looks like a harmless move.
+            The same scoping rule lands the other way for the site footer, which sits
+            outside <main> and so maps to `contentinfo`. Moving a <footer> inside an
+            <article> or <main> silently demotes it to `sectionfooter` — worth knowing,
+            because it looks like a harmless move.
 
-        `space="none"` with the padding on the inner <Grid> — the Footer's precedent,
-        and not a style preference. `.band[data-space='band']` is (0,2,0) and a
-        page-level `.title-band` is (0,1,0), so a page cannot override Band's own
-        padding without escalating; putting the padding on the Grid, which sets no
-        `padding-block` at all, sidesteps the fight entirely.
-      */
-      }
-      <Band as="header" space="none" class="title-band">
-        <Grid class="title-grid">
-          <div class="title-block">
-            <Eyebrow genre={genreLabel} date={insight.pubDate} microformats />
-            <h1 class="p-name">{insight.title}</h1>
+            `space="none"` with the padding on the inner <Grid> — the Footer's precedent,
+            and not a style preference. `.band[data-space='band']` is (0,2,0) and a
+            page-level `.title-band` is (0,1,0), so a page cannot override Band's own
+            padding without escalating; putting the padding on the Grid, which sets no
+            `padding-block` at all, sidesteps the fight entirely.
+          */}
+          <Band as="header" space="none" class="title-band">
+            <Grid class="title-grid">
+              <div class="title-block">
+                <Eyebrow genre={genreLabel} date={insight.pubDate} microformats />
+                <h1 class="p-name">{insight.title}</h1>
 
-            {
-              /*
-              ── THE PERMALINK, AND WHY IT IS A <data> ──────────────────────────
-
-              `u-url` is how a webmention receiver knows WHICH post a mention
-              targets, and what a syndicated copy links back to — so it is arguably
-              the most important property after name and content. It is also the one
-              with nothing on the page to hang on: there is no visible self-link,
-              and the implied-url rule does not fire, since that only applies when
-              the root contains exactly one `a[href]` and an article contains many.
-
-              `data[value]` is the mf2 parsing spec's own hook for a `u-*` with no
-              visible anchor, alongside `a[href]` and `img[src]`. It is valid flow
-              content anywhere, it renders nothing, and being empty it puts nothing
-              in the accessibility tree. A `<link rel>` here would NOT be valid —
-              `<link>` is metadata content and is only permitted in <body> when it
-              carries `itemprop`.
-
-              The alternative worth knowing is the classic blog pattern where the
-              DATE is the permalink link. That would make this visible markup rather
-              than invisible, at the cost of a link from a page to itself.
-
-              `u-uid` alongside it, on the same value: `u-url` says "where this
-              lives", `u-uid` says "this is its identity", and a consumer seeing the
-              same post at two URLs uses the uid to deduplicate. For a static site
-              with one canonical path they are the same string, and saying so is
-              cheaper than leaving the identity implicit.
-
-              PREVIEW BUILDS EMIT THE PREVIEW DOMAIN, because `Astro.site` differs
-              by build mode. That is correct rather than a bug — preview is
-              `noindex` and nothing syndicates from it — but it does mean this value
-              is not a stable identifier across the two environments.
-            */
-            }
-            <data class="u-url u-uid" value={permalink}></data>
-          </div>
-        </Grid>
-      </Band>
-
-      {
-        /*
-      THE IMAGE IS OUTSIDE <Grid>, deliberately — a grid would inset it to the
-      content columns and the full bleed would quietly disappear. SanityHero's own
-      header says so; this is the call site that has to honor it.
-
-      THE CAPTION IS NOT IN A <Grid> EITHER — it aligns to the VIEWPORT edge, not
-      the content column, matching the live site (Andy, 2026-08-26). A <figure> is an
-      ordinary full-width block, so wrapping costs the bleed nothing, and the caption
-      right-aligns inside it.
-
-      An earlier draft put the caption in its own <Grid> at `--col-main`, on the
-      reasoning that a caption is reading matter and belongs on the text measure.
-      That is the wrong model for this one: it is a photo credit hanging off the
-      corner of a full-bleed image, not prose.
-
-      19 of 42 heroes carry a caption and several are photo credits ("Photo by
-      Devin Avery on Unsplash"), so this is an attribution obligation rather than a
-      nicety. The Figma Article board draws the hero as 320px of image and nothing
-      else, which is why it was left out of the first draft; Andy's call, 2026-08-26.
-    */
-      }
-      {
-        insight.heroImage?.asset && (
-          <figure class="hero-figure">
-            {/*
-              `u-photo` reads the `src`, so it belongs on the <img> SanityHero emits
-              rather than on the <figure> around it. It is inside `h-entry` and
-              OUTSIDE `e-content`, which is what makes it a photo OF the post rather
-              than an image IN the body — a syndicated copy attaches it, and a card
-              preview uses it.
-
-              Same property name means something different on an h-card, where
-              `u-photo` is the person's avatar. Different root, different subject.
-            */}
-            <SanityHero image={insight.heroImage} class="u-photo" />
-            {insight.heroImage.caption && <figcaption>{insight.heroImage.caption}</figcaption>}
-          </figure>
-        )
-      }
-
-      <Band as="div" space="none" class="article-band">
-        <Grid class="article-grid">
-          {
-            /*
-            ── A <div>, NOT AN <article> ANY MORE ─────────────────────────────
-
-            Two nested <article>s would claim an article within an article — which
-            is what the element means, and it is how a comment or a syndicated
-            excerpt is marked up. The entry is the <article>; this is its body.
-
-            `e-content` is scoped HERE rather than to the entry, which is the whole
-            point of the split: the title, the hero credit and the rail sit inside
-            `h-entry` but outside `e-content`, so a syndicated copy carries the body
-            without dragging the apparatus along.
-
-            THE SELECTOR IN base.css MOVED WITH IT — `article.detail` -> `.detail`,
-            9 rules. Every one lost exactly one type selector, so the ramp's internal
-            ordering is untouched; verified by measuring all 31 sibling gaps before
-            and after. See the note in base.css → Vertical rhythm.
-          */
-          }
-          <div class="detail e-content">
-            <Prose value={insight.bodyText} />
-          </div>
-
-          {
-            /*
-            ── <aside>, AND NESTING IT IN <article> IS THE POINT ───────────────
-
-            An <aside> scoped to an <article> means "tangentially related to THIS
-            article" rather than to the site, which is exactly a per-article rail.
-            (There is no `<sidebar>` element in HTML — it was proposed and never
-            shipped; <aside> is the one that exists.)
-
-            THE NESTING ALSO FIXES THE LANDMARK PROBLEM RATHER THAN CAUSING ONE.
-            An <aside> maps to the `complementary` landmark only when its nearest
-            sectioning ancestor is <body>, or when it carries an accessible name.
-            Inside <article> and unnamed, it maps to `generic` — so it contributes
-            no nameless landmark, and the two named <nav>s inside stay the
-            landmarks a screen-reader user navigates by. That is why there is
-            deliberately NO `aria-label` here: adding one would promote this to a
-            third landmark competing with the two real ones.
-
-            ── A CONTAINER HOLDING TWO NAVS, NOT ONE NAV ──────────────────────
-
-            DESIGN.md said "a <nav> with two groups" and was amended. Each group
-            gets a real accessible name from a heading already on screen via
-            `aria-labelledby`, where one nav around both would need an invented
-            label — no single visible heading covers "On This Page" and "Topics".
-            And it is the only shape the other two rails fit: the Services rail is
-            an image ABOVE the nav, which a <nav> cannot contain, and a Note's rail
-            is a source card with no nav at all.
-
-            The `rail-` prefix on the heading ids is a namespace against the body's
-            own h2 ids, which are slugified from heading text — an h2 titled "Rail
-            topics" would otherwise collide.
-          */
-          }
-          {
-            (contents.length > 0 || topics.length > 0) && (
-              <aside class="rail">
                 {/*
-                  ── STICKINESS IS A PROPERTY OF THIS CHILD, NEVER OF .rail ──────
+                  ── THE PERMALINK, AND WHY IT IS A <data> ──────────────────────────
 
-                  One wrapper, because on an article BOTH groups pin together. That
-                  one indirection is also what makes the other two rails free: on
-                  Services the image is an ordinary sibling above the sticky child
-                  and scrolls away by itself, and a Note's rail simply marks nothing
-                  sticky. Three behaviors, one mechanism, no per-page branching.
+                  `u-url` is how a webmention receiver knows WHICH post a mention
+                  targets, and what a syndicated copy links back to — so it is arguably
+                  the most important property after name and content. It is also the one
+                  with nothing on the page to hang on: there is no visible self-link,
+                  and the implied-url rule does not fire, since that only applies when
+                  the root contains exactly one `a[href]` and an article contains many.
 
-                  A <div> and not a <section>: it is a positioning wrapper with no
-                  thematic content of its own, and <section> is explicitly not a
-                  generic container — it would put a nameless entry in the outline.
+                  `data[value]` is the mf2 parsing spec's own hook for a `u-*` with no
+                  visible anchor, alongside `a[href]` and `img[src]`. It is valid flow
+                  content anywhere, it renders nothing, and being empty it puts nothing
+                  in the accessibility tree. A `<link rel>` here would NOT be valid —
+                  `<link>` is metadata content and is only permitted in <body> when it
+                  carries `itemprop`.
 
-                  See the .rail style block for the two invariants this depends on.
+                  The alternative worth knowing is the classic blog pattern where the
+                  DATE is the permalink link. That would make this visible markup rather
+                  than invisible, at the cost of a link from a page to itself.
+
+                  `u-uid` alongside it, on the same value: `u-url` says "where this
+                  lives", `u-uid` says "this is its identity", and a consumer seeing the
+                  same post at two URLs uses the uid to deduplicate. For a static site
+                  with one canonical path they are the same string, and saying so is
+                  cheaper than leaving the identity implicit.
+
+                  PREVIEW BUILDS EMIT THE PREVIEW DOMAIN, because `Astro.site` differs
+                  by build mode. That is correct rather than a bug — preview is
+                  `noindex` and nothing syndicates from it — but it does mean this value
+                  is not a stable identifier across the two environments.
                 */}
-                <div class="rail-sticky">
-                  {contents.length > 0 && (
-                    <nav class="rail-contents" aria-labelledby="rail-contents">
-                      <h3 id="rail-contents">On This Page</h3>
-                      <ul role="list">
-                        {contents.map((heading) => (
-                          <li>
-                            <a href={`#${heading.id}`}>{heading.label}</a>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  )}
+                <data class="u-url u-uid" value={permalink} />
+              </div>
+            </Grid>
+          </Band>
 
-                  {topics.length > 0 && (
-                    <nav class="rail-topics" aria-labelledby="rail-topics">
-                      <h3 id="rail-topics">Topics</h3>
-                      <ul role="list">
-                        {topics.map((topic) => (
-                          <li>
-                            {/*
-                              PROVISIONAL HREF. docs/urls-and-filtering.md retires
-                              `/insights/tag/{slug}/` in favor of a filter param, and
-                              its own redirect rule — `^/insights/tag/(.+?)/?$ ->
-                              /insights?topic=$1` — is what fixes the VALUE shape as
-                              the slugified prefLabel. So the transform is right and
-                              the plumbing is not: the param should ultimately come
-                              from the facet index's "resolvable slugs per concept",
-                              resolved in the query, once the two SKOS vocabularies
-                              are designed. `/insights/` does not exist yet either.
+          {/*
+          THE IMAGE IS OUTSIDE <Grid>, deliberately — a grid would inset it to the
+          content columns and the full bleed would quietly disappear. SanityHero's own
+          header says so; this is the call site that has to honor it.
 
-                              `p-category` and NOT `u-category`, which is the easy
-                              one to get wrong: `p-` takes the element's TEXT, so
-                              this publishes the topic's label, which is what a
-                              reader or a syndicated copy wants as a tag. `u-` would
-                              take the href and publish the provisional filter URL
-                              above — a link nobody outside this site can use, and
-                              one that is going to change.
-                            */}
-                            <a class="p-category" href={`/insights/?topic=${slugify(topic)}`}>
-                              {topic}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </nav>
-                  )}
-                </div>
-              </aside>
-            )
-          }
-        </Grid>
-      </Band>
-    </article>
+          THE CAPTION IS NOT IN A <Grid> EITHER — it aligns to the VIEWPORT edge, not
+          the content column, matching the live site (Andy, 2026-08-26). A <figure> is an
+          ordinary full-width block, so wrapping costs the bleed nothing, and the caption
+          right-aligns inside it.
+
+          An earlier draft put the caption in its own <Grid> at `--col-main`, on the
+          reasoning that a caption is reading matter and belongs on the text measure.
+          That is the wrong model for this one: it is a photo credit hanging off the
+          corner of a full-bleed image, not prose.
+
+          19 of 42 heroes carry a caption and several are photo credits ("Photo by
+          Devin Avery on Unsplash"), so this is an attribution obligation rather than a
+          nicety. The Figma Article board draws the hero as 320px of image and nothing
+          else, which is why it was left out of the first draft; Andy's call, 2026-08-26.
+        */}
+          {insight.heroImage?.asset && (
+            <figure class="hero-figure">
+              {/*
+                  `u-photo` reads the `src`, so it belongs on the <img> SanityHero emits
+                  rather than on the <figure> around it. It is inside `h-entry` and
+                  OUTSIDE `e-content`, which is what makes it a photo OF the post rather
+                  than an image IN the body — a syndicated copy attaches it, and a card
+                  preview uses it.
+
+                  Same property name means something different on an h-card, where
+                  `u-photo` is the person's avatar. Different root, different subject.
+                */}
+              <SanityHero image={insight.heroImage} class="u-photo" />
+              {insight.heroImage.caption && <figcaption>{insight.heroImage.caption}</figcaption>}
+            </figure>
+          )}
+
+          <Band as="div" space="none" class="article-band">
+            <Grid class="article-grid">
+              {/*
+                ── A <div>, NOT AN <article> ANY MORE ─────────────────────────────
+
+                Two nested <article>s would claim an article within an article — which
+                is what the element means, and it is how a comment or a syndicated
+                excerpt is marked up. The entry is the <article>; this is its body.
+
+                `e-content` is scoped HERE rather than to the entry, which is the whole
+                point of the split: the title, the hero credit and the rail sit inside
+                `h-entry` but outside `e-content`, so a syndicated copy carries the body
+                without dragging the apparatus along.
+
+                THE SELECTOR IN base.css MOVED WITH IT — `article.detail` -> `.detail`,
+                9 rules. Every one lost exactly one type selector, so the ramp's internal
+                ordering is untouched; verified by measuring all 31 sibling gaps before
+                and after. See the note in base.css → Vertical rhythm.
+              */}
+              <div class="detail e-content">
+                <Prose value={insight.bodyText} />
+              </div>
+
+              {/*
+                ── <aside>, AND NESTING IT IN <article> IS THE POINT ───────────────
+
+                An <aside> scoped to an <article> means "tangentially related to THIS
+                article" rather than to the site, which is exactly a per-article rail.
+                (There is no `<sidebar>` element in HTML — it was proposed and never
+                shipped; <aside> is the one that exists.)
+
+                THE NESTING ALSO FIXES THE LANDMARK PROBLEM RATHER THAN CAUSING ONE.
+                An <aside> maps to the `complementary` landmark only when its nearest
+                sectioning ancestor is <body>, or when it carries an accessible name.
+                Inside <article> and unnamed, it maps to `generic` — so it contributes
+                no nameless landmark, and the two named <nav>s inside stay the
+                landmarks a screen-reader user navigates by. That is why there is
+                deliberately NO `aria-label` here: adding one would promote this to a
+                third landmark competing with the two real ones.
+
+                ── A CONTAINER HOLDING TWO NAVS, NOT ONE NAV ──────────────────────
+
+                DESIGN.md said "a <nav> with two groups" and was amended. Each group
+                gets a real accessible name from a heading already on screen via
+                `aria-labelledby`, where one nav around both would need an invented
+                label — no single visible heading covers "On This Page" and "Topics".
+                And it is the only shape the other two rails fit: the Services rail is
+                an image ABOVE the nav, which a <nav> cannot contain, and a Note's rail
+                is a source card with no nav at all.
+
+                The `rail-` prefix on the heading ids is a namespace against the body's
+                own h2 ids, which are slugified from heading text — an h2 titled "Rail
+                topics" would otherwise collide.
+              */}
+              {(contents.length > 0 || topics.length > 0) && (
+                <aside class="rail">
+                  {/*
+                      ── STICKINESS IS A PROPERTY OF THIS CHILD, NEVER OF .rail ──────
+
+                      One wrapper, because on an article BOTH groups pin together. That
+                      one indirection is also what makes the other two rails free: on
+                      Services the image is an ordinary sibling above the sticky child
+                      and scrolls away by itself, and a Note's rail simply marks nothing
+                      sticky. Three behaviors, one mechanism, no per-page branching.
+
+                      A <div> and not a <section>: it is a positioning wrapper with no
+                      thematic content of its own, and <section> is explicitly not a
+                      generic container — it would put a nameless entry in the outline.
+
+                      See the .rail style block for the two invariants this depends on.
+                    */}
+                  <div class="rail-sticky">
+                    {contents.length > 0 && (
+                      <nav class="rail-contents" aria-labelledby="rail-contents">
+                        <h3 id="rail-contents">On This Page</h3>
+                        <ul role="list">
+                          {contents.map((heading) => (
+                            <li>
+                              <a href={`#${heading.id}`}>{heading.label}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </nav>
+                    )}
+
+                    {topics.length > 0 && (
+                      <TopicList
+                        topics={topics}
+                        id="rail-topics"
+                        as="h3"
+                        microformats
+                        class="rail-topics"
+                      />
+                    )}
+                  </div>
+                </aside>
+              )}
+            </Grid>
+          </Band>
+        </article>
+      )
+    }
 
     {
       /*
@@ -763,50 +762,16 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
   }
 
   /*
-   * "Topics:  knowledge graphs,  strategy,  systems,  design" — one wrapping run,
-   * where row two starts at the column's left edge UNDER the label rather than
-   * indented past it. That is why the label and every item have to be siblings in
-   * ONE flex container: `display: contents` on the <ul> lifts the <li>s up beside
-   * the h3. A nested flex container would wrap inside its own box.
+   * PLACEMENT ONLY, below md. Everything the run looks like moved to TopicList,
+   * which chooses between the inline run and the stacked list from ITS OWN WIDTH —
+   * so this page no longer restates the h3 role, the colon, the commas or the flex
+   * row, and the md breakpoint that used to switch them is gone.
    *
-   * `gap: var(--space-1)` gives the board's 8 in both axes. Rows land 34 apart —
-   * the 26px line box plus 8 — which inline layout could not produce, since its row
-   * spacing is line-height and nothing else.
+   * It was never a viewport question. What changed at md was that this list moved
+   * from the main column into the rail; the component now measures that directly.
    */
   .rail-topics {
     grid-column: var(--col-main);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-1);
-  }
-
-  .rail-topics ul {
-    display: contents;
-  }
-
-  /* The h3 drops to the items' size and picks up its colon. Still an <h3>: it is
-     the group's heading at both widths, and `aria-labelledby` names the landmark
-     from it. Only the presentation changes. */
-  .rail-topics h3 {
-    font-size: var(--font-size-2);
-    line-height: 1.5;
-  }
-
-  .rail-topics h3::after {
-    content: ':';
-  }
-
-  /* base.css's `li + li` is 16px of prose rhythm. As flex items that would fight
-     `row-gap`, so it is zeroed here and restored at md where the list is a list. */
-  .rail-topics li + li {
-    margin-top: 0;
-  }
-
-  /* Inside the <li>, after the <a> — so the comma is not part of the link's text
-     and does not take the hover underline with it. */
-  .rail-topics li:not(:last-child)::after {
-    content: ',';
   }
 
   /* ── From md: the rail becomes a column ─────────────────────────────────── */
@@ -820,29 +785,22 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
    * reach: 16 from a heading to its list, 48 between the groups. `heading-minor`
    * rather than `rhythm-block` because what follows is an h3 — both are 48, and
    * DESIGN.md's rule is to pick by prefix and name, never by value.
+   *
+   * `.rail h3 + ul` NOW SERVES ONLY "On This Page". TopicList's heading and list are
+   * its own descendants and never carry this page's scope attribute, so this rule
+   * cannot reach inside it — which is correct, and is why the component states its
+   * own version of the same 16.
    */
   @container style(--breakpoint-md: true) {
     .rail,
     .rail-sticky,
-    .rail-contents,
-    .rail-topics,
-    .rail-topics ul {
+    .rail-contents {
       display: block;
     }
 
     .rail-sticky {
       position: sticky;
       top: var(--rhythm-band);
-    }
-
-    .rail-topics h3 {
-      font-size: var(--font-size-3);
-      line-height: 1.3;
-    }
-
-    .rail-topics h3::after,
-    .rail-topics li:not(:last-child)::after {
-      content: none;
     }
 
     .rail h3 + ul {
@@ -852,17 +810,18 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
     .rail nav + nav {
       margin-top: var(--rhythm-heading-minor);
     }
-
-    .rail-topics li + li {
-      margin-top: var(--rhythm-item);
-    }
   }
 
   /*
    * OPTS OUT OF THE WIPE-IN UNDERLINE, which base.css's `nav` role provides for
    * with exactly this escape hatch. The wipe is a chrome gesture for the masthead
-   * and footer; a dense list of topic links animating one by one under a moving
-   * pointer is noise rather than affordance.
+   * and footer; a dense list of links animating one by one under a moving pointer is
+   * noise rather than affordance.
+   *
+   * SCOPED TO "On This Page" NOW. The topic links moved into TopicList, which cannot
+   * be reached from here and states the same treatment itself. Two writings of one
+   * rule is the remainder the extraction did not remove; a THIRD dense link list is
+   * the signal to promote it rather than to copy it again.
    *
    * THE THICKNESS HAS TO BE RESTATED, and that is easy to miss. base.css gives
    * every anchor `text-decoration-thickness: 0.06em`, then `nav :is(a, button)`

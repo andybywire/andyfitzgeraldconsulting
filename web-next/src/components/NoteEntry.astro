@@ -1,0 +1,428 @@
+---
+/**
+ * The note entry — Note, Web Clipping and Book Note.
+ *
+ * ── ONE `note` TYPE, THREE VARIANTS, AND ONE SHAPE ───────────────────────────
+ *
+ * `genre` discriminates the three (CLAUDE.md → the five content types), but the
+ * three Figma boards draw ONE layout with one slot filled differently:
+ *
+ *                       Note 261:2693   Clipping 261:2209   Book Note 261:2806
+ *   article band        64 / 64         64 / 64             64 / 64
+ *   eyebrow -> h1       8               8                   8
+ *   h1 -> prose         16              16                  16
+ *   rail (span-3)       empty           source card         cover, 48, card
+ *   body -> Topics      64              64                  64
+ *
+ * So the variant lives entirely in the rail, and everything else here is shared.
+ * The rail is the NEXT piece; this file is the shape the three hang off.
+ *
+ * ── TWO BANDS, AND THE SPLIT IS ABOUT THE RAIL ───────────────────────────────
+ *
+ * ┌────────────────────────────────────────────────────────────────────────────┐
+ * │  THE RAIL'S TOP EDGE IS THE BODY'S, NOT THE TITLE'S. That is the whole      │
+ * │  reason the title sits in a band of its own. Merge them and the rail rides  │
+ * │  up to the eyebrow.                                                        │
+ * └────────────────────────────────────────────────────────────────────────────┘
+ *
+ * The boards are unambiguous once you look at the frame tree rather than the
+ * picture: on both, the rail is a CHILD of the same frame as the Prose, so the two
+ * share a top edge, and the title block is the frame above it.
+ *
+ *   Web Clipping 261:2209   title block h128 at y=0   content frame at y=144
+ *   Book Note    261:2806   title block h80  at y=0   content frame at y=96
+ *
+ * ── THIS FILE ARGUED THE OPPOSITE FIRST, AND IT WAS WRONG ────────────────────
+ *
+ * The first draft was ONE band with the title and body in a shared `--col-main`
+ * wrapper, on the reasoning that the article page splits into two bands only so
+ * `order` can move its hero between them — machinery a note has no use for. It
+ * built, and it put the rail 96px too high (caught by Andy on screen, 2026-09-01).
+ *
+ * The hero swap is a second thing the split ENABLES, not what it is for. Both
+ * detail pages need the same thing for the same reason, so they say it the same
+ * way — which is the argument for repeating the structure rather than saving the
+ * four declarations a one-band version costs.
+ *
+ * ── WHAT THE PADDING IS, AND WHY THERE IS NO BREAKPOINT IN IT ────────────────
+ *
+ * 64 above the title, 16 between title and body, 64 below the content. Split
+ * across the two bands as `rhythm-band / rhythm-heading-close` and `0 /
+ * rhythm-band`, which is the article page's lg arrangement — the difference being
+ * that a note holds it at EVERY width.
+ *
+ * The article draws 64/16 at lg and 32/32 at 375, because below lg its hero comes
+ * between the title and the prose and the title is bound to nothing. Here the title
+ * is bound to the prose at 375 exactly as at 1440 — the boards draw 16 at both — so
+ * this file contains no `@container` for it. `--rhythm-band` clamps 32 -> 64 on its
+ * own, so the outer numbers track the boards without a breakpoint either.
+ *
+ * ── AND THE REMAINING 64s ARE A ROW GAP ──────────────────────────────────────
+ *
+ * <Grid>'s `row-gap` is `--rhythm-heading-major` (64), which is every other gap on
+ * every board: body -> Topics on desktop, and body -> cover -> card -> Topics on the
+ * two mobile boards. So the content band's three grid items produce all of them from
+ * one declaration nobody wrote, with the rail's `display: contents` dispersal doing
+ * the narrow case.
+ */
+import type {TypedObject} from 'astro-portabletext/types'
+import type {INSIGHT_DETAIL_QUERY_RESULT} from '../../sanity.types'
+import Band from './Band.astro'
+import Grid from './Grid.astro'
+import Eyebrow from './Eyebrow.astro'
+import Prose from './prose/Prose.astro'
+import TopicList from './TopicList.astro'
+import SanityImage from './SanityImage.astro'
+import SourceCard from './cards/SourceCard.astro'
+import {formatYear} from '../lib/date'
+
+/**
+ * The two refs, taken FROM THE GENERATED QUERY TYPE rather than hand-declared.
+ *
+ * `Extract<…, {_type: 'note'}>` narrows the detail query's union to its note member,
+ * which is the shape this component is actually handed. Written out here it would be
+ * a second description of the same projection, free to drift the moment a field is
+ * added to the query — and drift in the direction that silently types a real field as
+ * absent.
+ */
+type Note = Extract<NonNullable<INSIGHT_DETAIL_QUERY_RESULT>, {_type: 'note'}>
+type ClipRef = Note['clipRef']
+type BookRef = Note['bookRef']
+
+export interface Props {
+  title?: string | null
+  genre?: string | null
+  /** ISO date string, straight from `pubDate`. */
+  date?: string | null
+  body?: TypedObject[] | null
+  /** Already narrowed to non-null by the page. */
+  topics: string[]
+  /** The canonical permalink, for `u-url` / `u-uid`. Built by the page from `Astro.site`. */
+  permalink: string
+  /** A Web Clipping's source. Its PRESENCE selects the rail's contents, not the genre. */
+  clip?: ClipRef
+  /** A Book Note's source. Exactly one of these two is set, or neither for a Note. */
+  book?: BookRef
+}
+
+/* `as Props` rather than the `: Props` annotation the other components use. In THIS
+   file Astro's inference leaves `Astro.props` as `Record<string, any>`, so the
+   annotation fails on the two REQUIRED props — reproduced with the frontmatter intact
+   and the template reduced to one <p>, so it is the checker and not this code. The
+   cast asserts exactly what the annotation asserted; runtime is unaffected either way,
+   and the call site in `[slug].astro` is still checked against `Props`. */
+const {title, genre, date, body, topics, permalink, clip, book} = Astro.props as Props
+
+/**
+ * ── ONE CARD'S WORTH OF PROPS, COMPOSED HERE RATHER THAN IN THE CARD ─────────
+ *
+ * SourceCard takes `[author?] title [image?] [source?]` and branches on nothing; what
+ * fills those slots is per-variant, so the mapping lives at the call site. That is
+ * also what keeps the card reusable when a `presentation` wants one.
+ *
+ * `source` is the same ROLE in both — what published the thing — and different copy:
+ * a Clipping's domain, a Book Note's "Publisher, Year". `filter(Boolean).join(', ')`
+ * so a book with a publisher and no date reads "Houghton Mifflin" rather than
+ * "Houghton Mifflin, ", and one with neither yields '' and the line is dropped.
+ *
+ * `clipRef.title` is the SOURCE ARTICLE's title, not the note's — "Still Holds:
+ * Gall's Law" against the note's "Gall's Law When Complexity Comes Cheap". The two
+ * are one word apart in the query and mixing them up would look plausible on screen.
+ */
+const sourceCard = clip
+  ? {
+      href: clip.clipUrl,
+      title: clip.title,
+      source: clip.publisher,
+      image: clip.img,
+      author: null,
+    }
+  : book
+    ? {
+        href: book.bookUrl,
+        title: book.title,
+        source: [book.publisher, formatYear(book.pubDate)].filter(Boolean).join(', '),
+        image: null,
+        author: book.author,
+      }
+    : null
+
+/* Every field on both refs is optional in the schema, so a card with no destination
+   or no title would render an empty box or a nameless link. Both are required props
+   on SourceCard; this is where that requirement is enforced against real data. */
+const hasCard = Boolean(sourceCard?.href && sourceCard.title)
+---
+
+{
+  /*
+  `h-entry` NEEDS ONE ROOT HOLDING BOTH `p-name` AND `e-content`, which Bridgy
+  Publish reads to build a syndicated copy. On the article page that requirement
+  is what forced <article> out to wrap the whole entry, because the hero sits
+  between the title and the body and no element contained both.
+
+  Here it costs nothing, because this element already wraps both bands. So a note
+  is the easier place to get mf2 right, and this is what the article page had to
+  reason its way to.
+
+  NO `.entry` CLASS, and its absence is the point: `.entry` on the article page
+  exists solely to be the flex column that scopes the hero's `order` swap. Nothing
+  here reorders, so this is ordinary block flow and grid.
+
+  The RSS and Related bands stay OUTSIDE this element, in the page. That is
+  structural rather than tidy: note cards in the related band are exactly the thing
+  a parser reads as `h-entry`, and nested inside this one they would be CHILD
+  entries — i.e. replies.
+*/
+}
+<article class="h-entry">
+  {
+    /*
+    <Band as="header">, matching the article page exactly — inside an <article>,
+    <header> is precisely "introductory aids for that article", which is what an
+    eyebrow and a title are, and it maps to `sectionheader` rather than to a second
+    `banner`. The longer reasoning is at the article page's title band.
+
+    `space="none"` with the padding on the inner <Grid>, and that is a specificity
+    fact rather than a preference: `.band[data-space='band']` is (0,2,0) where a
+    consumer's `.title-band` is (0,1,0), so the padding cannot be overridden from
+    out here without escalating. <Grid> sets no `padding-block` at all, which
+    sidesteps the fight.
+  */
+  }
+  <Band as="header" space="none" class="title-band">
+    <Grid class="title-grid">
+      <div class="title-block">
+        <Eyebrow genre={genre} date={date} microformats />
+        <h1 class="p-name">{title}</h1>
+
+        {
+          /*
+          The permalink as an empty <data>, which is the mf2 spec's own hook for
+          a `u-*` with no visible anchor. There is no self-link on the page and
+          the implied-url rule does not fire, since it only applies when the root
+          holds exactly one `a[href]`. `u-uid` alongside it says "this is its
+          identity" where `u-url` says "this is where it lives". Full reasoning
+          on the article page, which emits the same pair.
+        */
+        }
+        <data class="u-url u-uid" value={permalink}></data>
+      </div>
+    </Grid>
+  </Band>
+
+  <Band as="div" space="none" class="content-band">
+    <Grid class="content-grid">
+      {
+        /* `.detail` is the prose flow role from base.css — the rhythm ramp, the
+           measure cap and the thumbnail float all key off it. `e-content` is
+           scoped HERE and not to the entry, so a syndicated copy carries the body
+           without the eyebrow, the permalink or the topic list coming along. */
+      }
+      <div class="detail e-content">
+        <Prose value={body} />
+      </div>
+
+      {
+        /*
+        ── THE RAIL, AND WHAT IT IS NOT ────────────────────────────────────────
+
+        An <aside> nested in the entry's <article>, which is the documented meaning:
+        content tangentially related to THIS note rather than to the site. Unnamed and
+        inside <article> it maps to `generic`, so it adds no nameless landmark — which
+        is why there is deliberately no `aria-label`.
+
+        NOTHING PINS. DESIGN.md's rail table gives a Note "nothing pins — scrolls
+        naturally", and Andy confirmed it (2026-09-01). That costs no code at all,
+        which is the payoff of "stickiness is a property of a CHILD of the rail, never
+        of the rail itself": the article page marks a child sticky, this one marks
+        nothing, and there is no per-page branching or opt-out to remember.
+
+        It also means the two invariants the article page carries — `.rail` must stay a
+        stretched grid item, no `overflow` on any ancestor — do not bind here. Nothing
+        would break if they were violated, because nothing is travelling.
+
+        NO ELEMENT AT ALL FOR A PLAIN NOTE. The board draws an empty frame ("rail —
+        reserved (span-3)", 434:711) and it is reserved by `--col-main` being a fixed
+        span, not by anything occupying it. So a plain Note emits no <aside>, and the
+        prose does not widen.
+      */
+      }
+      {
+        (hasCard || book?.img?.asset) && (
+          <aside class="rail">
+            {/*
+              THE COVER IS OUTSIDE THE CARD, and the boards are explicit about it: the
+              Book Note rail is a 231x348 image, 48, then a 231x154 card (451:1622).
+              The Link card holds its thumbnail INSIDE; the Book card holds none.
+
+              NO `aspect` — the cover renders at the asset's own shape. The board's
+              231x348 is 0.664, and the live asset is 600x904, which is 0.664 to three
+              places. So the board is drawing the image's natural ratio, and imposing
+              one here would crop a book cover, which is the one image where the whole
+              rectangle is the content.
+
+              Its `altText` carries the real description ("Book cover for Proust and
+              the Squid"), so this is NOT decorative and gets no `alt=""`.
+            */}
+            {book?.img?.asset && <SanityImage image={book.img} class="rail-cover" />}
+
+            {hasCard && sourceCard && (
+              <SourceCard
+                href={sourceCard.href!}
+                title={sourceCard.title!}
+                author={sourceCard.author}
+                source={sourceCard.source}
+                image={sourceCard.image}
+              />
+            )}
+          </aside>
+        )
+      }
+
+      {
+        /*
+        ── TOPICS SIT BELOW THE BODY, AT EVERY WIDTH, NEVER IN THE RAIL ─────────
+
+        A note's topics are in the main column on all three desktop boards and on
+        both mobile ones (Andy, 2026-09-01: "topics never go in the sidebar for
+        notes"). Placed at `--col-main` it is therefore always wide, and TopicList's
+        container query gives it the inline run at every width WITHOUT this page
+        asking for one. The rail form it never reaches is the same component in a
+        231px column.
+
+        AN <h2>, WHERE THE ARTICLE'S RAIL PASSES <h3>. The rail's headings are inside
+        an <aside>, which signals apparatus; this one is a bare sibling of the body,
+        and a Book Note's body already carries h2 sections. An h3 after them would
+        read to a screen reader as a SUBSECTION of the last one — "Impressions >
+        Topics" — which is false. h2 makes it a sibling instead: still apparatus
+        rather than content, but navigationally honest. `as` costs nothing visually;
+        TopicList pins the type either way.
+
+        The `note-` prefix on the id namespaces it against the body's own h2 ids,
+        which are slugified from heading text — a note titled "Topics" would collide.
+      */
+      }
+      {
+        topics.length > 0 && (
+          <TopicList topics={topics} id="note-topics" as="h2" microformats class="note-topics" />
+        )
+      }
+    </Grid>
+  </Band>
+</article>
+
+<style>
+  /* ── Title band ─────────────────────────────────────────────────────────── */
+  /*
+   * 64 above, 16 below, at every width — see the header for why there is no
+   * breakpoint here where the article page has one.
+   *
+   * `rhythm-heading-close` for the 16 rather than a typed length, and the NAME is
+   * the reason: the title is bound to the paragraph that follows it exactly the way
+   * a heading is bound to its prose. That also settles what follows an h1, which
+   * base.css's rhythm ramp never covered — it handles h2-h4 and leaves h1 out.
+   */
+  .title-grid {
+    padding-block-start: var(--rhythm-band);
+    padding-block-end: var(--rhythm-heading-close);
+  }
+
+  /*
+   * One wrapper rather than two grid children, and the same reason as on the article
+   * page: <Grid>'s row gap is `rhythm-heading-major` (64), so an eyebrow and an h1
+   * placed as siblings ON the grid would sit 64 apart with no way to say 8. The gap
+   * between them is inside a block, not between rows.
+   */
+  .title-block {
+    grid-column: var(--col-main);
+  }
+
+  .title-block h1 {
+    margin-top: var(--rhythm-tight);
+  }
+
+  /* ── Content band ───────────────────────────────────────────────────────── */
+  /*
+   * No top padding — the title band's 16 is the entire gap, which is what puts the
+   * rail's top edge level with the body's first line.
+   *
+   * The prose measure is the same 8 columns as an article's, and it does NOT widen
+   * when the rail is empty: the plain Note board reserves the column rather than
+   * reclaiming it ("rail — reserved (span-3)", 434:711). That falls out of
+   * `--col-main` being a fixed span, so there is nothing to write for it — worth
+   * saying only because "no rail, so widen the text" is the plausible wrong move.
+   */
+  .content-grid {
+    padding-block-end: var(--rhythm-band);
+  }
+
+  .detail {
+    grid-column: var(--col-main);
+  }
+
+  /* ── The rail ───────────────────────────────────────────────────────────── */
+  /*
+   * ── BELOW md IT DISPERSES; IT DOES NOT COLLAPSE ────────────────────────────
+   *
+   * `display: contents` erases the <aside>'s box while keeping its children, so below
+   * md the cover and the card each become a grid item of <Grid> in their own right and
+   * land in the main column, in order, between the body and the topics run. Both
+   * mobile boards draw exactly that — body, 64, cover, 64, card, 64, Topics — and
+   * every one of those 64s is <Grid>'s row gap rather than anything written here.
+   *
+   * The mechanism is the article page's, and this is the case its comment predicted:
+   * "a Note's rail simply marks nothing sticky. Three behaviors, one mechanism."
+   *
+   * ── THE CHILDREN MUST CARRY A PLACEMENT TOKEN, AND IT IS EASY TO MISS ──────
+   *
+   * A dispersed child is an auto-placed grid item, so without `grid-column` it would
+   * take ONE column of twelve — a 60px-wide book cover — rather than the full width.
+   * `--col-rail` is the right token for both widths and not a coincidence: it is
+   * `1 / -1` below md, which is what the dispersal wants, and at md these are ordinary
+   * block children of `.rail` where the declaration is simply inert.
+   *
+   * `.rail` itself takes the same token, which is what puts it beside the prose at md.
+   */
+  .rail {
+    display: contents;
+  }
+
+  .rail,
+  .rail-cover,
+  .source-card {
+    grid-column: var(--col-rail);
+  }
+
+  @container style(--breakpoint-md: true) {
+    .rail {
+      display: block;
+    }
+
+    /*
+     * The cover-to-card gap, 48 on the Book Note board (image ends 348, card starts
+     * 396). `rhythm-block` and not `rhythm-heading-minor` — both are 48, and DESIGN.md
+     * says to pick by prefix and name rather than by value: what follows is a card,
+     * not a heading.
+     *
+     * Only needed from md. Below it the two are separate grid items and the row gap
+     * has already spaced them — at 64 rather than 48, which is what the mobile boards
+     * draw.
+     */
+    .rail-cover + .source-card {
+      margin-block-start: var(--rhythm-block);
+    }
+  }
+
+  /* ── The topics run ─────────────────────────────────────────────────────── */
+  /*
+   * PLACEMENT ONLY. Everything the run looks like — the flex row, the colon, the
+   * commas, the type, the link treatment — moved to TopicList, which decides between
+   * the inline run and the stacked list from its own width rather than from a prop.
+   * At `--col-main` it is always wide, so this page always gets the run.
+   *
+   * The 64 above comes from <Grid>'s row gap, since this is the next grid row.
+   */
+  .topic-list {
+    grid-column: var(--col-main);
+  }
+</style>

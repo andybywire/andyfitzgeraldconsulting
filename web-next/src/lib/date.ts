@@ -29,3 +29,23 @@ const FORMAT = new Intl.DateTimeFormat('en-US', {
 export function formatDate(iso: string | null | undefined): string | null {
   return iso ? FORMAT.format(new Date(iso)) : null
 }
+
+/**
+ * `"2005-04-01"` -> `"2005"`, for a book's publication year. Null in, null out.
+ *
+ * ── IT SHARES `FORMAT`'s UTC PIN, AND FOR THE SAME REASON ────────────────────
+ *
+ * `new Date("2025-01-01").getFullYear()` returns **2024** anywhere west of
+ * Greenwich, because the string parses as midnight UTC and `getFullYear` is local.
+ * That is the module's own bug in its worst form — a January date is the only case
+ * that shows it, so it would pass every test written with a mid-year date and be
+ * wrong on exactly the books published in January.
+ *
+ * `iso.slice(0, 4)` would also be correct, and is rejected on purpose: it would put
+ * a second, unrelated date-parsing rule in the one module that exists to hold one.
+ */
+const YEAR = new Intl.DateTimeFormat('en-US', {timeZone: 'UTC', year: 'numeric'})
+
+export function formatYear(iso: string | null | undefined): string | null {
+  return iso ? YEAR.format(new Date(iso)) : null
+}
