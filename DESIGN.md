@@ -240,13 +240,23 @@ spacing:
   # ── Component internals ───────────────────────────────────────────────────
   card-gap: "{spacing.space-1}"
   card-pad: "{spacing.space-2}"
+  # The gap BESIDE media, in the horizontal card. Its block-axis counterpart is
+  # smaller — 24 inline, 16 block, both off the Figma card component.
   card-media: "{spacing.space-3}"
+  card-media-block: "{spacing.space-2}"
   # space-4 until 2026-08-25, when the masthead was built and 32px top and bottom
   # made the header taller than the page wanted to give it. Reduced to shorten the
   # header's vertical footprint so it competes less with page content — a call made
   # against the real thing rather than the board, and expected to be revisited once
   # actual pages sit under it. The footer keeps space-5: it has nothing below it to
   # crowd, so the two chrome paddings are no longer a matched pair.
+  #
+  # REVISITED 2026-08-26, against the real article page, exactly as that note asked.
+  # The value here is unchanged and still symmetric — what changed is that at `lg`
+  # ONLY, the identity block's padding goes ASYMMETRIC: this above, space-4 below.
+  # 24 top and bottom read too tight underneath, where the header meets the hero.
+  # It lives in Masthead.astro rather than here because it has one consumer and only
+  # one of its two ends varies — a value with one consumer is not a token.
   chrome-pad-header: "{spacing.space-3}"
   chrome-pad-footer: "{spacing.space-5}"
   chrome-inset: "{spacing.space-5}"
@@ -365,6 +375,12 @@ components:
     borderColor: "{colors.border}"
     radius: "{radius.2}"
     padding: "{spacing.card-pad}"
+  # The hover highlight, shared by BOTH card types. A hard 2px offset down and to
+  # the right — no blur, no spread — so it reads as a sharp accent edge rather than
+  # as elevation. See Elevation & Depth for why that is not a breach of "no shadows".
+  card-hover:
+    highlightColor: "{colors.accent}"
+    highlightOffset: 2px
   card-title:
     textColor: "{colors.text-title}"
   note-card:
@@ -374,6 +390,8 @@ components:
     backgroundColor: "{colors.surface}"
     borderColor: "{colors.border}"
     radius: "{radius.2}"
+    highlightColor: "{colors.accent}"
+    highlightOffset: 2px
 
   # ── Input field ───────────────────────────────────────────────────────────
   input-field:
@@ -527,6 +545,12 @@ Two faces. **Noto Serif** for running prose, leads, captions, pull-quotes and th
 statement; **Lato** for h1–h4 and all metadata and UI. Reasoning in
 [docs/decisions/typography.md](docs/decisions/typography.md).
 
+**A third family arrived for code (2026-08-26) and is a system stack, not a face we serve** —
+`ui-monospace, SFMono-Regular, Menlo, Consolas, monospace`, declared as `--font-mono` in tokens.css.
+It ships no webfont, which is why it does not really breach "two faces": Noto Serif and Lato are ours,
+subset and preloaded, and this one is whatever the reader's platform calls monospace. See
+Components → Code.
+
 **Scale: 18px base, ratio 1.25 (major third).** Step 1 is a clamped floor at 16px, off the ratio —
 don't add a step below it for reading text. `size/0` (14px) is chrome only. The odd values
 (`2.746582031rem`) are exact on purpose; reference them by name and never retype them.
@@ -582,6 +606,28 @@ differ only in leading.
 **h4 has no size step left** — it differentiates by family + weight + tracking. If it reads as bold
 body text the levers are uppercase, small caps, color or a rule, **not** a smaller size.
 
+### Heading case — title case for h2 and rail h3
+
+**Decided 2026-09-03**, after being carried as an open question for some time.
+
+| | Case | Examples |
+|---|---|---|
+| **h2, anywhere** | **Title Case** | "Direct Clients", "Work With Me", "Related Insights" |
+| **Rail h3** — the rail's own group headings | **Title Case** | "On This Page", "Topics" |
+| **h3 and h4 in Portable Text** — authored body headings | sentence case | "Grooming selected concepts" |
+| `nav`, buttons, chips, labels | sentence case | "Work with me", "Show more" |
+
+**Prepositions and articles are capitalized too** — "Work **With** Me", "On **This** Page". This is
+the one point where the convention is stricter than AP or Chicago, and it is settled: the Figma
+boards read that way.
+
+**The split is by authorship, not by level.** Anything the front end writes is a label, and labels
+are title case; anything an editor writes in a body is prose, and prose headings are sentence case.
+That is why an h3 in the rail and an h3 in an article body differ — and why nothing in code needs to
+inspect a heading's level to know its case.
+
+Sentence-case h2s in *existing published Portable Text* are content, not a build concern.
+
 ### Measure
 
 Target **60–75 characters**; `66ch` measures ~67. On the 996px grid the measure comes from the column
@@ -603,6 +649,31 @@ article.detail :where(p, ul, ol, blockquote, figure) { max-width: 66ch; }
 right rail is one skipped column away. Both ends close exactly, at 1440 and at the 375 floor — don't
 nudge the numbers. Grids stretch rather than center. Reasoning in
 [docs/decisions/layout.md](docs/decisions/layout.md).
+
+### The page stack is a flex column
+
+**The page is a vertical stack of bands, and that stack is a flex column — not a grid** (decided
+2026-08-26). One axis is all it has to express, so grid's second dimension would be unused
+machinery. `<Grid>` handles the horizontal, inside each band.
+
+**Its one job beyond stacking is reordering.** At `lg` the hero swaps places with the page title,
+sitting directly under the masthead — and since the two are sibling bands, that swap needs a shared
+flex parent and `order`. The DOM is authored in the **narrow** order, title before hero, matching the
+rule the footer already follows: source order is reading order, and the wide layout is the exception.
+
+**`order` moves visual position without moving focus or reading order**, which is normally the
+argument against it. It is safe here specifically because the hero is a non-interactive image —
+nothing focusable changes place. A band containing controls must not be reordered this way.
+
+**The flex column is the *entry's* stack, not `<main>`'s** (amended 2026-08-26, when the detail page
+wrapped its title, hero and body in one `<article class="h-entry">` so that microformats have a root —
+see CLAUDE.md → Branching → POSSE). That element is the flex column; `<main>` stacks it and the bands
+that follow — the RSS CTA, Related Insights — in normal block flow.
+
+Which is the correct home rather than an artifact of the nesting: **flex earns its place here only
+because of `order`, and the reorder is between the hero and the title**, both children of the entry.
+Bands that never reorder stack identically in block flow with no machinery. So the rule stands as
+written; what this pins down is *which* stack owns it.
 
 ### Grid owns horizontal, rhythm owns vertical
 
@@ -747,16 +818,24 @@ So for the viewport-varying tokens, **the `@media` blocks are the side that matc
 not `:root`. Each token in `:root` carries an inline note naming its wide value, so the pair is
 readable without cross-referencing. Adding a third breakpoint is one more block, wider last.
 
-**48rem was arrived at by eye and is the one to move first.** It currently carries two unrelated
-decisions — the masthead nav going to a single row, and the content grid opening its 8+3 split — and
-only the nav is comfortable there. The split takes the prose from 66 characters at 767 to **49 at
-768**, recovering around 1028, and leaves the rail 166px wide. Both measured.
+**48rem was arrived at by eye and is now confirmed.** It carries two unrelated decisions — the masthead
+nav going to a single row, and the content grid opening its 8+3 split. The split takes the prose from
+66 characters at 767 to **49 at 768**, recovering around 1028, and leaves the rail 166px wide.
+Re-measured in the browser on a real article: **66 at 767, 49 at 768, 58 at 900, 66 again by 1023.**
 
-That is **accepted rather than overlooked** (2026-08-24): a short measure is the cheaper failure, since
+That was **accepted rather than overlooked** (2026-08-24): a short measure is the cheaper failure, since
 a long line loses the reader at the return where a short one only costs a few extra returns, and the
 rail is the likelier thing to force a change — `body-compact` already exists for "a column too narrow
-for `body`". Revisit against real content pages rather than against a specimen. It stays cheap to
-revisit precisely because no component hardcodes a width.
+for `body`".
+
+> **Settled 2026-08-26, judged against the real article page.** The 49-character measure reads fine in
+> practice, so 48rem stays and stops being "the one to move first" — the reasoning above is confirmed
+> rather than provisional.
+
+It stays cheap to revisit precisely because no component hardcodes a width. **One measurement worth
+keeping:** at 1023 the prose is 653 and the rail 230, not 656/231, because `--grid-margin` has already
+hit its 16px floor below ~1028 and the content band is 991 rather than 996. That is the fixed-222 hole
+in open-questions.md behaving as recorded, not a second fault.
 
 ### Outdenting
 
@@ -780,8 +859,21 @@ bleed, and on an index an unboxed card's hover should match the boxed cards besi
 
 ## Elevation & Depth
 
-**There are no shadows.** Depth is tonal layering plus a hairline border, which suits a
-typography-driven page where drop shadows would read as imported furniture.
+**There are no soft shadows.** Depth is tonal layering plus a hairline border, which suits a
+typography-driven page where blurred drop shadows would read as imported furniture.
+
+> **One hard-edged offset is the exception, and it is not a depth cue.** The card hover state adds
+> `box-shadow: 2px 2px 0 0 {colors.accent}` — no blur, no spread, no transparency. It reads as a
+> **sharp accent highlight** on the lower and right edges rather than as elevation, which is why it
+> does not breach the rule above: what is banned is the *soft* shadow used to fake height, not the
+> `box-shadow` property. Measured off the Figma card components (2026-08-26): 1px `border` on all four
+> edges, plus 2px of `accent` outboard of the right and bottom.
+
+**`box-shadow` is the right mechanism rather than a thicker border on two sides.** A border changes the
+box, so hovering would reflow the card's contents; a shadow is outside the box and costs no layout. It
+also inherits `radius-2` for free — with no spread, the offset rect is the same rounded rectangle
+shifted 2px, so the highlight tapers at the corners exactly as the board draws it. Same reason
+`box-shadow` draws the focus rings; see Shapes.
 
 | Layer | Token | Light | Dark |
 |---|---|---|---|
@@ -850,9 +942,47 @@ not 48 and 24.
 `border-on-accent`. On a band the ghost cannot lighten while keeping its label legible, so it inverts:
 **outline → solid white → gray**.
 
+**Button geometry: `min-width: 231px`, `7px 24px`, giving the board's 43px control** (added
+2026-09-01, when the button was built and the front matter turned out to specify fill, text,
+typography and radius but no box — the same gap the filter chip had).
+
+- **231 is `span-3`, and the label is centered in it rather than padded.** "Learn more" is 90px wide
+  and "Subscribe via RSS" is 138px; both sit in 231, with 70.5 and 46.5 either side. So the horizontal
+  space is a consequence of the width, not a value to read off.
+- **`min-width`, not `width`.** A fixed pixel width clips the first label longer than it, and these
+  labels come from the CMS. The board is reproduced exactly up to 183px of label, and the control grows
+  beyond it.
+- **The block padding is 7, not the board's 8, because the stroke moves.** Figma draws the ghost's
+  border *inside* the box, which CSS cannot; both variants carry the hairline — transparent on the
+  primary, so the two match — and it lands outside the padding box. `7 + 27 + 7 + 2 = 43`. Off the
+  space scale by a pixel for the same reason the chip's 3px is.
+- **The ghost's resting fill is the accent itself, not `transparent`.** It reads as transparent
+  because the band matches it, and saying so explicitly is what makes the hover a color change rather
+  than an appearance from nothing.
+- **The ghost swaps the focus pair itself.** `<Band tone="accent">` does not re-point the focus ring —
+  see its note for why it cannot and should not — so the default offset-then-ring order would paint a
+  blue-500 ring onto a blue-500 ground. Reversed, the inner ring reads against the button and the outer
+  white one against the band. Same fix as the mode selector's pill.
+
 **Filter chips.** Rest is a surface with a control border; hover and pressed tint toward the accent;
 selected is a filled accent pill. **The chip border is its own role, not the card hairline** — a card
 is not a control, a chip is, and form inputs take the same token.
+
+**Chip geometry: `3px 12px`, giving the board's 29px capsule** (added 2026-08-31, when the chips were
+built and the front matter turned out to specify fill, border, radius and typography but no box).
+29 = the `chip` role's 21px line box + 2px border + 3 + 3. **The block padding is deliberately off the
+space scale** — a 21px line box cannot be centered in a 29px capsule by a scale derived from a 32px
+one — and `field-height` is not the answer here: it is 48 and belongs to the input field.
+
+**Selected is drawn from `aria-current`, not a class.** Same rule as the nav's current page: the fact
+belongs to the document, so the attribute that carries it to assistive technology should also draw the
+indicator. `aria-pressed` is button-only and these are links.
+
+**And a chip row's controls are not all links.** The facet chips have a natural `href` — the URL of the
+state after the click — but a **"See all" disclosure goes nowhere and is a `<button>`**. That is the
+honest reading of "facet controls are links, not buttons" in
+[docs/urls-and-filtering.md](docs/urls-and-filtering.md): it is an argument about the things that change
+the URL, not about everything sitting in the row.
 
 **Tags are markers, deliberately not controls.** No hover, no pressed, no focus — those states don't
 exist and shouldn't be added. If tags ever become links they need hover and focus at 4.5.
@@ -860,6 +990,125 @@ exist and shouldn't be added. If tags ever become links they need hover and focu
 **Note cards are unboxed at rest on desktop and boxed at rest on mobile, with no hover state on
 mobile at all.** Touch devices have no hover, so a permanently-hovered mobile card would encode a
 state that cannot occur.
+
+**The reason for the rest-state difference is relative weight, not decoration** (2026-08-26). Wherever
+article cards and note cards are seen **side by side** — desktop and tablet, any index — the article
+card keeps its outline at rest and the note card does not. That contrast is the message: articles are
+substantial, notes are lightweight. **On mobile nothing is juxtaposed** — the columns collapse and a
+note card has no article card beside it to be lighter *than* — so the contrast has nothing to carry
+and the outline's other job takes over: making it obvious that each element is tappable. Both card
+types are therefore boxed at rest below `md`.
+
+> **So the note card's resting border is viewport-dependent while the article card's is not.** That
+> asymmetry is the design, not an oversight — and it is why the Figma note card carries a `Viewport`
+> axis that the article card has no need for.
+
+**Both card types take the same hover treatment**: the accent highlight from `card-hover`, plus — for
+the note card only, since it starts without one — the border and radius appearing at the same moment.
+
+**The whole card is the click target, and the accessible name is still the title.** The anchor stays on
+the title and a stretched pseudo-element covers the card:
+
+```css
+.card { position: relative }
+.card-title a::after { content: ''; position: absolute; inset: 0 }
+```
+
+Wrapping an anchor around the card instead would announce the title, genre, date and description as one
+link, and would put a heading inside a link rather than a link inside a heading. The costs are real but
+small: text in the card can no longer be drag-selected, and a second link inside a card would need
+lifting above the overlay with `z-index`. No card has one.
+
+### Card grids — the breakpoint ladder differs per index
+
+The card infers horizontal or vertical from its **own width**, so what each index page has to decide is
+only how many columns it hands out. That differs, and neither is a card concern.
+
+| | wide | middle | narrow |
+|---|---|---|---|
+| **Home** | article column + skip-1 + note column (571 / 316) | **6 + 6**, articles switch to vertical | 1 column, everything full width |
+| **Insights / Presentations index** | 3 columns at `span-4` | 2 columns (**6 + 6**) | 1 column |
+
+**This row said `span-3` until 2026-08-28 and that was an error** — `span-3` is 231. The Insights board
+draws the three masonry columns at **316** (x 0 / 340 / 680), which is `span-4`, and 3 × 316 + 2 × 24
+closes the 996 content width exactly. `ArticleCard`'s own header had it right all along.
+
+**Cards stretch between breakpoints rather than sitting at a fixed width** — the ladder changes the
+column *count*, and a card fills whatever it is given. So a card at `span-4` on desktop spans all 12 on
+a phone. **Whether that wants a `max-width` is open**, and is a question for real content rather than
+for a specimen.
+
+Home's middle step is the one carrying two changes at once — the columns balancing at 6+6 *and* the
+article card going vertical — and the second falls out of the first, since a 6-column card is under the
+card's own 32rem threshold. Probably `md`; judge it on the real page.
+
+#### How the masonry is built — the rule, not the reasoning
+
+Native CSS masonry does not ship, so the Insights and Presentations indexes build theirs. **Three rules
+govern it, and the first is the one to protect:**
+
+- **The DOM stays in date order.** Cards are emitted flat, newest first — no column wrappers. Column
+  wrappers force a contiguous DOM slice per column, which puts DOM order out of date order and costs a
+  CSS `order` per card to disguise. **Don't reintroduce them.**
+- **Columns come from `nth-child`**, one rule per column per rung, so the ladder is a selector rather
+  than a partition and no card carries a baked column.
+- **Row heights come from `grid-auto-rows: 1px` plus a measured `grid-row: span`.** The measurement is
+  the browser's, taken before the spans exist. **Build-time height estimates cannot be made safe** — a
+  span one pixel short of its card overflows into its neighbour, and padding the estimate to guarantee
+  otherwise reproduces the un-enhanced gaps.
+
+**With no JavaScript this is therefore a row grid**, not a masonry: correct order, nearly flush at the
+bottom, and roughly 16% airier than intended. Accepted 2026-08-28 — the fallback is a legitimate layout
+and it never hides a card.
+
+#### The page header spans all 12 on a masonry index
+
+**`--col-main` is 8 of 12, and those 8 exist to leave 10–12 for a rail.** An index built on the
+masonry-and-filters pattern has no rail, so a header constrained to `--col-main` reserves space for
+something that never arrives — and it costs a line: at 656px the Insights lede runs **three** lines
+where it runs **two** at 996, pushing the first row of cards a full line down the initial view.
+
+**So on these pages the header takes `--col-full`, and the lede takes `max-width: 66ch`.** The cap is
+not an extra rule — it is the safety net Measure already specifies for exactly this case, "anything
+wider" than a column span provides. Measured at 1440 on the real lede:
+
+| | box | capacity | longest line | lines |
+|---|---|---|---|---|
+| `--col-main` | 656px | 52ch | 42 | 3 |
+| `--col-full`, uncapped | 996px | **79ch** | 74 | 2 |
+| `--col-full` + `66ch` | 830px | 66ch | 60 | 2 |
+
+Uncapped clears the 60–75 target on capacity, which this particular string happens not to reach and
+the next one would. **Leading stays at the `lead` role's 1.6**: 66ch sits between the ramp's 1.6 (~54)
+and 1.8 (~67) rungs and the line actually renders at 60, so the role's own value is the closer of the
+two — this is not a case for overriding it.
+
+**Applies to Insights and Presentations**, which share the pattern. It does not generalize to pages
+that *do* carry a rail, where `--col-main` is doing its real job.
+
+**`grid-auto-flow: row dense`**, decided 2026-08-28. Sparse flow lets a card be held down by a taller
+one in a *previous* column — measured at a **288px** hole with one unusually tall card in the set, and a
+365px ragged bottom against dense's 168. So dense is better on balance *and* on gap fidelity, not a
+trade between them. The cost is that 21 of 45 positions differ from tab order, **none by more than two
+slots**, with DOM order untouched so screen readers and `h-feed` stay chronological. Reversible in one
+word — see [docs/open-questions.md](docs/open-questions.md).
+
+### Transitions — eased, not switched
+
+**Hover states ease.** Every hover in the build was binary until 2026-08-28, which reads as a state flip
+rather than as a response. The convention, now applied rather than merely stated:
+
+| | Duration | Where |
+|---|---|---|
+| affordances | **0.15s** | link colour, card hover highlight, card border and fill, the mode selector |
+| decoration | **0.3s** | the nav underline's wipe, the footer marks' draw |
+
+> **`text-decoration-line` cannot be transitioned.** It is a discrete keyword, so `none` -> `underline`
+> is always instant. Declare the line at rest and animate **`text-decoration-color`** from
+> `transparent` instead — which is what the rail's hover underline does.
+
+**`prefers-reduced-motion` turns all of it off**, not just the movement. The setting asks to be spared
+animation rather than to be spared 150ms of colour, so each of these degrades to an instant change.
 
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
 **not margin** — the bar sits at the box edge, so a margin would put the gap outside it.
@@ -883,6 +1132,84 @@ The same two colors in both contexts, order swapped. In CSS:
 rather than offered as flexibility. **The gap after the header belongs to the parent band**, not the
 component, so pages legitimately differ there.
 
+**Its band's padding is deliberately asymmetric — 64 above the title block, 16 below** (read off the
+Article board, confirmed intentional 2026-08-26). The title is bound to the prose that follows it the
+way a heading is bound to its paragraph, so the space below is `rhythm-heading-close`, not a matching
+`rhythm-band`. **This also settles what follows an h1**, which the rhythm ramp never covered:
+`heading-close` handles h2–h4 and the h1 was left out. Provisional in the sense every spacing value
+here is — judge it against real content, not the board.
+
+**The eyebrow above the title is the `label` role** — Lato **700** at the 16px step with +2% tracking,
+in `text-muted`. Not the 400 an earlier specimen used; it reads as a small bold label, which is what
+`label` is for.
+
+### The rail
+
+**An `<aside>`, holding two `<nav>`s** — "On This Page" and "Topics". It sits at `10 / span 3`, one
+skipped column from the prose, which is the **sidebar** relationship in the skip family: set apart
+rather than belonging to the paragraph beside it.
+
+*This said "a `<nav>` carrying two groups" until 2026-08-26, when the article page was built and the
+one-nav shape did not survive contact with the other two rails.* Two reasons it is inverted:
+
+- **Each group gets a real accessible name from a heading already on screen**, via `aria-labelledby`
+  pointing at its own h3. One nav around both would need an invented `aria-label`, because no single
+  visible heading covers "On This Page" and "Topics".
+- **It is the only shape all three rails fit.** The Services rail is an image *above* the nav, which a
+  `<nav>` cannot contain; a Note's rail is a source card with no nav at all. A container generalizes
+  where a nav does not.
+
+**`<aside>`, and nested inside the entry's `<article>`** — which is the documented meaning rather than
+a compromise: an `<aside>` scoped to an `<article>` is content tangentially related to *that article*,
+not to the site. (There is no `<sidebar>` element in HTML; it was proposed and never shipped.)
+
+> **Give it no `aria-label`.** An `<aside>` maps to the `complementary` landmark only when its nearest
+> sectioning ancestor is `<body>`, **or** when it carries an accessible name. Unnamed inside
+> `<article>` it maps to `generic` — so it adds no nameless landmark and the two named `<nav>`s stay
+> the landmarks. Naming it would promote it to a third landmark competing with them.
+
+**Rail links have their own treatment, and opt out of the wipe-in underline**
+(`::after { content: none }`, which Navigation already provides for). Rail links take a **plain
+underline on hover** instead. The wipe is a chrome gesture for the masthead and footer; a dense list
+of topic links animating one by one under a moving pointer is noise, not affordance.
+
+> **Opting out means restating the underline's thickness.** base.css gives every anchor
+> `text-decoration-thickness: 0.06em` and then `nav :is(a, button)` resets it with the
+> `text-decoration` **shorthand**, which includes `-thickness`. Without restating it the rail's hover
+> underline returns at the UA's `auto` weight, and two underlines in one viewport read as two systems.
+> `text-underline-offset` is not in the shorthand and survives on its own.
+
+**Rail headings take `text-heading`, and that is now a decision rather than a default** (settled
+2026-08-26, judged on the article page in both themes). They are headings *and* apparatus, and the
+system has no role for a heading of apparatus — so the question was whether `text-muted` served them
+better. It does not: **dark is where the choice mattered and dark is where `text-heading` is clearly
+right**, at 15.64 against `text-muted`'s 6.78. No new role is needed.
+
+#### Sticky, per child rather than per rail
+
+At desktop the rail's navigation **stays pinned to the top of the viewport** while a long article
+scrolls, so "On This Page" and "Topics" remain reachable. Three cases, one mechanism:
+
+| Page | Rail contents | Behavior |
+|---|---|---|
+| Article | the two nav groups | the groups pin |
+| Services | an image, then the nav | **the image scrolls away, the nav pins** |
+| Note | a source card or book reference | **nothing pins** — scrolls naturally |
+
+**Stickiness is a property of a child of the rail, never of the rail itself.** That is what makes the
+Services case free rather than special: anything above the sticky child is ordinary flow and leaves
+the viewport normally, and a rail that marks nothing sticky just scrolls.
+
+> **The rail must remain a stretched grid item. `align-self: start` silently breaks this.**
+
+A sticky element can only travel inside its containing block, which is the rail's box. A grid item
+stretches to its row's height by default, so the rail is as tall as the prose beside it and the
+sticky child has the whole article to travel down. Measured, at a 3000px prose column: stretched, the
+rail box is **3000px** and the sticky child pins at `top: 0`; with `align-self: start` the box is its
+own content height and the child scrolls out of view like anything else. No `overflow` other than
+`visible` may appear on any ancestor between the sticky child and the page, or it stops working with
+nothing to indicate why — `<Band>` and `<Grid>` set none, deliberately.
+
 ### The logo mark
 
 A 100×100 circular AF monogram, one `evenodd` path — so the letters are **holes**, not shapes. The disc
@@ -902,13 +1229,19 @@ tracks a reader's text size rather than the viewport.
 Full bleed on article and case-study pages. It reads as two designs and is one:
 
 ```css
-inline-size: 100%;  aspect-ratio: 16/9;  max-block-size: 24rem;  object-fit: cover;
+inline-size: 100%;  aspect-ratio: 16/9;  max-block-size: 20rem;  object-fit: cover;
 ```
 
-Below about 683px the ratio governs. Above it the height pins at 24rem while the width keeps growing,
-so the box widens into 2.08:1 at 800, 3.75:1 at 1440 and 5:1 at 1920. **The panorama is a consequence,
-not a declaration** — and the switch point is wherever 16:9 happens to meet 24rem, so it moves if
+Below about 569px the ratio governs. Above it the height pins at 20rem while the width keeps growing,
+so the box widens into 2.5:1 at 800, 4.5:1 at 1440 and 6:1 at 1920. **The panorama is a consequence,
+not a declaration** — and the switch point is wherever 16:9 happens to meet 20rem, so it moves if
 either constant does. That is why it takes no breakpoint and could not sensibly use one.
+
+**The cap was 24rem until 2026-08-26**, which was a transcription error rather than a decision — the
+Figma Article board draws the hero at 320px against a 1440 frame, which is 20rem. Every number in the
+paragraph above is derived from it, so all four moved. **Expect this one to keep moving through fit
+and finish against real content**; it is a single constant in `SanityHero.astro` plus the `capHeight`
+hedge beside it, and nothing else in the build reads it.
 
 **The hotspot works twice**, because the image is cropped twice: Sanity crops to 16/9 using it, and
 `object-position` then aims `object-fit: cover` as the box flattens past that. Without the second, a
@@ -922,6 +1255,75 @@ asset is stretched by the browser on a wide screen. That is intended — full bl
 and stretching the largest real file is strictly better than asking Sanity to upscale it first — but it
 means sharpness is an authoring responsibility. 2880 covers a 2560px display at 1× and a 1440px laptop
 at 2×.
+
+### Figures — three shapes from two booleans
+
+Settled 2026-08-26. A `figure` in a Portable Text body renders one of three ways, chosen by two
+checkboxes in the Studio. They compose — a book cover photographed against white wants both.
+
+| | Treatment |
+|---|---|
+| default | full prose width, capped at the 66ch measure |
+| `outline` | the same, plus a hairline border and `radius-1` **on the image** |
+| `thumbnail` | 150px, floated left in an article body with the prose wrapping around it |
+
+**`outline` is not a new design decision.** Elevation already says depth is "tonal layering plus a
+hairline border" and Shapes already gives content images `radius-1`, so the flag's own purpose —
+keeping a white-background image from dissolving into the page — is served by the two tokens that
+already mean that. It goes on the **image**, not the figure, or the border would box in the caption
+along with the picture. **43 of 128 existing figures set it**, so this was a rendering gap rather
+than a pending choice.
+
+**The thumbnail floats from `md`.** A 150px cover plus its `grid-gutter-content` takes 174px out of
+every line it overlaps, against an 8-column prose measure:
+
+| | Prose | Wrapped line |
+|---|---|---|
+| `md` (768) | 482px | 308px ≈ **31 characters** |
+| `lg` (1024) | 653px | 479px ≈ **48 characters** |
+
+**Written at `lg` on that arithmetic and moved to `md` by eye** (2026-08-26), judged against the real
+article rather than the numbers. Worth recording both ways round: 31 characters is the shortest
+measure anywhere in the build, and it was accepted deliberately, the same call as the 8+3 split's 49.
+
+Below `md` the thumbnail stays 150px and sits above the text, which is also what it does on a phone.
+**Measured at 1200: the first line starts 24px right of the cover and runs 475px ≈ 48 characters**,
+and the cover's top aligns with the following block's top to the pixel.
+
+**One consequence is open, and it is smaller than the numbers suggest.** The leading ramp indexes by
+*measure*, and ~29–33 characters is exactly the `body-compact` register at 1.5 — so text beside a
+thumbnail at `md` sits in that register while set at body's 1.8, the precise mismatch `body-compact`
+exists to name.
+
+But only the lines that actually overlap the cover are short, and a 150px cover is 226px tall — about
+seven line boxes. Measured on the real reading-list article at 820: the theme paragraph runs **six
+lines, three beside the cover at 34 characters and three at full width** below it. So the question is
+whether three or four lines per entry want tighter leading, which is a much weaker case for a rule
+than "the prose is set at the wrong measure." Undecided, and cheap either way.
+
+**The context grants the float; the component never asks where it is.** `article.detail` declares
+`--thumb-float: left` at `lg` and the figure reads it, so a case study — which shares the `figure`
+type — gets the thumbnail size without the float by simply not declaring it. No opt-out to remember.
+
+> **Only paragraphs and minor headings wrap beside a cover.** `h2`, `ul`, `ol`, `blockquote`,
+> `figure` and `pre` all clear it.
+
+**Lists clear because of their markers.** A float shortens *line boxes*, not boxes — so a list's own
+box would still start at the column's left edge and `list-style-position: outside` would put the
+bullets underneath the image while the text moved right. `figure` clearing is what stops two
+consecutive book covers stacking side by side when an entry runs short, and `clear` with no preceding
+float is a no-op, so the rule is inert on every page without a thumbnail.
+
+**One edge case is accepted rather than designed around:** if a paragraph is short enough that a
+following `h4` still wraps beside the cover while its list clears, that heading is stranded next to
+the image. The richer fix is `display: flow-root` on the lists, which makes each a block sitting
+*beside* the float at reduced width with its markers intact. Reach for it only if the stranding shows.
+
+**Switching from a bare `image` block to `figure` fixed the top alignment for free** — worth knowing,
+because it looks like it should need a rule. The rhythm ramp gives a bare `<img>` the base `* + *`
+(24px) and a `<figure>` the block gap (48px), while the heading after it takes `* + h3` (48px) either
+way. A float sits where it would have sat in flow, so as an image the title started 24px below the
+cover and as a figure they align with nothing added.
 
 ### Search — specified 2026-08-21, built in phase 4
 
@@ -946,6 +1348,134 @@ Recorded ahead of the build so the masthead can leave the right seam. **Phase 3 
 **Icons come from Lucide** (the Astro integration), for everything except the footer's social marks,
 which are brand assets rather than interface icons and are not ours to restyle.
 
+### Inline marks — what an editor can reach for
+
+Settled 2026-08-26, and recorded because the set is deliberately smaller than the CMS's default.
+
+| Mark | Element | Treatment |
+|---|---|---|
+| `strong` | `<strong>` | weight 700, from the variable `wght` axis |
+| `em` | `<em>` | Noto Serif italic |
+| `code` | `<code>` | **no rule yet** — see open questions |
+| `strike-through` | **`<s>`** | `line-through` at `0.06em`, matching the link underline |
+| ~~`underline`~~ | — | **removed from the schema** |
+
+> **The underline should only ever mean "link."**
+
+That is the rule the whole set turns on. Inline links carry a persistent underline
+and that underline *is* the affordance — which is what satisfies WCAG 1.4.1. A second
+meaning for the same mark makes an underlined word indistinguishable from a link, so
+`underline` is removed from every Portable Text field rather than styled. Two published
+articles had one; both were corrected.
+
+**`strike-through` is `<s>`, not `<del>`, and the distinction is a claim about the
+document.** `<del>` means "a removal from the document" — an editorial revision, paired
+with `<ins>` and carrying `cite`/`datetime`. `<s>` means "no longer accurate or
+relevant." A decorator reached from a toolbar means the second, so `<del>` would assert
+a revision history that does not exist.
+
+**Removing a decorator from the schema does not remove it from the data.** Sanity keeps
+marks it no longer offers, so an old document can still carry one. The renderer is not
+the place to fix that — the document is.
+
+### Code
+
+Settled 2026-08-26. Both roles take `--font-mono`, the system stack described under Typography.
+
+| | Treatment |
+|---|---|
+| inline `code` | mono at **0.9em**, `surface-muted` ground, `radius-1`, no border |
+| `pre` block | mono at size 1 (16px), leading 1.5, **`surface` + hairline border**, `radius-1`, `overflow-x: auto` |
+
+**The block is `surface` with a border, not `surface-muted` with none** — which is Elevation's model
+applied literally: a raised plane is the surface fill *plus* a hairline, "because the border carries
+the card boundary in both themes, not the fill difference." A muted fill with no boundary was the one
+combination Elevation says will not read. It also turned out to be what makes the syntax colors
+correct — see below.
+
+**0.9em is an optical match, not a size step.** A monospace face carries a larger x-height and a wider
+advance than Noto Serif at the same em, so inline code at 1em reads visibly bigger than the sentence
+holding it. 0.9em of the 18px body is 16.2px — above the legibility floor, and matched to its
+surroundings rather than smaller than them. This is not the size step below 16px that the Typography
+do's and don'ts forbid.
+
+**The chip takes `surface-muted`, not the block's `surface`** — chosen by eye against four candidates,
+and settled by a measurement that runs against intuition: against the page ground `surface-muted` is
+the **stronger** tint in both themes (1.153 light, 1.473 dark) where `surface` manages only 1.045 and
+1.169. Matching the block would have been both the option needing a border and the one harder to see
+without one.
+
+**And no border, which is the second reason.** An inline box that wraps across a line break fragments:
+`box-decoration-break: slice` — the default — leaves it open at the break, and `clone` closes both
+halves but draws a border mid-word. A fill has neither problem.
+
+**The block and the chip differing is not an inconsistency.** A block is a panel; a chip is a tint on
+a run of text. Different jobs, and the block additionally needs a white ground for GitHub's light
+palette to measure correctly.
+
+> **Code blocks scroll; they do not wrap.**
+
+The longest line in the content is 117 characters, and a wrapped shell command breaks across two
+visual lines with nothing marking the break — which reads as *two commands*. That is wrong rather
+than merely awkward, where a scrollbar is only awkward. **Measured: 6 of 21 blocks in the
+self-hosting article overflow, the widest at 1344px against a 656px column.**
+
+Scrolling brings an obligation: **the `<pre>` carries `tabindex="0"`**, because a scroll region that
+a pointer can drag and a keyboard cannot reach fails WCAG 2.1.1. No `role`/`aria-label` with it —
+21 landmarks in one article would bury the page's real ones.
+
+**A per-language wrap policy is possible and not taken.** `data-language` is on every block, so yaml
+and JavaScript could wrap — their lines are indented, so a break is far less ambiguous — while `sh`
+kept scrolling. Worth it only if the scrollbars prove annoying in practice.
+
+#### Syntax highlighting — GitHub's themes, on our ground
+
+**Shiki at build time, with `github-light-default` and `github-dark-default`.** Nothing ships to the
+reader: production is static, so highlighting happens while pages are generated and the output is
+plain HTML with colored spans. No runtime JS, no client bundle.
+
+**The `-default` pair, not `github-light` / `github-dark`.** Those are the legacy themes; the
+`-default` pair is what github.com renders today — so it is both the more faithful choice and the
+better-measuring one. The legacy dark comment gray fails AA on our ground at **3.35**, and fails on
+GitHub's own background too, at 3.05.
+
+**Theme switching costs nothing, which is why this shape works.** Shiki's documented dual-theme
+pattern emits one theme inline and the other as a variable you override — with `!important`, because
+an inline style wins. `defaultColor: 'light-dark()'` avoids that entirely: each token comes out as
+`color: light-dark(light, dark)`, and CSS `light-dark()` resolves against `color-scheme`, which
+`base.css` already sets for all three theme states. **The code blocks follow the site's theme through
+the mechanism that already exists** — no second set of theme blocks, no `!important`, nothing for the
+theme toggle to keep in step. It also fails safe: where `light-dark()` is unsupported the color is
+invalid, so the token inherits the block's text color and the code is unhighlighted but readable.
+
+> **The block's ground is ours; only the token colors are GitHub's.**
+
+Shiki's own `background-color` is stripped in the transformer, so the panel stays inside this
+project's Elevation model rather than becoming GitHub's `#ffffff` or `#0d1117`.
+
+**That ground is what makes the palette legal, and getting it wrong was measurable.** GitHub's light
+theme is designed against `#ffffff`. On a `surface-muted` ground two of its seven colors dropped
+below AA — the keyword red to **3.79** and the comment gray to **3.99**. Moving the block to
+`surface` puts the palette back on the ground it was built for, and in dark moves it onto
+`neutral-850`, which is *darker* than GitHub's own background and so raises contrast rather than
+lowering it. Measured across every distinct token color the real content produces:
+
+| | Colors | Worst | Failing AA |
+|---|---|---|---|
+| light, on `surface` (`#ffffff`) | 7 | 4.55 | **0** |
+| dark, on `surface` (`neutral-850`) | 7 | 5.24 | **0** |
+
+**Languages are loaded explicitly**, in `components/prose/highlighter.ts`: `shellscript` — which also
+registers `bash`, `sh`, `shell` and `zsh` — plus `yaml`, `javascript`, `typescript`, `css`, `html` and
+`python`. The last three have no content behind them yet and were added as likely.
+
+**Pre-loading a grammar is not "building on spec", and the distinction is worth keeping straight.** A
+grammar is *data*: loading one costs a little build time and guesses at nothing. A *serializer*
+written against no content would be guessing at what the content looks like, which is why `table`
+stays unbuilt. Everything unlisted falls back to plain text with a build-time warning naming the
+grammar to add — Shiki **throws** on an unloaded language, so without that fallback a content edit
+could break the build.
+
 ### Navigation — a global role, not a component one
 
 `nav` was on the list of type roles that live in the component that owns them, and it was **promoted
@@ -959,10 +1489,20 @@ live site: a pseudo-element animating `width: 0 → 100%`, because `text-decorat
 from zero width. It takes `link-hover`, which gives both of the live site's treatments from one
 declaration — blue on a light ground, white inside an accent band, which re-points that token.
 
-**The color holds still on hover.** The underline is the whole affordance, so the global inline-link
-rule has to be cancelled for nav. On an accent band that is not merely redundant: `link-hover` is the
-band's own fill, so a nav label turned exactly the color of the surface behind it and vanished under
-the pointer.
+**The label color moves to `link-hover` on a light ground and holds still on an accent band**
+(corrected 2026-08-26). The underline is the affordance in both cases; the color is a second signal
+that is only available off the band.
+
+On an accent band it is not merely redundant but wrong: `link-hover` is `blue-500`, which is also
+`surface-accent`, so a nav label turned exactly the color of the surface behind it and vanished under
+the pointer. **A real `<Band tone="accent">` makes this a non-issue by re-pointing `link-hover` to
+`text-on-accent-hover`** — so the footer needs no special handling. Only a component that paints an
+accent ground *without* `<Band>` has to cancel it, which today is the masthead, and only in the two
+states where its band exists.
+
+*Phase 3 read this as a nav-wide rule and cancelled the hover color globally, which also removed it
+from the masthead's inline desktop state, where there is no band and the label is meant to go blue.
+The scope is the accent ground, not the element.*
 
 **The current page is `aria-current`**, not a data attribute — the fact belongs to the document, so the
 attribute that carries it to assistive technology should also draw the indicator.
@@ -1029,5 +1569,8 @@ questioned rather than followed.
 
 Tracked in **[docs/open-questions.md](docs/open-questions.md)**. In brief: custom form-validation
 messaging blocks the error state; the fixed 222px margin does not survive intermediate widths; mobile
-prose leading is still at its desktop value; rail headings have no role; and dark has lost the
-heading-softer-than-body relationship. Five smaller taste calls sit alongside them.
+prose leading is still at its desktop value; and dark has lost the heading-softer-than-body
+relationship. Five smaller taste calls sit alongside them.
+
+**Rail headings are no longer on that list** — they keep `text-heading`, settled 2026-08-26 against the
+real article page, along with the 48rem measure and the sticky rail's `top`.

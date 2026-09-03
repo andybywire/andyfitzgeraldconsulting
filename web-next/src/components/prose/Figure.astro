@@ -1,0 +1,144 @@
+---
+/**
+ * The `figure` block, as a Portable Text type serializer. Three shapes from one
+ * component, selected by two booleans an editor sets in the Studio:
+ *
+ *   default            full prose width, capped at the measure by base.css
+ *   outline: true      the same, with a hairline border — for white-background
+ *                      images that would otherwise dissolve into the page
+ *   thumbnail: true    150px, floated left in an article body with the prose
+ *                      wrapping around it. The book-cover treatment.
+ *
+ * They compose: a thumbnail can take an outline, which is in fact the common case
+ * for a book cover photographed against white.
+ *
+ * ── IT REPLACES A SECOND BLOCK TYPE ──────────────────────────────────────────
+ *
+ * `article.bodyText` also allows a bare inline `image` whose `floatLeft` flag did
+ * the thumbnail job. That type is being retired in favour of this one (2026-08-26)
+ * so there is one serializer rather than two near-identical ones, and so a cover
+ * gains the `caption` field the bare image never had. The `image` type is still in
+ * the schema while the 11 existing blocks are converted by hand — until then those
+ * render nothing and the build says `missing "image"` on every run, which is a
+ * useful progress indicator rather than a fault to suppress.
+ *
+ * ── SWITCHING TO `figure` FIXED THE TOP ALIGNMENT FOR FREE ───────────────────
+ *
+ * Worth recording, because it was predicted to be a problem and is not. The whole
+ * point of the treatment is that the cover's top edge and the book title's first
+ * line start together, and the rhythm ramp decides that:
+ *
+ *     a bare <img>  takes the base `* + *`               ->  24px
+ *     a <figure>    is in `* + :is(ul, ol, blockquote, figure, pre)`  ->  48px
+ *
+ * The `h3` title after it takes `* + h3` -> 48px either way. A float is placed
+ * where it would have sat in flow, so with a bare image the title started 24px
+ * BELOW the cover and needed a rule to correct it. As a figure both are 48 and
+ * they align with nothing added. The consolidation paid for itself here.
+ *
+ * The residue is optical, not structural: a heading's line box carries about 7px
+ * of half-leading plus ascent above its capitals, so the cover's hard top edge
+ * sits marginally above the title's caps. That is an eye-set nudge if it wants
+ * one — CSS exposes no font metric to derive it, the same wall the masthead's nav
+ * baseline hit in phase 3 — and it is deliberately left alone until judged on
+ * screen.
+ *
+ * ── NO `aspect`, DELIBERATELY ────────────────────────────────────────────────
+ *
+ * Absent means "keep the source's own shape", which is right for both a diagram
+ * and a book cover: the figures in the real articles run 2400x914 and 1920x1440
+ * and 596x904, and forcing a shared ratio would crop a diagram's own edges off.
+ * It also means the hotspot is inert, which is correct — nothing is being
+ * discarded for it to protect. A crop set in the Studio still applies; that
+ * happens in the URL builder and needs no aspect.
+ */
+import type {Props as NodeProps} from 'astro-portabletext/types'
+import SanityImage from '../SanityImage.astro'
+import type {SanityImageSource} from '../../sanity/image'
+
+type FigureNode = SanityImageSource & {
+  _type: 'figure'
+  _key?: string
+  outline?: boolean | null
+  thumbnail?: boolean | null
+}
+
+type Props = NodeProps<FigureNode>
+
+const {node} = Astro.props
+
+/**
+ * Data attributes rather than classes, matching <Band>'s `data-tone` / `data-space`.
+ * Emitted only when true, so the selectors below stay simple attribute presence
+ * tests and the markup carries no `data-thumbnail="false"` noise.
+ */
+const isThumb = node.thumbnail === true
+const hasOutline = node.outline === true
+---
+
+<figure data-thumbnail={isThumb ? '' : undefined} data-outline={hasOutline ? '' : undefined}>
+  <SanityImage image={node} />
+  {node.caption && <figcaption>{node.caption}</figcaption>}
+</figure>
+
+<style>
+  /*
+   * ── The thumbnail ─────────────────────────────────────────────────────────
+   *
+   * `float` and `clear` both read `--thumb-float`, which base.css declares on
+   * `article.detail` at lg and nowhere else. So this component never asks where it
+   * is: an article body hands it `left`, a case study hands it nothing and the
+   * `none` fallback applies, and below lg the property is not declared at all.
+   *
+   * `clear` taking the same value is not a trick for its own sake — it is exactly
+   * right. Wherever the figure floats it must also clear the previous float, or
+   * two consecutive book covers sit side by side when an entry runs short.
+   */
+  figure[data-thumbnail] {
+    /*
+     * 150px at the nominal root. In `rem` for the same reason the hero's height
+     * cap is: the measure beside it is set in `ch`, which scales with the reader's
+     * text size, so a thumbnail fixed in px would eat a growing share of a
+     * scaled-up column. The literal is exact rather than rounded — 9.375 x 16 =
+     * 150 — matching how the type scale carries its own odd values.
+     */
+    inline-size: 9.375rem;
+
+    float: var(--thumb-float, none);
+    clear: var(--thumb-float, none);
+
+    /*
+     * The gap between cover and text. `grid-gutter-content` is DESIGN.md's token
+     * for "a real gap between content columns", and that is what this is — the
+     * thumbnail and the prose beside it read as two columns even though no grid is
+     * involved. Inert when not floating, since the box is 150px in a wider column.
+     */
+    margin-inline-end: var(--grid-gutter-content);
+
+    /*
+     * base.css caps every figure at the 66ch measure. Harmless here — 150px is far
+     * inside it — but `max-inline-size` would still win over `inline-size` if the
+     * measure ever resolved smaller than the thumbnail, which it does at the very
+     * narrow end: 66ch of a scaled-down font could fall under 150px. Pinning both
+     * keeps the thumbnail a thumbnail at every size.
+     */
+    max-inline-size: 9.375rem;
+  }
+
+  /*
+   * ── The outline ───────────────────────────────────────────────────────────
+   *
+   * DESIGN.md needed no new vocabulary for this. Elevation says depth is "tonal
+   * layering plus a hairline border", and Shapes gives content images `radius-1`,
+   * so the flag's own description — "help them not disappear onto the page at the
+   * edges" — is served by the two tokens that already mean exactly that.
+   *
+   * ON THE IMAGE, NOT THE FIGURE. A `figure` also contains the caption, so a
+   * border there would box the text in with the picture. The flag is about the
+   * image's edges dissolving, so the border belongs on the image.
+   */
+  figure[data-outline] :global(img) {
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-1);
+  }
+</style>

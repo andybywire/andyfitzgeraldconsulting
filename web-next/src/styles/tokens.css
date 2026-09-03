@@ -112,6 +112,30 @@
      Declaring them here too would shadow that, and the fallback is the point.
      base.css consumes them exactly as if they were local. */
 
+  /* ── ...except this one ────────────────────────────────────────────────── */
+  /* A THIRD FAMILY, and the only font stack this file declares. DESIGN.md's
+     Typography names two faces, so this is an addition rather than a
+     transcription — decided 2026-08-26, for `pre` blocks and the inline `code`
+     decorator, neither of which had any rule at all before.
+
+     IT SHIPS NO WEBFONT, which is why it does not really break the two-family
+     rule. Noto Serif and Lato are ours, subset and served; this is whatever the
+     reader's platform calls monospace. For code that is arguably the right
+     answer — a developer reading a shell command sees it in the face they read
+     code in every day — and it costs zero bytes and nothing in
+     scripts/subset-fonts.sh.
+
+     The trade is that the rendered width of a code line varies by OS: SF Mono on
+     macOS, Consolas on Windows, whatever `monospace` resolves to on Linux. So the
+     exact point at which a block starts scrolling is not ours to know. That is
+     accepted; the alternative is a third subset file to maintain for content that
+     is 25 blocks in four documents.
+
+     Declared HERE rather than in base.css because it is a value, not a rule —
+     which is the whole division these two files are built on. Astro owns the two
+     families it serves; this one has no provider to own it. */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
   /* ── Type scale — 18px base, ratio 1.25, fluid 375 → 1200px ────────────── */
   /* Steps 0 and 1 are static: 1 is the legibility floor, 0 is chrome only.
      Every preferred value is rem-dominant on purpose — a vw-dominant value
@@ -161,7 +185,13 @@
   /* ── Component internals ───────────────────────────────────────────────── */
   --card-gap: var(--space-1);
   --card-pad: var(--space-2);
+  /* The gap BESIDE media — the horizontal card's image-to-text column gap. */
   --card-media: var(--space-3);
+  /* And the gap BELOW it, when the card stacks. Two different values for the
+     same relationship on the two axes: 24 inline, 16 block, both read off the
+     Figma card component. Added 2026-08-28 — it had been expressed as
+     `card-gap` twice, which was arithmetic standing in for a name. */
+  --card-media-block: var(--space-2);
   --chrome-pad-header: var(--space-3);
   --chrome-pad-footer: var(--space-5);
   --chrome-inset: var(--space-2); /* -> space-5 at md */
@@ -391,21 +421,26 @@
 
 /* ── Medium breakpoint ────────────────────────────────────────────────────── */
 /*
- * 48rem = 768px. Arrived at by eye; iterate against real layouts.
+ * 48rem = 768px. Arrived at by eye, and CONFIRMED against the real article page.
  *
- * WHAT PINS IT: nothing hard yet, which is why it is the one to move first. It
- * currently carries two unrelated decisions — the nav going to a single row, and
- * the content grid opening its 8+3 split — and only the nav is comfortable here.
- * The split takes the prose from 66 characters at 767 to 49 at 768, recovering at
- * about 1024, and leaves the rail 166px wide. Both measured.
+ * WHAT PINS IT: the article detail page, judged on screen 2026-08-26. It carries
+ * two unrelated decisions — the nav going to a single row, and the content grid
+ * opening its 8+3 split — and for a long time only the nav was thought to be
+ * comfortable here. The split takes the prose from 66 characters at 767 to 49 at
+ * 768, recovering at about 1028, and leaves the rail 166px wide. Both measured, in
+ * the browser, on a real article: 66 at 767, 49 at 768, 58 at 900, 66 again by 1023.
  *
- * That is ACCEPTED, not overlooked (2026-08-24): a short measure is the cheaper
- * failure — long lines lose the reader at the line return, short ones only cost a
- * few extra returns — and the rail is the likelier thing to force a change, where
- * DESIGN.md's `body-compact` role already exists for "a column too narrow for
- * body". Revisit once real content pages exist rather than against a specimen. It
- * stays cheap to revisit precisely because no component hardcodes a width; if one
- * ever does, this decision gets expensive.
+ * That was ACCEPTED rather than overlooked (2026-08-24) on the reasoning that a
+ * short measure is the cheaper failure — long lines lose the reader at the line
+ * return, short ones only cost a few extra returns — and that the rail was the
+ * likelier thing to force a change, where DESIGN.md's `body-compact` role already
+ * exists for "a column too narrow for body".
+ *
+ * IT IS NOW SETTLED RATHER THAN ACCEPTED (Andy, 2026-08-26): the 49-character
+ * measure reads fine on the real page, so this stops being "the one to move first"
+ * and the reasoning above stands confirmed rather than provisional. It stays cheap
+ * to revisit precisely because no component hardcodes a width; if one ever does,
+ * this decision gets expensive.
  */
 @media (min-width: 48rem) {
   :root {

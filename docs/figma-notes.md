@@ -7,6 +7,59 @@ stale by construction.
 
 Design file: `pPZPGT6EpSaLkoUDK8HMMp`.
 
+## THE FILE HAS FIVE PAGES AND `get_metadata` ADMITS TO TWO
+
+**This is the single most expensive thing in this file to not know.** Called without a `nodeId`,
+`get_metadata` returns a list headed "Top-level pages of the document" — and it reports only:
+
+```
+0:1       💻 Desktop
+949:4650  ⚒️ Components
+```
+
+**There are five.** Enumerated through `use_figma` after warming every page:
+
+| | |
+|---|---|
+| `0:1` | 💻 Desktop |
+| **`949:4649`** | **📱 Mobile** — invisible to the page listing |
+| `949:4650` | ⚒️ Components |
+| `1472:8168` | 🖼️ Assets |
+| `164:1268` | 📝 Notes |
+
+The listing is not merely incomplete, it is **confidently** incomplete: it names itself a list of
+top-level pages and gives no hint of truncation. Almost certainly the same cold-document
+under-reporting that the `findAll` section below documents.
+
+**Never conclude a design does not exist from the page listing, or from searching Desktop.** Twice
+now a session has reported "there are no mobile designs" after checking Desktop — where all sixteen
+page mocks are 1440 wide, so finding nothing narrower reads as proof rather than as looking in the
+wrong place. Watch the node id, too: the Mobile page is `949:4649` and Components is `949:4650`,
+one digit apart, and misreading a shared link as the wrong one costs the same mistake.
+
+**To enumerate pages reliably**, warm them first — a read-only `use_figma` script:
+
+```js
+for (const p of figma.root.children) await p.loadAsync()
+return figma.root.children.map((p) => `${p.id} ${p.name}`)
+```
+
+### Where each kind of mobile design lives
+
+- **📱 Mobile page (`949:4649`)** — full mobile PAGE mocks, in the same three sections as Desktop:
+  `Detail Pages`, `Top Level Pages`, `Search Result`. This is where to look for how a band behaves
+  at 375.
+- **⚒️ Components page (`949:4650`)** — per-component mobile VARIANTS, as a frame holding two
+  symbols named `Viewport=Desktop` and `Viewport=Mobile`. Searching that page's metadata for
+  `Viewport=Mobile` finds them all: Connect/Work with me, Footer, Topics, Page Header, Contact,
+  Top Bar, note card, preso card.
+
+**A component having no `Viewport=Mobile` variant does not mean it has no mobile design.** The RSS
+CTA is a lone symbol on the Components page and adapts anyway — four instances on the Mobile page at
+375×420 and 375×389. The variant list is not the inventory.
+
+Widths vary — 375 mostly, 343 and 360 in places — so do not infer a breakpoint from a frame width.
+
 ## Collections and modes
 
 | Collection | Contents | Modes |

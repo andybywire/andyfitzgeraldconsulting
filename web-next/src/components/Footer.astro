@@ -252,12 +252,6 @@ const SOCIAL = [
     text-align: center; /* -> start at lg */
   }
 
-  .site-index li + li {
-    /* base.css's prose `li + li` margin would land on nine of ten items here,
-       including the ones already starting a row. `row-gap` does it correctly. */
-    margin-top: 0;
-  }
-
   /* No type role and no link treatment here: `.site-index` IS a <nav>, so
      base.css supplies both. And because this footer is a real <Band tone="accent">,
      Band has already re-pointed `--color-link-hover` to `text-on-accent-hover`,
@@ -279,10 +273,6 @@ const SOCIAL = [
     gap: var(--space-5);
     padding: 0;
     list-style: none;
-  }
-
-  .social li + li {
-    margin-top: 0;
   }
 
   .social a {
@@ -457,11 +447,6 @@ const SOCIAL = [
     }
 
     .site-index ul {
-      /* Column-major: down the first column, then down the second, the way an
-         index reads. DOM order stays alphabetical, so this changes the visual
-         arrangement without changing the reading order. */
-      grid-auto-flow: column;
-      grid-template-rows: repeat(5, auto);
       text-align: start;
     }
   }

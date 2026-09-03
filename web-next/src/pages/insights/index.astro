@@ -1,0 +1,1702 @@
+---
+/**
+ * The Insights index — item 2 in the phase 4 order.
+ *
+ * ── THE DOM IS IN DATE ORDER. EVERYTHING ELSE FOLLOWS FROM THAT ──────────────
+ *
+ * Native CSS masonry does not ship, so three columns have to be built by hand. The
+ * first build here used a greedy BUILD-TIME PARTITION into three column wrappers, and
+ * it worked, but wrappers force a contiguous DOM slice per column — which means DOM
+ * order becomes partition order, and a CSS `order` per card was needed to put the
+ * visual sequence back. That bought a correct visual order and paid for it with a
+ * visual-versus-focus mismatch, non-chronological screen-reader traversal, and a
+ * future `h-feed` out of date order.
+ *
+ * REPLACED (Andy's design, 2026-08-28). Cards are emitted flat, in date order, into
+ * ONE grid. Columns are assigned by `nth-child`, and the masonry comes from
+ * `grid-auto-rows: 1px` plus a per-card `grid-row: span`. So:
+ *
+ *   - DOM order is date order at every width. `order` is gone, and with it the focus
+ *     mismatch and the DESIGN.md rule that mismatch was breaking.
+ *   - There is no height estimator. src/lib/masonry.ts is deleted; the browser
+ *     measures, which it can do exactly and a build cannot.
+ *   - Changing the column ladder is a `nth-child` rule, not a re-partition.
+ *
+ * ── MEASURED ON THE REAL 45 CARDS, ALL THREE RUNGS ───────────────────────────
+ *
+ *                        ragged   wasted gap   height    DOM order
+ *   3 col, spans           219        0        6686      date
+ *   3 col, old wrappers    241        0        6686      partition
+ *   2 col, spans            89        0        9872      date
+ *   2 col, old wrappers    447      876       10489      partition
+ *   1 col, either            0        0       19687      date / partition
+ *
+ * The spans rows are with `grid-auto-flow: row dense`, which is what ships — sparse
+ * flow leaves 24px of excess gap on this corpus and a good deal more once one card is
+ * unusually tall. The style block has the full accounting, including what dense costs.
+ *
+ * The two-column rung is where it stops being close: the old approach could not serve
+ * a second partition from one DOM, so it fell back to a row grid there. This does not
+ * have that problem, which also retires the "tablet row gaps" question.
+ *
+ * ── THE NO-JS STATE IS A ROW GRID, AND THAT IS THE DESIGN ────────────────────
+ *
+ * The spans need MEASURED heights, and measuring has to happen before the spans
+ * exist: once `grid-auto-rows: 1px` is in effect a card's grid area IS its span, so
+ * measuring then returns the span rather than the content. Build-time estimates were
+ * tried and cannot be made safe — any under-estimate makes a card overflow into its
+ * neighbour, and padding the estimate to guarantee over-estimation lands back at the
+ * row grid's gaps with extra steps.
+ *
+ * So with no JavaScript this is a row grid: correct order, nearly flush at the bottom
+ * (29px), and airier than intended — a 59px median gap against the design's 32, about
+ * 16% of extra height. Accepted (Andy, 2026-08-28). Content is never hidden by it.
+ */
+import {loadQuery} from '../../sanity/load-query'
+import {INSIGHTS_INDEX_QUERY} from '../../sanity/queries/insights'
+import {SINGLETON_WORK_BAND_QUERY} from '../../sanity/queries/singletons'
+import {slugify} from '../../lib/slug'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Band from '../../components/Band.astro'
+import Grid from '../../components/Grid.astro'
+import Masthead from '../../components/Masthead.astro'
+import Footer from '../../components/Footer.astro'
+import PageHeader from '../../components/PageHeader.astro'
+import ArticleCard from '../../components/cards/ArticleCard.astro'
+import NoteCard from '../../components/cards/NoteCard.astro'
+import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
+import Chip from '../../components/Chip.astro'
+
+/* Both fetches are independent, so they go together rather than in series. */
+const [page, insights] = await Promise.all([
+  loadQuery(SINGLETON_WORK_BAND_QUERY, {slug: 'insights'}),
+  loadQuery(INSIGHTS_INDEX_QUERY),
+])
+
+/* Loud rather than quiet, matching `[slug].astro`. The singleton is content, so it can
+   be unpublished or re-slugged in the Studio — and a page that silently lost its own
+   title and lead would look like a styling bug rather than a missing document. */
+if (!page) throw new Error('[insights/index] no singleton with slug "insights"')
+
+/**
+ * One flat shape per card, in date order — which is now also DOM order.
+ *
+ * Resolved here rather than in the template so the template does no data work beyond
+ * choosing a component. `body` and `hasMedia` no longer feed a height model — nothing
+ * predicts heights any more — but they still record which of the two strings a card
+ * actually renders, which the filter chips will want.
+ *
+ * The query filters on `defined(slug.current)`, but TypeGen types a projected slug as
+ * `string | null` because it cannot see the filter — so this narrows rather than
+ * asserting, exactly as `[slug].astro` does for `getStaticPaths`.
+ */
+const cards = insights.flatMap((item) => {
+  if (!item.slug) return []
+
+  const isNote = item._type === 'note'
+  const sourceDomain = isNote ? (item.clipRef?.publisher ?? null) : null
+
+  return [
+    {
+      id: item._id,
+      isNote,
+      href: `/insights/${item.slug}/`,
+      title: item.title ?? 'Untitled',
+      genre: item.genre,
+      date: item.pubDate,
+      description: item.shortDescription,
+      image: item.heroImage,
+      sourceDomain,
+      /* Which string the card actually renders: a Clipping shows its source domain
+         where a Note shows its description. */
+      body: sourceDomain ?? item.shortDescription,
+      hasMedia: Boolean(item.heroImage?.asset),
+
+      /*
+       * ── THE FACETS, AS SLUGS, ON THE CARD ITSELF ───────────────────────────
+       *
+       * There is no JSON facet index and there does not need to be one: every
+       * document renders, so the DOM already holds the complete topic and genre sets
+       * that live counts need. urls-and-filtering.md called for the index on the
+       * grounds that co-occurrence "requires the topic set of EVERY resource, not
+       * just those in the DOM" — true, and satisfied here by rendering all of them.
+       * It comes back when show-more stops rendering everything, around 150 items.
+       *
+       * SLUGIFIED FROM prefLabel, WITH NO altLabels. Rendering an altLabel as its own
+       * chip would put two controls with identical behaviour side by side; they are
+       * for eventual search support instead (Andy, 2026-08-28). Verified across the
+       * live vocabulary: 31 topics and 9 genres in use produce 40 distinct slugs with
+       * zero collisions, all clean kebab-case.
+       *
+       * `slugify` and not a stored slug because concepts have no slug field — and
+       * because this is the same transform the phase 6 nginx rule assumes when it
+       * rewrites `/insights/tag/{slug}/` to `?topic={slug}`.
+       *
+       * ── SPACE-SEPARATED, WHICH IS A REAL CHOICE ────────────────────────────
+       *
+       * `data-topics="a b c"` rather than a comma list, because `~=` matches one word
+       * of a space-separated attribute natively: `[data-topics~="knowledge-graphs"]`
+       * is a selector, not a parse. That keeps the option of filtering in pure CSS
+       * open, and it means the script never splits a string to test membership.
+       *
+       * It also sidesteps the stega problem urls-and-filtering.md flags — these are
+       * clean slugs in an attribute, never rendered text, so preview mode's encoded
+       * metadata cannot land in them.
+       */
+      genreSlug: item.genre ? slugify(item.genre) : null,
+      topicSlugs: (item.topics ?? [])
+        .filter((topic): topic is string => Boolean(topic))
+        .map(slugify),
+    },
+  ]
+})
+
+/* The count line's resting text, built here rather than inline so the whole string is
+   one expression — see the note at the element. Mirrors `describe()`'s no-filter branch
+   in the script below, which is the only other place this sentence is written. */
+const totalLabel = `${cards.length} ${cards.length === 1 ? 'insight' : 'insights'}`
+
+/**
+ * ── THE FACETS, TALLIED AT BUILD TIME ────────────────────────────────────────
+ *
+ * Counted from the same documents the cards come from, so the number on a chip and
+ * the number of cards it would leave standing cannot disagree.
+ *
+ * SORTED BY COUNT, DESCENDING — urls-and-filtering.md: "Facet controls sort by hit
+ * count, descending, so the next-broadest cut is always nearest the front." The
+ * alphabetical tiebreak is not decoration: `Map` iteration order is insertion order,
+ * which would make ties depend on document order and quietly reshuffle the chip row
+ * whenever an unrelated document was published. This makes the build reproducible.
+ *
+ * It also gets the zero-hit case for free. The same doc weighs hiding unavailable
+ * facets against disabling them and lands on neither: "sort by count descending and a
+ * zero-hit facet sinks to the bottom on its own", below the truncation point, still in
+ * the model for anyone who opens "See all".
+ */
+function tally(rows: (string | null)[][]) {
+  const bySlug = new Map<string, {slug: string; label: string; count: number}>()
+
+  for (const row of rows) {
+    for (const label of row) {
+      if (!label) continue
+      const slug = slugify(label)
+      const seen = bySlug.get(slug)
+      if (seen) seen.count++
+      else bySlug.set(slug, {slug, label, count: 1})
+    }
+  }
+
+  return [...bySlug.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+}
+
+/**
+ * ── THE STATIC FLOOR, WHICH IS DELIBERATELY BELOW THE BOARD'S COUNT ──────────
+ *
+ * `initial` is what renders before any script runs: 5 topics and 3 genres, and every
+ * chip DISABLED. It is not the board's count — the board draws 6 and 4, which is what
+ * fills two rows at 571 and 316 — because how many chips fill two rows depends on how
+ * wide their labels are, which only the browser knows. Same shape as the masonry
+ * spans: ship a conservative floor, then measure and grow.
+ *
+ * DISABLED IS THE HONEST RESTING STATE, not a placeholder. Filtering is client-side by
+ * design (docs/urls-and-filtering.md), so with no script these controls cannot work —
+ * and a control that looks live and no-ops is worse than one that says it is inactive.
+ * They stay readable either way, which keeps the vocabulary informative: a visitor
+ * still learns what this collection is about. Andy's call, 2026-08-31.
+ */
+const facets = [
+  {
+    key: 'topic',
+    id: 'facet-topics',
+    heading: 'Topics',
+    reset: 'reset topics',
+    more: 'See all topics',
+    fewer: 'See fewer topics',
+    initial: 5,
+    items: tally(insights.map((item) => item.topics ?? [])),
+  },
+  {
+    key: 'genre',
+    id: 'facet-genres',
+    heading: 'Genres',
+    reset: 'reset genres',
+    more: 'See all genres',
+    fewer: 'See fewer genres',
+    initial: 3,
+    items: tally(insights.map((item) => [item.genre])),
+  },
+]
+---
+
+<BaseLayout title={page.title ?? 'Insights'} description={page.lede ?? undefined}>
+  <Masthead />
+
+  <main>
+    <Band as="section" class="index-band">
+      <Grid>
+        {
+          /*
+          ── MOVED TO <PageHeader> ────────────────────────────────────────────
+
+          This was inline until Reviews arrived, and the note that used to sit here
+          named that as the condition: a SECOND CONSUMER is the promotion trigger. The
+          h1, the lead role and the spacing between them now live in the component; what
+          stays here is where the header sits on THIS page's grid, below.
+
+          No `body` prop. That third slot takes a singleton's `bodyText`, and an index
+          page has no intro copy under its lead — the facets come next.
+        */
+        }
+        <PageHeader title={page.title ?? 'Insights'} lede={page.heroCopy} />
+
+        {
+          /*
+          ── THE FACET GROUPS ─────────────────────────────────────────────────
+
+          At `1 / span 7` and `9 / span 4`, the same asymmetric split as Home and the
+          one the board measures: 571 + skip-1 + 316 closes 996 exactly. <Grid>'s own
+          `rhythm-heading-major` row gap is the 64 the board draws between the header,
+          the filters and the masonry, so nothing here sets vertical spacing.
+
+          A <nav> PER GROUP, each named by its own visible heading via
+          `aria-labelledby` — the shape the article page's rail arrived at for exactly
+          this reason: one nav around both would need an invented label, because no
+          single heading covers "Topics" and "Genres". A <fieldset> would be wrong;
+          these are links, not form controls.
+
+          NO SCRIPT YET, DELIBERATELY. Every chip is a real <a href> carrying the URL
+          for its own state, so the whole contract in docs/urls-and-filtering.md is
+          inspectable — view source, read the hrefs — before any behaviour exists.
+        */
+        }
+        <nav class="facets" aria-label="Filter insights">
+          {
+            facets.map((group) => (
+              <div class="facet-group" data-facet-group={group.key}>
+                <div class="facet-head">
+                  <h2 id={group.id}>{group.heading}</h2>
+                  {/*
+                    On the heading row and right-aligned, appearing only once the group
+                    has a selection — so `hidden` in the static page, which has none.
+                    urls-and-filtering.md rejected an icon-only control in the chip row
+                    because inserting a leading item shifts every chip after it,
+                    including the one just clicked.
+
+                    Its href is the current URL minus this group's parameters, which
+                    with no selection is the bare index.
+                  */}
+                  <a class="facet-reset" href="/insights/" hidden>
+                    {group.reset}
+                  </a>
+                </div>
+
+                <ul class="facet-chips" role="list" aria-labelledby={group.id}>
+                  {group.items.map((facet, i) => (
+                    <li hidden={i >= group.initial}>
+                      {/*
+                        EVERY chip is in the DOM, not just the visible ones — the script
+                        grows the set by unhiding rather than by fetching or building
+                        markup, so there is one place the chip's shape is written.
+
+                        `aria-label` carries no action verb yet, because in this state
+                        there is no action: it reads "Structured Content, 15 results".
+                        The script appends ", add filter" when it enables the control,
+                        and swaps it for ", selected, remove filter" on selection —
+                        docs/urls-and-filtering.md, since the same control means
+                        opposite things by state and only the fill says so visually.
+
+                        `aria-disabled`, not `disabled`, which anchors do not have. The
+                        href stays so the URL contract is inspectable from view-source,
+                        and because a click landing on `?topic=…` before the script has
+                        hydrated still expresses the intent — the script reads the URL
+                        on load, so that navigation resolves correctly rather than being
+                        swallowed.
+                      */}
+                      <Chip
+                        href={`/insights/?${group.key}=${facet.slug}`}
+                        data-facet={group.key}
+                        data-slug={facet.slug}
+                        aria-disabled="true"
+                        aria-label={`${facet.label}, ${facet.count} results`}
+                      >
+                        <span class="chip-label">{facet.label}</span>
+                        <span class="chip-count">{facet.count}</span>
+                      </Chip>
+                    </li>
+                  ))}
+
+                  {/*
+                    <button>, where the chips are links — the honest split rather than
+                    an inconsistency. A filter control has a natural href: the URL of
+                    the state after the click. A disclosure goes nowhere.
+                    urls-and-filtering.md's "facet controls are links, not buttons" is
+                    an argument about the things that change the URL.
+
+                    Both are `hidden` at rest and revealed by the script, so the no-JS
+                    page carries no control that cannot work. In the markup rather than
+                    built in JS so the chip's shape is written once.
+                  */}
+                  <li hidden>
+                    <Chip as="button" class="chip-more" type="button">
+                      {group.more}
+                    </Chip>
+                  </li>
+
+                  <li hidden>
+                    <Chip as="button" class="chip-fewer" type="button">
+                      {group.fewer}
+                    </Chip>
+                  </li>
+                </ul>
+              </div>
+            ))
+          }
+        </nav>
+
+        {
+          /*
+          FLAT, AND IN DATE ORDER. No column wrappers: the columns are `nth-child`
+          rules in the style block, so the DOM sequence is the reading sequence at
+          every width and there is nothing here for a partition to reorder.
+
+          ── THE HEADING OUTLINE IS FLAT, AND THAT IS THE DECISION ──────────────
+
+          `as="h2"` puts the card titles at the same level as "Topics" and "Genres",
+          so the page reads h1 then a run of h2s. Dropping the cards to h3 was
+          considered and REJECTED (Andy, 2026-08-31): it would situate every card
+          title as subordinate to *Genres*, the heading immediately above it, which
+          is a worse claim than a flat run. Getting a strictly correct tree would
+          mean inventing upper-level divisions to compartmentalise the controls
+          separately from the results, and that is more structure than this page
+          needs.
+        */
+        }
+        <div class="masonry">
+          {
+            cards.map((card) =>
+              card.isNote ? (
+                <NoteCard
+                  as="h2"
+                  data-genre={card.genreSlug}
+                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  sourceDomain={card.sourceDomain}
+                />
+              ) : (
+                <ArticleCard
+                  as="h2"
+                  data-genre={card.genreSlug}
+                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  image={card.image}
+                />
+              ),
+            )
+          }
+        </div>
+
+        {
+          /*
+          ── THE RESULT COUNT, BELOW THE GRID ─────────────────────────────────
+
+          It started above the grid and moved here (Andy, 2026-08-31), on the
+          reasoning that the chips report on the WHOLE collection by design, so the
+          number of cards actually on screen is not information you need before you
+          start — it is information you want at the point where you notice the grid
+          ended. This is also where the "show more" / "show all" controls will land,
+          which is the second reason to group them.
+
+          Moving it costs nothing for a screen-reader user, and that is worth stating
+          because it is the non-obvious half: a live region announces wherever it
+          sits. Position governs who SEES it, never who hears it.
+
+          ── TWO ELEMENTS, AND THE SECOND ONE IS NOT A DUPLICATE ──────────────
+
+          The visible line carries NO live role. The announcement comes from a
+          separate region that ships EMPTY and is written only on a user-initiated
+          change.
+
+          This replaces the "promote to role=status after the first render" idea, and
+          the reason is the case that idea does not cover: someone arriving on a
+          shared `?topic=` link. The visible line is server-rendered for the no-JS
+          truth — every card shown — so on that arrival JS rewrites it during load,
+          and a region that was live by then would read its own count out before the
+          page had been read. Starting empty makes that impossible by construction
+          rather than by timing, and it costs one element.
+
+          `role="status"` rather than a bare `aria-live="polite"`: it carries implicit
+          `polite` and `atomic`, and is the better-supported of the two.
+        */
+        }
+        <div class="results-footer">
+          {
+            /*
+            `tabindex="-1"` takes it out of nothing — a negative index is unreachable
+            by Tab and only makes the element focusable PROGRAMMATICALLY. It is here
+            so focus has somewhere to land when "Show all" removes the button that
+            was just pressed, which would otherwise drop focus to the body.
+          */
+          }
+          {
+            /*
+            The no-JS truth: every card renders, so this is accurate as shipped and the
+            script only ever narrows it. Kept in step with `describe()` below.
+
+            ONE EXPRESSION, NOT TWO. Written as `{cards.length} {…plural}` this emitted
+            "45insights" — Astro drops the whitespace BETWEEN adjacent expressions once a
+            formatter puts them on separate lines. The browser never showed it, because
+            the script rewrites this line on load; only the built HTML, which is to say
+            only the no-JS state, carried the bug.
+          */
+          }
+          <p class="result-count" tabindex="-1">Displaying all {totalLabel}</p>
+
+          {
+            /*
+            Both `hidden` at rest, because the static page has already shown
+            everything — a control that would reveal what is on screen is worse than
+            no control. The script un-hides them when it truncates.
+
+            `<button>`, where the facet chips are links: these change how much of the
+            page is shown, not what the URL addresses, and the reveal is deliberately
+            NOT in the URL (Andy, 2026-08-31) — it resets on navigating away. A
+            control with no address is a button.
+          */
+          }
+          <div class="result-controls">
+            <Chip as="button" class="show-more" type="button" hidden>Show more</Chip>
+            <Chip as="button" class="show-all" type="button" hidden>Show all</Chip>
+          </div>
+
+          <div class="result-status" role="status"></div>
+        </div>
+      </Grid>
+    </Band>
+
+    {
+      /*
+      The band's content resolves in the query, not here — the page hands over what
+      SINGLETON_WORK_BAND_QUERY produced and never learns which of the three tiers it
+      came from. Insights sets its own, so today this is tier one.
+
+      Rendered only when the ladder produced something. There is a site default, so the
+      only way to reach null is Settings having no Work with Me band at all — in which
+      case a heading and a button over empty space would be worse than no band.
+    */
+    }
+    {
+      page.workBand && (
+        <WorkWithMeBand message={page.workBand.message} clientLogos={page.workBand.clientLogos} />
+      )
+    }
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* The header sits on the prose measure; the masonry spans the full content width.
+     They therefore cannot share a grid row, so <Grid>'s row gap separates them — which
+     is `rhythm-heading-major`, and correct here for the reason it is always correct:
+     what lands below starts with a heading. */
+  /*
+   * ── FULL WIDTH, BECAUSE THERE IS NO RAIL TO LEAVE ROOM FOR ─────────────────
+   *
+   * `--col-main` is 8 of 12, and those 8 exist so a rail can occupy 10-12. This page
+   * has no rail, so the header was reserving space for nothing — and the cost was
+   * real: at 656px the lede ran THREE lines where it runs two at 996, pushing the
+   * cards a whole line further down the initial view (Andy, 2026-08-31).
+   *
+   * The rule generalises to any index built on the masonry-and-filters pattern;
+   * DESIGN.md -> Card grids carries it, and Presentations is the next consumer.
+   *
+   * ── THIS IS ALL THAT STAYED BEHIND ─────────────────────────────────────────
+   *
+   * The lead role, the measure cap and the h1-to-lead spacing moved into
+   * <PageHeader> when Reviews became the second consumer. Placement did not, and the
+   * two consumers are the argument: Reviews spans `--col-main` because it has a rail.
+   * Where a header sits on the grid is a fact about the PAGE, so it is stated by the
+   * page — reaching the component's root through the scope attribute Astro passes down.
+   */
+  .page-header {
+    grid-column: var(--col-full);
+  }
+
+  /* ── The facet groups ───────────────────────────────────────────────────── */
+  /*
+   * `display: contents` so each group is a grid item of <Grid> in its own right and
+   * can take its own placement token — 7 + skip-1 + 4, the board's asymmetric split.
+   * The <nav> is a naming wrapper, not layout.
+   */
+  .facets {
+    display: contents;
+  }
+
+  .facet-group {
+    grid-column: var(--col-full); /* -> the split at md, below */
+  }
+
+  @container style(--breakpoint-md: true) {
+    .facet-group[data-facet-group='topic'] {
+      grid-column: 1 / span 7;
+    }
+
+    .facet-group[data-facet-group='genre'] {
+      grid-column: 9 / span 4;
+    }
+  }
+
+  /*
+   * The heading row: heading left, reset right. `space-between` rather than a float or
+   * an absolute position, so the reset wraps beneath instead of colliding when the
+   * column is narrow — "reset genres" is the longer label in the narrower column, which
+   * is the case docs/open-questions.md flags for intermediate widths.
+   */
+  .facet-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  /* base.css's `nav :is(a, button)` reset strips the underline for nav links; this is
+     apparatus rather than a chip, so it wants to look like a link again. */
+  .facet-reset {
+    font-size: var(--font-size-1);
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+  }
+
+  /*
+   * ── ONE UNDERLINE, NOT TWO ──────────────────────────────────────────────────
+   *
+   * base.css's nav reset removes `text-decoration` and replaces it with the wipe-in
+   * `::after` border, so restoring the text-decoration above without cancelling the
+   * pseudo-element gave this a static underline AND a 2px animated one under the
+   * pointer. The opt-out is the one base.css names — "a component whose nav links
+   * are not link-shaped opts out with `::after { content: none }`" — and it applies
+   * here for the opposite reason it applies to a chip: this link IS link-shaped, and
+   * a plain text-decoration underline is the shape it wants. The color still moves to
+   * `link-hover` on hover, from the global `a:hover`.
+   */
+  .facet-reset::after {
+    content: none;
+  }
+
+  .facet-chips {
+    /* base.css keeps the UA list indent for prose. A nav is not prose. `role="list"`
+       is on the element because `list-style: none` drops list semantics in Safari. */
+    margin-top: var(--rhythm-heading-close);
+    padding: 0;
+    list-style: none;
+
+    display: flex;
+    flex-wrap: wrap;
+    /* The board draws 16 between chips in both axes. */
+    gap: var(--space-2);
+  }
+
+  /*
+   * ── THE CHIP'S SHAPE MOVED TO <Chip> (2026-09-02) ───────────────────────────
+   *
+   * The pill, the type role, `:hover`, `:active` and the wipe-in opt-out now live in
+   * `components/Chip.astro`, because the genre prev/next nav became a second consumer
+   * and the Figma boards instantiate the same `filter` component for both.
+   *
+   * WHAT STAYED IS THE FILTER'S OWN, and the seam is what the second consumer lacks:
+   * `aria-current` (selected), `aria-disabled`, the count and `.is-zero` below. A
+   * prev/next chip is never selected, and when there is no previous entry it is absent
+   * rather than dimmed — so hoisting those would have generalised from one case.
+   *
+   * These rules still reach the component: Astro passes this page's scope attribute to
+   * a child component's root element. The script is untouched for the same reason —
+   * `.chip` still lands on the rendered element.
+   */
+
+  /*
+   * SELECTED IS `aria-current`, not a class — DESIGN.md: "the fact belongs to the
+   * document, so the attribute that carries it to assistive technology should also
+   * draw the indicator." Nothing sets it yet; the rule is here so the script has only
+   * state to change, not styling to add.
+   */
+  .chip[aria-current='true'] {
+    border-color: var(--color-surface-accent);
+    background-color: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+  }
+
+  .chip[aria-current='true']:hover {
+    border-color: var(--color-accent-hover);
+    background-color: var(--color-accent-hover);
+  }
+
+  /*
+   * `aria-disabled`, not the `disabled` attribute, which anchors do not have.
+   * urls-and-filtering.md prefers it over dropping `href`: the chip stays focusable
+   * and discoverable rather than falling out of the tab order. Count-descending sort
+   * means this mostly only surfaces inside "See all".
+   */
+  .chip[aria-disabled='true'] {
+    border-color: var(--color-border);
+    background-color: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
+    pointer-events: none;
+  }
+
+  /* The count is quieter than the label but not muted into illegibility — it is data,
+     not decoration. Inherits `text-on-accent` when selected, which is why this is a
+     colour and not a token pointing at `text-muted`. */
+  .chip-count {
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * ── A ZERO-HIT CHIP DROPS ITS COUNT AND WIDENS TO COMPENSATE ────────────────
+   *
+   * The zero is noise: the chip is already dimmed, and with chip order fixed at build
+   * time the excluded facets stay in the visible row rather than sinking, so a
+   * filtered view was showing a column of repeated "0"s (Andy, 2026-08-31).
+   *
+   * DROPPING IT ALONE MAKES THE CHIP NARROWER, and every chip narrowing at once slides
+   * the rest of the row leftward. `0.5rem` each side is very nearly the exact
+   * compensation: the count occupies one tabular digit plus the flex `gap`, which is
+   * 16.1px, and 0.5rem twice is 16. Measured across all 40 chips, unfiltered against
+   * `?topic=best-practices`:
+   *
+   *                                     total shift   max shrink   max grow   unchanged
+   *   drop the count, no compensation      509px         -24          0         7/40
+   *   padding-inline 0.75 -> 1rem          289px         -16          0         7/40
+   *   padding-inline 0.75 -> 1.75rem       521px          -8        +16         3/40
+   *   padding-inline 0.75 -> 1.25rem        36px          -8          0        36/40
+   *
+   * Under-compensating leaves most of the movement; over-compensating makes chips GROW,
+   * which is why 1.75rem scores worse than doing nothing. The four chips that still move
+   * had two-digit counts, so they lose one digit — the same 8px a chip already moves
+   * going 15 -> 3.
+   *
+   * Holding the count's box with `visibility: hidden` scored a hair better (32px) and was
+   * rejected on the design: it leaves the chip padded on the right for a number that is
+   * not there, which reads as lopsided. Symmetry is worth 4px.
+   *
+   * ── WHY THIS IS A CLASS AND NOT `[aria-disabled]` ───────────────────────────
+   *
+   * Every chip carries `aria-disabled` in the static page — that is the honest resting
+   * state before any script runs — and those chips show REAL counts, which are the only
+   * thing telling a no-JS visitor what the collection holds. Keying off the attribute
+   * would blank all 40 of them. `is-zero` is set only by the script, only for a facet
+   * with no hits in the current intersection.
+   */
+  .chip.is-zero {
+    padding-inline: 1.25rem;
+  }
+
+  .chip.is-zero .chip-count {
+    display: none;
+  }
+
+  /*
+   * ── THE LADDER ──────────────────────────────────────────────────────────────
+   *
+   * Mobile-first, and the breakpoint widths stay in tokens.css alone: these read the
+   * `--breakpoint-*` flags rather than restating 48rem and 64rem.
+   *
+   * COLUMNS COME FROM `nth-child`, NOT FROM A DATA ATTRIBUTE. Andy's sketch proposed
+   * cycling an A/B/C attribute per card, which works — but the cycle is exactly the
+   * card's position among its siblings, and `nth-child` reads that directly. Nothing
+   * to generate, nothing to ship in the markup, and it cannot drift out of step with
+   * source order the way a baked attribute could.
+   *
+   * The explicit column is what keeps the columns INDEPENDENT once the spans arrive:
+   * a card whose definite column sits left of the placement cursor pushes the cursor
+   * down a row, so each column stacks on its own instead of sharing a row height.
+   *
+   * ── `of :not([hidden])` IS WHAT MAKES THE FILTER WORK ────────────────────────
+   *
+   * Plain `nth-child` counts EVERY sibling, hidden ones included, so a filtered view
+   * would keep whatever columns its survivors happened to hold in the full set — at
+   * worst leaving all of them in one column. Measured before this was added: a
+   * 1789px ragged bottom on `?topic=content-modeling` against 478 once the count is
+   * taken over the visible set alone.
+   *
+   * `:nth-child(An+B of S)` counts only siblings matching S, and it RE-EVALUATES as
+   * the attribute changes — verified in the browser on the real 45 cards. So one
+   * ladder serves all three states: no-JS, unfiltered, and filtered. Safari 9,
+   * Chrome 111, Firefox 113, so Baseline widely available.
+   *
+   * ── AND IT REPLACED A JS PARTITION THAT LATCHED ──────────────────────────────
+   *
+   * A first pass at the filter assigned columns in JS instead — a greedy
+   * shortest-column-first walk over the visible set, reading the rung back from
+   * `getComputedStyle(grid).gridTemplateColumns`. It had a bug that only appeared on
+   * resize, and it is worth recording because the mechanism is not obvious:
+   * **that computed value includes IMPLICIT tracks.** A stale inline `grid-column: 3`
+   * left over from the 3-column rung creates an implicit third track at the 2-column
+   * rung, so the string reads "316px 316px 0px", the column count comes back as 3,
+   * and the partition keeps feeding the track that should not exist. Self-sustaining,
+   * and it overflows the page to the right.
+   *
+   * Nothing here can reproduce that: no inline `grid-column` is ever written, so
+   * there is no implicit track and no rung to misread. The columns are the explicit
+   * template, always.
+   */
+  .masonry {
+    grid-column: var(--col-full);
+
+    display: grid;
+    grid-template-columns: 1fr;
+
+    /* Horizontal is grid, vertical is rhythm. The board draws 24 between columns and
+       32 between cards, which is exactly this pair. `row-gap` applies in the no-JS
+       row-grid state; once spans arrive the gap is built into the span instead. */
+    column-gap: var(--grid-gutter);
+    row-gap: var(--rhythm-list);
+
+    /*
+     * REQUIRED, at every rung. In the row-grid state it stops cards stretching to
+     * their row's height — an unboxed note card stretched to a tall article card's
+     * height would reveal that whole box on hover. In the span state it stops a card
+     * stretching to fill its span, which is what leaves the trailing 32 as the gap.
+     */
+    align-items: start;
+  }
+
+  @container style(--breakpoint-md: true) {
+    .masonry {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .masonry > :nth-child(2n + 1 of :not([hidden])) {
+      grid-column: 1;
+    }
+
+    .masonry > :nth-child(2n of :not([hidden])) {
+      grid-column: 2;
+    }
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .masonry {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .masonry > :nth-child(3n + 1 of :not([hidden])) {
+      grid-column: 1;
+    }
+
+    .masonry > :nth-child(3n + 2 of :not([hidden])) {
+      grid-column: 2;
+    }
+
+    .masonry > :nth-child(3n of :not([hidden])) {
+      grid-column: 3;
+    }
+  }
+
+  /*
+   * ── THE JS-ENHANCED STATE ───────────────────────────────────────────────────
+   *
+   * Added by the script below once it has measured every card. 1px rows are small
+   * enough that no two cards can share one, so the shared-row height that makes the
+   * base state a row grid stops existing. `row-gap: 0` because the 32 is inside each
+   * span — see the script.
+   *
+   * ── `dense`, CHOSEN ON THE EYE AND PAID FOR IN TAB ORDER ────────────────────
+   *
+   * Sparse packing moves the placement cursor forward only, which guarantees a card
+   * never appears above an earlier one — but it also means a card can be held down by
+   * a taller card in a PREVIOUS column rather than by its own, leaving gaps well over
+   * the design's 32.
+   *
+   * MEASURED ON A CORPUS CARRYING ONE UNUSUALLY TALL CARD, which is the case that
+   * settled it — an even set of heights understates sparse badly:
+   *
+   *                     worst gap   gaps > 33   total excess   ragged
+   *   sparse             287.75px       3          511px        365px
+   *   dense               32.88px       0            0px        168px
+   *
+   * So dense is not a trade of balance for order — it is better on BOTH counts here,
+   * and a 288px hole in a column is not a rounding error. Judged on screen and chosen
+   * (Andy, 2026-08-28); for anyone not navigating by keyboard it is strictly better.
+   *
+   * WHAT IT COSTS, STATED PLAINLY. Dense can float a later card above an earlier one,
+   * so the visual sequence and the DOM sequence come apart: on this corpus 21 of 45
+   * positions differ — but NO CARD MOVES MORE THAN TWO SLOTS. That is the number worth
+   * keeping: it is a chain of small local shifts, not the wholesale column-major
+   * jumbling that ruled `column-count` out, and the count is inflated by construction
+   * because one card rising past another displaces both.
+   *
+   * DOM ORDER ITSELF IS UNTOUCHED, so screen-reader traversal and a future `h-feed`
+   * stay chronological. Only the visual-to-focus correspondence gives, and only
+   * locally. Accepted as minor, explicitly as a judgment about a real experience
+   * rather than a measurement.
+   *
+   * REVISITABLE IN ONE WORD. Nothing structural depends on it — not the DOM order, the
+   * nth-child placement, the spans, or the filter scripts, which act on WHICH column a
+   * card is in rather than where it sits within one. Drop `dense` and the ordering
+   * guarantee comes back at the cost of the gaps. Tracked in docs/open-questions.md,
+   * with the console snippet that produced the 6-of-45 figure.
+   */
+  .masonry.is-measured {
+    grid-auto-rows: 1px;
+
+    /* `row dense` rather than the equivalent bare `dense`, which is valid — the
+       grammar is `[row | column] || dense` — but leaves the axis implied. */
+    grid-auto-flow: row dense;
+    row-gap: 0;
+  }
+
+  .masonry.is-measured > * {
+    grid-row: span var(--card-span);
+  }
+
+  /*
+   * ── THE FIRST 24, BEFORE ANY SCRIPT RUNS ────────────────────────────────────
+   *
+   * The truncation has to be in force at the FIRST paint or it is a visible collapse
+   * rather than an initial state — 45 cards' worth of page drawn and then thrown
+   * away. `html.js` is set by the synchronous inline script in BaseLayout, which runs
+   * while <head> is still parsing, so this rule is true before <body> exists.
+   *
+   * THE THREE-PART SELECTOR IS THREE SEPARATE JOBS:
+   *
+   *   html.js               only where a script can undo it. Without JS the class
+   *                         never arrives, the rule never matches, and all 45 render
+   *                         — no control the visitor cannot operate, and no content
+   *                         they cannot reach.
+   *   :not([data-hydrated]) hands over cleanly. The script sets that attribute in the
+   *                         same synchronous pass in which it starts managing
+   *                         `hidden`, so exactly one mechanism is truncating at any
+   *                         moment and they cannot disagree.
+   *   :nth-child(n + 25)    plain `nth-child`, deliberately NOT the ladder's
+   *                         `of :not([hidden])`. Nothing is hidden yet at this point,
+   *                         so the two would count identically — and this one has to
+   *                         keep working before the script exists.
+   */
+  html.js .masonry:not([data-hydrated]) > :nth-child(n + 25) {
+    display: none;
+  }
+
+  /*
+   * The board's *Card display controls* frame: the chip row sits at y=40 under a
+   * 24px-tall label, so 16 — `rhythm-heading-close`, the label being bound to the
+   * controls the way a heading is bound to its paragraph. The chips are 16 apart,
+   * which is the same `space-2` the facet rows use.
+   *
+   * `wrap` rather than a stacking rule at a breakpoint: the pair measures ~176px
+   * together, so they fit side by side at 360 and only ever stack if a longer label
+   * arrives. A media query would be asserting a wrap that does not happen.
+   */
+  .result-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  /* ── The result count ───────────────────────────────────────────────────── */
+  /*
+   * A grid item in its own right, so <Grid>'s `rhythm-heading-major` row gap is what
+   * separates it from the masonry. That token's rationale — "what lands below always
+   * starts with a heading" — does not hold here, and 64 below a grid whose bottom is
+   * ragged by up to 728px may read as too much or as exactly right. Left as the grid
+   * gives it, to be judged on screen rather than guessed at.
+   */
+  .results-footer {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * ── DESIGN.md's `label` ROLE ────────────────────────────────────────────────
+   *
+   * Lato 700 at the 16px step with +2% tracking, in `text-muted` — the same role as
+   * the article page's eyebrow, and the style Andy applied on the board's *Card
+   * display controls* frame. It replaced an italic draft: a small bold label reads as
+   * apparatus about the page, where italic body reads as an aside within it.
+   *
+   * `text-muted` VERIFIED AGAINST THE BOARD rather than assumed. The frame renders
+   * the label's glyph cores at #505a5e, which is `--neutral-700` exactly, which is
+   * what `--color-text-muted` resolves to. Worth recording because the render reads
+   * darker than a mid gray by eye — the sample settled it and the eye did not.
+   *
+   * Family and tracking are declared here because this is the only place on the page
+   * that uses `label`; base.css's scope stops at h1-h4, body, links and nav, and
+   * names `label` among the roles that belong to the component that owns one.
+   *
+   * Left-aligned, which is the default and therefore not declared. Noted only because
+   * the controls landing beneath it are left-aligned by decision, not inheritance.
+   */
+  .result-count {
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+
+  /*
+   * ── VISUALLY HIDDEN, AND THE SECOND CONSUMER OF THIS BLOCK ──────────────────
+   *
+   * `Masthead.astro`'s `.search-label` is the first, with the same seven
+   * declarations. CLAUDE.md's promotion rule — a second consumer is the trigger —
+   * has therefore fired, and this belongs in base.css as a utility. Left scoped here
+   * deliberately so the count line lands as one reviewable change; Search will be the
+   * third consumer and is the natural moment to move it.
+   *
+   * NOT `display: none` and not `visibility: hidden` — both remove the element from
+   * the accessibility tree, which would make a live region silent. The 1px-clipped
+   * box is the only way to be invisible and still announced.
+   */
+  .result-status {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  /**
+   * The masonry enhancement: measure every VISIBLE card and hand it a row span. That
+   * is the whole job — the columns are the style block's `nth-child` ladder, at every
+   * state including a filtered one, so nothing here writes a `grid-column`.
+   *
+   * ── WHY THIS CANNOT HAPPEN AT BUILD TIME ─────────────────────────────────────
+   *
+   * A card's height depends on how its title and description wrap, which depends on
+   * the column width and the loaded font. Only the browser knows. An earlier build
+   * predicted heights from character counts and was accurate to a couple of pixels,
+   * but prediction is not good enough HERE: with `grid-auto-rows: 1px` a span is a
+   * hard track size, so any under-estimate makes a card overflow into its neighbour.
+   *
+   * ── AND WHY IT MEASURES BEFORE IT APPLIES ────────────────────────────────────
+   *
+   * Once the class is on, a card's grid area IS its span, so `offsetHeight` would
+   * return the span rather than the content. Hence the remove / measure / add
+   * sequence. `align-items: start` on the container is what keeps the measured height
+   * the natural one in the row-grid state rather than the row's height.
+   */
+  /* The grid is passed in rather than closed over, so it is non-null by TYPE rather
+     than by a check the compiler cannot see through: TypeScript will not narrow a
+     captured binding into a hoisted function declaration, since nothing proves the
+     function is not called before the check. A parameter settles it. */
+  function enhance(grid: HTMLElement) {
+    const cards = Array.from(grid.children) as HTMLElement[]
+
+    function layout() {
+      /* Back to the row grid so each card reports its own height. */
+      grid.classList.remove('is-measured')
+
+      /* The 32 is read from the cascade rather than hardcoded, so it follows
+         `--rhythm-list` if that ever moves. Read while the row gap still applies —
+         `is-measured` sets it to 0. */
+      const gap = Math.round(parseFloat(getComputedStyle(grid).rowGap)) || 0
+
+      /* Only what the filter left standing. A hidden card is `display: none`, so it
+         holds no grid cell and reports no height — measuring one would write a span
+         of just the gap. The COLUMNS are not this function's business: the ladder's
+         `:nth-child(… of :not([hidden]))` counts the same visible set in CSS. */
+      const visible = cards.filter((card) => !card.hidden)
+
+      /*
+       * `ceil` OF THE FRACTIONAL HEIGHT, not `offsetHeight`.
+       *
+       * `offsetHeight` is rounded to the nearest integer, so it rounds DOWN as often
+       * as up — and a span one pixel short of its card is the one error this mechanism
+       * cannot absorb, because with 1px rows the span is a hard track size and the
+       * card overflows into its neighbour. Measured at the 2-column rung with
+       * `offsetHeight`, the median gap came out at 30 rather than 32.
+       *
+       * `getBoundingClientRect().height` is fractional and `ceil` always errs long, so
+       * gaps land in [32, 33) and overlap is impossible.
+       *
+       * Two passes on purpose: read every height, THEN write every span. Interleaving
+       * them would invalidate layout on each write and force a reflow per card.
+       */
+      const spans = visible.map((card) => Math.ceil(card.getBoundingClientRect().height) + gap)
+      visible.forEach((card, i) => card.style.setProperty('--card-span', String(spans[i])))
+
+      grid.classList.add('is-measured')
+    }
+
+    /* Fonts first: the metric-matched fallback and the real face wrap differently, so
+       measuring before the swap would bake in spans for the wrong face. */
+    document.fonts.ready.then(layout)
+
+    /*
+     * Column width changes with the rung, and wrapping changes with width, so spans go
+     * stale on resize. ResizeObserver on the grid rather than a window listener: it
+     * catches a rung crossing and anything else that changes the grid's box.
+     *
+     * ── THE WIDTH GUARD IS NOT AN OPTIMISATION, IT BREAKS A FEEDBACK LOOP ──────
+     *
+     * ResizeObserver watches BOTH axES, and applying spans changes the grid's HEIGHT —
+     * so an unguarded callback re-triggers itself. It would settle rather than spin,
+     * since the second pass computes identical spans, but it costs a second full
+     * measure of every card and is exactly the shape that logs "ResizeObserver loop
+     * completed with undelivered notifications". Only a WIDTH change can alter
+     * wrapping, so only a width change needs a re-measure.
+     *
+     * rAF rather than a timeout because this is layout work that should land before a
+     * paint. It does not fire in a background tab, which is correct: the deferred
+     * measure runs when the tab becomes visible, so a stale span is never displayed.
+     */
+    let queued = 0
+    let lastWidth = 0
+    new ResizeObserver((entries) => {
+      const width = Math.round(entries[0].contentRect.width)
+      if (width === lastWidth) return
+      lastWidth = width
+      cancelAnimationFrame(queued)
+      queued = requestAnimationFrame(layout)
+    }).observe(grid)
+
+    /* Handed back rather than closed over, so the filter can re-partition after it
+       changes which cards are visible. Same reason the grid is a parameter: the
+       caller holds a value it can prove is callable. */
+    return layout
+  }
+
+  const grid = document.querySelector<HTMLElement>('.masonry')
+  const relayout = grid ? enhance(grid) : () => {}
+
+  /**
+   * ── THE FACET CHIPS: ENABLE, THEN GROW TO FILL THE ROW BUDGET ────────────────
+   *
+   * The markup ships 5 topics and 3 genres, disabled, because filtering is
+   * client-side and a control that cannot work should say so. Everything below is the
+   * enhancement: enable what is there, then reveal as many more chips as fit in two
+   * rows (three below `md`, where the groups stack and there is width to spare).
+   *
+   * ── PACKED IN ARITHMETIC, NOT BY TRYING LAYOUTS ──────────────────────────────
+   *
+   * The obvious implementation reveals one chip, measures the row count, and repeats —
+   * which is up to 31 forced layout flushes per group, on every resize. A chip's width
+   * does not depend on how many of its siblings are visible, so instead: reveal
+   * everything once, read every width in a single pass, then simulate the wrap in
+   * arithmetic. One layout read, no thrash.
+   */
+  function fitRow(list: HTMLElement, budget: number) {
+    const entries = Array.from(list.children) as HTMLElement[]
+    const chips = entries.filter((li) => !li.querySelector('.chip-more, .chip-fewer'))
+    const more = entries.find((li) => li.querySelector('.chip-more'))
+    const fewer = entries.find((li) => li.querySelector('.chip-fewer'))
+    if (!more || !fewer) return
+
+    const expanded = list.dataset.expanded === 'true'
+
+    /* Reveal everything so every width is measurable, then read in one pass. The
+       `more` control has to be measured too: it occupies a slot in the last kept row,
+       so packing without it would reveal one chip too many. */
+    for (const li of chips) li.hidden = false
+    more.hidden = false
+    fewer.hidden = true
+
+    const available = list.clientWidth
+    /* Read from the cascade rather than hardcoded, so it follows the token. */
+    const gap = parseFloat(getComputedStyle(list).columnGap) || 0
+    const widths = chips.map((li) => li.getBoundingClientRect().width)
+    const moreWidth = more.getBoundingClientRect().width
+
+    /* How many rows a given prefix of chips occupies, with `tail` parked at the end. */
+    const rowsFor = (count: number, tail: number) => {
+      let rows = 1
+      let used = 0
+      for (const width of [...widths.slice(0, count), tail]) {
+        if (used === 0) used = width
+        else if (used + gap + width <= available) used += gap + width
+        else {
+          rows++
+          used = width
+        }
+      }
+      return rows
+    }
+
+    if (expanded) {
+      /* Everything shown, and `fewer` closes it — parked at the end of the run, which
+         is where the reader's eye ends up rather than back at the heading. */
+      more.hidden = true
+      fewer.hidden = false
+      return
+    }
+
+    /* The largest prefix that still fits the budget. It CAN land below the static floor
+       of 5 and 3 — at 375 a couple of long labels fill three rows on their own — and
+       that is right: fitting the space is the goal, and overflowing it to honour a
+       floor chosen for the no-script case would be the wrong trade. */
+    let shown = chips.length
+    while (shown > 1 && rowsFor(shown, moreWidth) > budget) shown--
+
+    for (const [i, li] of chips.entries()) li.hidden = i >= shown
+
+    /* Nothing left to reveal means nothing to reveal it with. */
+    more.hidden = shown >= chips.length
+  }
+
+  /* Two rows from `md`, three below it — reading the flag rather than restating the
+     width, so tokens.css stays the only place 48rem is written. */
+  function rowBudget() {
+    const md = getComputedStyle(document.documentElement).getPropertyValue('--breakpoint-md')
+    return md.trim() === 'true' ? 2 : 3
+  }
+
+  /* Re-fit only. SEPARATE FROM WIRING ON PURPOSE: this runs on every resize and on
+     font load, and folding the listener registration in here would attach a new click
+     handler on each pass. */
+  function fitAllFacets() {
+    const budget = rowBudget()
+    for (const list of document.querySelectorAll<HTMLElement>('.facet-chips')) {
+      fitRow(list, budget)
+    }
+  }
+
+  /* Wiring. Runs exactly once. */
+  function wireFacets() {
+    const groups = document.querySelectorAll<HTMLElement>('.facet-group')
+    if (!groups.length) return
+
+    for (const group of groups) {
+      const list = group.querySelector<HTMLElement>('.facet-chips')
+      if (!list) continue
+
+      /* Enable. The label's missing verb is NOT restored here — `applySelection`
+         below rewrites every chip's `aria-label` from its live count and state, and
+         two writers of one attribute is a bug waiting to be found. This clears only
+         the resting `aria-disabled`; a zero-hit chip earns it back there. */
+      for (const chip of group.querySelectorAll<HTMLElement>('.chip[aria-disabled]')) {
+        chip.removeAttribute('aria-disabled')
+      }
+
+      const more = list.querySelector<HTMLButtonElement>('.chip-more')
+      const fewer = list.querySelector<HTMLButtonElement>('.chip-fewer')
+
+      more?.addEventListener('click', () => {
+        list.dataset.expanded = 'true'
+        fitRow(list, rowBudget())
+        /* Focus follows the disclosure to the control that replaced it, so a keyboard
+           user is not dropped at the top of a list that just grew under them. */
+        fewer?.focus()
+      })
+
+      fewer?.addEventListener('click', () => {
+        list.dataset.expanded = 'false'
+        fitRow(list, rowBudget())
+        more?.focus()
+      })
+    }
+
+    fitAllFacets()
+
+    /*
+     * Label widths change with the font and the row budget changes with the rung, so
+     * the fit re-runs on both.
+     *
+     * OBSERVING A GROUP, NOT `.facets` — that element is `display: contents`, so it has
+     * no box and a ResizeObserver on it would never fire. Width-guarded for the same
+     * reason the masonry's is: revealing chips changes the list's HEIGHT, and an
+     * unguarded observer feeds itself.
+     */
+    document.fonts.ready.then(fitAllFacets)
+
+    let queuedFit = 0
+    let lastFacetWidth = 0
+    new ResizeObserver((entries) => {
+      const width = Math.round(entries[0].contentRect.width)
+      if (width === lastFacetWidth) return
+      lastFacetWidth = width
+      cancelAnimationFrame(queuedFit)
+      queuedFit = requestAnimationFrame(fitAllFacets)
+    }).observe(groups[0])
+  }
+
+  wireFacets()
+
+  /**
+   * ── THE FILTER ───────────────────────────────────────────────────────────────
+   *
+   * Query parameters driving client-side JS — docs/urls-and-filtering.md. Filter
+   * state lives in the URL so a configuration can be linked to, which is also why
+   * every chip is a real anchor carrying the URL of the state after its own click.
+   *
+   * ── THE DOM IS THE FACET INDEX ───────────────────────────────────────────────
+   *
+   * There is no JSON index and there does not need to be one while every document
+   * renders. Every card carries `data-genre` and `data-topics` as space-separated
+   * clean slugs, so one CSS selector IS the whole AND intersection and the counts
+   * come from the same query that does the hiding. It comes back when show-more
+   * stops rendering everything, around 150 items.
+   */
+  type FacetKey = 'topic' | 'genre'
+  type Selection = Record<FacetKey, string[]>
+
+  const FACET_KEYS: readonly FacetKey[] = ['topic', 'genre']
+
+  function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+    const cards = Array.from(grid.children) as HTMLElement[]
+    const chips = Array.from(nav.querySelectorAll<HTMLAnchorElement>('.chip[data-facet]'))
+    const groups = Array.from(nav.querySelectorAll<HTMLElement>('.facet-group'))
+    const countLine = document.querySelector<HTMLElement>('.result-count')
+    const status = document.querySelector<HTMLElement>('.result-status')
+    const showMore = document.querySelector<HTMLButtonElement>('.show-more')
+    const showAll = document.querySelector<HTMLButtonElement>('.show-all')
+
+    /*
+     * ── THE REVEAL, WHICH IS THE SECOND AXIS ─────────────────────────────────
+     *
+     * How many cards are shown is two independent things: the FILTER, which lives in
+     * the URL and is shareable, and the REVEAL, which does not and is not (Andy,
+     * 2026-08-31). It resets on navigating away, which is the point — a link should
+     * carry what you searched for, not how far you had scrolled through it.
+     *
+     * THE TWO NEVER OVERLAP. A filtered view shows every match and offers no
+     * controls: the largest topic holds 15 of 45, so filtering is already a
+     * reduction, and truncating a reduction to 24 would be a second cut nobody asked
+     * for. The reveal is REMEMBERED across that, so expanding, filtering, and
+     * clearing puts you back where you were rather than back at 24.
+     *
+     * That non-overlap is also what keeps the masonry honest: truncation is always a
+     * DOM SUFFIX, so it can never disturb the ladder's count over the visible set.
+     * If the two axes ever did combine, that guarantee would need re-checking.
+     */
+    const STEP = 24
+    let revealed = STEP
+
+    /* Every slug the page knows about, read off the chips the build already tallied.
+       An unrecognised `?topic=` value is dropped against this — and because slugify
+       emits only [a-z0-9-], anything that survives is safe to interpolate into a
+       selector without escaping. */
+    const known: Record<FacetKey, Set<string>> = {
+      topic: new Set(),
+      genre: new Set(),
+    }
+    for (const chip of chips) {
+      const key = chip.dataset.facet as FacetKey
+      if (chip.dataset.slug) known[key].add(chip.dataset.slug)
+    }
+
+    const empty = (): Selection => ({topic: [], genre: []})
+
+    function withGroup(sel: Selection, key: FacetKey, values: string[]): Selection {
+      const next: Selection = {topic: [...sel.topic], genre: [...sel.genre]}
+      next[key] = values
+      return next
+    }
+
+    function toggle(sel: Selection, key: FacetKey, slug: string): Selection {
+      const on = sel[key].includes(slug)
+      return withGroup(sel, key, on ? sel[key].filter((s) => s !== slug) : [...sel[key], slug])
+    }
+
+    /*
+     * ── READING THE URL ──────────────────────────────────────────────────────
+     *
+     * COMMA-JOINED — `?topic=a,b&genre=method` (Andy, 2026-08-31). `getAll().join()`
+     * rather than `get()` so a repeated parameter is understood too: it costs one
+     * word and means a hand-edited or double-appended URL still resolves.
+     *
+     * UNKNOWN VALUES ARE DROPPED SILENTLY, and the cleaned URL is written back with
+     * `replaceState` so a stale shared link heals itself. Note the consequence for
+     * phase 6: the nginx rule rewriting `/insights/tag/{slug}/` to `?topic={slug}`
+     * was designed assuming altLabel matching would catch a renamed concept. Without
+     * it a renamed concept's old tag URL lands here, drops, and shows the unfiltered
+     * index — graceful, and now a known consequence rather than a surprise.
+     */
+    function readSelection(search: string): Selection {
+      const params = new URLSearchParams(search)
+      const sel = empty()
+
+      for (const key of FACET_KEYS) {
+        const raw = params.getAll(key).join(',').split(',')
+        sel[key] = [...new Set(raw.filter((slug) => known[key].has(slug)))]
+      }
+
+      return sel
+    }
+
+    /*
+     * The URL for a given selection. Values are sorted ALPHABETICALLY rather than
+     * kept in click order, so one filter state is one URL — the normalisation
+     * docs/urls-and-filtering.md asks for. Alphabetical rather than chip order
+     * because chip order is count-descending and therefore moves as content is
+     * published; a shared link should not depend on the corpus.
+     *
+     * Built from `location.pathname`, not a literal `/insights/`, so the script does
+     * not carry a second copy of the route and a trailing-slash difference cannot
+     * turn a history write into a navigation.
+     */
+    function urlFor(sel: Selection) {
+      const params = FACET_KEYS.filter((key) => sel[key].length).map(
+        (key) => `${key}=${[...sel[key]].sort().join(',')}`,
+      )
+      return params.length ? `${location.pathname}?${params.join('&')}` : location.pathname
+    }
+
+    /*
+     * ── ONE SELECTOR IS THE WHOLE INTERSECTION ───────────────────────────────
+     *
+     * `~=` matches one word of a space-separated attribute natively, so
+     * `[data-topics~="knowledge-graphs"][data-genre="method"]` is the AND of a topic
+     * and a genre as a single selector. The script never splits a string to test
+     * membership, and nothing here reads rendered text — which is what keeps preview
+     * mode's stega-encoded strings out of the comparison.
+     *
+     * AND ACROSS GENRES IS A REAL CONSTRAINT, NOT A BUG. `data-genre` is
+     * single-valued, so two selected genres produce a selector that can never match.
+     * That is AND behaving as specified, and it is exactly why live counts are not
+     * separable from it: once one genre is chosen, every other genre counts zero and
+     * goes unavailable, so the empty state is unreachable by clicking.
+     */
+    function matcher(sel: Selection) {
+      return (
+        sel.topic.map((slug) => `[data-topics~="${slug}"]`).join('') +
+        sel.genre.map((slug) => `[data-genre="${slug}"]`).join('')
+      )
+    }
+
+    function countFor(selector: string) {
+      return selector === '' ? cards.length : cards.filter((card) => card.matches(selector)).length
+    }
+
+    /*
+     * ── ONE STRING, TWO CONSUMERS ────────────────────────────────────────────
+     *
+     * The visible line and the announcement are the same sentence, built once. That
+     * is the answer to "can the message that changes on screen be the message a
+     * screen reader hears" — it can, and it is the same function; the two elements
+     * exist only because one of them must not speak on load.
+     *
+     * IT HAS TO BE SELF-SUFFICIENT. A live region is heard with no surrounding
+     * context, so "14" would be meaningless — the sentence has to say what 14 is.
+     *
+     * What it deliberately does NOT say is which filter caused the change, and that
+     * is not an omission: the chip that was just clicked is the focused element, and
+     * its own accessible name already changed to "Method, 14 results, selected,
+     * remove filter". Naming the filter here would say it twice.
+     *
+     * Wording is Andy's, 2026-08-31. "insights" and not "resources" — the latter is
+     * the content model's word, used throughout docs/urls-and-filtering.md and
+     * nowhere a visitor can see it. Two cases he did not specify and I have filled in
+     * rather than emitting bad English — both one-string changes: the singular, and
+     * zero, which reads "No matching insights" rather than "Displaying 0".
+     */
+    const isFiltered = (sel: Selection) => FACET_KEYS.some((key) => sel[key].length)
+
+    /*
+     * ── THE ONLY PAGE-SPECIFIC STRING IN THIS SCRIPT ─────────────────────────
+     *
+     * Presentations gets the same masonry, the same facet groups and the same footer,
+     * so this whole script is portable — everything else in it is addressed by class
+     * name or read from `location.pathname`. Naming the noun once means the port is
+     * one line rather than a search for four string literals.
+     *
+     * NOT EXTRACTED TO A MODULE YET, deliberately: a second consumer is the trigger
+     * for promotion and Presentations does not exist. When it does, this and the
+     * masonry belong in one module together and the noun becomes its argument.
+     */
+    const NOUN = {one: 'insight', many: 'insights'}
+    const noun = (n: number) => (n === 1 ? NOUN.one : NOUN.many)
+
+    function describe(sel: Selection, shown: number) {
+      if (isFiltered(sel)) {
+        if (shown === 0) return `No matching ${NOUN.many}`
+        return `Displaying ${shown} matching ${noun(shown)}`
+      }
+      const total = cards.length
+      if (shown >= total) return `Displaying all ${total} ${noun(total)}`
+      return `Displaying ${shown} of ${total} ${noun(total)}`
+    }
+
+    /*
+     * The live region is CLEARED shortly after it speaks, and that is not
+     * housekeeping. Its text duplicates the visible line word for word, so leaving it
+     * populated puts the same sentence twice in a row for anyone reading the page
+     * linearly. Announcing is a mutation, not a state — once it has been read the
+     * region has no reason to hold anything.
+     *
+     * One timer, reset on each call, so a second change inside the window replaces
+     * the message rather than having its own clear cancelled by the first.
+     */
+    let clearAnnouncement = 0
+    function announce(message: string) {
+      if (!status) return
+      status.textContent = message
+      clearTimeout(clearAnnouncement)
+      clearAnnouncement = window.setTimeout(() => {
+        status.textContent = ''
+      }, 3000)
+    }
+
+    /*
+     * ── THE ONE WRITER ───────────────────────────────────────────────────────
+     *
+     * Everything derived from the selection is written here and nowhere else: which
+     * cards are visible, every chip's count, state, name and href, and each group's
+     * reset control. State goes in, the whole page comes out — so there is no
+     * incremental update to get out of step with the URL.
+     */
+    let current = empty()
+
+    /* False for exactly one call — the initial render — because the region must not
+       read a shared `?topic=` link's count out over the page load. Back and Forward
+       DO announce: the content changed and the visitor asked for it. */
+    function applySelection(sel: Selection, shouldAnnounce = true) {
+      current = sel
+
+      /*
+       * ONE PASS SETS BOTH AXES. A card is shown when it matches the filter AND falls
+       * within the reveal — and the reveal only applies when there is no filter, so
+       * in practice exactly one of the two is ever doing work.
+       *
+       * `shown` counts survivors rather than using the loop index, so the cutoff is
+       * "the first N that match" rather than "the first N in the DOM". Those are the
+       * same thing while the axes stay mutually exclusive; writing it this way means
+       * the day they stop being exclusive, this line is already right.
+       */
+      const filtered = isFiltered(sel)
+      const selector = matcher(sel)
+      let shown = 0
+      for (const card of cards) {
+        const matches = selector === '' || card.matches(selector)
+        card.hidden = !matches || (!filtered && shown >= revealed)
+        if (!card.hidden) shown++
+      }
+
+      /* The handover: from here `hidden` is the only thing truncating, so the
+         pre-paint CSS rule must stop. Set in the same synchronous pass that writes
+         the flags above, so no frame sees both mechanisms or neither. */
+      grid.dataset.hydrated = ''
+
+      /* "Show all" while anything is held back; "Show more" only while a further step
+         would leave a remainder — otherwise it is a second button doing exactly what
+         the first one does. At 45 with a step of 24 that means "Show all" alone; at
+         50 it means both, until the first press. */
+      if (showMore) showMore.hidden = filtered || revealed + STEP >= cards.length
+      if (showAll) showAll.hidden = filtered || shown >= cards.length
+
+      for (const chip of chips) {
+        const key = chip.dataset.facet as FacetKey
+        const slug = chip.dataset.slug ?? ''
+        const selected = sel[key].includes(slug)
+        const next = toggle(sel, key, slug)
+
+        /* STRICT AND: an unselected chip shows what you would get by adding it. A
+           selected one shows the current result count, since adding what is already
+           there changes nothing — the honest number either way. */
+        const count = countFor(selected ? selector : matcher(next))
+
+        chip.setAttribute('href', urlFor(next))
+
+        /* The count is still written even when it will not be shown, so the chip has
+           something to reveal the moment the intersection opens up again. `is-zero`
+           drops it and widens the chip to fill the space it left — see the rule. */
+        const countEl = chip.querySelector<HTMLElement>('.chip-count')
+        if (countEl) countEl.textContent = String(count)
+        chip.classList.toggle('is-zero', count === 0 && !selected)
+        const label = chip.querySelector('.chip-label')?.textContent ?? ''
+
+        /*
+         * THE ACCESSIBLE NAME CHANGES BY STATE, and that is the point rather than a
+         * workaround: a selected chip's href REMOVES its filter where an unselected
+         * one's adds it, so the same control means opposite things and only the fill
+         * says so visually.
+         *
+         * `aria-current`, never `aria-pressed`, which is button-only — and it draws
+         * the selected pill too, since DESIGN.md has the attribute carry the fact.
+         * `aria-disabled` rather than dropping `href`, so a zero-hit chip stays
+         * focusable and discoverable.
+         */
+        if (selected) {
+          chip.setAttribute('aria-current', 'true')
+          chip.removeAttribute('aria-disabled')
+          chip.setAttribute('aria-label', `${label}, ${count} results, selected, remove filter`)
+        } else {
+          chip.removeAttribute('aria-current')
+          if (count === 0) {
+            chip.setAttribute('aria-disabled', 'true')
+            chip.setAttribute('aria-label', `${label}, no results, unavailable`)
+          } else {
+            chip.removeAttribute('aria-disabled')
+            chip.setAttribute('aria-label', `${label}, ${count} results, add filter`)
+          }
+        }
+      }
+
+      /* Present only once its own group has a selection, and pointing at the current
+         state minus that group — which is why there is no global reset: two scoped
+         controls are unambiguous where one would not be. */
+      for (const group of groups) {
+        const key = group.dataset.facetGroup as FacetKey
+        const reset = group.querySelector<HTMLAnchorElement>('.facet-reset')
+        if (!reset) continue
+        reset.hidden = sel[key].length === 0
+        reset.setAttribute('href', urlFor(withGroup(sel, key, [])))
+      }
+
+      const message = describe(sel, shown)
+      if (countLine) countLine.textContent = message
+      if (shouldAnnounce) announce(message)
+
+      /* Counts change chip widths, so the row budget has to be re-packed; and the
+         visible card set changed, so the spans have to be re-measured. */
+      fitAllFacets()
+      relayout()
+    }
+
+    /*
+     * ── HISTORY: PUSH ONCE, THEN REPLACE ─────────────────────────────────────
+     *
+     * (Andy, 2026-08-31.) The first filter pushes and every refinement replaces, so
+     * one Back returns to the unfiltered index and a second leaves the page — rather
+     * than trapping someone behind a dozen presses, which is what a push per toggle
+     * would do.
+     *
+     * `pushed` is re-armed on `popstate`: once Back has moved off the entry this
+     * script pushed, the next filter has to push a fresh one rather than overwrite
+     * the entry the visitor just returned to.
+     */
+    let pushed = false
+
+    function commit(sel: Selection) {
+      const url = urlFor(sel)
+      if (pushed) history.replaceState(null, '', url)
+      else {
+        history.pushState(null, '', url)
+        pushed = true
+      }
+      applySelection(sel)
+    }
+
+    /*
+     * ONE DELEGATED LISTENER, on the nav rather than per control — `.facets` is
+     * `display: contents` and so has no box, but events bubble through it regardless
+     * (that only bites a ResizeObserver, which needs one).
+     *
+     * MODIFIED CLICKS ARE LEFT ALONE. Middle-click, cmd-click and shift-click all
+     * navigate to the filtered URL for real, which is the whole reason these are
+     * anchors: a filtered view is meant to be a shareable artifact.
+     */
+    nav.addEventListener('click', (event) => {
+      if (event.defaultPrevented) return
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return
+      }
+
+      const target = (event.target as Element | null)?.closest<HTMLElement>(
+        '.chip[data-facet], .facet-reset',
+      )
+      if (!target) return
+
+      /* `pointer-events: none` already stops the mouse reaching a disabled chip, but
+         it stays in the tab order by design, and Enter on a focused anchor still
+         fires a click. */
+      if (target.getAttribute('aria-disabled') === 'true') {
+        event.preventDefault()
+        return
+      }
+
+      event.preventDefault()
+
+      const group = target.closest<HTMLElement>('.facet-group')
+      const isReset = target.classList.contains('facet-reset')
+      const key = (isReset ? group?.dataset.facetGroup : target.dataset.facet) as FacetKey
+      if (!key) return
+
+      commit(
+        isReset ? withGroup(current, key, []) : toggle(current, key, target.dataset.slug ?? ''),
+      )
+
+      /* Reset moves focus to the first facet in the group it cleared — the control
+         it replaced has just gone `hidden`, so focus would otherwise fall to the
+         body. `:not([hidden])` because the re-fit above may have re-packed the row.
+         Whether this should be the group HEADING instead, which announces "Topics"
+         where a chip name is contextless, is still open and pairs with the wording
+         of the live region. */
+      if (isReset) group?.querySelector<HTMLElement>('li:not([hidden]) .chip')?.focus()
+    })
+
+    /*
+     * ── REVEALING MORE ───────────────────────────────────────────────────────
+     *
+     * No history entry: the reveal is not in the URL, so pressing Back after "Show
+     * all" leaves the page rather than re-collapsing it. That is the accepted cost of
+     * keeping the URL about WHAT you are looking at rather than how much of it.
+     *
+     * FOCUS HAS TO BE CAUGHT. Both controls can disappear as a result of being
+     * pressed, and a button that removes itself drops focus to the body — which for a
+     * keyboard user means starting the page again. The fallback ladder is: the other
+     * control if it survived, otherwise the count line, which is focusable for exactly
+     * this and reads out the new total when focus lands on it.
+     */
+    function reveal(next: number, pressed: HTMLButtonElement) {
+      revealed = Math.min(next, cards.length)
+      applySelection(current)
+
+      if (!pressed.hidden) return
+      const fallback = pressed === showMore && showAll && !showAll.hidden ? showAll : countLine
+      fallback?.focus()
+    }
+
+    showMore?.addEventListener('click', () => reveal(revealed + STEP, showMore))
+    showAll?.addEventListener('click', () => reveal(cards.length, showAll))
+
+    /* Back and Forward re-read the URL rather than replaying a stored state object:
+       one parser, and an entry written before a vocabulary change still gets cleaned. */
+    addEventListener('popstate', () => {
+      pushed = false
+      applySelection(readSelection(location.search))
+    })
+
+    /* Initial state. The canonical URL is written back whenever the address bar does
+       not already hold it — which covers both a dropped unknown value and an
+       unsorted one, with `replaceState` so no entry is added. */
+    const initial = readSelection(location.search)
+    const canonical = urlFor(initial)
+    if (canonical !== location.pathname + location.search) {
+      history.replaceState(null, '', canonical)
+    }
+
+    /*
+     * ── ARRIVING FILTERED OPENS BOTH GROUPS ──────────────────────────────────
+     *
+     * (Andy, 2026-08-31.) Someone who clicks a chip watched the row they clicked it
+     * in, so they know what the truncated set held. Someone arriving on a shared
+     * `?topic=` link did not — and because excluded facets are disabled IN PLACE
+     * rather than sorted away, the five chips they land on may all be dimmed, which
+     * reads as a broken page rather than a narrow one. Opening both groups shows
+     * what the filter is a filter OF.
+     *
+     * BOTH groups, not just the one carrying a parameter: a topic filter is exactly
+     * what makes the Genres row go quiet, so the group with no parameter in the URL
+     * is the one most likely to look inexplicable.
+     *
+     * This is the arrival state only. From here the disclosure is the visitor's —
+     * "See fewer" collapses it and clearing the filter does not reopen it.
+     */
+    if (FACET_KEYS.some((key) => initial[key].length)) {
+      for (const group of groups) {
+        const list = group.querySelector<HTMLElement>('.facet-chips')
+        if (list) list.dataset.expanded = 'true'
+      }
+    }
+
+    applySelection(initial, false)
+  }
+
+  const facetsNav = document.querySelector<HTMLElement>('.facets')
+  if (grid && facetsNav) wireFilter(grid, facetsNav)
+</script>

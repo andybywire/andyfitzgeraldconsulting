@@ -1,0 +1,776 @@
+---
+/**
+ * The article / insight detail page — item 1 in the phase 4 order, and the page
+ * type with the most structural leverage: it is where DESIGN.md is most specific
+ * and where the type system either works or does not.
+ *
+ * ── THE STACK, AND WHERE THE NUMBERS COME FROM ───────────────────────────────
+ *
+ * Read off the Figma Article board (253:1425) at its 1440 frame, then expressed in
+ * existing tokens rather than as lengths. Every one of these landed on a token
+ * already in the system, which is the useful result:
+ *
+ *   masthead        phase 3
+ *   hero            320 tall, full bleed          -> SanityHero's 20rem cap
+ *   title band      64 above / 16 below            -> rhythm-band / heading-close
+ *     eyebrow -> h1 8                              -> rhythm-tight
+ *   article band    0 above / 64 below             -> see the note on .article-grid
+ *     prose         656 wide                       -> --col-main
+ *     rail          x765, 231 wide                 -> --col-rail (765 = 656 + 109)
+ *   RSS CTA         96/96, accent                  -> NOT BUILT, see below
+ *   related         96/96, three 316 cards         -> NOT BUILT, see below
+ *   footer          phase 3
+ *
+ * ── TWO BANDS ARE DELIBERATELY MISSING ───────────────────────────────────────
+ *
+ * The RSS CTA and Related Insights are not here. Related Insights is three article
+ * cards, and cards are index-page work — building them from one consumer would
+ * design the card against the wrong page. The CTA needs the ghost button, which is
+ * also a component several pages want. Both sit below the fold and neither affects
+ * what this page exists to settle, so they are the next reviewable pieces rather
+ * than this one.
+ *
+ * ── WHAT THIS PAGE EXISTED TO SETTLE, AND DID ────────────────────────────────
+ *
+ * 48rem carries two unrelated decisions — the masthead nav going to one row, and
+ * the content grid opening its 8+3 split — and only the nav was thought to be
+ * comfortable there. The split takes the prose from 66 characters at 767 to 49 at
+ * 768, recovering around 1028, with the rail at 166px; DESIGN.md accepted that on
+ * the grounds that a short measure is the cheaper failure, and said to judge it
+ * against a real article rather than a specimen.
+ *
+ * **SETTLED AT 48rem, judged on this page (Andy, 2026-08-26.)** The 49-character
+ * measure reads fine in practice, so the breakpoint stays where it is and stops
+ * being "the one to move first". It also stays cheap to revisit, because nothing
+ * here hardcodes a width — it is one `min-width` in tokens.css.
+ *
+ * Two more calls settled the same way, both of them values the boards could not
+ * show: the sticky rail's `top` offset, and rail headings taking `text-heading`
+ * rather than `text-muted` in dark.
+ */
+import {loadQuery} from '../../sanity/load-query'
+import {
+  INSIGHT_DETAIL_QUERY,
+  INSIGHT_RSS_BAND_QUERY,
+  INSIGHT_SLUGS_QUERY,
+} from '../../sanity/queries/insights'
+import {CASE_STUDY_BAND_QUERY, CASE_STUDY_DETAIL_QUERY} from '../../sanity/queries/case-studies'
+import {GENRE_NAV_QUERY, INSIGHT_NAV_TYPES} from '../../sanity/queries/genre-nav'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Band from '../../components/Band.astro'
+import Grid from '../../components/Grid.astro'
+import Masthead from '../../components/Masthead.astro'
+import Footer from '../../components/Footer.astro'
+import Prose from '../../components/prose/Prose.astro'
+import EntryHeader from '../../components/EntryHeader.astro'
+import TopicList from '../../components/TopicList.astro'
+import NoteEntry from '../../components/NoteEntry.astro'
+import CaseStudyEntry from '../../components/CaseStudyEntry.astro'
+import GenreNav from '../../components/GenreNav.astro'
+import RssBand from '../../components/bands/RssBand.astro'
+import RelatedBand from '../../components/bands/RelatedBand.astro'
+import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
+import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
+import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
+import {headingId, headingText} from '../../components/prose/headingId'
+
+export async function getStaticPaths() {
+  const rows = await loadQuery(INSIGHT_SLUGS_QUERY)
+  /* The query already filters on `defined(slug.current)`, so nothing should be
+     dropped here — but TypeGen types a projected slug as `string | null` because
+     it cannot see the filter, and a null would become the literal path
+     `/insights/null`. Narrowing rather than asserting. */
+  return rows
+    .filter((row): row is {params: {slug: string}} => Boolean(row.params.slug))
+    .map((row) => ({params: row.params}))
+}
+
+/* Two queries rather than one projection, and not by preference — folding the band into
+   INSIGHT_DETAIL_QUERY silently untypes it. See INSIGHT_RSS_BAND_QUERY for the mechanism.
+   They are independent, so they go together rather than in series. */
+const {slug} = Astro.params
+const [insight, bands, related] = await Promise.all([
+  loadQuery(INSIGHT_DETAIL_QUERY, {slug}),
+  loadQuery(INSIGHT_RSS_BAND_QUERY, {slug}),
+  loadQuery(RELATED_POOL_QUERY),
+])
+
+/* Loud rather than quiet. Every slug here came out of the dataset a moment ago,
+   so a miss means the two queries disagree — which should fail the build, not
+   ship a page with an empty body. */
+if (!insight) throw new Error(`[insights/[slug]] no document for slug "${slug}"`)
+
+/* `genre` is defined on all 42 documents (verified 2026-08-26), so the fallback is
+   for a future document mid-edit rather than for the corpus. */
+const genreLabel = insight.genre ?? 'Insight'
+
+/**
+ * ── ONE ROUTE, TWO ENTRY SHAPES ──────────────────────────────────────────────
+ *
+ * `note` joins `article` and `caseStudy` on this route rather than getting a file
+ * of its own, because everything AROUND the entry is shared: the slug paths, all
+ * three queries, the permalink, the related ranking and both bands below. What
+ * differs is only what sits between <main> and the RSS band.
+ *
+ * Branching on `_type` and not on `genre`. Genre is a SKOS prefLabel and can be
+ * renamed in the Studio — it was "Clipping" until 2026-09-01 and is now "Web
+ * Clipping" — where `_type` is structural. NoteCard already branches this way for
+ * the same reason.
+ *
+ * The three note VARIANTS are NoteEntry's business, not the route's.
+ */
+const isNote = insight._type === 'note'
+const isCaseStudy = insight._type === 'caseStudy'
+
+/**
+ * ── THE CASE STUDY'S OWN PROJECTION, FETCHED ONLY FOR A CASE STUDY ───────────
+ *
+ * `INSIGHT_DETAIL_QUERY` returns the caseStudy member of its union, which carries the
+ * shared fields and none of the eleven this page type needs. Those live in
+ * CASE_STUDY_DETAIL_QUERY, for the reason its own header gives.
+ *
+ * AWAITED SEQUENTIALLY, and on purpose. It cannot join the `Promise.all` above
+ * because the type is not known until that resolves, and the alternatives are worse:
+ * running it unconditionally would fire a wasted query on all 40 non-case-study
+ * pages, and passing `_type` through `getStaticPaths` props — the idiomatic way to
+ * know it earlier — is not reliable across BOTH build modes, since the preview
+ * environment builds with `output: "server"` where those props may not be produced.
+ *
+ * The cost is one serial round trip on seven pages of a forty-seven page build. The
+ * two case-study queries go together inside that trip — they are independent of each
+ * other and both need only the slug, so only the FIRST await is serial.
+ */
+const [caseStudy, caseStudyBands] = isCaseStudy
+  ? await Promise.all([
+      loadQuery(CASE_STUDY_DETAIL_QUERY, {slug}),
+      loadQuery(CASE_STUDY_BAND_QUERY, {slug}),
+    ])
+  : [null, null]
+
+/* Loud rather than quiet, matching the guard above: the type came out of the first
+   query, so a miss means the two queries disagree about the same document. */
+if (isCaseStudy && !caseStudy) {
+  throw new Error(`[insights/[slug]] no caseStudy projection for slug "${slug}"`)
+}
+
+/**
+ * ── PREVIOUS / NEXT WITHIN THE GENRE ─────────────────────────────────────────
+ *
+ * Joined to the case study's serial await rather than the `Promise.all` above, for the
+ * same reason: it needs `insight.genre` and `insight.pubDate`, which only exist once
+ * the detail query has resolved. One round trip, and it runs for every document type
+ * on this route rather than only for case studies.
+ *
+ * SKIPPED WHEN EITHER KEY IS MISSING. A document mid-edit with no genre or no pubDate
+ * cannot be placed in a sequence, and `genreLabel`'s 'Insight' fallback must not leak
+ * in here — it would query for a genre no concept has and return two nulls, which is
+ * the right answer reached the wrong way.
+ */
+const canSequence = Boolean(insight.genre && insight.pubDate)
+const genreNav = canSequence
+  ? await loadQuery(GENRE_NAV_QUERY, {
+      types: INSIGHT_NAV_TYPES,
+      genre: insight.genre,
+      pubDate: insight.pubDate,
+      id: insight._id,
+    })
+  : null
+
+/*
+ * ── RELATED CONTENT ──────────────────────────────────────────────────────────
+ *
+ * The pool arrives unfiltered with the Genre tree beside it, and everything downstream is
+ * decided here: which branch this page draws from, which genres that admits, and how the
+ * pool ranks against this document's topics. See lib/related.ts for the rule.
+ *
+ * The Sanity `_type` picks the branch — an article draws from the Document branch minus the
+ * Note subtree, a note from the Note subtree. Genre then filters, and it is doing real work
+ * rather than restating the type: four documents stored as `article` carry a Presentation
+ * genre, and this is what keeps those interviews out of an article's related list.
+ *
+ * `topic` is projected by the pool query but not by INSIGHT_DETAIL_QUERY in the shape the
+ * ranker needs, so this document's own row is taken FROM THE POOL. It is in there — the
+ * pool is every publishable document — which also means one source for the topic shape
+ * rather than two projections to keep in step.
+ */
+const branch = branchForType(insight._type)
+const eligibleGenres = genresForBranch(branch, related.genres?.tops, related.genres?.concepts)
+const self = related.pool.find((row) => row._id === insight._id)
+const {items: relatedItems, isFallback} = rankRelated(
+  {_id: insight._id, topics: self?.topics},
+  related.pool,
+  eligibleGenres,
+)
+
+/**
+ * The rail's "On This Page" list — h2 blocks only, matching what the board draws.
+ *
+ * `flatMap` with a 0-or-1 array rather than `filter().map()`: it narrows and
+ * projects in one pass, so `block.style` is only reached where TypeScript has
+ * already established the block is a text block and not a `figure`, `code` or
+ * `table`.
+ *
+ * 13 of 42 insights have no h2 at all and every caseStudy has no `bodyText` field,
+ * so an empty list here is ordinary. The template omits the group rather than
+ * rendering an empty heading.
+ */
+const contents = (insight.bodyText ?? []).flatMap((block) =>
+  block._type === 'block' && block.style === 'h2'
+    ? [{id: headingId(block), label: headingText(block)}]
+    : [],
+)
+
+/* TypeGen types a dereferenced prefLabel as `string | null`, so the nulls are
+   filtered rather than asserted away. All 42 documents carry at least one topic. */
+const topics = (insight.topics ?? []).filter((topic): topic is string => Boolean(topic))
+
+/**
+ * The canonical permalink, for `u-url` / `u-uid`.
+ *
+ * Built from `Astro.site` rather than from `Astro.url`, which in a static build is
+ * whatever path the page is being generated at and in the SSR preview is the
+ * REQUEST url — including any query string a visitor arrived with. A permalink has
+ * to be the one canonical address, so it is composed from the two things that
+ * define it: the configured origin and the slug.
+ *
+ * `Astro.site` is typed `URL | undefined` because the config field is optional. It
+ * is set in astro.config.mjs for both build modes, so the fallback is unreachable
+ * today — but a bare `!` here would emit the string "undefined/insights/…" into a
+ * property whose whole job is to be a stable identifier, so it fails loudly instead.
+ */
+if (!Astro.site) throw new Error('[insights/[slug]] `site` is unset in astro.config.mjs')
+const permalink = new URL(`/insights/${slug}/`, Astro.site).href
+---
+
+<BaseLayout
+  title={insight.title ?? 'Untitled'}
+  description={insight.description ?? insight.shortDescription ?? undefined}
+>
+  <Masthead />
+
+  {
+    /*
+    <main> IS THE PAGE STACK, not <body>. `order` sorts among SIBLINGS, so if the
+    stack were <body> the masthead and footer would be in the sort too. Excluding
+    the chrome is what keeps the reorder local — and it earns the landmark. A skip
+    link has somewhere to point now; there isn't one yet.
+  */
+  }
+  <main>
+    {
+      /*
+      ── <article> IS THE WHOLE ENTRY, AND IT HAS TO BE ─────────────────────────
+
+      Title, hero and body in one element (2026-08-26). Two things forced it, and
+      they turned out to be the same thing:
+
+        - `h-entry` needs ONE root holding both `p-name` (the h1) and `e-content`
+          (the body). Bridgy Publish reads exactly those to build a syndicated copy,
+          so without a common ancestor POSSE cannot work. mf2 is not optional here —
+          webmentions are wanted, and the IndieWeb reads mf2, not JSON-LD.
+        - The <article> element previously wrapped the BODY ONLY, so it contained no
+          heading of its own. That was a real weakness on plain HTML terms and it is
+          gone for free.
+
+      IT IS ALSO THE FLEX COLUMN, which is what scopes the hero's `order` swap to
+      the three bands that participate. The RSS CTA and Related Insights will be
+      <main>'s later children, OUTSIDE this element — and that placement is
+      load-bearing rather than tidy: article cards are exactly the thing someone
+      marks up as `h-entry`, and nested inside this one a parser would read them as
+      CHILD entries, i.e. replies. Keeping them out is a structural guarantee where
+      a comment would be a promise.
+
+      The DOM is authored NARROW-FIRST — title, then hero — the rule the footer
+      already follows: source order is reading order, and the wide layout is the
+      exception. `order` is safe only because the hero is a non-interactive image,
+      so nothing focusable changes place. A band with controls must not be reordered
+      this way.
+    */
+    }
+    {
+      /* THE BRANCH. The two shapes share no markup — one band against two, no hero,
+         no rail nav, topics in the main column — so they are two arms rather than one
+         tree with conditionals in it. NoteEntry owns the note's markup AND its CSS;
+         the article's stay here, where they already were. */
+      isCaseStudy && caseStudy ? (
+        <CaseStudyEntry
+          title={caseStudy.title}
+          genre={genreLabel}
+          date={caseStudy.pubDate}
+          permalink={permalink}
+          hero={caseStudy.heroImage}
+          atGlance={caseStudy.atGlance}
+          whatDid={caseStudy.whatDid}
+          client={caseStudy.client}
+          projectGoal={caseStudy.projectGoal}
+          projectApproach={caseStudy.projectApproach}
+          projectOutcome={caseStudy.projectOutcome}
+          beforeImage={caseStudy.beforeImage}
+          afterImage={caseStudy.afterImage}
+          review={caseStudy.review}
+        />
+      ) : isNote ? (
+        <NoteEntry
+          title={insight.title}
+          genre={genreLabel}
+          date={insight.pubDate}
+          body={insight.bodyText}
+          topics={topics}
+          permalink={permalink}
+          clip={insight.clipRef}
+          book={insight.bookRef}
+        />
+      ) : (
+        <article class="h-entry">
+          {/* The eyebrow, title, permalink and hero all moved to <EntryHeader> in
+              2026-09-02's extraction — the note entry had written the title half
+              independently and case studies would have been a third copy. It also
+              owns the flex column that scopes the hero's `order` swap, so this
+              <article> stacks in ordinary block flow and no longer needs `.entry`. */}
+          <EntryHeader
+            title={insight.title}
+            genre={genreLabel}
+            date={insight.pubDate}
+            permalink={permalink}
+            hero={insight.heroImage}
+          />
+
+          <Band as="div" space="none" class="article-band">
+            <Grid class="article-grid">
+              {/*
+                ── A <div>, NOT AN <article> ANY MORE ─────────────────────────────
+
+                Two nested <article>s would claim an article within an article — which
+                is what the element means, and it is how a comment or a syndicated
+                excerpt is marked up. The entry is the <article>; this is its body.
+
+                `e-content` is scoped HERE rather than to the entry, which is the whole
+                point of the split: the title, the hero credit and the rail sit inside
+                `h-entry` but outside `e-content`, so a syndicated copy carries the body
+                without dragging the apparatus along.
+
+                THE SELECTOR IN base.css MOVED WITH IT — `article.detail` -> `.detail`,
+                9 rules. Every one lost exactly one type selector, so the ramp's internal
+                ordering is untouched; verified by measuring all 31 sibling gaps before
+                and after. See the note in base.css → Vertical rhythm.
+              */}
+              <div class="detail e-content">
+                <Prose value={insight.bodyText} />
+              </div>
+
+              {/*
+                ── <aside>, AND NESTING IT IN <article> IS THE POINT ───────────────
+
+                An <aside> scoped to an <article> means "tangentially related to THIS
+                article" rather than to the site, which is exactly a per-article rail.
+                (There is no `<sidebar>` element in HTML — it was proposed and never
+                shipped; <aside> is the one that exists.)
+
+                THE NESTING ALSO FIXES THE LANDMARK PROBLEM RATHER THAN CAUSING ONE.
+                An <aside> maps to the `complementary` landmark only when its nearest
+                sectioning ancestor is <body>, or when it carries an accessible name.
+                Inside <article> and unnamed, it maps to `generic` — so it contributes
+                no nameless landmark, and the two named <nav>s inside stay the
+                landmarks a screen-reader user navigates by. That is why there is
+                deliberately NO `aria-label` here: adding one would promote this to a
+                third landmark competing with the two real ones.
+
+                ── A CONTAINER HOLDING TWO NAVS, NOT ONE NAV ──────────────────────
+
+                DESIGN.md said "a <nav> with two groups" and was amended. Each group
+                gets a real accessible name from a heading already on screen via
+                `aria-labelledby`, where one nav around both would need an invented
+                label — no single visible heading covers "On This Page" and "Topics".
+                And it is the only shape the other two rails fit: the Services rail is
+                an image ABOVE the nav, which a <nav> cannot contain, and a Note's rail
+                is a source card with no nav at all.
+
+                The `rail-` prefix on the heading ids is a namespace against the body's
+                own h2 ids, which are slugified from heading text — an h2 titled "Rail
+                topics" would otherwise collide.
+              */}
+              {(contents.length > 0 || topics.length > 0) && (
+                <aside class="rail">
+                  {/*
+                      ── STICKINESS IS A PROPERTY OF THIS CHILD, NEVER OF .rail ──────
+
+                      One wrapper, because on an article BOTH groups pin together. That
+                      one indirection is also what makes the other two rails free: on
+                      Services the image is an ordinary sibling above the sticky child
+                      and scrolls away by itself, and a Note's rail simply marks nothing
+                      sticky. Three behaviors, one mechanism, no per-page branching.
+
+                      A <div> and not a <section>: it is a positioning wrapper with no
+                      thematic content of its own, and <section> is explicitly not a
+                      generic container — it would put a nameless entry in the outline.
+
+                      See the .rail style block for the two invariants this depends on.
+                    */}
+                  <div class="rail-sticky">
+                    {contents.length > 0 && (
+                      <nav class="rail-contents" aria-labelledby="rail-contents">
+                        <h3 id="rail-contents">On This Page</h3>
+                        <ul role="list">
+                          {contents.map((heading) => (
+                            <li>
+                              <a href={`#${heading.id}`}>{heading.label}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      </nav>
+                    )}
+
+                    {topics.length > 0 && (
+                      <TopicList
+                        topics={topics}
+                        id="rail-topics"
+                        as="h3"
+                        microformats
+                        class="rail-topics"
+                      />
+                    )}
+                  </div>
+                </aside>
+              )}
+            </Grid>
+          </Band>
+        </article>
+      )
+    }
+
+    {
+      /*
+      ── PREVIOUS / NEXT WITHIN THE GENRE ──────────────────────────────────────
+
+      IMMEDIATELY AFTER THE ENTRY AND BEFORE THE BANDS, which is where all three
+      boards draw it and which is also what makes its own bottom margin work: the
+      component decides that with `:has(+ [data-tone]...)`, so it has to be a SIBLING
+      of whichever band follows. Wrapping it in anything, or putting it inside
+      </article>, would break that silently.
+
+      Outside <article> for the same reason the two bands below are: sequence controls
+      are site apparatus, not part of the entry, and nothing here should be readable as
+      `e-content`.
+
+      The component renders nothing when a genre holds one document, so the three notes
+      and `cs-meetup` emit no nav at all rather than an empty row.
+    */
+    }
+    {
+      genreNav && (
+        <GenreNav genre={genreLabel} prev={genreNav.prev} next={genreNav.next} base="/insights/" />
+      )
+    }
+
+    {
+      /*
+      OUTSIDE `</article>`, deliberately. The board puts it here — article band, then RSS,
+      then Related, then the footer — and the markup agrees for a second reason: this is
+      site apparatus, not part of the entry. When the `h-entry` wrapper lands it must not
+      swallow a subscribe prompt as `e-content`.
+
+      Rendered only if the ladder produced a band. There is a site default, so null means
+      Settings carries no RSS band at all, and a heading over an empty band is worse than
+      no band.
+
+      AND NEVER ON A CASE STUDY. The ladder still resolves one for it — the Settings
+      default matches every type — but `caseStudy.bands` accepts only `bandWorkWithMe`,
+      and the Figma board agrees: it carries the RSS CTA instance marked `hidden="true"`
+      with a Connect/Work with me band in its place. So the suppression is a fact about
+      the page type rather than about the data, and it belongs here rather than in the
+      query, which has no business knowing what a template renders.
+    */
+    }
+    {
+      !isCaseStudy && bands?.rssBand && (
+        <RssBand
+          title={bands.rssBand.title}
+          message={bands.rssBand.message}
+          buttonTarget={bands.rssBand.buttonTarget}
+        />
+      )
+    }
+
+    {
+      /* Omitted entirely when the pool yields nothing — a heading over no cards is worse
+         than no band. Measured on the current corpus this cannot happen, since the thinnest
+         document still has five sibling matches, but a first-published document would hit
+         it. The noun follows the branch, so a note page reads "Related Notes". */
+      relatedItems.length > 0 && (
+        <RelatedBand
+          noun={branch === 'note' ? 'Notes' : 'Insights'}
+          isFallback={isFallback}
+          items={relatedItems}
+        />
+      )
+    }
+
+    {
+      /*
+      ── WORK WITH ME, ON A CASE STUDY ONLY ─────────────────────────────────────
+
+      AFTER Related, which is where the board puts it: article band 2, then the
+      hidden RSS CTA, then Related, then Connect/Work with me, then the footer
+      (verified against the board's own child order, 2026-09-02).
+
+      A case study is the one page type here that takes this band instead of the RSS
+      one, and the schema says so rather than the template guessing: `caseStudy.bands`
+      accepts only `bandWorkWithMe`, where `article` and `note` accept only `bandRss`.
+      That is also why the RSS band above is suppressed for it.
+
+      Resolved through the same three-tier ladder as every repeated band — document,
+      then page-type override, then Settings default — inside the GROQ, so this knows
+      nothing about precedence. All seven case studies currently fall through to the
+      site default; none carries its own.
+
+      Rendered only if the ladder produced one, matching RssBand's guard. There is a
+      site default today, so null would mean Settings carries no Work with Me band at
+      all, and an empty band is worse than none.
+    */
+    }
+    {
+      isCaseStudy && caseStudyBands?.workBand && (
+        <WorkWithMeBand
+          message={caseStudyBands.workBand.message}
+          clientLogos={caseStudyBands.workBand.clientLogos}
+        />
+      )
+    }
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* The page stack, the hero figure and the title band all moved to
+     <EntryHeader> — including the flex column that scopes the hero's `order`
+     swap. <article> stacks in ordinary block flow now. */
+
+  /* ── Article band ───────────────────────────────────────────────────────── */
+  /*
+   * NO TOP PADDING AT lg, AND THAT INVERSION IS THE POINT. The board draws this
+   * band 0 above / 64 below, because at desktop the hero has moved up and the title
+   * band's own 16 is the whole gap between the title and the prose.
+   *
+   * Below lg the hero sits BETWEEN them, so that 16 now binds the title to the hero
+   * and there is nothing left holding the hero off the first paragraph. The base
+   * case therefore needs the padding and lg drops it — which is ordinary
+   * mobile-first, not an exception to it.
+   */
+
+  .article-grid {
+    padding-block: var(--rhythm-band);
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .article-grid {
+      padding-block-start: 0;
+    }
+  }
+
+  .detail {
+    grid-column: var(--col-main);
+  }
+
+  /* ── The rail ───────────────────────────────────────────────────────────── */
+  /*
+   * ┌────────────────────────────────────────────────────────────────────────┐
+   * │  TWO INVARIANTS. BOTH FAIL SILENTLY.                                   │
+   * │                                                                        │
+   * │  1. .rail MUST REMAIN A STRETCHED GRID ITEM. Do not add                │
+   * │     `align-self: start`.                                               │
+   * │  2. NO `overflow` OTHER THAN `visible` on any ancestor between          │
+   * │     .rail-sticky and the page.                                         │
+   * └────────────────────────────────────────────────────────────────────────┘
+   *
+   * A sticky element can only travel inside its containing block, which is
+   * .rail's box. A grid item stretches to its row's height by default, so .rail is
+   * as tall as the prose beside it and the sticky child has the whole article to
+   * travel down. Measured at a 3000px prose column: stretched, the rail box is
+   * 3000px and the child pins; with `align-self: start` the box collapses to its
+   * own content height and the child scrolls away like anything else. There is
+   * nothing on screen to say why.
+   *
+   * <Band> and <Grid> set no `overflow`, deliberately, and neither does anything
+   * here. That is the second invariant, and it has the same failure shape.
+   *
+   * NO `grid-row` EITHER. Auto-placement is doing the right thing on its own: at md
+   * the two placement tokens do not overlap in columns, so both items land in row 1
+   * and share its height; at the base they are both `1 / -1`, so the rail is pushed
+   * to row 2 and takes <Grid>'s `rhythm-heading-major` row gap — which is correct,
+   * because what lands below genuinely does start with a heading.
+   */
+
+  .rail {
+    grid-column: var(--col-rail);
+  }
+
+  /* base.css keeps the UA's list indent for prose; a nav is not prose. */
+  .rail ul {
+    padding: 0;
+    list-style: none;
+  }
+
+  /* ── Below md: THE RAIL DOES NOT COLLAPSE, IT DISPERSES ─────────────────── */
+  /*
+   * The obvious implementation — let `--col-rail` collapse to `1 / -1` and drop the
+   * whole rail under the prose — is the one the design rejects. "Insight Detail —
+   * Mobile" (674:5455) shows the two groups going SEPARATE WAYS: "On This Page" is
+   * gone entirely, and Topics reappears at the foot of the prose as an inline
+   * comma-separated run. They are not one block that reflows.
+   *
+   * ── `display: contents` IS THE MECHANISM, AND IT IS THE FORWARD PATH ───────
+   *
+   * It erases a box while keeping its children, so `.rail` and `.rail-sticky` stop
+   * being layout at all below md and each nav becomes a grid item of <Grid> in its
+   * own right — free to place itself, or to not render. One DOM, no duplicated
+   * link list, nothing hidden that a screen reader would still read.
+   *
+   * Both are plain <div>s with no role, so the historic `display: contents`
+   * accessibility bug — the element vanishing from the tree — has nothing to take.
+   * The <nav>s keep their boxes and their landmarks.
+   *
+   * THIS IS WHAT THE SINGLETON PAGE WILL NEED. Its rail image belongs between the
+   * lede and the body on mobile (Andy, 2026-08-26), which is a position no
+   * collapsing rail could reach and an ordinary `order` once the image is a grid
+   * item. Built for this page, but built the way that one will want.
+   *
+   * ── WHY THE MOBILE TREATMENT IS THE BASE AND md UNDOES IT ─────────────────
+   *
+   * Mobile-first, per tokens.css: an engine that never evaluates the query must be
+   * left with the phone layout. The cost is that md has to RESTATE h3's size and
+   * leading rather than unset them — `revert` would go to the UA's h3, not to
+   * base.css's. Those two declarations duplicate base.css deliberately; if the h3
+   * role ever moves, this is the second place.
+   */
+
+  .rail,
+  .rail-sticky {
+    display: contents;
+  }
+
+  /* Not `visibility` and not off-screen — the design says this is not AVAILABLE on
+     mobile, so it should be absent from the accessibility tree too. */
+  .rail-contents {
+    display: none;
+  }
+
+  /*
+   * PLACEMENT ONLY, below md. Everything the run looks like moved to TopicList,
+   * which chooses between the inline run and the stacked list from ITS OWN WIDTH —
+   * so this page no longer restates the h3 role, the colon, the commas or the flex
+   * row, and the md breakpoint that used to switch them is gone.
+   *
+   * It was never a viewport question. What changed at md was that this list moved
+   * from the main column into the rail; the component now measures that directly.
+   */
+  .rail-topics {
+    grid-column: var(--col-main);
+  }
+
+  /* ── From md: the rail becomes a column ─────────────────────────────────── */
+  /*
+   * `top` is a judgment call the board cannot show, since it draws no scroll
+   * position. The masthead does not stick, so `top: 0` would pin the nav flush
+   * against the viewport edge; `rhythm-band` gives it the same breathing room the
+   * bands have. **Judged on screen and settled** (Andy, 2026-08-26).
+   *
+   * The group rhythm is the ramp from base.css restated for a context it does not
+   * reach: 16 from a heading to its list, 48 between the groups. `heading-minor`
+   * rather than `rhythm-block` because what follows is an h3 — both are 48, and
+   * DESIGN.md's rule is to pick by prefix and name, never by value.
+   *
+   * `.rail h3 + ul` NOW SERVES ONLY "On This Page". TopicList's heading and list are
+   * its own descendants and never carry this page's scope attribute, so this rule
+   * cannot reach inside it — which is correct, and is why the component states its
+   * own version of the same 16.
+   */
+  @container style(--breakpoint-md: true) {
+    .rail,
+    .rail-sticky,
+    .rail-contents {
+      display: block;
+    }
+
+    .rail-sticky {
+      position: sticky;
+      top: var(--rhythm-band);
+    }
+
+    .rail h3 + ul {
+      margin-top: var(--rhythm-heading-close);
+    }
+
+    /*
+     * ── "On This Page" ASKS FOR ITS ITEM SPACING NOW ──────────────────────────
+     *
+     * It used to arrive for free from base.css's global `li + li`, and this list was
+     * the ONE place in the build genuinely relying on that rule. Removing it
+     * (2026-09-02) collapsed these entries against each other — visible immediately
+     * on any article with multi-line headings, and caught on screen by Andy rather
+     * than by the grep that found the rule's eight cancellations. A list that
+     * depended on a global by saying nothing is invisible to a search for overrides.
+     *
+     * `rhythm-item`, which is what it was getting and what TopicList's stacked form
+     * asks for a few rules down, so the two rail groups stay in step. That parity is
+     * the requirement: "On This Page" and "Topics" sit one above the other and any
+     * difference between them reads as a mistake.
+     */
+    .rail-contents li + li {
+      margin-top: var(--rhythm-item);
+    }
+
+    .rail nav + nav {
+      margin-top: var(--rhythm-heading-minor);
+    }
+  }
+
+  /*
+   * OPTS OUT OF THE WIPE-IN UNDERLINE, which base.css's `nav` role provides for
+   * with exactly this escape hatch. The wipe is a chrome gesture for the masthead
+   * and footer; a dense list of links animating one by one under a moving pointer is
+   * noise rather than affordance.
+   *
+   * SCOPED TO "On This Page" NOW. The topic links moved into TopicList, which cannot
+   * be reached from here and states the same treatment itself. Two writings of one
+   * rule is the remainder the extraction did not remove; a THIRD dense link list is
+   * the signal to promote it rather than to copy it again.
+   *
+   * THE THICKNESS HAS TO BE RESTATED, and that is easy to miss. base.css gives
+   * every anchor `text-decoration-thickness: 0.06em`, then `nav :is(a, button)`
+   * resets it with the `text-decoration` SHORTHAND — which includes `-thickness`.
+   * Without the line below the rail's hover underline would come back at the UA's
+   * `auto` weight, so two underlines in the same viewport would read as two
+   * systems. `text-underline-offset` is NOT in the shorthand and survives.
+   *
+   * The hover COLOR is left to base.css's global `a:hover`. The rail is on the page
+   * ground, where `link-hover` is the right answer and the underline is not the
+   * only signal available.
+   */
+  .rail a::after {
+    content: none;
+  }
+
+  /*
+   * ── THE UNDERLINE IS ALWAYS THERE, AND ONLY ITS COLOUR MOVES ───────────────
+   *
+   * `text-decoration-line` cannot be animated from `none` to `underline` — it is a
+   * discrete keyword, so the underline appeared instantly while everything else on
+   * the page eased. Declaring the line at rest and animating
+   * `text-decoration-color` from `transparent` gives the same appearance with a real
+   * transition. base.css's `nav :is(a, button)` reset is what removes it in the
+   * first place, so this restates the line as well as the thickness.
+   */
+  .rail a {
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+    text-decoration-color: transparent;
+    transition:
+      color 0.15s,
+      text-decoration-color 0.15s;
+  }
+
+  .rail a:hover {
+    text-decoration-color: currentColor;
+  }
+</style>

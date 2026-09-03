@@ -138,7 +138,14 @@ Current direction → Deploy shape, and is written in phase 6.
 - Andy maintains a **parallel design system in Figma** (variables + text styles). CSS mirrors that
   two-layer idea: **primitive tokens** and **semantic role styles** that reference them.
 - Linked Data matters here. Semantics and structured markup are first-class concerns, not
-  nice-to-haves — JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2.
+  nice-to-haves — **JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2**.
+  **Both, and the reason is webmentions** (questioned and reaffirmed 2026-08-26): the two serve
+  different audiences and neither substitutes for the other. JSON-LD is what search engines read; mf2
+  is what the IndieWeb reads, and **Andy wants to support webmentions**, which makes mf2 load-bearing
+  rather than decorative. mf2 was briefly cut from this file on the grounds that one vocabulary is one
+  place to be wrong; that was wrong on the facts. See Branching → POSSE for what specifically depends
+  on it, and note the structural constraint it puts on detail pages: **`h-entry` needs one element
+  containing both the title and the body.**
 - **Two-space indentation everywhere, CSS included.** One Prettier style repo-wide — no semicolons,
   single quotes, 100 char width — configured at the root and mirrored in `web-next/` only to add the
   Astro plugin. The old rule here said tabs in CSS; that described `web/style/`, which is reference
@@ -309,13 +316,97 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    masthead icon inert; the spec covers expand-in-place replacing the nav, results replacing the page
    content, Fuse.js, `cmd + k`, and the mobile treatment. Don't redesign it from scratch here.
 
-   The content model is iterated alongside, driven by what each page needs. **The `note` type and
-   the two SKOS vocabularies** land here rather than up front — a hierarchical topic vocabulary for
-   tag browsing and related content, and a **semantic type** vocabulary distinguishing kinds that
-   share one structural Sanity type (method vs. perspective vs. conference note).
-   `sanity-plugin-taxonomy-manager` is already installed. Taxonomy design may deserve its own branch.
+   The content model is iterated alongside, driven by what each page needs.
+   `sanity-plugin-taxonomy-manager` is already installed.
+
+   **Both SKOS vocabularies are now built** (2026-08-26), and the Genre scheme turned out to carry
+   more structure than "a semantic type vocabulary" suggested — it has **two top concepts**, and they
+   are the content model's own top-level division:
+
+   ```
+   Document                      Presentation
+     ├─ Perspective                ├─ Keynote
+     ├─ Method                     ├─ Talk
+     ├─ Case Study                 ├─ Workshop
+     ├─ Conference Themes          ├─ Panel
+     └─ Note                       └─ Interview
+          ├─ Clipping
+          └─ Book Note
+   ```
+
+   Topic is a separate 3-level scheme under **Engineering / Design / Discovery / Strategy**, and
+   `docs/urls-and-filtering.md` filters on **direct tags only** — no ancestor roll-up. Content is
+   tagged at leaf and mid level and **never at a top concept**, verified, which is what keeps that
+   rule from producing a "Design" chip that competes with an "Information Architecture" one.
+
+   **A consistency invariant falls out of the Genre hierarchy, and it is worth a build-time check:**
+   a document's genre should sit under the top concept matching its structural family. **Four
+   documents violate it today** — `earley-ia-knowledge-graphs-and-ia`,
+   `the-informed-life-structured-content` and `content-strategy-insights-data-stories-meaning` are
+   genre *Interview*, and `cs-meetup` is genre *Talk*, all four stored as `article`. They are
+   presentations, and they move when `presentation` exists. Until then the Insights index
+   over-collects by four.
+
+   ### The five content types, and what separates them
+
+   | Type | What it is | Layout |
+   |---|---|---|
+   | `singleton` | CMS-governed content with a **unique** layout | bespoke per page |
+   | `page` | website-**generic** scaffolding | one repeatable template |
+   | `article` / `caseStudy` / `note` | the Document branch — what gets published | detail templates |
+   | `presentation` | the Presentation branch — a delivered work | detail template |
+   | `event` | one **delivery occasion** of a presentation | no page of its own |
+
+   **Singletons:** Home, Insights, Reviews, Presentations (index), Contact.
+
+   **Pages:** About, Colophon, Apologia, Projects, Consulting. `page` is a repeatable main content
+   field, a responsive right rail, and a few below-content bands (provisionally just "Get in Touch").
+
+   > **`page` means generic to the medium "website", not generic in the Genre sense.** A contact page,
+   > a colophon, an About page — the bureaucratic furniture a website is expected to have. The
+   > **disqualifier is testable: a `page` carries no Topic or Genre concepts and never appears in
+   > article listings.** Anything that wants either belongs in the Document branch instead.
+
+   That is deliberately page-based thinking, and it is not in tension with the argument in *Content
+   Modeling in the Age of Flying Cars* — it is the other half of it. Medium-*independent* content is
+   modeled by Topic and Genre; medium-*dependent* scaffolding is what `page` is for. The risk is
+   drift, not the type: `page` must not become where things land that should have been modeled.
+
+   **Consulting is a `page` for now and will likely become a singleton** — an index drawing together
+   positions, methods and case studies per service. `page` buys room to work out the positioning
+   first. Note the 4 orphan `service` documents (Structured Content Design, Information Architecture,
+   Content Strategy, Knowledge Graph Engineering) are the obvious content for that, which is why
+   phase 7's "adopt or delete" call is really Consulting's call.
+
+   **`note` is ONE type, and the vocabulary decided that** — Note is a *branch* with Clipping and Book
+   Note beneath it, so `genre` discriminates the three. Built 2026-08-26 with two optional objects
+   rather than one polymorphic source: `clipRef` (url, publisher, title, image) and `bookRef` (url,
+   title, author, image, publisher, pubDate). Validation to stop a Clipping carrying Book Note fields
+   is deferred; **assume the types are consistent for now.** Three sample documents exist, one per
+   variant, kept thin so the shape can still move.
+
+   **`presentation` inverts `event`.** `event` records a date and location at which Andy spoke, with
+   the talk title subordinate; `presentation` makes the delivered work the organizing principle — one
+   presentation, many deliveries — and carries a description, takeaways, an optional deck link, and
+   the events at which it was given. Recordings and transcripts are a later iteration. **This is why
+   interviews are Presentations rather than Insights.** The 38 existing `event` documents are
+   deliveries, so they group under a smaller set of presentations; none carries a `genre` today.
 5. **Content parity check.** Render every document of every type; catch dangling references and
    fields that silently stopped rendering.
+
+   **Two content gaps to fix here, both enumerable rather than vague:**
+   - **16 of 42 heroes have no `altText`** (measured 2026-08-26) — `how-to-hire-an-ia`,
+     `earley-ia-knowledge-graphs-and-ia`, `structured-content-design`, `boutique-knowledge-graphs`,
+     `when-to-use-an-ia`, `cs-meetup`, `domain-modeling`, `what-is-information-architecture`,
+     `content-strategy-insights-data-stories-meaning`, `purpose-driven-taxonomy-design`,
+     `keyword-extraction-nlp`, `site-maps-connected-content`, `self-hosting-sanity-studio`,
+     `structured-content-design-22`, `conversations-with-robots`, `working-with-an-ia`. These are the
+     `[SanityHero] no altText` warnings the build already prints. **It costs twice now, not once:**
+     php-mf2 returns `u-photo` as `{value, alt}`, so the alt text travels into every syndicated copy —
+     verified against a real parse. Body figures are clean, 0 of 139.
+   - **`h5` residue.** Phase 1 dropped the style from `article`, `caseStudy` and `singleton`, but
+     dropping it from the schema does not remove it from published blocks. One query against
+     `production-26` settles whether any survive; they would render unstyled.
 6. **Cutover.** Rewrite CI for pnpm, Node 24 and the new build directory. **`mailhandler.php` must
    survive** — it stays PHP on the droplet, but becomes a backend endpoint called from JS rather
    than a form target with its own display pages, since mail forms now appear on several pages.
@@ -338,11 +429,52 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
      `services.njk` iterates singletons, and no query fetches either type. So they are adopted into
      the schema or deleted — the choice is editorial, not structural.
    - **Shrink `hiddenDocTypes`** in `sanity.config.ts` to whatever survives the above.
+   - **Delete the serializer specimen** — `specimen-serializers` on `production-26`, at
+     `/insights/serializer-specimen/`. A phase 4 test fixture holding one instance of every
+     block style, inline mark, list shape and custom block the Portable Text serializers
+     handle, so a regression in any of them has somewhere to be seen. It is a **published**
+     article, deliberately — the static build reads the `published` perspective, so a draft
+     would not render — which means it is indexable and would otherwise go live. Delete it
+     once the serializers are covered by something that is not content, or keep it and
+     exclude it from the index, the sitemap and the feed. **Do not leave that choice to
+     launch day.**
 8. **Quality gates + POSSE.** Performance budgets, accessibility checks, link checking, HTML
    validation; per-taxonomy RSS feeds; **POSSE** (https://indieweb.org/POSSE) syndication to
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
    Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
    watch-mode generation is off and `pnpm typegen` is run by hand.
+
+   **The microformats remainder lands here, and it is a short list because most of mf2 is already
+   built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,
+   `u-url`/`u-uid`, `u-photo` and `p-category` (2026-08-26). What is left needs either a schema field
+   or a live syndication target, which is why none of it could be done with the markup:
+
+   - **`u-syndication`** — the property Bridgy's **backfeed** matches a social reply against, so
+     without it replies never find their way home. Needs an array-of-URLs field on `article`/`note`
+     **and** a way to populate it. Andy's inclination (2026-08-26) is a webhook writing back to
+     Sanity, which triggers a rebuild through the existing webhook path. A weekly `schedule:` trigger
+     was floated as an alternative or backstop — note that **GitHub disables scheduled workflows after
+     60 days of repo inactivity**, so it wants a fallback if it is the only mechanism.
+   - **`p-summary`, and a real question with it.** Bridgy uses it for the text on character-limited
+     platforms — Bluesky is 300 — so without it a long `e-content` gets truncated by someone else's
+     rule. `shortDescription` is the obvious source and is **card copy, which is not the same job**;
+     syndication text may want its own field. Decide the field before writing the markup.
+   - **`dt-updated`** from `_updatedAt`, which is already projected. Optional, and invisible markup,
+     so it goes with the two above rather than on its own.
+   - **`<link rel="webmention">`** advertising an endpoint — webmention.io is the usual answer — plus
+     a **build-time fetch of that endpoint's API** to render received mentions. Receiving is inert
+     without both.
+   - **`h-feed`** wrapping the entries on index pages, so a reader can subscribe by mf2. Index-page
+     work, but it belongs on this list.
+
+   **Not phase 8: the author `h-card`.** It lands with the **home page** (phase 4 item 3) as the
+   site's *representative* h-card, because that is where a `rel=author` lookup resolves. The detail
+   pages already emit `<link rel="author" href="/">` and it is **inert until that card exists** — the
+   design carries no byline, so an in-entry `p-author` would have to be invisible markup, and the
+   authorship algorithm is the way around that. **`settings` now carries `authorName` and
+   `authorImage`** (string; image with hotspot and `altText`, added 2026-08-26), so the data is
+   waiting. Note the property collision that is not one: `u-photo` on an `h-entry` is an image *of the
+   post* — the hero, already built — while `u-photo` on an `h-card` is the person's avatar.
 
    **The service worker decision lands here** (deferred from phase 2, 2026-08-21). Andy has shipped
    service workers on Jekyll and 11ty sites and runs one on `ux-methods`, which is also Astro, so
@@ -541,8 +673,27 @@ subjects use conventional-commit prefixes (`feat:`, `chore:`). **Commit and push
 
 **Sequencing constraint from POSSE:** syndicated copies link to canonical permalinks permanently, so
 **URL design must land before notes go live** — which is why permalink design sits in phase 1 rather
-than emerging page by page. Microformats2 (`h-entry`/`h-card`) sits alongside the existing JSON-LD
-without conflict.
+than emerging page by page.
+
+**Microformats2 (`h-entry`/`h-card`) sits alongside the existing JSON-LD without conflict**, and
+**webmentions are why it is not optional** (2026-08-26). Worth being precise about what reads what,
+because "webmentions need mf2" is true in a roundabout way:
+
+- **Webmention itself is protocol-only** — an HTTP POST carrying `source` and `target`. It mandates no
+  vocabulary at either end.
+- **mf2 is how a mention is interpreted.** A receiver fetches the *source* page and parses its mf2 to
+  tell a reply from a like from a repost, and to get the sender's name and photo. So other people's
+  mf2 powers what shows up here, and **this site's mf2 is what lets its own mentions display properly
+  elsewhere.**
+- **Bridgy is the concrete dependency.** Bridgy Publish reads `h-entry` / `p-name` / `e-content` off
+  the page to build the syndicated copy, and Bridgy's backfeed matches replies to posts via
+  `u-syndication`. Both are mf2 only.
+
+**The structural consequence, and it is not free:** `h-entry` needs **one element containing both
+`p-name` (the h1) and `e-content` (the body)**. On the article page those sit in two different bands
+so that the hero can be reordered between them, and no element contains both — see
+`web-next/src/pages/insights/[slug].astro`. Resolving that is a real markup decision, not a class
+attribute.
 
 **Decided against:** the **domain change to andyfitzgerald.net is off** (2026-07-27). Also **against
 a separate v3 repository** (2026-08-17) — same site, same domain, and a single history running

@@ -53,6 +53,58 @@
  */
 import Logo from './Logo.astro'
 import {Search} from '@lucide/astro'
+
+/**
+ * ── WHICH SECTION THE PAGE IS IN, DRAWN AS A RESTING UNDERLINE ───────────────
+ *
+ * Ported from the live site: the section's nav item carries its underline at rest,
+ * with the LABEL at its ordinary resting colour. The underline alone says where you
+ * are; a coloured label would read as a permanent hover.
+ *
+ * base.css already draws it — `nav :is(a, button)[aria-current]::after` sets the
+ * same `inline-size: 100%` that hover does, and its comment ends "Nothing sets it
+ * yet." This is what sets it. Nothing about the colour needed changing, because only
+ * `:hover` moves a nav label's colour and `aria-current` is not a hover.
+ *
+ * COMPUTED HERE, NOT PASSED IN. Every page renders this component, so deriving the
+ * section from the URL means no page can forget to declare it — and a page type
+ * added later is correct before anyone thinks about it.
+ *
+ * ── `page` vs `true`, AND WHY BOTH ARE USED ──────────────────────────────────
+ *
+ * ARIA has no `section` token. On `/insights/` the item IS the current page, so it
+ * takes `page`; on `/insights/some-note/` it is the current item in a set but not
+ * the page itself, which is what the generic `true` means. Both match the
+ * `[aria-current]` selector, so the indicator is identical and only what is
+ * announced differs.
+ *
+ * NEVER `aria-current="false"`. `[aria-current]` is an ATTRIBUTE-PRESENCE selector,
+ * so the string "false" would draw the underline on every item that is not current —
+ * the exact inverse of the feature. Returning `undefined` omits the attribute, which
+ * is what Astro does with `undefined`, `null` and `false`.
+ *
+ * ── ROOT-LEVEL PAGES MATCH NOTHING, BY CONSTRUCTION ──────────────────────────
+ *
+ * About, Colophon and Apologia sit at the root and belong to no section, so no item
+ * underlines (Andy, 2026-09-01). That needs no special case: `/about/` is not a
+ * prefix match for any of the five hrefs, and neither is `/`. The prefix test only
+ * works because every section href is itself a directory ending in `/` — without the
+ * trailing slash, a future `/insight-search/` would light up Insights.
+ */
+const here = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`
+
+/* Returned as props and spread, so the href is written ONCE per item. Passing it
+   twice — to `href` and to a checker — is a drift the indicator would fail silently
+   on, since a mismatched section simply never lights up. */
+/* The return type is annotated rather than inferred, and it is not decoration:
+   without it the ternary's two string literals widen to `string`, and Astro types
+   `aria-current` as the ARIA token union — so every call site fails to typecheck.
+   Naming the union here keeps the literals narrow and makes a typo in one of the two
+   tokens an error rather than a silently inert attribute. */
+const navLink = (href: string): {href: string; 'aria-current'?: 'page' | 'true'} => ({
+  href,
+  'aria-current': here === href ? 'page' : here.startsWith(href) ? 'true' : undefined,
+})
 ---
 
 {
@@ -88,9 +140,9 @@ import {Search} from '@lucide/astro'
       */
       }
       <ul role="list">
-        <li><a href="/insights/">Insights</a></li>
-        <li><a href="/projects/">Projects</a></li>
-        <li><a href="/presentations/">Presentations</a></li>
+        <li><a {...navLink('/insights/')}>Insights</a></li>
+        <li><a {...navLink('/projects/')}>Projects</a></li>
+        <li><a {...navLink('/presentations/')}>Presentations</a></li>
         <li>
           {
             /*
@@ -113,12 +165,12 @@ import {Search} from '@lucide/astro'
             after writing it the other way first.
           */
           }
-          <a href="/consulting/">
+          <a {...navLink('/consulting/')}>
             <span class="label-stacked">Consulting</span>
             <span class="label-inline">{' '}Work with me</span>
           </a>
         </li>
-        <li><a href="/contact/">Contact</a></li>
+        <li><a {...navLink('/contact/')}>Contact</a></li>
         <li>
           {
             /*
@@ -298,11 +350,6 @@ import {Search} from '@lucide/astro'
        base rule rather than the md block keeps one declaration instead of two,
        at the cost of looking dead where it is written. */
     flex: 1 1 6.5rem;
-
-    /* base.css puts `margin-top: var(--rhythm-item)` on `li + li` for prose
-       lists, which would land on items 2–6 here — including the ones already on
-       the first row. `row-gap` above does the job correctly. */
-    margin-top: 0;
   }
 
   /*
@@ -314,11 +361,38 @@ import {Search} from '@lucide/astro'
    * custom property from inside the block that overrode it needs `unset` and a
    * paragraph explaining it.
    *
-   * No hover COLOR change. The underline carries it alone, which is both quieter
-   * and what the live site does.
+   * No hover COLOR change on the band either — the underline carries it alone. The
+   * two go together, so the cancel sits right here rather than in base.css.
    */
   .slot :is(a, button)::after {
     border-block-end-color: var(--color-text-on-accent-hover);
+  }
+
+  /*
+   * THE HOVER COLOR IS CANCELLED ON THE BAND AND RESTORED AT lg. base.css states no
+   * nav-hover rule at all, so the global `a:hover { color: var(--color-link-hover) }`
+   * reaches these links — and `link-hover` is blue-500, which is this band's own
+   * fill. Uncancelled, a label turns the color of the surface behind it and vanishes
+   * under the pointer.
+   *
+   * ADDITIVE, not a `not style(--breakpoint-lg: true)` query, and the difference is
+   * the fallback. One inverted query would say "hold the color still while on the
+   * band" in a single declaration — but an engine without style-query support
+   * matches NO @container block, so `not` would fail to match too and the bug would
+   * be the fallback state. Cancelling unconditionally and re-enabling at lg keeps
+   * the safe state as the base one, which is the pattern the whole file is built on.
+   *
+   * `inherit` rather than `text-on-accent`, because it means "whatever this already
+   * was" — which is correct in both themes without naming either.
+   *
+   * ANCHORS ONLY, NOT `:is(a, button)`. Two reasons, and the second is a real bug
+   * avoided: the global rule it cancels only ever matched anchors, so a button needs
+   * no cancel; and `.slot :is(a, button):hover` is (0,2,1), which would outrank
+   * `.search-toggle:hover` at (0,2,0) and override the knocked-out glyph color in
+   * the search button's fill treatment at lg.
+   */
+  .slot a:hover {
+    color: inherit;
   }
 
   /* ── The two swapped labels ─────────────────────────────────────────────── */
@@ -504,6 +578,24 @@ import {Search} from '@lucide/astro'
       flex-direction: row;
       text-align: start;
       padding-inline: 0;
+
+      /*
+       * ASYMMETRIC HERE AND NOWHERE ELSE — 24 above, 32 below (2026-08-26, judged
+       * against the real article page, which is what DESIGN.md's note on
+       * `chrome-pad-header` said to wait for).
+       *
+       * The identity is the taller child at this width, so it sets the header's
+       * height and this padding IS the gap between the wordmark and whatever the
+       * page puts underneath. Symmetric 24 read too tight there. The top stays at
+       * the token: the space above the mark is against the viewport edge, which
+       * needs less than a boundary with content does.
+       *
+       * Not a token, and not in tokens.css, because it has one consumer and only
+       * one of its two ends varies. Bumping `--chrome-pad-header` itself was tried
+       * and is the wrong instrument: it would move the stacked and tablet states
+       * too, where the header is already tall and nothing was wrong.
+       */
+      padding-block: var(--chrome-pad-header) var(--space-4);
     }
 
     /* The band goes away. `padding-block` deliberately stays: the identity is the
@@ -522,6 +614,14 @@ import {Search} from '@lucide/astro'
     .slot :is(a, button)::after {
       border-block-end-color: var(--color-link-hover);
       border-block-end-width: 3px;
+    }
+
+    /* And the LABEL goes blue with it. No band here, so there is nothing for
+       `link-hover` to collide with — this restores what the global rule in base.css
+       would have done, undoing the base-state cancel above. Same specificity as
+       that rule, so source order decides and this block is below it. */
+    .slot a:hover {
+      color: var(--color-link-hover);
     }
 
     /* NO RULE UNDER THE MAGNIFIER. Search does not navigate — it replaces this

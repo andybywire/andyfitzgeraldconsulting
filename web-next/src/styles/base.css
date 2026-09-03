@@ -74,7 +74,69 @@
   margin: 0;
 }
 
+/*
+ * ── `hidden` HAS TO WIN, AND IT DOES NOT WIN ON ITS OWN ──────────────────────
+ *
+ * The UA implements the attribute as `[hidden] { display: none }` — an ordinary
+ * declaration at (0,1,0). ANY author rule that sets `display` on the same element
+ * beats it on source order, so the element stays visible while the DOM says it is
+ * hidden. Nothing reports this: `el.hidden` is `true`, the attribute is in the
+ * markup, and the thing is on screen.
+ *
+ * Caught by the Insights filter chips (2026-08-31): `.chip { display: inline-flex }`
+ * left a `hidden` "See all genres" button rendering. Any component that sets
+ * `display` on something it also toggles has the same latent bug, which is why the
+ * fix belongs to the reset rather than to the chip.
+ *
+ * `!important` deliberately, and it is the one in this file. The attribute is not a
+ * styling hint, it is a statement that the element is not applicable — there is no
+ * legitimate case for a component overriding it, and `[hidden]` cannot outrank an
+ * arbitrary future selector any other way. Same reasoning every mainstream reset
+ * uses. Use `[hidden]` for "not applicable" and a class for "styled away".
+ */
+[hidden] {
+  display: none !important;
+}
+
 /* ── Page ──────────────────────────────────────────────────────────────────── */
+
+/*
+ * ── SMOOTH SCROLLING, AND WHY IT HAS TO LIVE IN THIS FILE ───────────────────
+ *
+ * For the rail's "On This Page" links, and any other in-page fragment.
+ *
+ * IT ONLY WORKS ON THE SCROLLING ELEMENT, WHICH HERE IS <html>. Two ways to write
+ * that fail silently and are worth naming, because both look right:
+ *
+ *   `body { scroll-behavior: smooth }` — does NOTHING. Unlike `overflow` and
+ *   `background`, this property does not propagate from body to the viewport, so it
+ *   applies only to scrolling INSIDE the body box, which nothing does.
+ *
+ *   `html { … }` inside a component's scoped <style> — does NOTHING. Astro appends its
+ *   scope attribute to every selector in a scoped block, so it compiles to
+ *   `html[data-astro-cid-…]`, and <html> lives in BaseLayout and never carries another
+ *   component's attribute. The rule ships and matches nothing. This is the same failure
+ *   that took the page header's `grid-column` out on 2026-09-03; a scoped style reaches
+ *   a component's own elements and its child components' ROOTS, nothing above it.
+ *
+ * So it belongs here, in the one stylesheet that is global by construction.
+ *
+ * ── `no-preference` RATHER THAN CANCELLING UNDER `reduce` ───────────────────
+ *
+ * Written as opt-in so the default — including every engine that reports no preference
+ * either way — is the still page. Browsers increasingly disable smooth scrolling under
+ * `reduce` on their own, but that is a courtesy rather than a guarantee, and a jump to
+ * the anchor is the correct behavior for someone who asked not to be moved.
+ *
+ * Anything that is a fragment TARGET wants `scroll-margin-block-start`, or it lands
+ * flush against the viewport edge with its context off-screen. The Reviews page sets it
+ * on both the group headings and each review.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
 
 body {
   /* NOT cosmetic. The UA gives body `margin: 8px`, and while that is invisible
@@ -104,16 +166,22 @@ body {
  * family, weight and tracking alone. If it ever reads as bold body text, the
  * levers are uppercase, small caps, color or a rule. NOT a smaller size.
  *
- * `text-wrap: balance` is NOT in DESIGN.md — it evens out the rag on a wrapped
- * heading and is capped by the UA at a handful of lines. Drop it if you'd
- * rather headings break naturally.
+ * ── NO `text-wrap: balance`, AND IT IS NOT COMING BACK ──────────────────────
+ *
+ * It was on this rule until 2026-09-02, with a comment already admitting it was
+ * "NOT in DESIGN.md" and offering to drop it. Dropped: it is not doing the job
+ * in this design and was never specified (Andy, on screen).
+ *
+ * Headings break naturally now. This was the only instance in the build —
+ * verified by grep across `src/`, not assumed — so there is nothing else to
+ * unwind. Do not reintroduce it on a component heading either; if a particular
+ * heading's rag needs help, that is a content or measure decision.
  */
 
 :is(h1, h2, h3, h4) {
   color: var(--color-text-heading);
   font-family: var(--font-heading);
   font-weight: 700;
-  text-wrap: balance;
 }
 
 h1 {
@@ -149,17 +217,39 @@ h4 {
  * serves. DESIGN.md defines no bold-prose weight; its only Noto Serif 500 is
  * the `display` role.
  *
- * `--rhythm-item` here is an INFERENCE, not a transcription. DESIGN.md never
- * says where `rhythm-item` (16px) or `rhythm-tight` (8px) are consumed, and its
- * own guidance is to pick a spacing token "by prefix first, then by name, never
- * by value" — which points a list item at the role literally called `item`.
- * Note `rhythm-list` (32px) is NOT the token for this: open-questions.md shows
- * it sitting between unboxed note cards, so the name misleads.
+ * ── THERE IS NO `li + li` RULE, AND THERE USED TO BE ────────────────────────
+ *
+ * `li + li { margin-top: var(--rhythm-item) }` lived here until 2026-09-02.
+ * Removed, not rescoped, on the evidence of its own consumers.
+ *
+ * Its comment admitted it was "an INFERENCE, not a transcription" — DESIGN.md
+ * names `rhythm-item` as a token and never says a list consumes it. What settled
+ * it is that EIGHT places had written `li + li { margin-top: 0 }` purely to
+ * cancel it:
+ *
+ *   TopicList   CaseStudyEntry   Footer (x2)   Masthead
+ *   RelatedBand   WorkWithMeBand   insights/index (facet chips)
+ *
+ * Every one of those is a nav, card or chip list, where the item spacing comes
+ * from a flex or grid `gap` that a stray margin fights. And the ONE family the
+ * rule was written for — Portable Text prose lists — turned out not to want it
+ * either: 16px between one-line items reads far too airy, judged on screen on
+ * the case study's "Work I Did" and its project sections (Andy, 2026-09-02).
+ *
+ * TWO places set a list's item spacing on purpose, and both still do, locally:
+ * `TopicList`'s stacked rail form asks for `rhythm-item`, and the home page's
+ * review list takes `rhythm-paragraph` plus a divider border. Those are the shape
+ * this should always have had — asked for where wanted, not cancelled everywhere
+ * else.
+ *
+ * So a list's items are separated by their leading and nothing else. A list that
+ * ever does want a gap should say so locally, which is now the cheap direction
+ * rather than the expensive one.
+ *
+ * `.detail`'s ramp still puts `--rhythm-block` (48) ABOVE and BELOW a list as a
+ * block — that is a different rule, it is still here, and it was not part of
+ * this. See Vertical rhythm below.
  */
-
-li + li {
-  margin-top: var(--rhythm-item);
-}
 
 /* ── Links ─────────────────────────────────────────────────────────────────── */
 /*
@@ -181,6 +271,12 @@ li + li {
 
 a {
   color: inherit;
+
+  /* Eased rather than switched (2026-08-28). Every hover in the build had been
+     binary — links, rail links, cards — which reads as a state flip rather than a
+     response. 0.15s is DESIGN.md's controls-immediate end of the convention. */
+  transition: color 0.15s;
+
   text-decoration-line: underline;
   text-decoration-thickness: 0.06em;
   text-underline-offset: 0.16em;
@@ -248,28 +344,206 @@ nav :is(a, button)[aria-current]::after {
 }
 
 /*
- * AND THE COLOR HOLDS STILL. The underline is the whole affordance here, so the
- * global `a:hover` from the Links section above has to be cancelled for nav —
- * that rule is for INLINE PROSE LINKS, where moving to `link-hover` is the point.
+ * THE COLOR CHANGES ON HOVER, and there is deliberately NO RULE HERE saying so —
+ * the global `a:hover` from the Links section above already does it, and a nav on
+ * the page ground wants exactly that: the label moves to `link-hover` alongside
+ * the underline wiping in.
  *
- * On an accent band it is worse than redundant. `link-hover` is blue-500, which is
- * the band's own fill, so a nav label on the masthead's band turned exactly the
- * color of the surface behind it and disappeared under the pointer. A real <Band>
- * hides this by re-pointing the token; the masthead is not one, so it showed.
+ * ── WHAT USED TO BE HERE, AND WHY IT WAS WRONG ──────────────────────────────
  *
- * `inherit` rather than a named role, because the right value differs by context —
- * page text on a light ground, `text-on-accent` on a band — and inheriting is how
- * you say "whatever it already was" once rather than naming both.
+ * Phase 3 cancelled the hover color for every nav at every width:
+ *
+ *     nav :is(a, button):hover { color: inherit }
+ *
+ * It was fixing a real bug with the wrong scope. `link-hover` is blue-500, which
+ * is also `surface-accent`, so a nav label on the MASTHEAD's accent band turned
+ * exactly the color of the band behind it and vanished under the pointer. Killing
+ * the color change globally hid that — and took the desktop treatment with it,
+ * where the masthead has no band and the label is supposed to go blue.
+ *
+ * ── IT IS AN ACCENT-BAND PROBLEM, NOT A NAV PROBLEM ─────────────────────────
+ *
+ * A real <Band tone="accent"> re-points `--color-link-hover` to
+ * `text-on-accent-hover`, so inside one the global rule resolves to the color the
+ * text already is and changes nothing visible. The FOOTER is a real Band, so it was
+ * never affected and does not need this rule.
+ *
+ * The masthead is not a Band — its accent treatment has to disappear at lg — so it
+ * cancels the hover color itself, in the states where it is on the band, and
+ * restores it at lg. That sits beside the two declarations it already states per
+ * state for the fill and the underline color. See Masthead.astro → `.slot`.
+ *
+ * The general rule, for the next component that fakes a band: A COMPONENT THAT
+ * PAINTS AN ACCENT GROUND WITHOUT <Band> OWNS THE CONSEQUENCES OF NOT RE-POINTING
+ * THE ROLE TOKENS. Do not solve one of them here.
  */
-nav :is(a, button):hover {
-  color: inherit;
-}
 
-/* The wipe is decoration; the underline still appears, it just stops traveling. */
+/*
+ * The wipe is decoration; the underline still appears, it just stops traveling.
+ *
+ * The colour and box-shadow eases go with it. They are small, but this setting asks
+ * to be spared movement rather than to be spared 150ms of colour — so the honest
+ * reading is that anything animated should stop, and every one of these degrades to
+ * an instant change rather than to nothing.
+ */
 @media (prefers-reduced-motion: reduce) {
-  nav :is(a, button)::after {
+  nav :is(a, button)::after,
+  a {
     transition: none;
   }
+}
+
+/* ── Code ──────────────────────────────────────────────────────────────────── */
+/*
+ * Two roles, one family. Neither had a rule before 2026-08-26, so inline `code`
+ * was rendering in Noto Serif — indistinguishable from the prose around it — in
+ * the seven documents that use it.
+ *
+ * `--font-mono` is a system stack and the only font variable tokens.css declares;
+ * see the note there for why a third family is an addition rather than a breach.
+ *
+ * ── 0.9em IS AN OPTICAL MATCH, NOT A SIZE STEP ───────────────────────────────
+ *
+ * DESIGN.md forbids a size step below 16px for reading text, and this is not one:
+ * it is a per-family correction. A monospace face carries a larger x-height and a
+ * wider advance than Noto Serif at the same em, so inline code set at 1em reads
+ * visibly bigger than the sentence holding it and disturbs the line. 0.9em of the
+ * 18px body is 16.2px — still above the legibility floor, and matched to its
+ * surroundings rather than smaller than them. It is `em`, not a token, so it
+ * tracks whatever it is nested in.
+ *
+ * ── THE CHIP TAKES `surface-muted`, AND NOT THE BLOCK'S `surface` ───────────
+ *
+ * Chosen by eye against four candidates mocked up in the specimen (2026-08-26),
+ * and the measurement is what settled it. Against the page ground, `surface-muted`
+ * is the STRONGER tint in both themes — 1.153 on light and 1.473 on dark, where
+ * `surface` manages 1.045 and 1.169. So matching the block would have been both
+ * the option needing a border and the one harder to see without one.
+ *
+ * No border, which is the second reason. An inline box that wraps across a line
+ * break fragments: `box-decoration-break: slice` — the default — leaves the box
+ * open at the break, and `clone` closes both halves but draws a border mid-word.
+ * A fill has neither problem, so the treatment simply never arises.
+ *
+ * THE BLOCK AND THE CHIP DIFFERING IS NOT AN INCONSISTENCY. A block is a panel,
+ * which Elevation makes `surface` plus a hairline, and which needs a white ground
+ * for GitHub's light palette to measure correctly. A chip is a tint on a run of
+ * text. Different jobs.
+ *
+ * Padding is in `em` so it tracks the chip's own 0.9em rather than the paragraph.
+ * The vertical value is deliberately small: an inline box's background grows past
+ * its line box without affecting leading, so a generous value would have chips on
+ * consecutive lines overlapping.
+ */
+
+:is(pre, code) {
+  font-family: var(--font-mono);
+}
+
+code {
+  padding: 0.1em 0.3em;
+  border-radius: var(--radius-1);
+  background-color: var(--color-surface-muted);
+  font-size: 0.9em;
+}
+
+/*
+ * ── The block ──────────────────────────────────────────────────────────────
+ *
+ * A tinted ground here, where inline code gets none: a block is a panel, and
+ * `surface-muted` is the role for a quiet inset plane in both themes.
+ *
+ * SIZE 1 (16px), NOT the body step. Code lines are long — the longest in the
+ * content is 117 characters — so the step down buys about 12% more of them before
+ * the block scrolls, and a block already reads as apparatus rather than prose.
+ * Leading 1.5 for the same reason DESIGN.md indexes leading by measure: nothing
+ * here is running prose.
+ *
+ * `overflow-x: auto` RATHER THAN WRAPPING. 117 monospace characters needs roughly
+ * 1264px against a 656px prose column, so something has to give. Wrapping would
+ * break a shell command across two visual lines with no marker saying so, which
+ * reads as two commands — worse than a scrollbar, because it is wrong rather than
+ * merely awkward. The `tabindex="0"` that makes the scroll region keyboard
+ * reachable is in the component, since it is markup.
+ *
+ * `pre code` RESETS THE SIZE. `code` above sets 0.9em, which would compound
+ * against the block's own step and land at 14.4px.
+ */
+pre {
+  padding: var(--space-3);
+
+  /*
+   * `surface` PLUS A HAIRLINE, which is DESIGN.md's Elevation model applied
+   * literally: a raised plane is the surface fill and a border, because "the
+   * border carries the card boundary in both themes, not the fill difference" —
+   * ground to surface is only 1.045 on light, so the fill alone would not read.
+   *
+   * IT IS ALSO WHAT MAKES THE SYNTAX COLOURS CORRECT. This was `surface-muted`
+   * with no border until 2026-08-26, and GitHub's light theme is designed against
+   * #ffffff — which `surface` is. On the darker muted ground two of its seven
+   * colours dropped below AA: the keyword red to 3.79 and the comment grey to
+   * 3.99. Moving to `surface` puts the palette back on the ground it was built
+   * for, and in dark moves it onto neutral-850, which is DARKER than GitHub's own
+   * #24292e and so raises contrast rather than lowering it.
+   */
+  border: var(--border-width-hairline) solid var(--color-border);
+  border-radius: var(--radius-1);
+  background-color: var(--color-surface);
+  font-size: var(--font-size-1);
+  line-height: 1.5;
+  overflow-x: auto;
+
+  /*
+   * NO SYNTAX-HIGHLIGHTING VARIABLES HERE, and their absence is the point of the
+   * arrangement rather than an omission.
+   *
+   * An earlier version bound twelve `--shiki-token-*` variables to this project's
+   * colour roles, because Shiki was built with `createCssVariablesTheme`. It now
+   * uses GitHub's light and dark themes directly, emitting each token as
+   * `color: light-dark(light, dark)` — which resolves against `color-scheme`, set
+   * at the top of this file for all three theme states. So the palette rides the
+   * theme mechanism that already exists and needs nothing here.
+   *
+   * What this rule still owns is the block's GROUND and its typography. Shiki's own
+   * background is stripped in the transformer so the panel is drawn from this
+   * project's Elevation model rather than the theme's — see the note above.
+   */
+}
+
+/*
+ * The <code> inside a block resets every one of the chip's declarations. Shiki's
+ * output is `<pre><code>`, so without this the block would carry a second, inset
+ * panel with its own padding and radius — and `font-size` would compound, 0.9em of
+ * the block's own 16px landing at 14.4.
+ */
+pre code {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: inherit;
+}
+
+/* ── Struck text ───────────────────────────────────────────────────────────── */
+/*
+ * The `strike-through` decorator, rendered as `<s>` — "no longer accurate or
+ * relevant" — rather than `<del>`, which would claim an editorial revision that
+ * never happened. See components/prose/Strike.astro.
+ *
+ * THE THICKNESS IS THE POINT OF THIS RULE. Without it a struck word takes the
+ * UA's own line weight, which does not match the 0.06em this file gives every
+ * inline link — so two horizontal strokes in the same paragraph would read as two
+ * different systems. `text-underline-offset` has no equivalent for line-through
+ * and none is needed: the line sits on the x-height by definition.
+ *
+ * NOT MUTED, though the argument for it is real: "no longer relevant" is close to
+ * what `text-muted` means, and dimming struck text would say the same thing twice.
+ * Left at `currentColor` because DESIGN.md assigns this no color role, and struck
+ * text inside an already-muted caption would then mute twice over. Worth revisiting
+ * if it ever reads too loud on the page.
+ */
+
+s {
+  text-decoration-thickness: 0.06em;
 }
 
 /* ── Blockquote ────────────────────────────────────────────────────────────── */
@@ -374,16 +648,37 @@ svg.lucide.icon-sm {
  * section wrappers, so there is no container to put a `gap` on, and `gap` could
  * not express "tighter after a heading" anyway.
  *
- * SOURCE ORDER DECIDES. Rules 2–6 all have identical specificity (0,1,2), so
+ * SOURCE ORDER DECIDES. Every override has identical specificity (0,1,1), so
  * the last matching one wins — which is why `heading-close` is last: a heading
  * binds to whatever follows it, whatever that is.
  *
- * The base rule is (0,1,1), one notch lower, so it is the fallback the others
+ * The base rule is (0,1,0), one notch lower, so it is the fallback the others
  * override. That is only true because the `.sidebar`/`.banner` exclusion is
  * written as `:where(:not(…))`. A bare `:not(.sidebar):not(.banner)` would add
- * two class weights and lift the base rule to (0,3,1) — beating every rule
+ * two class weights and lift the base rule to (0,3,0) — beating every rule
  * below it and silently flattening the whole ramp to one value. `:where()`
  * always contributes zero specificity regardless of what is inside it.
+ *
+ * THE RAMP IS THREE OVERRIDES NOW, NOT FIVE. The two `rhythm-block` rules for
+ * lists, quotes, figures and code were removed 2026-09-02 — see the note where
+ * they used to sit. Nothing about the ordering changed: the survivors were
+ * already the last three, and they still read heading-opens, heading-opens,
+ * heading-binds.
+ *
+ * ── THE SELECTOR WAS `article.detail` UNTIL 2026-08-26 ──────────────────────
+ *
+ * It became `.detail` when the article page moved the `<article>` element OUT to
+ * wrap the whole entry — title, hero and body — so that `h-entry` has one root
+ * holding both `p-name` and `e-content`, which webmentions need. The body is now
+ * `<div class="detail e-content">`, because two nested `<article>`s would claim an
+ * article within an article.
+ *
+ * EVERY RULE HERE LOST EXACTLY ONE TYPE SELECTOR, which is the property that makes
+ * the change safe: the numbers above all shifted down by (0,0,1) together, so the
+ * base rule is still one notch below the five overrides and the ramp is unchanged.
+ * Verified by measuring all 31 sibling gaps on a real article before and after —
+ * identical. Do not "restore" the element to the selector: nothing renders
+ * `<article class="detail">` any more except the throwaway specimen page.
  *
  * Both classes are excluded because they are explicitly grid-placed: a
  * margin-top would push them off their grid row.
@@ -391,28 +686,123 @@ svg.lucide.icon-sm {
  * No `margin-bottom` anywhere, so nothing collapses.
  */
 
-article.detail > * + *:where(:not(.sidebar, .banner)) {
+.detail > * + *:where(:not(.sidebar, .banner)) {
   margin-top: var(--rhythm-paragraph);
 }
 
-article.detail > * + :is(ul, ol, blockquote, figure, pre) {
-  margin-top: var(--rhythm-block);
-}
+/*
+ * ── THERE IS NO `rhythm-block` PAIR HERE ANY MORE ───────────────────────────
+ *
+ * Two rules gave `ul, ol, blockquote, figure, pre` 48px above AND below, as a
+ * block-level tier of the ramp:
+ *
+ *   .detail > * + :is(ul, ol, blockquote, figure, pre) { margin-top: 48 }
+ *   .detail > :is(ul, ol, blockquote, figure, pre) + * { margin-top: 48 }
+ *
+ * Removed 2026-09-02: too much vertical space in running text, in ALL of those
+ * cases and not just lists (Andy, on screen). Like the `li + li` margin above,
+ * `--rhythm-block`'s use here was an inference — DESIGN.md names the token and
+ * never says these five elements consume it.
+ *
+ * They now fall through to the base rule and take `--rhythm-paragraph` (24), the
+ * same as any two adjacent blocks. That is the whole change: a special case
+ * removed, not a new number introduced.
+ *
+ * TWO OVERRIDES REMAIN, both at (0,1,1), and the source-order note above still
+ * governs them: `* + h3` and `* + h2` open a section, and `:is(h2,h3,h4) + *`
+ * binds a heading to whatever follows. `heading-close` stays last for that reason.
+ */
 
-article.detail > :is(ul, ol, blockquote, figure, pre) + * {
-  margin-top: var(--rhythm-block);
-}
-
-article.detail > * + h3 {
+.detail > * + h3 {
   margin-top: var(--rhythm-heading-minor);
 }
 
-article.detail > * + h2 {
+.detail > * + h2 {
   margin-top: var(--rhythm-heading-major);
 }
 
-article.detail > :is(h2, h3, h4) + * {
+.detail > :is(h2, h3, h4) + * {
   margin-top: var(--rhythm-heading-close);
+}
+
+/* ── The floated thumbnail, and what flows around it ───────────────────────── */
+/*
+ * A `figure` marked `thumbnail` in the Studio renders small and, in an article
+ * body, floats left with the prose wrapping around it — the book-cover treatment.
+ * The figure's own appearance (its width, its border) belongs to the component;
+ * what lives here is the FLOW, because that is `.detail`'s business and
+ * because these are amendments to the rhythm ramp above.
+ *
+ * ── THE CONTEXT OPTS IN, THE COMPONENT DOES NOT DECIDE ───────────────────────
+ *
+ * `--thumb-float` is declared here and read by Figure.astro. Two things fall out
+ * of that direction, and both are the reason for it:
+ *
+ *   - A CASE STUDY GETS THE THUMBNAIL WITHOUT THE FLOAT, for free, by simply not
+ *     declaring this. `figure` is shared with caseStudy's projectApproach and
+ *     projectOutcome, where the layout differs and the float is untested — so the
+ *     flag sizes the image there and stops. No opt-out to remember.
+ *   - The component needs no ancestor selector. A scoped style in Figure.astro
+ *     cannot see `.detail` without `:global()`, and reaching up out of a
+ *     component to find its context is the thing custom properties exist to avoid.
+ *
+ * ── FROM md, AND THE MEASURE IT COSTS ────────────────────────────────────────
+ *
+ * The prose column is 8 of 12 columns. A 150px thumbnail plus its 24px gutter
+ * takes 174px out of every line it overlaps:
+ *
+ *     768  (md)   482px prose - 174  =  308px  ->  ~31 characters
+ *     1024 (lg)   653px prose - 174  =  479px  ->  ~48 characters
+ *
+ * IT WAS WRITTEN AT lg AND MOVED TO md (2026-08-26, Andy's call, judged on screen
+ * against the real article). This comment argued for lg on the arithmetic — 31
+ * characters is a very short line — and the eye disagreed, which is the tie-break
+ * this project uses. Recorded rather than silently swapped, because the number is
+ * worth knowing: it is the shortest measure anywhere in the build.
+ *
+ * ONE THING THAT FOLLOWS, unresolved: DESIGN.md's leading ramp indexes by MEASURE,
+ * and ~29-33 characters is precisely the `body-compact` register at 1.5. Text
+ * beside a thumbnail at md is 31 characters set at body's 1.8, which is the exact
+ * mismatch `body-compact` exists to name. Whether the wrapped lines want the
+ * tighter leading is a real question and a small rule; it is not made here.
+ *
+ * Below md the thumbnail is simply a small block above the text, which is also
+ * what it does on a phone.
+ */
+
+@container style(--breakpoint-md: true) {
+  .detail {
+    --thumb-float: left;
+  }
+}
+
+/*
+ * WHAT MUST NOT WRAP. Only paragraphs and the minor headings should sit beside a
+ * cover; everything with its own left-edge furniture has to clear it:
+ *
+ *   h2          opens a section, so it starts against the margin, not beside the
+ *               previous entry's cover
+ *   ul, ol      MARKERS ARE THE REASON. A float shortens LINE BOXES, not boxes —
+ *               the list's own box still starts at the container's left edge, so
+ *               `list-style-position: outside` would put the bullets underneath
+ *               the thumbnail while the text moved right
+ *   figure      including the next thumbnail, which is what stops two consecutive
+ *               book covers from stacking side by side when an entry runs short
+ *   blockquote  its bar sits at the box edge, so it would land under the float
+ *   pre         does not wrap, so it would simply overlap
+ *
+ * `clear` with no preceding float is a no-op, so this rule is inert on every page
+ * that has no thumbnail. It costs nothing to leave switched on.
+ *
+ * ONE KNOWN EDGE CASE, not designed around: if a theme paragraph is short enough
+ * that a following h4 still wraps beside the cover while its list clears, that
+ * heading is left stranded next to the image with its list below. The richer fix
+ * is `display: flow-root` on the lists, which makes each one a block that sits
+ * BESIDE the float at a reduced width with its markers intact, rather than
+ * clearing it. Worth reaching for only if the stranding actually shows.
+ */
+.detail > :is(h2, ul, ol, blockquote, figure, pre) {
+  clear: left;
 }
 
 /* ── Measure ───────────────────────────────────────────────────────────────── */
@@ -432,6 +822,6 @@ article.detail > :is(h2, h3, h4) + * {
  * would be 66 characters of Lato.
  */
 
-article.detail :where(p, ul, ol, blockquote, figure) {
+.detail :where(p, ul, ol, blockquote, figure) {
   max-width: 66ch;
 }

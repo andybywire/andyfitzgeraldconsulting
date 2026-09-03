@@ -1,4 +1,5 @@
 import {defineArrayMember, defineField, defineType} from 'sanity'
+import {PLAIN_STYLES, MARKS} from '../portableText'
 
 export default defineType({
   type: 'object',
@@ -27,7 +28,8 @@ export default defineType({
                       of: [
                         defineArrayMember({
                           type: 'block',
-                          styles: [{title: 'Normal', value: 'normal'}],
+                          styles: PLAIN_STYLES,
+                          marks: MARKS,
                         }),
                       ],
                     }),

@@ -1,0 +1,36 @@
+---
+/**
+ * A body h2, with a fragment id.
+ *
+ * ── IT DOES NOT RESTATE A DEFAULT, WHICH IS THE BAR Prose.astro SETS ─────────
+ *
+ * astro-portabletext already renders `style: 'h2'` as `<h2>`, and Prose.astro's own
+ * rule is to resist overrides that only repeat that. This one adds an attribute the
+ * library has no way to know it needs: the rail's "On This Page" links target these
+ * ids, so without them half the rail points at nothing.
+ *
+ * ONLY h2, because the rail lists only h2s — that is what the Figma Article board
+ * draws, and the three entries in its sidebar correspond to its three h2 sections.
+ * If h3 ever joins the list this file takes `{h2: Heading, h3: Heading}` and reads
+ * `node.style` for the tag; it is deliberately not built that way yet, on the same
+ * rule that keeps `table` unwritten.
+ *
+ * ── NO STYLING, AND NO SCOPED <style> BLOCK ──────────────────────────────────
+ *
+ * `h2` is a global element role in base.css. A scoped style here would need
+ * `:global()` to reach the rhythm ramp anyway, and the ramp is `article.detail > *`
+ * — a direct-child selector this component's output satisfies only because
+ * <PortableText> emits blocks flat. Nothing to add.
+ *
+ * `index` and `isInline` arrive in props and are deliberately not destructured:
+ * unused bindings would fail `astro check`, and nothing here needs them.
+ */
+import type {BlockProps} from 'astro-portabletext/types'
+import {headingId} from './headingId'
+
+type Props = BlockProps
+
+const {node} = Astro.props
+---
+
+<h2 id={headingId(node)}><slot /></h2>

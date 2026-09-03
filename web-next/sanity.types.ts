@@ -15,6 +15,86 @@
 export declare const internalGroqTypeReferenceTo: unique symbol
 
 // Source: schema.json
+export type BandGetInTouch = {
+  _type: 'bandGetInTouch'
+  message?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+}
+
+export type ClientReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'client'
+}
+
+export type BandWorkWithMe = {
+  _type: 'bandWorkWithMe'
+  message?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  clientLogos?: Array<
+    {
+      _key: string
+    } & ClientReference
+  >
+}
+
+export type BandRss = {
+  _type: 'bandRss'
+  title?: string
+  message?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  buttonTarget?: string
+}
+
 export type Table = {
   _type: 'table'
   headerRows?: number
@@ -62,13 +142,7 @@ export type Figure = {
   caption?: string
   altText?: string
   outline?: boolean
-}
-
-export type ClientReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'client'
+  thumbnail?: boolean
 }
 
 export type ReviewReference = {
@@ -96,6 +170,42 @@ export type Settings = {
   siteSubtitle?: string
   url?: string
   description?: string
+  authorName?: string
+  authorImage?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    altText?: string
+    _type: 'image'
+  }
+  bands?: Array<
+    | ({
+        _key: string
+      } & BandRss)
+    | ({
+        _key: string
+      } & BandWorkWithMe)
+    | ({
+        _key: string
+      } & BandGetInTouch)
+  >
+  bandOverrides?: Array<{
+    documentType?: 'note' | 'article' | 'caseStudy'
+    bands?: Array<
+      | ({
+          _key: string
+        } & BandRss)
+      | ({
+          _key: string
+        } & BandWorkWithMe)
+      | ({
+          _key: string
+        } & BandGetInTouch)
+    >
+    _type: 'bandOverride'
+    _key: string
+  }>
   homeLogos?: Array<
     {
       _key: string
@@ -189,7 +299,7 @@ export type Singleton = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -210,6 +320,17 @@ export type Singleton = {
         _type: 'image'
         _key: string
       }
+  >
+  bands?: Array<
+    | ({
+        _key: string
+      } & BandRss)
+    | ({
+        _key: string
+      } & BandWorkWithMe)
+    | ({
+        _key: string
+      } & BandGetInTouch)
   >
 }
 
@@ -281,7 +402,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -299,7 +420,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -317,7 +438,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -345,7 +466,7 @@ export type CaseStudy = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -359,16 +480,6 @@ export type CaseStudy = {
     | ({
         _key: string
       } & Figure)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        altText?: string
-        _type: 'image'
-        _key: string
-      }
   >
   projectOutcome?: Array<
     | {
@@ -378,7 +489,7 @@ export type CaseStudy = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -392,16 +503,6 @@ export type CaseStudy = {
     | ({
         _key: string
       } & Figure)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        altText?: string
-        _type: 'image'
-        _key: string
-      }
   >
   afterImage?: {
     asset?: SanityImageAssetReference
@@ -413,6 +514,11 @@ export type CaseStudy = {
     outline?: boolean
     _type: 'image'
   }
+  bands?: Array<
+    {
+      _key: string
+    } & BandWorkWithMe
+  >
 }
 
 export type Review = {
@@ -424,6 +530,7 @@ export type Review = {
   author?: string
   slug?: Slug
   title?: string
+  linkedIn?: string
   employer?: ClientReference
   excerpt?: string
   condensedBody?: Array<{
@@ -433,7 +540,7 @@ export type Review = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -451,7 +558,7 @@ export type Review = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -472,6 +579,14 @@ export type Client = {
   _rev: string
   name?: string
   slug?: Slug
+  relationship?: 'Direct Client' | 'Agency Partner' | 'Coworker' | 'Student'
+  role?: string
+  engagementDates?: Array<{
+    startDate?: string
+    endDate?: string
+    _type: 'engagement'
+    _key: string
+  }>
   logo?: {
     asset?: SanityImageAssetReference
     media?: unknown
@@ -497,8 +612,6 @@ export type Article = {
   _updatedAt: string
   _rev: string
   title?: string
-  genre?: SkosConceptReference
-  insightType?: SkosConceptReference
   slug?: Slug
   pubDate?: string
   heroImage?: {
@@ -517,6 +630,8 @@ export type Article = {
       _key: string
     } & SkosConceptReference
   >
+  genre?: SkosConceptReference
+  insightType?: SkosConceptReference
   shortDescription?: string
   description?: string
   lede?: Array<{
@@ -545,7 +660,7 @@ export type Article = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h1' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -559,16 +674,6 @@ export type Article = {
     | ({
         _key: string
       } & Figure)
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        altText?: string
-        floatLeft?: boolean
-        _type: 'image'
-        _key: string
-      }
     | ({
         _key: string
       } & Code)
@@ -577,6 +682,85 @@ export type Article = {
       } & Table)
   >
   canonical?: string
+  bands?: Array<
+    {
+      _key: string
+    } & BandRss
+  >
+}
+
+export type Note = {
+  _id: string
+  _type: 'note'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  slug?: Slug
+  shortDescription?: string
+  pubDate?: string
+  genre?: SkosConceptReference
+  topic?: Array<
+    {
+      _key: string
+    } & SkosConceptReference
+  >
+  bodyText?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Figure)
+  >
+  clipRef?: {
+    clipUrl?: string
+    publisher?: string
+    title?: string
+    img?: {
+      asset?: SanityImageAssetReference
+      media?: unknown
+      hotspot?: SanityImageHotspot
+      crop?: SanityImageCrop
+      altText?: string
+      _type: 'image'
+    }
+  }
+  bookRef?: {
+    bookUrl?: string
+    title?: string
+    author?: string
+    img?: {
+      asset?: SanityImageAssetReference
+      media?: unknown
+      hotspot?: SanityImageHotspot
+      crop?: SanityImageCrop
+      altText?: string
+      _type: 'image'
+    }
+    publisher?: string
+    pubDate?: string
+  }
+  bands?: Array<
+    {
+      _key: string
+    } & BandRss
+  >
 }
 
 export type Code = {
@@ -737,10 +921,13 @@ export type Geopoint = {
 }
 
 export type AllSanitySchemaTypes =
+  | BandGetInTouch
+  | ClientReference
+  | BandWorkWithMe
+  | BandRss
   | Table
   | SanityImageAssetReference
   | Figure
-  | ClientReference
   | ReviewReference
   | CaseStudyReference
   | Settings
@@ -754,6 +941,7 @@ export type AllSanitySchemaTypes =
   | Review
   | Client
   | Article
+  | Note
   | Code
   | SkosConceptScheme
   | SkosConcept
@@ -766,9 +954,255 @@ export type AllSanitySchemaTypes =
   | SanityImageAsset
   | Geopoint
 
+// Source: ../web-next/src/sanity/queries/case-studies.ts
+// Variable: CASE_STUDY_DETAIL_QUERY
+// Query: *[_type == "caseStudy" && slug.current == $slug][0] {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		description,		client->{			name,			"image": tile{asset, crop, hotspot, altText}		},		heroImage { 	asset,	crop,	hotspot,	altText,	caption },		atGlance,		whatDid,		projectGoal,		beforeImage { 	asset,	crop,	hotspot,	altText,	caption },		projectApproach,		projectOutcome,		afterImage { 	asset,	crop,	hotspot,	altText,	caption, outline },		review->{			author,			title,			"slug": slug.current,			"employer": employer->name,			condensedBody		}	}
+export type CASE_STUDY_DETAIL_QUERY_RESULT = {
+  _id: string
+  _type: 'caseStudy'
+  slug: string | null
+  pubDate: string | null
+  _updatedAt: string
+  genre: string | null
+  topics: Array<string | null> | null
+  title: string | null
+  shortDescription: string | null
+  description: string | null
+  client: {
+    name: string | null
+    image: {
+      asset: SanityImageAssetReference | null
+      crop: SanityImageCrop | null
+      hotspot: SanityImageHotspot | null
+      altText: string | null
+    } | null
+  } | null
+  heroImage: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+    caption: string | null
+  } | null
+  atGlance: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  whatDid: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  projectGoal: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  beforeImage: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+    caption: string | null
+  } | null
+  projectApproach: Array<
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+  > | null
+  projectOutcome: Array<
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+  > | null
+  afterImage: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+    caption: string | null
+    outline: boolean | null
+  } | null
+  review: {
+    author: string | null
+    title: string | null
+    slug: string | null
+    employer: string | null
+    condensedBody: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+  } | null
+} | null
+
+// Source: ../web-next/src/sanity/queries/case-studies.ts
+// Variable: CASE_STUDY_BAND_QUERY
+// Query: *[_type == "caseStudy" && slug.current == $slug][0] {			"workBand": coalesce(	bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]){		message,		"clientLogos": clientLogos[]->{			name,			"image": tile{asset, crop, hotspot, altText}		}	}	}
+export type CASE_STUDY_BAND_QUERY_RESULT = {
+  workBand: {
+    message: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+    clientLogos: Array<{
+      name: string | null
+      image: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+      } | null
+    }> | null
+  } | null
+} | null
+
+// Source: ../web-next/src/sanity/queries/genre-nav.ts
+// Variable: GENRE_NAV_QUERY
+// Query: {		"prev": *[			_type in $types			&& defined(slug.current)			&& defined(pubDate)			&& genre->prefLabel == $genre			&& (pubDate < $pubDate || (pubDate == $pubDate && _id < $id))		] | order(pubDate desc, _id desc)[0] {			_type,			"slug": slug.current,			title		},		"next": *[			_type in $types			&& defined(slug.current)			&& defined(pubDate)			&& genre->prefLabel == $genre			&& (pubDate > $pubDate || (pubDate == $pubDate && _id > $id))		] | order(pubDate asc, _id asc)[0] {			_type,			"slug": slug.current,			title		}	}
+export type GENRE_NAV_QUERY_RESULT = {
+  prev:
+    | {
+        _type: 'article'
+        slug: string | null
+        title: string | null
+      }
+    | {
+        _type: 'caseStudy'
+        slug: string | null
+        title: string | null
+      }
+    | {
+        _type: 'note'
+        slug: string | null
+        title: string | null
+      }
+    | null
+  next:
+    | {
+        _type: 'article'
+        slug: string | null
+        title: string | null
+      }
+    | {
+        _type: 'caseStudy'
+        slug: string | null
+        title: string | null
+      }
+    | {
+        _type: 'note'
+        slug: string | null
+        title: string | null
+      }
+    | null
+}
+
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHTS_INDEX_QUERY
-// Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription	}
+// Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		heroImage { 	asset,	crop,	hotspot,	altText,	caption },		clipRef { publisher }	}
 export type INSIGHTS_INDEX_QUERY_RESULT = Array<
   | {
       _id: string
@@ -780,6 +1214,14 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
+      clipRef: null
     }
   | {
       _id: string
@@ -791,12 +1233,35 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
+      clipRef: null
+    }
+  | {
+      _id: string
+      _type: 'note'
+      slug: string | null
+      pubDate: string | null
+      _updatedAt: string
+      genre: string | null
+      topics: Array<string | null> | null
+      title: string | null
+      shortDescription: string | null
+      heroImage: null
+      clipRef: {
+        publisher: string | null
+      } | null
     }
 >
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHT_DETAIL_QUERY
-// Query: *[_type in ["article", "caseStudy"] && slug.current == $slug][0] {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		lede,		bodyText	}
+// Query: *[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		description,		lede,		bodyText,		heroImage { 	asset,	crop,	hotspot,	altText,	caption },		clipRef {			clipUrl,			publisher,			title,			img { asset, crop, hotspot, altText }		},		bookRef {			bookUrl,			title,			author,			publisher,			pubDate,			img { asset, crop, hotspot, altText }		}	}
 export type INSIGHT_DETAIL_QUERY_RESULT =
   | {
       _id: string
@@ -808,6 +1273,7 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      description: string | null
       lede: Array<{
         children?: Array<{
           marks?: Array<string>
@@ -843,7 +1309,7 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
               _type: 'span'
               _key: string
             }>
-            style?: 'blockquote' | 'h1' | 'h2' | 'h3' | 'h4' | 'normal'
+            style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
             listItem?: 'bullet' | 'number'
             markDefs?: Array<{
               href?: string
@@ -854,17 +1320,16 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
             _type: 'block'
             _key: string
           }
-        | {
-            asset?: SanityImageAssetReference
-            media?: unknown
-            hotspot?: SanityImageHotspot
-            crop?: SanityImageCrop
-            altText?: string
-            floatLeft?: boolean
-            _type: 'image'
-            _key: string
-          }
       > | null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
+      clipRef: null
+      bookRef: null
     }
   | {
       _id: string
@@ -876,26 +1341,439 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
       topics: Array<string | null> | null
       title: string | null
       shortDescription: string | null
+      description: string | null
       lede: null
       bodyText: null
+      heroImage: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      } | null
+      clipRef: null
+      bookRef: null
+    }
+  | {
+      _id: string
+      _type: 'note'
+      slug: string | null
+      pubDate: string | null
+      _updatedAt: string
+      genre: string | null
+      topics: Array<string | null> | null
+      title: string | null
+      shortDescription: string | null
+      description: null
+      lede: null
+      bodyText: Array<
+        | ({
+            _key: string
+          } & Figure)
+        | {
+            children?: Array<{
+              marks?: Array<string>
+              text?: string
+              _type: 'span'
+              _key: string
+            }>
+            style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+            listItem?: 'bullet' | 'number'
+            markDefs?: Array<{
+              href?: string
+              _type: 'link'
+              _key: string
+            }>
+            level?: number
+            _type: 'block'
+            _key: string
+          }
+      > | null
+      heroImage: null
+      clipRef: {
+        clipUrl: string | null
+        publisher: string | null
+        title: string | null
+        img: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+        } | null
+      } | null
+      bookRef: {
+        bookUrl: string | null
+        title: string | null
+        author: string | null
+        publisher: string | null
+        pubDate: string | null
+        img: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+        } | null
+      } | null
     }
   | null
 
 // Source: ../web-next/src/sanity/queries/insights.ts
+// Variable: INSIGHT_RSS_BAND_QUERY
+// Query: *[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {			"rssBand": coalesce(	bands[_type == "bandRss"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandRss"][0],	*[_type == "settings"][0].bands[_type == "bandRss"][0]){title, message, buttonTarget}	}
+export type INSIGHT_RSS_BAND_QUERY_RESULT = {
+  rssBand: {
+    title: string | null
+    message: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+    buttonTarget: string | null
+  } | null
+} | null
+
+// Source: ../web-next/src/sanity/queries/insights.ts
+// Variable: INSIGHTS_REVIEW_QUERY
+// Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {		_type,		"slug": slug.current,		title,		pubDate,		"genre": genre->prefLabel,		"blocks": coalesce(count(bodyText), 0),		"blockTypes": array::unique(bodyText[]._type),		"styles": array::unique(bodyText[_type == "block"].style),		"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,		"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,		"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,		"hasHero": defined(heroImage.asset)	}
+export type INSIGHTS_REVIEW_QUERY_RESULT = Array<
+  | {
+      _type: 'article'
+      slug: string | null
+      title: string | null
+      pubDate: string | null
+      genre: string | null
+      blocks: number | 0
+      blockTypes: Array<'block' | 'code' | 'figure' | 'table'> | null
+      styles: Array<'blockquote' | 'h2' | 'h3' | 'h4' | 'normal' | null> | null
+      hasNestedList: boolean | false
+      hasUnderline: boolean | false
+      hasInlineCode: boolean | false
+      hasHero: false | true
+    }
+  | {
+      _type: 'caseStudy'
+      slug: string | null
+      title: string | null
+      pubDate: string | null
+      genre: string | null
+      blocks: 0
+      blockTypes: null
+      styles: null
+      hasNestedList: false
+      hasUnderline: false
+      hasInlineCode: false
+      hasHero: false | true
+    }
+>
+
+// Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHT_SLUGS_QUERY
-// Query: *[_type in ["article", "caseStudy"] && defined(slug.current)] {		"params": {"slug": slug.current}	}
+// Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {		"params": {"slug": slug.current}	}
 export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
   params: {
     slug: string | null
   }
 }>
 
+// Source: ../web-next/src/sanity/queries/related.ts
+// Variable: RELATED_POOL_QUERY
+// Query: {		"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {			"tops": topConcepts[]->{_id, prefLabel},			"concepts": concepts[]->{				_id,				prefLabel,				"parent": broader[0]._ref			}		},		"pool": *[			_type in ["article", "caseStudy", "note"]			&& defined(slug.current)			&& defined(pubDate)		] | order(pubDate desc) {				_id,	_type,	"slug": slug.current,				pubDate,	_updatedAt,			title,			shortDescription,			"genreId": genre._ref,			"genre": genre->prefLabel,			heroImage { 	asset,	crop,	hotspot,	altText,	caption },			"sourceDomain": clipRef.publisher,			"topics": topic[]->{				_id,				"parent": broader[0]._ref,				"parentIsTop": !defined(broader[0]->broader[0]._ref)			}		}	}
+export type RELATED_POOL_QUERY_RESULT = {
+  genres: {
+    tops: Array<{
+      _id: string
+      prefLabel: string | null
+    }> | null
+    concepts: Array<{
+      _id: string
+      prefLabel: string | null
+      parent: string | null
+    }> | null
+  } | null
+  pool: Array<
+    | {
+        _id: string
+        _type: 'article'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        title: string | null
+        shortDescription: string | null
+        genreId: string | null
+        genre: string | null
+        heroImage: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+          caption: string | null
+        } | null
+        sourceDomain: null
+        topics: Array<{
+          _id: string
+          parent: string | null
+          parentIsTop: false | true
+        }> | null
+      }
+    | {
+        _id: string
+        _type: 'caseStudy'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        title: string | null
+        shortDescription: string | null
+        genreId: string | null
+        genre: string | null
+        heroImage: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+          caption: string | null
+        } | null
+        sourceDomain: null
+        topics: Array<{
+          _id: string
+          parent: string | null
+          parentIsTop: false | true
+        }> | null
+      }
+    | {
+        _id: string
+        _type: 'note'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        title: string | null
+        shortDescription: string | null
+        genreId: string | null
+        genre: string | null
+        heroImage: null
+        sourceDomain: string | null
+        topics: Array<{
+          _id: string
+          parent: string | null
+          parentIsTop: false | true
+        }> | null
+      }
+  >
+}
+
+// Source: ../web-next/src/sanity/queries/reviews.ts
+// Variable: REVIEWS_BY_CLIENT_QUERY
+// Query: *[_type == "client" && count(*[_type == "review" && references(^._id)]) > 0] {		_id,		name,		relationship,		role,		"logo": logo{asset, crop, hotspot, altText},		"engagements": engagementDates[]{startDate, endDate},		"latestEnd": engagementDates[].endDate | order(@ desc)[0],		"reviews": *[_type == "review" && references(^._id)] {			author,			title,			linkedIn,			"slug": slug.current,			body		}	} | order(latestEnd desc)
+export type REVIEWS_BY_CLIENT_QUERY_RESULT = Array<{
+  _id: string
+  name: string | null
+  relationship: 'Agency Partner' | 'Coworker' | 'Direct Client' | 'Student' | null
+  role: string | null
+  logo: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+  } | null
+  engagements: Array<{
+    startDate: string | null
+    endDate: string | null
+  }> | null
+  latestEnd: string | null
+  reviews: Array<{
+    author: string | null
+    title: string | null
+    linkedIn: string | null
+    slug: string | null
+    body: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+  }>
+}>
+
+// Source: ../web-next/src/sanity/queries/singletons.ts
+// Variable: SINGLETON_HEADER_QUERY
+// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy)	}
+export type SINGLETON_HEADER_QUERY_RESULT = {
+  _id: string
+  title: string | null
+  heroCopy: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  lede: string
+} | null
+
+// Source: ../web-next/src/sanity/queries/singletons.ts
+// Variable: SINGLETON_WORK_BAND_QUERY
+// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy),			"workBand": coalesce(	bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]){		message,		"clientLogos": clientLogos[]->{			name,			"image": tile{asset, crop, hotspot, altText}		}	}	}
+export type SINGLETON_WORK_BAND_QUERY_RESULT = {
+  _id: string
+  title: string | null
+  heroCopy: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  lede: string
+  workBand: {
+    message: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+    clientLogos: Array<{
+      name: string | null
+      image: {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+      } | null
+    }> | null
+  } | null
+} | null
+
+// Source: ../web-next/src/sanity/queries/singletons.ts
+// Variable: SINGLETON_INTRO_QUERY
+// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy),		bodyText	}
+export type SINGLETON_INTRO_QUERY_RESULT = {
+  _id: string
+  title: string | null
+  heroCopy: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  lede: string
+  bodyText: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        _type: 'image'
+        _key: string
+      }
+  > | null
+} | null
+
 // Query TypeMap
 import '@sanity/client'
 declare module '@sanity/client' {
   interface SanityQueries {
-    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
-    '\n\t*[_type in ["article", "caseStudy"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tlede,\n\t\tbodyText\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
-    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
+    '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tclient->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t},\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tatGlance,\n\t\twhatDid,\n\t\tprojectGoal,\n\t\tbeforeImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tprojectApproach,\n\t\tprojectOutcome,\n\t\tafterImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n, outline },\n\t\treview->{\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\t"slug": slug.current,\n\t\t\t"employer": employer->name,\n\t\t\tcondensedBody\n\t\t}\n\t}\n': CASE_STUDY_DETAIL_QUERY_RESULT
+    '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t"workBand": coalesce(\n\tbands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t}\n\t}\n\n\t}\n': CASE_STUDY_BAND_QUERY_RESULT
+    '\n\t{\n\t\t"prev": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate < $pubDate || (pubDate == $pubDate && _id < $id))\n\t\t] | order(pubDate desc, _id desc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t},\n\t\t"next": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate > $pubDate || (pubDate == $pubDate && _id > $id))\n\t\t] | order(pubDate asc, _id asc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t}\n\t}\n': GENRE_NAV_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tclipRef { publisher }\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tlede,\n\t\tbodyText,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tclipRef {\n\t\t\tclipUrl,\n\t\t\tpublisher,\n\t\t\ttitle,\n\t\t\timg { asset, crop, hotspot, altText }\n\t\t},\n\t\tbookRef {\n\t\t\tbookUrl,\n\t\t\ttitle,\n\t\t\tauthor,\n\t\t\tpublisher,\n\t\t\tpubDate,\n\t\t\timg { asset, crop, hotspot, altText }\n\t\t}\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {\n\t\t\n\t"rssBand": coalesce(\n\tbands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bands[_type == "bandRss"][0]\n){title, message, buttonTarget}\n\n\t}\n': INSIGHT_RSS_BAND_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
+    '\n\t{\n\t\t"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {\n\t\t\t"tops": topConcepts[]->{_id, prefLabel},\n\t\t\t"concepts": concepts[]->{\n\t\t\t\t_id,\n\t\t\t\tprefLabel,\n\t\t\t\t"parent": broader[0]._ref\n\t\t\t}\n\t\t},\n\n\t\t"pool": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t] | order(pubDate desc) {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\t"genreId": genre._ref,\n\t\t\t"genre": genre->prefLabel,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"sourceDomain": clipRef.publisher,\n\t\t\t"topics": topic[]->{\n\t\t\t\t_id,\n\t\t\t\t"parent": broader[0]._ref,\n\t\t\t\t"parentIsTop": !defined(broader[0]->broader[0]._ref)\n\t\t\t}\n\t\t}\n\t}\n': RELATED_POOL_QUERY_RESULT
+    '\n\t*[_type == "client" && count(*[_type == "review" && references(^._id)]) > 0] {\n\t\t_id,\n\t\tname,\n\t\trelationship,\n\t\trole,\n\t\t"logo": logo{asset, crop, hotspot, altText},\n\t\t"engagements": engagementDates[]{startDate, endDate},\n\t\t"latestEnd": engagementDates[].endDate | order(@ desc)[0],\n\t\t"reviews": *[_type == "review" && references(^._id)] {\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\tlinkedIn,\n\t\t\t"slug": slug.current,\n\t\t\tbody\n\t\t}\n\t} | order(latestEnd desc)\n': REVIEWS_BY_CLIENT_QUERY_RESULT
+    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
+    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\tbands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
+    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\tbodyText\n\t}\n': SINGLETON_INTRO_QUERY_RESULT
   }
 }

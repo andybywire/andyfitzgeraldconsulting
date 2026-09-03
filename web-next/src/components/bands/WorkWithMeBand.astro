@@ -1,0 +1,272 @@
+---
+/**
+ * The "Work with me" band — Insights and Home today.
+ *
+ * ── IT TAKES A RESOLVED BAND, NOT A DOCUMENT ─────────────────────────────────
+ *
+ * The three-tier ladder (document -> page-type override -> Settings default) lives in
+ * GROQ, in `BAND_WORK_WITH_ME` in sanity/fragments.ts. By the time a page renders this
+ * it holds one object and does not know or care which tier produced it. That is the
+ * whole point of resolving in the query: the precedence rule is written once.
+ *
+ * PROPS ARE STRUCTURAL, not the generated query type. Matching the convention Prose
+ * sets — a component depends on a shape, so any query projecting that shape can feed
+ * it, which is what lets Home reuse this without a second component.
+ *
+ * ── WHAT IS HARDCODED, AND WHY THAT IS RIGHT ─────────────────────────────────
+ *
+ * The heading and the button's destination are not content (Andy, 2026-09-01). `bandRss`
+ * carries a `title` because its heading genuinely varies — "Follow along with RSS" on an
+ * article against "Follow presentations with RSS" — where this one never does. Same for
+ * /consulting: there is one consulting page. A field per invariant is a field that can
+ * be set wrong.
+ */
+import type {TypedObject} from 'astro-portabletext/types'
+import type {SanityImageSource} from '../../sanity/image'
+import Band from '../Band.astro'
+import Grid from '../Grid.astro'
+import Prose from '../prose/Prose.astro'
+import Button from '../Button.astro'
+import SanityImage from '../SanityImage.astro'
+
+interface Props {
+  message?: TypedObject[] | null
+  /** `image` is the client's `tile` — the 5:3 lockup, not the square `logo` mark. */
+  clientLogos?: ({name?: string | null; image?: SanityImageSource | null} | null)[] | null
+}
+
+const {message, clientLogos}: Props = Astro.props
+
+/* Anything without an image cannot render, so it is dropped here rather than guarded
+   in the template — the band then knows whether it has a logo column at all. */
+const logos = (clientLogos ?? []).filter((client) => client?.image?.asset)
+---
+
+<Band tone="logo" space="section" aria-labelledby="work-with-me">
+  {
+    /*
+    `space="section"` and NOT the default `band`. Measured off the board: 96px above and
+    below the content, and --rhythm-band resolves to 64 at 1440 where --rhythm-section
+    resolves to 96. All three repeated bands are `section`.
+
+    `tone="logo"` is the board's `color/surface/logo-band` — white on light, neutral-900
+    on dark, which lifts this band off the page ground either way. It is the one tone
+    that re-points nothing: its own note in Band.astro records that ordinary text roles
+    already read correctly against it in both themes, so the copy and the button need no
+    adjustment for sitting here.
+  */
+  }
+  <Grid class="work-grid">
+    {
+      /* Title case, including the preposition — the board reads "Work With Me". Settled
+        for every h2 and rail h3 on 2026-09-03; Portable Text h3s stay sentence case. */
+    }
+    <h2 id="work-with-me" class="work-title">Work With Me</h2>
+
+    <div class="work-copy"><Prose value={message} /></div>
+
+    {
+      logos.length > 0 && (
+        <ul class="work-logos" role="list">
+          {logos.map((client) => (
+            <li>
+              {/*
+                Alt falls back to the client's NAME, not to empty. A logo here is not
+                decoration — the band's claim is who these clients are — so the name is
+                the honest description when no altText was authored. Passing it also
+                suppresses SanityImage's missing-altText warning, correctly: there is a
+                real alternative, it just is not stored on the asset.
+              */}
+              <SanityImage
+                image={client!.image!}
+                alt={client!.image!.altText ?? client!.name ?? ''}
+                class="work-logo"
+              />
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    {
+      /*
+      ── AFTER THE LOGOS IN THE DOM, WHICH IS THE MOBILE ORDER ────────────────
+
+      The mobile variant puts the button below the client tiles, full width. That is a
+      SOURCE ORDER difference, not a visual one, so the DOM carries it and CSS never
+      reorders: `order` would buy the mobile layout at the price of a visual-versus-DOM
+      mismatch, which is the exact trade the masonry rebuild was done to avoid.
+
+      Desktop places it back into the left column by explicit `grid-row`, so both
+      layouts come from placement rather than from reordering. The cost is that a screen
+      reader hears copy -> clients -> call to action at every width. That reads fine, and
+      the button is the only focusable thing in the band, so tab order cannot disagree
+      with what is on screen either way.
+    */
+    }
+    <Button href="/consulting" class="work-cta">Learn more</Button>
+  </Grid>
+</Band>
+
+<style>
+  /*
+   * ── THE ROW GAP IS OVERRIDDEN, AND THE OVERRIDE IS PRINCIPLED ───────────────
+   *
+   * <Grid> sets `row-gap: rhythm-heading-major` (64), and states its own reason:
+   * "because what lands below always starts with a heading." Here what lands below the
+   * h2 is body copy, so the justification does not apply and `heading-close` (16) is
+   * the correct pairing — which is also exactly what the board draws.
+   *
+   * Reachable at all because <Grid> spreads `...rest`, so Astro's scope attribute
+   * reaches its root element. Band.astro's header documents that mechanism.
+   */
+  .work-grid {
+    row-gap: var(--rhythm-heading-close);
+  }
+
+  .work-title {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * Mobile-first: one column, everything full width. The board's asymmetric split —
+   * 571 + skip-1 + 316, closing 996 exactly — arrives at md. It is the same split the
+   * facet groups and Home use.
+   */
+  .work-copy,
+  .work-logos,
+  .work-cta {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * FULL WIDTH BELOW md, for free. A grid item is blockified, so the button's
+   * `inline-flex` computes to `flex` and the default `justify-self: stretch` fills the
+   * column — 343 at 375, which is what the mobile variant draws. Its label is already
+   * centered by the component. `justify-self: start` at md hands it back its own width.
+   *
+   * The margin makes the 48 the variant shows below the logos: 16 of row gap plus 32.
+   * At md it becomes the FLOOR under the copy instead, with `align-self: end` supplying
+   * the rest — see below.
+   */
+  .work-cta {
+    margin-top: var(--rhythm-list);
+  }
+
+  /* Prose emits a flat run of paragraphs and base.css's rhythm ramp is scoped to
+     `article.detail`, so nothing spaces these otherwise. 24 is what the board draws
+     and what `rhythm-paragraph` is. `:global` because the elements carry Prose's
+     scope, not this component's. */
+  .work-copy :global(p + p) {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  .work-logos {
+    /*
+     * base.css keeps the UA list indent for prose; this is not prose. `role="list"` is
+     * on the element because `list-style: none` drops list semantics in Safari.
+     *
+     * ── THE TOP MARGIN IS THE STACKED GAP, AND IT LIVES HERE ON PURPOSE ───────
+     *
+     * Below md this is the only thing between the copy and the first client tile — the
+     * grid's 16px row gap alone left them reading as one block. `rhythm-list` and not
+     * `rhythm-block` because row gap and margin ADD: 16 + 32 is the 48 the mobile
+     * variant draws, both above the tiles and below them.
+     *
+     * Written as a longhand INSIDE this block rather than as a rule above it, which is
+     * where it was first and where it silently did nothing: this block's `margin: 0`
+     * shorthand has the same specificity and comes later, so it won. Measured at 16px
+     * when it should have been 48.
+     */
+    margin: var(--rhythm-list) 0 0;
+    padding: 0;
+    list-style: none;
+
+    display: flex;
+    flex-direction: column;
+    /* CENTERED below md, where the tiles are the only thing in the column and the
+       variant centers them — 68px either side of a 207 frame in 343. Left-aligned at md,
+       where they share a row with the copy and a ragged left edge would show. */
+    align-items: center;
+    /*
+     * 16, WHICH IS THE BOARD'S FRAME GAP AND NOT ITS IMAGE GAP. The board draws each
+     * mark inside a frame padded by 16, so mark-to-mark reads as 48 while frame-to-frame
+     * is 16. A `tile` carries that padding INSIDE the asset — it is a 5:3 lockup with
+     * its own whitespace, not a cropped mark — so the frame gap is the one that
+     * transfers. Using 48 here would add the padding twice.
+     */
+    gap: var(--space-2);
+  }
+
+  /*
+   * 200px, JUDGED ON SCREEN (Andy, 2026-09-01) rather than taken from the board, which
+   * draws each mark at 175 inside the 316 column. The board's 175 is the extent of the
+   * ARTWORK; a `tile` is a 5:3 lockup with its own whitespace baked in, so at 175 the
+   * mark inside it renders visibly smaller than the board's. 200 puts the visible mark
+   * back where the board has it.
+   *
+   * Either way they are left-aligned in the column rather than filling it — the width is
+   * a size, not a layout.
+   *
+   * `max-inline-size` rather than a fixed width so a narrow phone can shrink them; 200
+   * still fits the 343 column at 375, so it only binds below about 232.
+   */
+  .work-logo {
+    /*
+     * `radius-1`, the same 3px the button takes. It is doing real work rather than
+     * decoration: a tile whose artwork has no dark variant sits as a light rectangle on
+     * the dark logo band, and a hard 90-degree corner is what makes that read as a
+     * pasted-on box. Softening the corner is the cheapest thing that helps.
+     */
+    border-radius: var(--radius-1);
+    inline-size: 200px;
+    max-inline-size: 100%;
+    block-size: auto;
+  }
+
+  /*
+   * ── DESKTOP PLACES ALL FOUR EXPLICITLY, AND THAT IS WHAT BOTTOM-ALIGNS THE CTA ──
+   *
+   * Rows are stated rather than auto-placed because the DOM order is the MOBILE order:
+   * the button comes after the tiles and has to land back beside them, in the left
+   * column, without `order`.
+   *
+   *   row 1   heading, full width
+   *   row 2   copy (1-7)          tiles (9-12, spanning rows 2 and 3)
+   *   row 3   button (1-7)
+   *
+   * The tiles spanning two rows is the whole mechanism. A spanning item taller than its
+   * tracks distributes the excess across them, so rows 2 and 3 together always equal the
+   * tile column's height — and `align-self: end` drops the button to the bottom of row 3,
+   * which is therefore the bottom of the tiles. That reproduces the board's 86px gap
+   * without anyone knowing it is 86.
+   *
+   * It also degrades the right way. When the copy is the taller of the two there is no
+   * excess to distribute, the rows collapse to their content, and the button's own
+   * `margin-top` is what keeps it off the last paragraph.
+   */
+  @container style(--breakpoint-md: true) {
+    .work-title {
+      grid-row: 1;
+    }
+
+    .work-copy {
+      grid-column: 1 / span 7;
+      grid-row: 2;
+    }
+
+    .work-logos {
+      grid-column: 9 / span 4;
+      grid-row: 2 / span 2;
+      margin-top: 0;
+      align-items: start;
+    }
+
+    .work-cta {
+      grid-column: 1 / span 7;
+      grid-row: 3;
+      align-self: end;
+      justify-self: start;
+    }
+  }
+</style>

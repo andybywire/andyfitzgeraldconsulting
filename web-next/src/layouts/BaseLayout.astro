@@ -31,13 +31,31 @@ const {title, description} = Astro.props
 
     {
       /*
-      Theme, resolved BEFORE anything paints.
+      Theme and the `js` flag, both resolved BEFORE anything paints.
 
       `is:inline` is load-bearing. Without it Astro treats this as a module and
       bundles it, which gives it `defer` semantics — it would run after the
       document is parsed, so the page would paint in the wrong theme and then
       correct itself. That flash is the exact failure the three-block CSS in
       tokens.css was written to avoid, and deferring this script reintroduces it.
+
+      ── `html.js` IS THE SAME MECHANISM, SPENT ON A SECOND JOB ─────────────────
+
+      A synchronous inline script runs while <head> is still parsing, so the class
+      is on the root element before <body> exists and before the first paint. Any
+      rule keyed on `html.js` is therefore true FROM that paint rather than applied
+      as a correction to it — which is the whole point: progressive enhancement
+      that changes layout has to be in place before anything is drawn, or it is a
+      visible shift instead of an enhancement.
+
+      A visitor without JavaScript never gets the class, so those rules never match
+      and they see the un-enhanced page. That is the arrangement the Insights index
+      needs to hide cards 25+ before paint while keeping ALL of them visible when
+      nothing can reveal them again — a control that cannot work should not exist,
+      and neither should content nobody can reach.
+
+      Global rather than per-page because it is about the DOCUMENT, not a feature:
+      search lands on every page in phase 4 and wants the same flag.
 
       Only an explicit choice sets the attribute. Following the system means
       leaving `data-theme` ABSENT, so the `prefers-color-scheme` block applies
@@ -49,6 +67,10 @@ const {title, description} = Astro.props
     */
     }
     <script is:inline>
+      /* First, and outside the try: a localStorage failure must not cost the page
+         its enhancement flag. */
+      document.documentElement.classList.add('js')
+
       try {
         const t = localStorage.getItem('theme')
         if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
@@ -76,6 +98,37 @@ const {title, description} = Astro.props
 
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+
+    {
+      /*
+      ── rel=author, FOR MICROFORMATS AUTHORSHIP ──────────────────────────────
+
+      The design carries no byline — a detail page's eyebrow is genre and date, and
+      on a single-author site that is right. So an `h-entry` here has no visible
+      author to mark up, and an in-entry `p-author h-card` would have to be
+      invisible content, which microformats discourages.
+
+      The IndieWeb answer is the authorship algorithm: a consumer that finds no
+      `p-author` on the entry looks for a page-level `rel=author`, fetches it, and
+      takes the REPRESENTATIVE h-card it finds there. One attribute, no hidden
+      markup, no change to the design.
+
+      IT IS INERT UNTIL THE HOMEPAGE CARRIES THAT h-card, which is phase 4 item 3.
+      Harmless in the meantime — a consumer follows the link, finds no h-card and
+      reports no author, which is where it already was. Nothing consumes authorship
+      until syndication, and that is phase 8.
+
+      In <head> rather than on the masthead's identity link, which also points at
+      `/`. `rel` there means "this is the site's home"; overloading it with an
+      authorship claim would put a metadata concern on a nav element, and the two
+      would then have to be changed together. Site-wide because it is true
+      site-wide, not just on entries.
+
+      The h-card itself will need an author name and avatar. `settings` has neither
+      today — two fields Andy is adding.
+    */
+    }
+    <link rel="author" href="/" />
   </head>
   <body>
     <slot />

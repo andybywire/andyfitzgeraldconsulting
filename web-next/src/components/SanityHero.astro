@@ -9,17 +9,23 @@
  *
  *     inline-size: 100%      full bleed at every width
  *     aspect-ratio: 16/9     the shape while there is room for it
- *     max-block-size: 24rem  the height it is not allowed to exceed
+ *     max-block-size: 20rem  the height it is not allowed to exceed
  *
- * Below 682.7px the ratio governs. Above it the height pins at 384px while the
- * width keeps growing, so the box widens into 2.08:1 at 800, 3.75:1 at 1440 and
- * 5:1 at 1920 — the panorama, arrived at rather than specified. Measured across
- * all of those widths.
+ * Below 568.9px the ratio governs. Above it the height pins at 320px while the
+ * width keeps growing, so the box widens into 2.5:1 at 800, 4.5:1 at 1440 and
+ * 6:1 at 1920 — the panorama, arrived at rather than specified.
  *
  * THE SWITCH POINT IS DERIVED, which is the reason this needs no breakpoint and
- * could not sensibly use one: 682.7 is wherever 16:9 happens to meet 24rem, so it
+ * could not sensibly use one: 568.9 is wherever 16:9 happens to meet 20rem, so it
  * moves if either constant does. A media query would have to be recomputed by hand
  * every time; `max-block-size` simply cannot be wrong.
+ *
+ * THE CAP WAS 24rem UNTIL 2026-08-26 and every number above moved with it — the
+ * switch point from 682.7, the ratios from 2.08/3.75/5. 20rem is what the Figma
+ * Article board draws (320px against a 1440 frame), and phase 3 had transcribed the
+ * wrong constant. Expect it to move again during fit and finish against real
+ * content; when it does, edit `HERO_MAX_BLOCK_REM` below — that is the only value
+ * to change — and recompute the four derived numbers in this comment.
  *
  * `object-fit: cover` fills the widening box, and `object-position` aims the crop
  * — see the hotspot note below.
@@ -46,8 +52,12 @@
  *
  * The srcset ladder stops at the source's own width, so a 1262px-wide asset offers
  * nothing above 1262w — and this element is full bleed, so on a 1890px viewport
- * the browser stretches that file to 1890 and the result is soft. Confirmed in
- * DevTools: rendered 1890x384 from an intrinsic 1262x710.
+ * the browser stretches that file to 1890 and the result is soft. At the 20rem cap
+ * that is a 1890x320 box filled from an intrinsic 1262x640, still a 1.5x horizontal
+ * stretch. (The 24rem version of this line recorded 1890x384 from 1262x710, measured
+ * in DevTools. The pair above is RECOMPUTED from the new cap, not re-measured — the
+ * top rung's height is min(1262 / (16/9), 640) — so treat it as arithmetic until
+ * someone confirms it in a real browser.)
  *
  * THAT IS THE DESIGN, not a failure of the cap. Full bleed is not negotiable, so
  * the only question is which way to be wrong when a source is too small, and
@@ -97,18 +107,37 @@ interface Props {
 const {image, alt, aspect = '16/9', class: className, ...rest}: Props = Astro.props
 
 /**
- * 24rem at the nominal 16px root, DOUBLED for density — see `capHeight` in
- * image.ts. This is the one number shared between the frontmatter and the
- * stylesheet below, and they have to move together; there is no way to read a CSS
- * value from here, and computing the CSS from this would put layout in JS.
+ * ── THE ONE NUMBER ───────────────────────────────────────────────────────────
  *
- * It is a hedge, not a measurement: a reader who has scaled their text up makes
- * `24rem` larger than 384px, and the cap does not follow. The failure is a
- * slightly soft hero for that reader, which is the same failure an undersized
- * source already produces.
+ * The hero's height cap, in rem, and the only place it is written. Both consumers
+ * derive from it: the stylesheet gets it as a custom property on the element, and
+ * the srcset rung cap gets it in device pixels.
+ *
+ * IT USED TO BE TWO — a `HERO_MAX_BLOCK_PX` here and a `max-block-size: 20rem` in
+ * the stylesheet, coupled by a "keep in step" comment. Comments are not a
+ * mechanism, and this value is expected to keep moving through fit and finish, so
+ * the two would eventually disagree by exactly one edit.
+ *
+ * The direction of the fix is forced. There is no way to read a CSS value from
+ * here, so the frontmatter has to be the authority and the CSS has to receive it —
+ * which is the same shape the hotspot already uses below, and the reason this needs
+ * no new mechanism.
+ *
+ * ── WHAT THE `* 16` AND THE `* 2` ARE ────────────────────────────────────────
+ *
+ *   * 16   rem -> px at the NOMINAL root size. Not a measurement: a reader who has
+ *          scaled their text up makes 20rem larger than 320px and the cap does not
+ *          follow, leaving them a slightly soft hero — the same failure an
+ *          undersized source already produces.
+ *   * 2    the density hedge. A rung of width w may serve a w-wide viewport at 1x
+ *          or a w/2-wide one at 2x, and the second needs twice the height. See
+ *          `capHeight` in image.ts.
+ *
+ * So the px figure is a FETCH HEURISTIC derived from the design value, not a second
+ * copy of it. That is why one constant can legitimately serve both.
  */
-const HERO_MAX_BLOCK_PX = 24 * 16
-const attrs = imageAttrs(image, {aspect, capHeight: HERO_MAX_BLOCK_PX * 2})
+const HERO_MAX_BLOCK_REM = 20
+const attrs = imageAttrs(image, {aspect, capHeight: HERO_MAX_BLOCK_REM * 16 * 2})
 
 /**
  * THE HOTSPOT HAS TO WORK TWICE, because this image is cropped twice: once by
@@ -122,10 +151,35 @@ const attrs = imageAttrs(image, {aspect, capHeight: HERO_MAX_BLOCK_PX * 2})
  *
  * A custom property rather than `object-position` inline, so the property name and
  * its default stay in the stylesheet and only the DATA arrives from the document.
+ *
+ * PER-AXIS DEFAULTS, and the apparent duplication with the stylesheet's
+ * `var(--hero-focus, 50% 50%)` is real but not redundant — the two cover different
+ * cases. The CSS fallback handles NO HOTSPOT, where this emits nothing at all. The
+ * `?? 0.5`s handle a hotspot that exists with a member missing, which Sanity's
+ * schema permits and TypeGen therefore types as `number | undefined`. Defaulting
+ * per axis rather than discarding the whole hotspot keeps a half-populated one
+ * useful: a present `x` still aims the crop horizontally.
+ *
+ * A `!` assertion would compile and then write `NaN%` into the style attribute.
  */
-const focus = image?.hotspot
-  ? `--hero-focus: ${(image.hotspot.x * 100).toFixed(2)}% ${(image.hotspot.y * 100).toFixed(2)}%`
-  : undefined
+const hotspot = image?.hotspot
+const focus = hotspot
+  ? `--hero-focus: ${((hotspot.x ?? 0.5) * 100).toFixed(2)}% ${((hotspot.y ?? 0.5) * 100).toFixed(2)}%`
+  : null
+
+/**
+ * Both custom properties in one attribute — the design constant and, when there is
+ * one, the hotspot. `filter(Boolean)` rather than a ternary because the hotspot is
+ * genuinely optional while the height never is.
+ *
+ * THE STYLESHEET HAS NO FALLBACK for `--hero-max-block`, deliberately. A
+ * `var(--hero-max-block, 20rem)` would put the number back in two places, which is
+ * the whole thing this replaces. The consequence is that the property MUST arrive:
+ * an unresolvable `var()` in `max-block-size` computes to `none`, so the cap would
+ * silently disappear and the hero would run at 16/9 to any width. That is what the
+ * attribute order in the template guards.
+ */
+const style = [`--hero-max-block: ${HERO_MAX_BLOCK_REM}rem`, focus].filter(Boolean).join('; ')
 
 const resolvedAlt = alt ?? image?.altText ?? ''
 if (alt === undefined && !image?.altText && attrs) {
@@ -146,8 +200,8 @@ if (alt === undefined && !image?.altText && attrs) {
       loading="eager"
       fetchpriority="high"
       decoding="async"
-      style={focus}
       {...rest}
+      style={style}
     />
   )
 }
@@ -157,13 +211,16 @@ if (alt === undefined && !image?.altText && attrs) {
     inline-size: 100%;
     aspect-ratio: 16 / 9;
 
-    /* 24rem = 384px. Component-local rather than a token: one consumer, and
-       DESIGN.md names no chrome height. In rem so it tracks a reader's text size,
-       like the rest of the type-derived spacing.
+    /* 20rem = 320px, matching the Figma Article board — but the number is NOT here.
+       It arrives from `HERO_MAX_BLOCK_REM` in the frontmatter, which is also what
+       caps the srcset rungs, so the two cannot drift. Component-local rather than a
+       token: one consumer, and DESIGN.md names no chrome height. In rem so it
+       tracks a reader's text size, like the rest of the type-derived spacing.
 
-       KEEP IN STEP WITH `HERO_MAX_BLOCK_PX` in the frontmatter, which caps the
-       srcset rungs against this number. */
-    max-block-size: 24rem;
+       NO FALLBACK VALUE ON PURPOSE — see the note on `style` in the frontmatter. A
+       second number here would defeat the point, and its absence is what makes the
+       attribute order in the template load-bearing rather than incidental. */
+    max-block-size: var(--hero-max-block);
 
     /* Fills the box as it widens past 16/9. Without this the image would letterbox
        or distort once the height caps. */

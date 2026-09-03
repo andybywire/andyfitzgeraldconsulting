@@ -1,6 +1,7 @@
 # Hand-wrapped prose. Prettier reflows markdown, which would destroy deliberate line breaks in
-# DESIGN.md, CLAUDE.md and the decision records.
+# DESIGN.md, CLAUDE.md and the decision records. Likewise, `pnpm format` rewrites workflow docs.
 *.md
+.github/
 
 # Frozen generations — reformatting them would create noise against main
 web/

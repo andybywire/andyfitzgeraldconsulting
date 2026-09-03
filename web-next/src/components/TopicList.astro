@@ -1,0 +1,262 @@
+---
+/**
+ * The topic list — "Topics: systems thinking, mental models" or a stacked list,
+ * depending on how much width it is given.
+ *
+ * ── IT INFERS ITS LAYOUT FROM ITS OWN WIDTH, NOT FROM THE PAGE ───────────────
+ *
+ * Two consumers wrote these rules independently — the article page's rail and the
+ * note entry — which is DESIGN.md's trigger for promotion. Extracting them raised the
+ * real question: the note is an inline run at EVERY width, the article rail is an
+ * inline run below md and a stacked list from md, and a `layout` prop is the obvious
+ * way to say so.
+ *
+ * It is the wrong way, because the page is not what decides. What decides is whether
+ * this list is sitting in the RAIL COLUMN or in the MAIN COLUMN — a question about
+ * the space it occupies, which is exactly what a size container query answers and
+ * what DESIGN.md nominates:
+ *
+ *   "Prefer a real size container query for those, which answers to the space the
+ *    component occupies rather than to the viewport, so the same card in the rail
+ *    and at full width get different treatment from one rule."
+ *
+ * So neither caller configures anything, and a third — a `presentation` rail, a
+ * services page — is correct without being told. The article page's md breakpoint
+ * for this disappears: it was never about the viewport, it was about the list moving
+ * columns AT that viewport.
+ *
+ * ── THE 16rem THRESHOLD, AND WHY IT CLEARS BOTH SIDES ────────────────────────
+ *
+ *   rail        150 at md (768) -> 231 from ~1028 up, capped by the 996 grid
+ *   main column 288 at a 320 viewport -> 343 at 375 -> 440 at md -> 656 at 1440
+ *
+ * 16rem is 256: about 25px above the rail's widest and 32px below the main column's
+ * narrowest. 18rem would sit more centrally between 231 and 343 and would flip a
+ * 320px phone to the stacked form, which is why it is not used — 343 is the
+ * comfortable floor, not the real one.
+ *
+ * ── THE INNER ELEMENT IS NOT GRATUITOUS ──────────────────────────────────────
+ *
+ * A container query never restyles its own container, so the element declaring
+ * `container-type` cannot be the one that switches between flex and block. The <nav>
+ * measures; `.topic-list-inner` responds. ArticleCard hit the same wall and its
+ * header records the same fix.
+ */
+import {slugify} from '../lib/slug'
+
+interface Props {
+  /** Already narrowed to non-null by the caller. */
+  topics: string[]
+  /**
+   * The heading's id, which `aria-labelledby` also points at. The CALLER supplies it
+   * because it has to be namespaced against that page's own body heading ids, which
+   * are slugified from heading text — an h2 titled "Topics" would otherwise collide.
+   */
+  id: string
+  /** Outline level only. The component pins the type; see the note on the label. */
+  as?: 'h2' | 'h3'
+  /** Emit mf2 `p-category`. Only inside an `h-entry` — Eyebrow's `microformats`
+      opt-in, and for the same reason: a category outside any entry root is noise a
+      parser has to ignore. */
+  microformats?: boolean
+  class?: string
+  /* Forwarded to the root element, which is what lets a PAGE place this component:
+     Astro passes the parent's scope down as a prop and it reaches the DOM only if the
+     component spreads rest. PLACEMENT IS THE CALLER'S — this file sets no
+     `grid-column`, the same boundary the cards draw around their outdent. */
+  [key: string]: unknown
+}
+
+const {
+  topics,
+  id,
+  as: Heading = 'h3',
+  microformats = false,
+  class: className,
+  ...rest
+}: Props = Astro.props
+---
+
+<nav class:list={['topic-list', className]} aria-labelledby={id} {...rest}>
+  <div class="topic-list-inner">
+    <Heading id={id} class="topic-list-label">Topics</Heading>
+    <ul role="list">
+      {
+        topics.map((topic) => (
+          <li>
+            {/*
+              PROVISIONAL HREF. docs/urls-and-filtering.md retires `/insights/tag/{slug}/`
+              in favour of a filter param, and its own redirect rule —
+              `^/insights/tag/(.+?)/?$ -> /insights?topic=$1` — is what fixes the VALUE
+              shape as the slugified prefLabel. So the transform is right and the
+              plumbing is not: the param should ultimately come from the facet index's
+              resolvable slugs per concept, resolved in the query.
+
+              `p-category` and NOT `u-category`, which is the easy one to get wrong:
+              `p-` takes the element's TEXT, so this publishes the topic's label, which
+              is what a reader or a syndicated copy wants as a tag. `u-` would take the
+              href and publish the provisional filter URL above — a link nobody outside
+              this site can use, and one that is going to change.
+            */}
+            <a
+              class:list={[microformats && 'p-category']}
+              href={`/insights/?topic=${slugify(topic)}`}
+            >
+              {topic}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .topic-list {
+    /* What makes the layout query possible. Also contains the inline axis, which is
+       what we want: this takes its width from the column it is placed in, never from
+       its own contents. */
+    container-type: inline-size;
+  }
+
+  /* ── Wide: the inline run, and it is the BASE case ───────────────────────── */
+  /*
+   * "Topics:  systems thinking,  mental models" — one wrapping run where row two
+   * starts at the column's left edge UNDER the label rather than indented past it.
+   * That is why the label and every item have to be siblings in ONE flex container:
+   * `display: contents` on the <ul> lifts the <li>s up beside the heading. A nested
+   * flex container would wrap inside its own box.
+   *
+   * `gap: var(--space-1)` gives the boards' 8 in both axes. Rows land 34 apart — the
+   * 26px line box plus 8 — which inline layout could not produce, since its row
+   * spacing is line-height and nothing else.
+   *
+   * ── WHY THIS IS THE BASE AND THE STACKED FORM IS THE QUERY ─────────────────
+   *
+   * tokens.css's rule is that an engine which never evaluates the query must be left
+   * with the phone layout. On a phone BOTH consumers show the inline run — the rail
+   * has dispersed into the main column by then — so the run is the honest base. The
+   * cost of no container-query support is a wide-form list in a 231px rail: cramped,
+   * not broken.
+   */
+  .topic-list-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1);
+  }
+
+  /* `display: contents` lifts the <li>s into the flex row above. base.css keeps the
+     UA's list indent for prose; a nav is not prose. */
+  .topic-list ul {
+    display: contents;
+    padding: 0;
+    list-style: none;
+  }
+
+  /*
+   * ── THE COMPONENT OWNS ITS TYPE; `as` OWNS ONLY THE OUTLINE LEVEL ──────────
+   *
+   * The cards' rule, and it earns its place here twice over: the note passes `as="h2"`
+   * and the article rail `as="h3"`, and base.css gives those two different sizes AND
+   * different tracking. Without pinning all three properties the same list would draw
+   * at 28.125/35.16 with -1.5% tracking on one page and 22.5/29.25 on the other.
+   *
+   * `letter-spacing: normal` is the one that hides: h3 carries none, so the article
+   * page never needed it and the note did. Stated unconditionally so the level a
+   * caller picks stays a document-outline decision and costs nothing visually.
+   */
+  .topic-list-label {
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+    letter-spacing: normal;
+  }
+
+  .topic-list-label::after {
+    content: ':';
+  }
+
+  /* Inside the <li>, after the <a> — so the comma is not part of the link's text and
+     does not take the hover underline with it. */
+  .topic-list li:not(:last-child)::after {
+    content: ',';
+  }
+
+  /* ── Narrow: the stacked list, when this sits in a rail ──────────────────── */
+  @container (inline-size < 16rem) {
+    .topic-list-inner,
+    .topic-list ul {
+      display: block;
+    }
+
+    /* The h3 role. Still whatever element `as` chose — the level is the outline's
+       business and only the presentation changes here. */
+    .topic-list-label {
+      font-size: var(--font-size-3);
+      line-height: 1.3;
+    }
+
+    .topic-list-label::after,
+    .topic-list li:not(:last-child)::after {
+      content: none;
+    }
+
+    /* The rhythm ramp from base.css restated for a context it does not reach: 16 from
+       a heading to its list, and `rhythm-item` between items.
+
+       THE ITEM GAP IS ASKED FOR HERE, not inherited. base.css carried a global
+       `li + li` margin until 2026-09-02, when it was removed because eight places
+       cancelled it and none wanted it; this stacked rail list is the one that did, so
+       it now says so locally. See base.css → Prose. */
+    .topic-list-label + ul {
+      margin-top: var(--rhythm-heading-close);
+    }
+
+    .topic-list li + li {
+      margin-top: var(--rhythm-item);
+    }
+  }
+
+  /* ── Links ──────────────────────────────────────────────────────────────── */
+  /*
+   * OPTS OUT OF THE WIPE-IN UNDERLINE, which base.css's `nav` role provides for with
+   * exactly this escape hatch. The wipe is a chrome gesture for the masthead and the
+   * footer; a dense run of topic links animating one by one under a moving pointer is
+   * noise rather than affordance. DESIGN.md → The rail.
+   *
+   * THE THICKNESS HAS TO BE RESTATED, and that is easy to miss. base.css gives every
+   * anchor `text-decoration-thickness: 0.06em`, then `nav :is(a, button)` resets it
+   * with the `text-decoration` SHORTHAND, which includes `-thickness`. Without the
+   * declaration below the underline returns at the UA's `auto` weight, and two
+   * underlines in one viewport read as two systems. `text-underline-offset` is NOT in
+   * the shorthand and survives on its own.
+   *
+   * THE LINE IS DECLARED AT REST AND ONLY ITS COLOUR MOVES, because
+   * `text-decoration-line` is a discrete keyword and cannot be animated from `none` —
+   * it appeared instantly while everything else on the page eased.
+   *
+   * These rules are now in two places, not one: the article page's `.rail a` still
+   * covers its "On This Page" links, which this component cannot reach. That is a
+   * genuine remainder rather than an oversight — if a THIRD dense link list appears,
+   * the answer is to promote the treatment, not to write it a third time.
+   *
+   * The hover COLOUR is left to base.css's global `a:hover`. This sits on the page
+   * ground, where `link-hover` is right and the underline is not the only signal.
+   */
+  .topic-list a::after {
+    content: none;
+  }
+
+  .topic-list a {
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+    text-decoration-color: transparent;
+    transition:
+      color 0.15s,
+      text-decoration-color 0.15s;
+  }
+
+  .topic-list a:hover {
+    text-decoration-color: currentColor;
+  }
+</style>

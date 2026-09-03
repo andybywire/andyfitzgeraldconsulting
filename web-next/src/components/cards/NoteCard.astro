@@ -1,0 +1,185 @@
+---
+/**
+ * The note card — Note, Book Note and Clipping.
+ *
+ * ── THREE GENRES, TWO SHAPES ─────────────────────────────────────────────────
+ *
+ * Note and Book Note are the same card: title, meta, short description. A Clipping
+ * swaps the description for the source domain with a link icon. That is why the
+ * Figma component has a `Type` axis of two rather than three (48:930) — Book Note
+ * shares Note's layout, confirmed 2026-08-26 — and why this file branches on the
+ * PRESENCE OF A SOURCE rather than on the genre label. Genre is a SKOS prefLabel and
+ * could be renamed in the Studio; `clipRef` either exists or it does not.
+ *
+ * Geometry, read off the component:
+ *
+ *   Note      316x155   pad 16, title h29, 8, meta h24, 8, description
+ *   Clipping  316x128   pad 16, title h29, 8, meta h24, 8, [icon | domain]
+ *
+ * ── THE RESTING BORDER IS VIEWPORT-DEPENDENT, AND THAT IS THE DESIGN ─────────
+ *
+ * Unboxed at rest from `md` up, boxed at rest below it. DESIGN.md's reasoning:
+ * wherever note cards and article cards are seen SIDE BY SIDE, the article card
+ * keeps its outline and this one does not — articles substantial, notes lightweight,
+ * and the contrast is the message. Below `md` nothing is juxtaposed, so the contrast
+ * has nothing to carry and the border's other job takes over: making it obvious the
+ * element is tappable.
+ *
+ * NO HOVER STATE BELOW md EITHER. Touch devices have no hover, so a
+ * permanently-hovered card would encode a state that cannot occur.
+ *
+ * Mobile-first, so the base case is the boxed one and `md` takes the box away —
+ * which reads backwards until you remember that an engine which never evaluates the
+ * query should leave a phone with the phone layout.
+ *
+ * ── WHAT THIS CARD DOES NOT DECIDE ───────────────────────────────────────────
+ *
+ * Its outdent, which is the CONTEXT's call. On the home page it is pulled out by
+ * `card-pad` so its text sits flush with the column edge and the hover box bleeds
+ * past it; on an index it is not, so its text aligns with the article cards' TEXT
+ * and its hover box lands on the same vertical line as their borders. DESIGN.md:
+ * "outdent the card, never the column", and "on an index an unboxed card's hover
+ * should match the boxed cards beside it, not exceed them."
+ */
+import {Link} from '@lucide/astro'
+import Eyebrow from '../Eyebrow.astro'
+
+interface Props {
+  href: string
+  title: string
+  genre?: string | null
+  date?: string | null
+  description?: string | null
+  /** A Clipping's source. Its presence, not the genre, selects the layout. */
+  sourceDomain?: string | null
+  as?: 'h2' | 'h3' | 'h4'
+  class?: string
+  /* Forwarded to the root element. See the longer note in ArticleCard. */
+  [key: string]: unknown
+}
+
+const {
+  href,
+  title,
+  genre,
+  date,
+  description,
+  sourceDomain,
+  as: Tag = 'h3',
+  class: className,
+  ...rest
+}: Props = Astro.props
+---
+
+<article class:list={['note-card', className]} {...rest}>
+  <Tag class="card-title"><a href={href}>{title}</a></Tag>
+  <Eyebrow genre={genre} date={date} />
+
+  {
+    sourceDomain ? (
+      <p class="card-source">
+        {/* Decorative: the domain beside it already says what this is, and Lucide
+            sets aria-hidden by default unless given an a11y prop. */}
+        <Link class="icon-sm" />
+        <span>{sourceDomain}</span>
+      </p>
+    ) : (
+      description && <p class="card-desc">{description}</p>
+    )
+  }
+</article>
+
+<style>
+  /* ── The box: boxed at rest BELOW md, unboxed from md ────────────────────── */
+  .note-card {
+    display: grid;
+    row-gap: var(--card-gap);
+
+    /* See ArticleCard: `normal` behaves as `stretch`, so a card in an equal-height
+       row grew its gaps instead of leaving the slack at the bottom. */
+    align-content: start;
+
+    /* Containing block for the full-card link overlay. */
+    position: relative;
+
+    padding: var(--card-pad);
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+  }
+
+  @container style(--breakpoint-md: true) {
+    .note-card {
+      /* `transparent`, not `none` — DESIGN.md's `note-card` binds a transparent
+         background, and keeping the border declared-but-invisible means the box
+         appearing on hover changes a colour rather than adding a layout-affecting
+         property. A border that appears from nothing would shift the contents 1px. */
+      border-color: transparent;
+      background-color: transparent;
+    }
+
+    /* The box appears and the highlight with it — the only state where both arrive
+       at once, since the article card already has its border at rest. */
+    .note-card {
+      transition:
+        border-color 0.15s,
+        background-color 0.15s,
+        box-shadow 0.15s;
+    }
+
+    .note-card:hover,
+    .note-card:focus-within {
+      border-color: var(--color-border);
+      background-color: var(--color-surface);
+      box-shadow: 2px 2px 0 0 var(--color-accent);
+    }
+  }
+
+  /* ── Type ───────────────────────────────────────────────────────────────── */
+
+  /* The card owns its type; `as` owns only the outline level. See the longer note in
+     ArticleCard — the short version is that `as="h2"` otherwise draws the title at
+     h2's size and tracking, which is not what the board draws. */
+  .card-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+    letter-spacing: normal;
+  }
+
+  .card-title a {
+    color: var(--color-text-title);
+    text-decoration: none;
+  }
+
+  .card-title a:hover {
+    color: var(--color-link-hover);
+  }
+
+  /* The whole card is the target; the accessible name stays the title. See the
+     longer note in ArticleCard. */
+  .card-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .card-desc {
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+  }
+
+  /* ── A Clipping's source line ────────────────────────────────────────────── */
+  /*
+   * The board draws a 25px icon 2px from the text; this uses the system's
+   * `--icon-size-sm` (18) with a real `card-gap`, which lands at the same optical
+   * place — 18 + 8 = 26 against the board's 27 — without introducing a third icon
+   * size. `align-items: center` because the icon has no baseline to share.
+   */
+  .card-source {
+    display: flex;
+    align-items: center;
+    gap: var(--card-gap);
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+  }
+</style>
