@@ -61,7 +61,7 @@ import Band from '../../components/Band.astro'
 import Grid from '../../components/Grid.astro'
 import Masthead from '../../components/Masthead.astro'
 import Footer from '../../components/Footer.astro'
-import Prose from '../../components/prose/Prose.astro'
+import PageHeader from '../../components/PageHeader.astro'
 import ArticleCard from '../../components/cards/ArticleCard.astro'
 import NoteCard from '../../components/cards/NoteCard.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
@@ -236,34 +236,18 @@ const facets = [
       <Grid>
         {
           /*
-          ── STILL INLINE, NOT YET A <PageHeader> ─────────────────────────────
+          ── MOVED TO <PageHeader> ────────────────────────────────────────────
 
-          DESIGN.md calls the page header "one component with an optional lead", and
-          this is the first thing to render the optional half. It stays inline anyway,
-          for the reason the project promotes on: a SECOND CONSUMER is the trigger, and
-          there is not one yet. The article page's title block looks like it, but it is
-          an eyebrow above an h1 with no lead — a different shape, and extracting a
-          component around both today would be guessing at what they share.
+          This was inline until Reviews arrived, and the note that used to sit here
+          named that as the condition: a SECOND CONSUMER is the promotion trigger. The
+          h1, the lead role and the spacing between them now live in the component; what
+          stays here is where the header sits on THIS page's grid, below.
 
-          Reviews, Presentations and Home all want exactly this pair. Whichever lands
-          first is the second consumer, and that is when it moves.
-
-          A <div> around the lead rather than a bare <Prose>: the component is
-          deliberately TRANSPARENT — it emits a flat sequence of blocks and no
-          container — so `heroCopy`'s paragraphs would otherwise become children of
-          <header> with nothing to scope the lead role to.
+          No `body` prop. That third slot takes a singleton's `bodyText`, and an index
+          page has no intro copy under its lead — the facets come next.
         */
         }
-        <header class="page-header">
-          <h1>{page.title ?? 'Insights'}</h1>
-          {
-            page.heroCopy && (
-              <div class="page-lede">
-                <Prose value={page.heroCopy} />
-              </div>
-            )
-          }
-        </header>
+        <PageHeader title={page.title ?? 'Insights'} lede={page.heroCopy} />
 
         {
           /*
@@ -533,80 +517,18 @@ const facets = [
    *
    * The rule generalises to any index built on the masonry-and-filters pattern;
    * DESIGN.md -> Card grids carries it, and Presentations is the next consumer.
+   *
+   * ── THIS IS ALL THAT STAYED BEHIND ─────────────────────────────────────────
+   *
+   * The lead role, the measure cap and the h1-to-lead spacing moved into
+   * <PageHeader> when Reviews became the second consumer. Placement did not, and the
+   * two consumers are the argument: Reviews spans `--col-main` because it has a rail.
+   * Where a header sits on the grid is a fact about the PAGE, so it is stated by the
+   * page — reaching the component's root through the scope attribute Astro passes down.
    */
   .page-header {
     grid-column: var(--col-full);
   }
-
-  /*
-   * ── DESIGN.md's `lead` ROLE, SCOPED HERE ON PURPOSE ───────────────────────
-   *
-   * base.css states its own scope: h1-h4, body prose, links, nav, blockquote, figure,
-   * icons and the rhythm mechanism, and "every other typographic role in DESIGN.md
-   * (display, lead, small, label, …) is component-scoped and belongs to the component
-   * that owns it." The page header owns the lead, so it lives here — and moves with it
-   * when the header becomes a real component.
-   *
-   * Noto Serif at the `font-size-3` step, weight 400, in `text-lead`. Family and weight
-   * are inherited from body rather than restated: `--font-prose` at 400 is already what
-   * a <p> gets, so declaring them again would be two more places to drift.
-   *
-   * LEADING 1.6 IS THE POINT OF THE ROLE, not the size. DESIGN.md indexes leading by
-   * MEASURE, not by size step — 1.5 at ~29-33 characters, 1.6 at ~54, 1.8 at ~67 — and
-   * a lead sits at the middle register. `body` at 1.8 here would be leading tuned for a
-   * line a third longer than this one actually runs.
-   */
-  .page-lede {
-    color: var(--color-text-lead);
-    font-size: var(--font-size-3);
-    line-height: 1.6;
-
-    /*
-     * THE CAP IS WHAT MAKES THE FULL-WIDTH HEADER SAFE. DESIGN.md's Measure section
-     * already specifies `66ch` as exactly this — "the cap is a safety net for
-     * anything wider" than the column span provides. Measured at 1440 on the real
-     * lede: 996px is 79 characters of capacity, past the 60-75 target, where 66ch
-     * gives 830px and the same two lines. It costs this string nothing and stops the
-     * next, longer one running away.
-     *
-     * `ch` on the wrapper rather than the paragraph because the two share a font and
-     * a size, so it resolves identically — and it keeps the constraint on the element
-     * that owns the role rather than on whatever <Prose> happens to emit.
-     *
-     * Leading stays 1.6. At 66ch capacity this sits between the ramp's 1.6 (~54
-     * characters) and 1.8 (~67) rungs, and the longest line actually renders at 60 —
-     * so the role's own value is still the closer of the two.
-     */
-    max-width: 66ch;
-  }
-
-  /* What follows an h1, which base.css's ramp does not cover — it handles h2-h4 and
-     leaves the h1 out. DESIGN.md settled this on the article page: `heading-close`,
-     because the lead is bound to the title the way a paragraph is bound to a heading. */
-  .page-header h1 + .page-lede {
-    margin-top: var(--rhythm-heading-close);
-  }
-
-  /*
-   * ── A LEAD IS ONE PARAGRAPH, AND NOTHING HERE SPACES A SECOND ──────────────
-   *
-   * A draft of this file carried `.page-lede :global(p + p)` giving a second paragraph
-   * `rhythm-paragraph`, on the grounds that `heroCopy` is an array and About currently
-   * holds two blocks. REMOVED DELIBERATELY (Andy, 2026-08-28): the second About
-   * paragraph is body copy that reads as body copy on the live site only because it was
-   * styled to, and it moves into `bodyText` when that page is built. A lead is one
-   * paragraph.
-   *
-   * The rule is not merely unnecessary — it is the mechanism by which the drift
-   * happened. Styling that makes a second paragraph look intentional is exactly what
-   * stops anyone noticing the content model has been worked around. Without it a second
-   * block butts against the first with no space, which is visibly wrong and is the
-   * signal we want.
-   *
-   * The right home for the invariant is a `validation: Rule.max(1)` on `heroCopy` in the
-   * Studio, so the editor cannot create the state at all. That is schema work and
-   * belongs with the About page, not here.
-   */
 
   /* ── The facet groups ───────────────────────────────────────────────────── */
   /*
