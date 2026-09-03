@@ -100,6 +100,44 @@
 
 /* ── Page ──────────────────────────────────────────────────────────────────── */
 
+/*
+ * ── SMOOTH SCROLLING, AND WHY IT HAS TO LIVE IN THIS FILE ───────────────────
+ *
+ * For the rail's "On This Page" links, and any other in-page fragment.
+ *
+ * IT ONLY WORKS ON THE SCROLLING ELEMENT, WHICH HERE IS <html>. Two ways to write
+ * that fail silently and are worth naming, because both look right:
+ *
+ *   `body { scroll-behavior: smooth }` — does NOTHING. Unlike `overflow` and
+ *   `background`, this property does not propagate from body to the viewport, so it
+ *   applies only to scrolling INSIDE the body box, which nothing does.
+ *
+ *   `html { … }` inside a component's scoped <style> — does NOTHING. Astro appends its
+ *   scope attribute to every selector in a scoped block, so it compiles to
+ *   `html[data-astro-cid-…]`, and <html> lives in BaseLayout and never carries another
+ *   component's attribute. The rule ships and matches nothing. This is the same failure
+ *   that took the page header's `grid-column` out on 2026-09-03; a scoped style reaches
+ *   a component's own elements and its child components' ROOTS, nothing above it.
+ *
+ * So it belongs here, in the one stylesheet that is global by construction.
+ *
+ * ── `no-preference` RATHER THAN CANCELLING UNDER `reduce` ───────────────────
+ *
+ * Written as opt-in so the default — including every engine that reports no preference
+ * either way — is the still page. Browsers increasingly disable smooth scrolling under
+ * `reduce` on their own, but that is a courtesy rather than a guarantee, and a jump to
+ * the anchor is the correct behavior for someone who asked not to be moved.
+ *
+ * Anything that is a fragment TARGET wants `scroll-margin-block-start`, or it lands
+ * flush against the viewport edge with its context off-screen. The Reviews page sets it
+ * on both the group headings and each review.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 body {
   /* NOT cosmetic. The UA gives body `margin: 8px`, and while that is invisible
      on a page with no full-width surfaces, it insets every band by 8px so a
