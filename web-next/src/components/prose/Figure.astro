@@ -22,19 +22,23 @@
  * render nothing and the build says `missing "image"` on every run, which is a
  * useful progress indicator rather than a fault to suppress.
  *
- * ── SWITCHING TO `figure` FIXED THE TOP ALIGNMENT FOR FREE ───────────────────
+ * ── THE TOP ALIGNMENT IS AN EXPLICIT RULE, NOT A FREE ONE ────────────────────
  *
- * Worth recording, because it was predicted to be a problem and is not. The whole
- * point of the treatment is that the cover's top edge and the book title's first
- * line start together, and the rhythm ramp decides that:
+ * The whole point of the treatment is that the cover's top edge and the book
+ * title's first line start together, and the rhythm ramp decides that: a float is
+ * placed where it would have sat in flow, so the alignment is an equality between
+ * the figure's top margin and the following `h3`'s.
  *
- *     a bare <img>  takes the base `* + *`               ->  24px
- *     a <figure>    is in `* + :is(ul, ol, blockquote, figure, pre)`  ->  48px
+ * THIS BLOCK USED TO SAY THE TWO MATCHED FOR FREE, and for a while they did —
+ * `* + :is(ul, ol, blockquote, figure, pre)` gave the figure 48 and `* + h3` gives
+ * the heading 48. That pair was removed on 2026-09-02 for good reasons that had
+ * nothing to do with covers, the figure fell to the base `* + *` at 24, and every
+ * cover on the reading-list article rode 24px above its title until it was caught
+ * on screen.
  *
- * The `h3` title after it takes `* + h3` -> 48px either way. A float is placed
- * where it would have sat in flow, so with a bare image the title started 24px
- * BELOW the cover and needed a rule to correct it. As a figure both are 48 and
- * they align with nothing added. The consolidation paid for itself here.
+ * base.css now states the coupling instead of relying on it — one rule beside
+ * `--thumb-float`, reading the same token as the heading step. Recorded here
+ * because THIS comment is what made the dependency look self-maintaining.
  *
  * The residue is optical, not structural: a heading's line box carries about 7px
  * of half-leading plus ascent above its capitals, so the cover's hard top edge

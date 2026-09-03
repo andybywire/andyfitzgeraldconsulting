@@ -736,6 +736,45 @@ svg.lucide.icon-sm {
   .detail {
     --thumb-float: left;
   }
+
+  /*
+   * ── THE TOPLINE, AND WHY IT HAS TO BE SAID OUT LOUD NOW ────────────────────
+   *
+   * The whole point of the treatment is that the cover's top edge and the book
+   * title start together. A float is placed where it WOULD have sat in flow, so
+   * that alignment is nothing but an equality between two top margins:
+   *
+   *     the figure's        measured from the previous paragraph's bottom
+   *     the h3's after it   measured from the same edge, since the float is out
+   *                         of flow and the heading is positioned as if it
+   *                         weren't there
+   *
+   * They used to match by luck. The removed `rhythm-block` pair gave the figure
+   * 48 and `* + h3` gives the heading 48, and Figure.astro's header recorded that
+   * as "fixed the top alignment for free". 2026-09-02 dropped the pair, the figure
+   * fell through to the base `* + *` at 24, and the cover has been sitting 24px
+   * proud of every title on the reading-list article since — measured, not
+   * inferred. Nothing about the removal was wrong; the coupling was simply
+   * invisible, so it went with it.
+   *
+   * So it is written down, keyed to the SAME TOKEN the heading rule reads. If the
+   * h3 step ever moves, this moves with it.
+   *
+   * ── IT COSTS NO VERTICAL SPACE, WHICH IS WHY IT CAN LIVE HERE ──────────────
+   *
+   * A float contributes nothing to its parent's height, so this margin only ever
+   * moves the cover DOWN the column — it does not reopen the airiness 2026-09-02
+   * closed. That is also exactly why it belongs inside this `@container` and not
+   * outside it: below md the figure is an ordinary block in flow, where 48 would
+   * be the running-text spacing that was deliberately removed. Below md it keeps
+   * the base 24 and simply sits above the title.
+   *
+   * ONLY THE THUMBNAIL. A full-width figure is not aligned to anything and takes
+   * the paragraph step like every other block.
+   */
+  .detail > * + figure[data-thumbnail] {
+    margin-top: var(--rhythm-heading-minor);
+  }
 }
 
 /*
