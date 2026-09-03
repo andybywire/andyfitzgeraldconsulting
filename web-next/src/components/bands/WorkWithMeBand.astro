@@ -57,7 +57,11 @@ const logos = (clientLogos ?? []).filter((client) => client?.image?.asset)
   */
   }
   <Grid class="work-grid">
-    <h2 id="work-with-me" class="work-title">Work with me</h2>
+    {
+      /* Title case, including the preposition — the board reads "Work With Me". Settled
+        for every h2 and rail h3 on 2026-09-03; Portable Text h3s stay sentence case. */
+    }
+    <h2 id="work-with-me" class="work-title">Work With Me</h2>
 
     <div class="work-copy"><Prose value={message} /></div>
 
