@@ -24,6 +24,11 @@ export default defineType({
       description: 'Author job title at the time the review was written.',
     }),
     defineField({
+      name: 'linkedIn',
+      title: 'LinkedIn Address',
+      type: 'url'
+    }),
+    defineField({
       name: 'employer',
       type: 'reference',
       title: 'Employer',

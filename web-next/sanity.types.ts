@@ -530,6 +530,7 @@ export type Review = {
   author?: string
   slug?: Slug
   title?: string
+  linkedIn?: string
   employer?: ClientReference
   excerpt?: string
   condensedBody?: Array<{
@@ -578,6 +579,14 @@ export type Client = {
   _rev: string
   name?: string
   slug?: Slug
+  relationship?: 'Direct Client' | 'Agency Partner' | 'Coworker' | 'Student'
+  role?: string
+  engagementDates?: Array<{
+    startDate?: string
+    endDate?: string
+    _type: 'engagement'
+    _key: string
+  }>
   logo?: {
     asset?: SanityImageAssetReference
     media?: unknown

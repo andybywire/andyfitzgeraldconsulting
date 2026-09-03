@@ -17,6 +17,60 @@ export default defineType({
        called `title`, which is why slugField takes the source. */
     slugField('name'),
     defineField({
+      name: 'relationship',
+      type: 'string',
+      validation: rule => rule.required(),
+      options: {
+        list: [
+          {title: 'Direct Client', value: 'Direct Client'},
+          {title: 'Agency Partner', value: 'Agency Partner'},
+          {title: 'Former Employer', value: 'Coworker'},
+          {title: 'Teaching Institution', value: 'Student'},
+        ]
+      }
+    }),
+    defineField({
+      name: 'role',
+      type: 'text',
+      description: 'The role I played in my engagements with this client.',
+      rows: 2,
+    }),
+    defineField({
+      name: 'engagementDates',
+      title: 'Engagement Dates',
+      type:'array',
+      validation: rule => rule.required(),
+      of: [
+        defineField({
+          name: 'engagement',
+          title: 'Client Engagement',
+          type: 'object',
+          fields: [
+            defineField({
+              name: 'startDate',
+              type: 'date',
+              validation: rule => rule.required(),
+            }),
+            defineField({
+              name: 'endDate',
+              type: 'date',
+              validation: rule => rule.required(),
+            }),
+          ],
+          preview: {
+            select: {
+              date: 'startDate'
+            },
+            prepare(selection) {
+              return {
+                title: `Beginning ${selection.date}`
+              }
+            }
+          }
+        }),
+      ]
+    }),
+    defineField({
       name: 'logo',
       title: 'Logo',
       type: 'image',
