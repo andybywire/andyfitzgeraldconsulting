@@ -749,12 +749,21 @@ const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
    * base.css's `caption` role is most of the way there already — `--font-size-1` at
    * 1.5 is exactly the board's 24px line box, and `text-muted` re-points to
    * `text-on-accent` inside this band, so the colour is right without a word. Only
-   * two things need saying: it is NOT italic here, and the 8px `rhythm-tight` the
-   * role gives a figure caption becomes 48.
+   * one thing needs saying: the 8px `rhythm-tight` the role gives a figure caption
+   * becomes 48.
+   *
+   * ── IT USED TO CANCEL THE ITALIC, AND THAT WAS THE ODD ONE OUT ─────────────
+   *
+   * `font-style: normal` sat here until 2026-09-03. Every other figcaption on the site
+   * is italic — the base role says so, and the Reviews page's bylines, which are the
+   * same attribution in a different place, inherit it. Cancelling it here made the one
+   * testimonial that appears on a case study the only attribution not in italic.
+   *
+   * Removed for consistency (Andy, 2026-09-03). The two pages now render the same
+   * pattern the same way, which also matters because they link to each other.
    */
   .attribution {
     margin-top: var(--rhythm-block);
-    font-style: normal;
     text-align: end;
   }
 
