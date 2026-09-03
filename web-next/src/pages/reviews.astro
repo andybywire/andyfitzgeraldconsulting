@@ -1,0 +1,622 @@
+---
+/**
+ * The Reviews page — a singleton whose body is assembled from `client` and `review`.
+ *
+ * ── IT IS A SINGLETON, BUT IT IS SHAPED LIKE THE GENERIC PAGE TYPE ──────────
+ *
+ * `singleton` means "CMS-governed content with a unique layout", and this qualifies: no
+ * other page groups reviews by relationship. What it shares with About, Colophon,
+ * Projects and Consulting — the `page` type that does not exist yet — is the FRAME:
+ * a title, a lead, a paragraph of intro copy, a main column and a rail. So the parts
+ * that are frame rather than content are built to be reused (Andy, 2026-09-03), which is
+ * why <PageHeader> was extracted here rather than in place.
+ *
+ * ── THE STRUCTURE, AND WHICH LEVEL OWNS WHAT ────────────────────────────────
+ *
+ *   h1  Reviews                        the singleton's `title`
+ *       lead + intro                   its `heroCopy` and `bodyText`
+ *   h2  Direct Clients                 client.relationship, pluralised — a rail target
+ *   h3    Elemeno Health               one block per CLIENT, not per review
+ *         logo, engagement dates, role
+ *         blockquote + byline          one figure per review, the fragment target
+ *
+ * Only the middle level has no document behind it: `relationship` is a string field on
+ * `client`, so the grouping is computed. lib/reviews.ts holds those rules.
+ *
+ * ── TWO KINDS OF ANCHOR, AND THEY SERVE DIFFERENT CALLERS ───────────────────
+ *
+ * The h2 ids are the rail's targets, built from the same array the rail renders so the
+ * two cannot disagree about which sections exist.
+ *
+ * The `review.slug` ids on each <figure> are for the CASE STUDIES, whose testimonial
+ * bylines link to `/reviews/#{review-slug}`. That link has existed since 2026-09-02 and
+ * has been 404ing on five case studies; this page is what resolves it. The anchor sits
+ * at the START of the review block rather than on the byline (Andy, 2026-09-03) — so a
+ * visitor arriving from a case study lands on the quote they were promised, not on its
+ * attribution.
+ *
+ * ── WHY THE `.detail` RHYTHM RAMP IS NOT USED HERE ──────────────────────────
+ *
+ * `.detail` exists because Portable Text emits a FLAT sequence with no section wrappers,
+ * so sibling margins are the only mechanism available. This page is the opposite case:
+ * it has real nesting, so `gap` says the same thing more directly and cannot be
+ * cancelled by an adjacent-sibling rule further down.
+ *
+ * It also would not have fitted. `.detail`'s `h2 + *` gives `heading-close` (16); the
+ * board draws 48 between a group heading and its first client. Adopting the ramp would
+ * have meant overriding the one rule it exists to state.
+ *
+ * `<Prose>` inside each blockquote still renders Portable Text, and base.css's element
+ * roles style it. What is not inherited is only the SPACING mechanism.
+ */
+import {loadQuery} from '../sanity/load-query'
+import {SINGLETON_INTRO_QUERY} from '../sanity/queries/singletons'
+import {REVIEWS_BY_CLIENT_QUERY} from '../sanity/queries/reviews'
+import {groupByRelationship} from '../lib/reviews'
+import {formatEngagements} from '../lib/date'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Band from '../components/Band.astro'
+import Grid from '../components/Grid.astro'
+import Masthead from '../components/Masthead.astro'
+import Footer from '../components/Footer.astro'
+import PageHeader from '../components/PageHeader.astro'
+import SanityImage from '../components/SanityImage.astro'
+import Prose from '../components/prose/Prose.astro'
+
+/*
+  TWO QUERIES, NOT ONE, and it is the ClientReturn ceiling rather than tidiness — see
+  the note in queries/reviews.ts. They are independent, so they run concurrently.
+*/
+const [page, clients] = await Promise.all([
+  loadQuery(SINGLETON_INTRO_QUERY, {slug: 'reviews'}),
+  loadQuery(REVIEWS_BY_CLIENT_QUERY),
+])
+
+const groups = groupByRelationship(clients)
+---
+
+<BaseLayout title={page?.title ?? 'Reviews'} description={page?.lede ?? undefined}>
+  <Masthead />
+
+  <main>
+    {
+      /*
+        ── 64 TOP, 96 BOTTOM — THE BOARD'S ASYMMETRY, CONFIRMED ───────────────
+
+        The Reviews board draws this band 64 top / 96 bottom, and it is the only
+        asymmetric band in the file: every other content band is a symmetric 64/64
+        (`rhythm-band`) and every 96 is a symmetric 96/96 (`rhythm-section`) on an
+        APPENDED band — Topics, RSS, Related, Work With Me.
+
+        Reviews is also the only page with nothing between its content and the footer,
+        which is what the extra 32 is for. Confirmed as intended (Andy, 2026-09-03).
+
+        `space="band"` still supplies the top, so only the end is overridden — and it
+        takes `--rhythm-section`, the token the 96s elsewhere already use, rather than a
+        literal. Both clamp together at narrow widths.
+      */
+    }
+    <Band as="section" spaceEnd="section">
+      <Grid>
+        <PageHeader title={page?.title ?? 'Reviews'} lede={page?.heroCopy} body={page?.bodyText} />
+
+        {
+          /*
+            ── ONE WRAPPER AROUND ALL THE GROUPS ────────────────────────────────
+
+            A grid item in its own right, so the groups stack inside it with a `gap`
+            rather than each becoming a <Grid> item and taking <Grid>'s row gap. The
+            board's 64 between groups and <Grid>'s `rhythm-heading-major` are the same
+            token, but only one of them is stated where the relationship is.
+          */
+        }
+        <div class="reviews">
+          {
+            groups.map((group) => (
+              <section class="review-group" aria-labelledby={group.id}>
+                {/*
+                  A NAMED <section>, WHICH THE CASE STUDY DELIBERATELY AVOIDS.
+
+                  CaseStudyEntry rejected one per project on the grounds that a named
+                  section is a `region` landmark, and three of them is landmark noise
+                  rather than navigation. The distinguishing fact here is that there IS
+                  a navigation: the rail lists exactly these four, so the landmarks
+                  mirror a control the page actually offers rather than inventing
+                  structure. A screen reader user gets the same four jump targets by
+                  landmark that a sighted user gets by rail.
+                */}
+                <h2 id={group.id}>{group.label}</h2>
+
+                {group.clients.map((client) => (
+                  <div class="client">
+                    <div class="client-head">
+                      {client.logo?.asset && (
+                        <SanityImage
+                          image={client.logo}
+                          alt={client.logo.altText ?? client.name ?? ''}
+                          sizes="146px"
+                          class="client-logo"
+                        />
+                      )}
+
+                      {/*
+                        NO `aspect`, so the logo keeps its source shape and is never
+                        cropped. Measured across all 16: thirteen are exactly 300x300
+                        and the rest 200x200 or 300x302, so a square box is what the
+                        assets already are. Passing `aspect="1/1"` would introduce an
+                        `object-fit` on a logo, which is the one thing this project has
+                        a standing rule against.
+                      */}
+                      <div class="client-meta">
+                        <h3>{client.name}</h3>
+                        {formatEngagements(client.engagements) && (
+                          <p class="client-dates">{formatEngagements(client.engagements)}</p>
+                        )}
+                        {client.role && <p class="client-role">{client.role}</p>}
+                      </div>
+                    </div>
+
+                    {client.reviews.map((review) => {
+                      /*
+                        Composed in JS rather than interpolated across the template.
+                        Astro drops whitespace between adjacent expressions once a
+                        formatter splits them over lines, which has already shipped
+                        `45insights` into this build's output once.
+                      */
+                      const attribution = [review.author, review.title].filter(Boolean).join(', ')
+
+                      return (
+                        <figure class="review" id={review.slug ?? undefined}>
+                          {/*
+                            <figure> + <blockquote> + <figcaption> is WHATWG's own
+                            pattern, and the attribution MUST sit outside the
+                            <blockquote> because anything inside it is part of the
+                            quoted text. No <cite> around the name: the spec is explicit
+                            that `cite` is the title of a work and a person is not one.
+                            Same reasoning as the case study's testimonial band.
+                          */}
+                          <blockquote>
+                            <Prose value={review.body} />
+                          </blockquote>
+
+                          <figcaption class="byline">
+                            {/*
+                              ONE LINK AROUND BOTH LINES, so the accessible name is the
+                              whole attribution rather than a bare name with the
+                              employer stranded outside the target. It goes to the
+                              reviewer's LinkedIn profile (Andy, 2026-09-03) — a link to
+                              the PERSON, which is why the person's name, role and
+                              employer all belong inside it.
+
+                              All 22 reviews carry `linkedIn` today. The fallback is not
+                              defensive coding for its own sake: the field is optional in
+                              the schema, and an empty href would be a link to this page.
+                            */}
+                            {review.linkedIn ? (
+                              <a href={review.linkedIn}>
+                                <span class="byline-name">{`– ${attribution}`}</span>
+                                <span class="byline-org">{client.name}</span>
+                              </a>
+                            ) : (
+                              <>
+                                <span class="byline-name">{`– ${attribution}`}</span>
+                                <span class="byline-org">{client.name}</span>
+                              </>
+                            )}
+                          </figcaption>
+                        </figure>
+                      )
+                    })}
+                  </div>
+                ))}
+              </section>
+            ))
+          }
+        </div>
+
+        {
+          /*
+            ── THE RAIL ─────────────────────────────────────────────────────────
+
+            Built from `groups`, so it lists exactly the sections that rendered.
+
+            An <h3> rather than an <h2>, matching the article page's rail. It is inside a
+            `complementary` landmark, so its level is not carrying page structure, and
+            the board gives it the same size as a client name — which is the h3 role.
+
+            "Reviews — Mobile" (2487:12185) has no rail at all: its content frame holds
+            the prose column and nothing else. So this is `display: none` below md rather
+            than the article rail's `display: contents` dispersal — that mechanism exists
+            because an article's Topics list REAPPEARS at the foot of the prose. Nothing
+            here disperses, so nothing here needs it.
+          */
+        }
+        <aside class="rail">
+          <nav class="rail-contents" aria-labelledby="rail-contents">
+            <h3 id="rail-contents">On This Page</h3>
+            <ul role="list">
+              {
+                groups.map((group) => (
+                  <li>
+                    <a href={`#${group.id}`}>{group.label}</a>
+                  </li>
+                ))
+              }
+            </ul>
+          </nav>
+        </aside>
+      </Grid>
+    </Band>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* ── Placement ────────────────────────────────────────────────────────────── */
+  /*
+   * ── THE HEADER IS TRANSPARENT HERE, SO THE RAIL CAN START AT THE LEAD ──────
+   *
+   * "On This Page" lines up with the top of the LEAD, not the top of the h1 — the board
+   * draws the title above a two-column region whose left column opens with the lead.
+   *
+   * A rail can only align to a row that exists. With <PageHeader> as one grid item the
+   * only row available is the header's, whose top is the h1; `display: contents` turns
+   * its two children into two grid ROWS, and the rail then starts from the second. The
+   * component ships the `.page-intro` wrapper for exactly this — see its own note,
+   * including why a transparent <header> costs nothing semantically.
+   *
+   * ── AND THE ROW GAP HAS TO GO TO ZERO, WHICH IS THE PRICE ─────────────────
+   *
+   * <Grid>'s row gap is `rhythm-heading-major` (64), correct for its usual job of
+   * separating whole bands of content. It is wrong between a title and its own lead,
+   * which want 16, and once the header is transparent that boundary IS a grid row
+   * boundary. A gap cannot vary per row, so it is zeroed and every row states its own
+   * top margin instead — three values, each named, none of them a remainder:
+   *
+   *     h1 -> .page-intro    16, from <PageHeader> (unchanged in flow or in grid)
+   *     .page-intro -> .rail  aligned, because both take `heading-close` below
+   *     -> .reviews          64, `rhythm-heading-major`, restated here
+   *
+   * This is a page-level decision about a shared component's spacing, so it is scoped to
+   * this page's <Grid> and nothing else inherits it.
+   */
+  .grid {
+    row-gap: 0;
+
+    /*
+     * ── THE THREE ROWS ARE EXPLICIT SO THE RAIL'S `-1` MEANS SOMETHING ───────
+     *
+     * Title, intro, content. Negative grid lines count from the end of the EXPLICIT
+     * grid, and a grid with no `grid-template-rows` has exactly one row line — so
+     * `grid-row: 2 / -1` resolves its end to line 1, the browser swaps the reversed
+     * pair, and the rail silently spans row 1 instead of everything below it. Naming the
+     * rows makes `-1` the fourth line, which is what the rail is asking for.
+     */
+    grid-template-rows: auto auto auto;
+  }
+
+  /*
+   * The header goes transparent so its h1 and intro become two of those rows; see the
+   * note above and <PageHeader>'s own. `--page-header-span` is not set, so the header's
+   * children take its default `--col-main` — correct here, because this page has a rail.
+   */
+  .page-header {
+    display: contents;
+  }
+
+  .reviews {
+    grid-column: var(--col-main);
+  }
+
+  .reviews {
+    margin-block-start: var(--rhythm-heading-major);
+  }
+
+  .rail {
+    grid-column: var(--col-rail);
+  }
+
+  /* ── The group stack ──────────────────────────────────────────────────────── */
+  /*
+   * `gap` rather than sibling margins, and the file header says why at length: this page
+   * has real wrappers, so the mechanism `.detail` exists to work around is not needed.
+   *
+   * 64 between groups is `rhythm-heading-major` — the same value <Grid> uses for a row
+   * gap, and correct for the same reason it is always correct: what follows starts with
+   * a heading.
+   */
+  .reviews {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rhythm-heading-major);
+  }
+
+  /*
+   * 48 from the h2 to the first client, and 48 between clients — one value, so one
+   * `gap` states both. The board draws them identically.
+   *
+   * This is where `.detail`'s ramp would have disagreed: its `h2 + *` rule is
+   * `heading-close` (16). The looser spacing is right here because a client block is a
+   * composed unit with its own internal rhythm, not the next paragraph of a body.
+   */
+  .review-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  /* The rail's four targets. Same offset the reviews take, and needed for the same
+     reason: without it a heading arrives flush against the viewport edge. Now visible
+     rather than theoretical, since base.css scrolls these smoothly. */
+  .review-group > h2 {
+    scroll-margin-block-start: var(--rhythm-band);
+  }
+
+  /* ── A client block ───────────────────────────────────────────────────────── */
+  /*
+   * ── TWO DIFFERENT GAPS, WHICH IS WHY THIS IS NOT A `gap` ───────────────────
+   *
+   * The board draws THREE spacings inside a client block and they are not all equal:
+   *
+   *   head -> first quote    16   (Frame 427318303, gap=16)
+   *   quote -> its byline    24   (Body Group, gap=24)
+   *   byline -> next quote   24   (Body Group again — one group holds every quote and
+   *                                byline for the client, so all of its gaps are 24)
+   *
+   * Measured off the desktop board rather than assumed: head bottom 757 -> Body Group
+   * 773 is 16; blockquote bottom 1861 -> byline 1885 is 24; byline bottom 1933 -> next
+   * blockquote 1957 is 24.
+   *
+   * A single `gap` cannot say that, and a first draft used one — giving every pair 16
+   * and putting the two-review clients 8px tight. Sibling margins can, because the two
+   * relationships are distinguishable by selector. `.review + .review` is (0,2,0)
+   * against the base rule's (0,1,0), so it wins on specificity and the source order of
+   * the two is not load-bearing.
+   *
+   * Five clients have more than one review, so this is visible on a third of the page.
+   */
+  .client > * + * {
+    margin-top: var(--space-2);
+  }
+
+  .review + .review {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  /*
+   * ── THE HEAD IS A COLUMN ON MOBILE AND A ROW FROM md ───────────────────────
+   *
+   * Mobile-first, per tokens.css: an engine that never evaluates the container query
+   * must be left with the phone layout. "Reviews — Mobile" stacks the logo ABOVE the
+   * text and CENTRES it, while the text below stays left-aligned — which is why the
+   * centring is `align-items` on the flex container rather than `text-align`.
+   */
+  .client-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /*
+   * ── THE METADATA IS CENTRED ON MOBILE AND LEFT-ALIGNED FROM md ─────────────
+   *
+   * All three mobile text nodes carry `textAlignHorizontal: CENTER` — the name, the
+   * dates and the role. A structure walk does not report alignment, so the first build
+   * had the logo centred by `align-items` and the text still ranged left; only reading
+   * the board's text properties settles it. Same blind spot that hid the byline's right
+   * alignment.
+   *
+   * `text-align` on the container rather than on each line, so the three stay a block.
+   */
+  .client-meta {
+    text-align: center;
+  }
+
+  /*
+   * From md the desktop board's row: logo left, metadata beside it, `gap=16`,
+   * `counterAxisAlignItems: MIN` — so the text starts at the TOP of the logo rather than
+   * centring against it. The arithmetic checks out on the board: logo at x=222 is 146
+   * wide, and the text column starts at 384, which is 222 + 146 + 16.
+   */
+  @container style(--breakpoint-md: true) {
+    .client-head {
+      flex-direction: row;
+      align-items: flex-start;
+    }
+
+    .client-meta {
+      text-align: start;
+    }
+  }
+
+  /*
+   * ── 146px IS MEASURED OFF THE BOARD, NOT DERIVED ───────────────────────────
+   *
+   * DESIGN.md specifies no logo size, and 146 is not on the space scale. Same situation
+   * as the chip's padding, and handled the same way: a local custom property, so the one
+   * unexplained number appears once and is named.
+   *
+   * `block-size: auto` and no `object-fit`. The assets are square to within 0.7%, so the
+   * box takes its height from the image and two of the sixteen render one pixel taller
+   * than the rest. Forcing a square would mean cropping a logo.
+   *
+   * `flex: none` so the row never squeezes it — a flex item's default `min-width: auto`
+   * protects intrinsic content, but this is a replaced element that would happily shrink.
+   */
+  .client-logo {
+    --logo-size: 9.125rem; /* 146px */
+
+    flex: none;
+    inline-size: var(--logo-size);
+    block-size: auto;
+    border-radius: var(--radius-1);
+  }
+
+  /* 4px between the three lines of client metadata — tighter than any rhythm token,
+     because these are three parts of one label rather than three blocks. The board
+     draws 4 and the space scale starts at 8. */
+  .client-meta > * + * {
+    margin-top: 0.25rem;
+  }
+
+  .client-dates {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  /* DESIGN.md's `body-compact`: body copy at the tighter leading, because this line runs
+     well short of the measure the 1.8 ramp rung is tuned for. */
+  .client-role {
+    line-height: 1.5;
+  }
+
+  /* ── A review ─────────────────────────────────────────────────────────────── */
+  /*
+   * `scroll-margin` because this element is a fragment target. Without it a case study's
+   * `/reviews/#lisa-crounse` puts the quote flush against the viewport edge with its
+   * client heading off-screen above — technically correct and unreadable. `rhythm-band`
+   * is the same offset the article rail uses for its sticky top, for the same reason.
+   */
+  .review {
+    scroll-margin-block-start: var(--rhythm-band);
+  }
+
+  /* base.css already gives every blockquote the bar and the indent — 4px/24 at the base
+     and 6px/48 from md, which is exactly what both boards draw. Nothing to add there. */
+
+  /*
+   * ── A REVIEW'S BLOCKS NEED SEPARATING, AND NOT ONLY ITS PARAGRAPHS ─────────
+   *
+   * base.css zeroes the margin on every block element and hands the rhythm to `.detail`.
+   * That is the right division for an article body, but this blockquote is not inside
+   * `.detail` — so a multi-block review rendered as one unbroken slab with the breaks
+   * its author wrote silently discarded. Eleven of the 22 have more than one block.
+   *
+   * ── `> * + *`, NOT `p + p` ────────────────────────────────────────────────
+   *
+   * The first fix here was `p + p`, which is the same mistake in a smaller form: it
+   * separated paragraphs and left every OTHER block transition at zero. Miriam Bartha's
+   * review is `p, p, ul, p`, so its list stayed jammed against the paragraph above and
+   * the one below while the paragraphs around it looked correct — the fix hid its own
+   * gap. `* + *` covers every pair, which is exactly what `.detail`'s base rule says.
+   *
+   * ── THE CHILD COMBINATOR IS WHAT KEEPS LIST ITEMS OUT ─────────────────────
+   *
+   * `>` restricts this to the blockquote's OWN children — the top-level Portable Text
+   * blocks. Without it, `* + *` would also match `li + li`, putting 24px between every
+   * bullet. base.css deliberately dropped the global `li + li` margin on 2026-09-02 and
+   * lists are now separated by their leading alone; this must not quietly reinstate it
+   * inside quotes. Verified against the built DOM: `blockquote > p, p, ul, p`, with the
+   * six `li`s nested a level down and untouched.
+   *
+   * `--rhythm-paragraph` because that is what two adjacent blocks take everywhere else,
+   * `.detail` included since the `rhythm-block` pair was removed. Nothing new is
+   * introduced here; a rule the ramp cannot reach is restated for this one context.
+   *
+   * SCOPED TO `.review blockquote`, so no other Portable Text is affected — article
+   * bodies keep taking `.detail`'s ramp, and the case study's testimonial is untouched.
+   *
+   * `:global()` because these elements are <Prose>'s: a scope attribute reaches a
+   * component's root, never its descendants.
+   */
+  .review blockquote > :global(* + *) {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  .review blockquote + .byline {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  /*
+   * ── THE BYLINE IS RIGHT-ALIGNED, WHICH THE STRUCTURE WALK DOES NOT SHOW ────
+   *
+   * Only the screenshot does — the text node is full-width with `textAlignHorizontal:
+   * RIGHT`, so a measurement of its box reads as left-aligned. Worth stating because it
+   * is the one property of this element that a board walk actively misreports.
+   *
+   * Two <span>s in a block link, so the name and the employer are separate lines while
+   * remaining one target with one accessible name.
+   */
+  .byline {
+    text-align: right;
+    font-size: var(--font-size-1);
+    line-height: 1.5;
+  }
+
+  .byline a {
+    display: block;
+  }
+
+  .byline-name,
+  .byline-org {
+    display: block;
+  }
+
+  /* ── The rail ─────────────────────────────────────────────────────────────── */
+  /*
+   * ABSENT BELOW md, not collapsed. The mobile board has no "On this page" — its content
+   * frame holds one child. `display: none` rather than visually hiding it, because the
+   * design says this is not AVAILABLE on mobile: it should be out of the accessibility
+   * tree too, exactly as the article rail's own contents nav is.
+   */
+  .rail {
+    display: none;
+  }
+
+  @container style(--breakpoint-md: true) {
+    /*
+     * ── `grid-row` AND `align-self` ARE BOTH LOAD-BEARING FOR THE STICKINESS ─
+     *
+     * The article page needs neither, and the difference is the number of grid items.
+     * There, <Grid> holds exactly two — the body and the rail — whose placement tokens
+     * do not overlap in columns, so both land in row 1 and share its height. Its own
+     * comment says auto-placement "is doing the right thing on its own".
+     *
+     * Here there are FOUR, since the transparent header contributes two: the h1, the
+     * intro, the reviews and the rail. Left to auto-placement the rail lands in row 1,
+     * beside the H1 — a grid area about 60px tall that scrolls away immediately.
+     *
+     * `grid-row: 2 / -1` starts it at the INTRO's row, which is the alignment the board
+     * draws, and runs it to the end so the sticky nav has the page's full height to
+     * travel. `margin-block-start` then matches the 16 that <PageHeader> puts between
+     * the h1 and the intro, so the two columns begin on the same line.
+     *
+     * `align-self: start` is the other half, and without it the span alone does nothing:
+     * a grid item stretches to its area by default, so a full-height rail would be as
+     * tall as the thing it is supposed to stick within — no range, no movement. This is
+     * why the article page puts `position: sticky` on an inner `.rail-sticky` child
+     * instead. One wrapper or one `align-self`; this rail has nothing to disperse on
+     * mobile, so it takes the property rather than the extra element.
+     */
+    .rail {
+      display: block;
+      grid-row: 2 / -1;
+      align-self: start;
+      margin-block-start: var(--rhythm-heading-close);
+      position: sticky;
+      top: var(--rhythm-band);
+    }
+
+    /* base.css keeps the UA's list indent for prose; a nav is not prose. */
+    .rail ul {
+      padding: 0;
+      list-style: none;
+    }
+
+    /* The ramp from base.css restated for a context it does not reach: 16 from a heading
+       to its list. `heading-close` by name, not by value. */
+    .rail h3 + ul {
+      margin-top: var(--rhythm-heading-close);
+    }
+
+    /* 16 between rail links. The board draws 43px baseline-to-baseline on an 18px/1.5
+       line — 27 of line box plus 16. */
+    .rail li + li {
+      margin-top: var(--rhythm-heading-close);
+    }
+  }
+</style>

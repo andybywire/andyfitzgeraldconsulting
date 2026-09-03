@@ -18,6 +18,21 @@ interface Props {
   tone?: 'page' | 'surface' | 'accent' | 'logo'
   /** Vertical padding. Both band and section interpolate with no breakpoint. */
   space?: 'band' | 'section' | 'none'
+  /**
+   * Override the BOTTOM padding only, leaving `space` to supply the top.
+   *
+   * ── IT IS A PROP BECAUSE A PAGE CANNOT WIN THE CASCADE ─────────────────────
+   *
+   * The rules below are `.band[data-space='…']`, which Astro compiles with the
+   * component's own scope attribute — three simple selectors, (0,3,0). A page styling
+   * this component reaches its ROOT with one class plus one scope attribute, (0,2,0),
+   * so `.my-band { padding-block-end: … }` loses on specificity no matter where it sits
+   * in the source. That is not obvious from the page's side and fails silently.
+   *
+   * Reviews needs it: 64 top, 96 bottom — the one asymmetric band in the design, because
+   * it is the only page with nothing between its content and the footer.
+   */
+  spaceEnd?: 'band' | 'section' | 'none'
   as?: 'section' | 'header' | 'footer' | 'div' | 'aside'
   class?: string
   /* Anything else is forwarded to the root element. That is also what lets a
@@ -29,13 +44,20 @@ interface Props {
 const {
   tone = 'page',
   space = 'band',
+  spaceEnd,
   as: Tag = 'section',
   class: className,
   ...rest
 }: Props = Astro.props
 ---
 
-<Tag class:list={['band', className]} data-tone={tone} data-space={space} {...rest}>
+<Tag
+  class:list={['band', className]}
+  data-tone={tone}
+  data-space={space}
+  data-space-end={spaceEnd}
+  {...rest}
+>
   <slot />
 </Tag>
 
@@ -56,6 +78,21 @@ const {
 
   .band[data-space='none'] {
     padding-block: 0;
+  }
+
+  /* AFTER the three above, and the order is what makes these win: they are the same
+     (0,3,0) specificity, so a later rule takes the tie. `padding-block-end` longhand
+     against their shorthand, so only the bottom is replaced. */
+  .band[data-space-end='band'] {
+    padding-block-end: var(--rhythm-band);
+  }
+
+  .band[data-space-end='section'] {
+    padding-block-end: var(--rhythm-section);
+  }
+
+  .band[data-space-end='none'] {
+    padding-block-end: 0;
   }
 
   .band[data-tone='surface'] {

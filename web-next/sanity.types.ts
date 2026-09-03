@@ -1573,6 +1573,51 @@ export type RELATED_POOL_QUERY_RESULT = {
   >
 }
 
+// Source: ../web-next/src/sanity/queries/reviews.ts
+// Variable: REVIEWS_BY_CLIENT_QUERY
+// Query: *[_type == "client" && count(*[_type == "review" && references(^._id)]) > 0] {		_id,		name,		relationship,		role,		"logo": logo{asset, crop, hotspot, altText},		"engagements": engagementDates[]{startDate, endDate},		"latestEnd": engagementDates[].endDate | order(@ desc)[0],		"reviews": *[_type == "review" && references(^._id)] {			author,			title,			linkedIn,			"slug": slug.current,			body		}	} | order(latestEnd desc)
+export type REVIEWS_BY_CLIENT_QUERY_RESULT = Array<{
+  _id: string
+  name: string | null
+  relationship: 'Agency Partner' | 'Coworker' | 'Direct Client' | 'Student' | null
+  role: string | null
+  logo: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+  } | null
+  engagements: Array<{
+    startDate: string | null
+    endDate: string | null
+  }> | null
+  latestEnd: string | null
+  reviews: Array<{
+    author: string | null
+    title: string | null
+    linkedIn: string | null
+    slug: string | null
+    body: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+  }>
+}>
+
 // Source: ../web-next/src/sanity/queries/singletons.ts
 // Variable: SINGLETON_HEADER_QUERY
 // Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy)	}
@@ -1656,6 +1701,63 @@ export type SINGLETON_WORK_BAND_QUERY_RESULT = {
   } | null
 } | null
 
+// Source: ../web-next/src/sanity/queries/singletons.ts
+// Variable: SINGLETON_INTRO_QUERY
+// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy),		bodyText	}
+export type SINGLETON_INTRO_QUERY_RESULT = {
+  _id: string
+  title: string | null
+  heroCopy: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  lede: string
+  bodyText: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        _type: 'image'
+        _key: string
+      }
+  > | null
+} | null
+
 // Query TypeMap
 import '@sanity/client'
 declare module '@sanity/client' {
@@ -1669,7 +1771,9 @@ declare module '@sanity/client' {
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
     '\n\t{\n\t\t"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {\n\t\t\t"tops": topConcepts[]->{_id, prefLabel},\n\t\t\t"concepts": concepts[]->{\n\t\t\t\t_id,\n\t\t\t\tprefLabel,\n\t\t\t\t"parent": broader[0]._ref\n\t\t\t}\n\t\t},\n\n\t\t"pool": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t] | order(pubDate desc) {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\t"genreId": genre._ref,\n\t\t\t"genre": genre->prefLabel,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"sourceDomain": clipRef.publisher,\n\t\t\t"topics": topic[]->{\n\t\t\t\t_id,\n\t\t\t\t"parent": broader[0]._ref,\n\t\t\t\t"parentIsTop": !defined(broader[0]->broader[0]._ref)\n\t\t\t}\n\t\t}\n\t}\n': RELATED_POOL_QUERY_RESULT
+    '\n\t*[_type == "client" && count(*[_type == "review" && references(^._id)]) > 0] {\n\t\t_id,\n\t\tname,\n\t\trelationship,\n\t\trole,\n\t\t"logo": logo{asset, crop, hotspot, altText},\n\t\t"engagements": engagementDates[]{startDate, endDate},\n\t\t"latestEnd": engagementDates[].endDate | order(@ desc)[0],\n\t\t"reviews": *[_type == "review" && references(^._id)] {\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\tlinkedIn,\n\t\t\t"slug": slug.current,\n\t\t\tbody\n\t\t}\n\t} | order(latestEnd desc)\n': REVIEWS_BY_CLIENT_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\tbands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
+    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\tbodyText\n\t}\n': SINGLETON_INTRO_QUERY_RESULT
   }
 }

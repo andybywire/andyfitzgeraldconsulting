@@ -61,3 +61,38 @@ export const SINGLETON_WORK_BAND_QUERY = defineQuery(`
 		${BAND_WORK_WITH_ME}
 	}
 `)
+
+/**
+ * A singleton's header PLUS `bodyText` — the title, the lead, and a paragraph of intro
+ * copy beneath it.
+ *
+ * ── THE THIRD FIELD IS THE WHOLE DIFFERENCE FROM SINGLETON_HEADER_QUERY ─────
+ *
+ * Reviews is the first page to render all three, and it will not be the last: the
+ * generic `page` type is expected to open the same way (Andy, 2026-09-03), which is why
+ * this is named for the SHAPE rather than for Reviews. <PageHeader>'s optional third
+ * slot is the rendering half of the same pattern.
+ *
+ * Still not folded into SINGLETON_HEADER_QUERY, for the reason that query already gives:
+ * a page should not be typed with fields it cannot use. The Insights index renders no
+ * intro copy under its lead — the facets come next — so `bodyText` would be a field it
+ * is handed and must ignore.
+ *
+ * `bodyText` is projected BARE, like `heroCopy`. It is Portable Text and can contain
+ * images as well as blocks, so an array comes back whole and a projection here could
+ * only drop a block type by omitting it.
+ *
+ * NO BAND. Reviews sets none and the board draws none — the footer follows the content
+ * directly. A page wanting one composes BAND_WORK_WITH_ME in its own query, which is
+ * also what keeps this one clear of the ClientReturn ceiling: two Portable Text arrays
+ * and a band fragment is the shape that has tipped it before.
+ */
+export const SINGLETON_INTRO_QUERY = defineQuery(`
+	*[_type == "singleton" && slug.current == $slug][0] {
+		_id,
+		title,
+		heroCopy,
+		"lede": pt::text(heroCopy),
+		bodyText
+	}
+`)
