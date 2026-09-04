@@ -6,6 +6,7 @@ import review from './documents/review'
 import settings from './documents/settings'
 import singleton from './documents/singleton'
 import note from './documents/note'
+import page from './documents/page'
 
 import figure from './objects/figure'
 import table from './objects/table'
@@ -20,6 +21,7 @@ export const schemaTypes = [
   client,
   review,
   event,
+  page,
   singleton,
   settings,
   figure,

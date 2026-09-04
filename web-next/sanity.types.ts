@@ -35,6 +35,7 @@ export type BandGetInTouch = {
     _type: 'block'
     _key: string
   }>
+  bandCopy?: boolean
 }
 
 export type ClientReference = {
@@ -338,6 +339,80 @@ export type Slug = {
   _type: 'slug'
   current?: string
   source?: string
+}
+
+export type Page = {
+  _id: string
+  _type: 'page'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  title?: string
+  slug?: Slug
+  lede?: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }>
+  heroImg?: {
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    altText?: string
+    _type: 'image'
+  }
+  bodyText?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        _type: 'image'
+        _key: string
+      }
+  >
+  bands?: Array<
+    | ({
+        _key: string
+      } & BandWorkWithMe)
+    | ({
+        _key: string
+      } & BandGetInTouch)
+  >
 }
 
 export type Event = {
@@ -935,6 +1010,7 @@ export type AllSanitySchemaTypes =
   | SanityImageHotspot
   | Singleton
   | Slug
+  | Page
   | Event
   | SkosConceptReference
   | CaseStudy
