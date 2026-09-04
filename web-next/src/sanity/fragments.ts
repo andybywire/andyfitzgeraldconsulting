@@ -155,13 +155,30 @@ export const BAND_RSS = /* groq */ `
  * Inline rather than through IMAGE: `client.tile` carries `altText` but no `caption`, so
  * the shared fragment would add a permanently-null field. (Worth noting IMAGE's claim
  * that "every image field in this schema carries these" does not hold for `client`.)
+ *
+ * ── `caseStudy` IS THE CLIENT'S MOST RECENT ONE, AS A SLUG ───────────────────
+ *
+ * The logos are links, and this is where they point. `^._id` steps out to the client
+ * being projected, so the subquery asks "case studies for THIS client, newest first,
+ * take one" — which is why WHO resolves to `who-ntd` (2021) rather than `who-kap`
+ * (2020) without either being named here.
+ *
+ * Projected to the SLUG STRING, not an object: the band builds `/insights/{slug}/`
+ * itself, and a one-field object would only be something to unwrap at the call site.
+ *
+ * NULL IS REACHABLE AND IS RENDERED, not guarded away. A client in this band with no
+ * case study yet gets an unlinked logo rather than a link to nowhere — the band still
+ * makes its point. Andy is adding Studio validation to stop the state arising; this
+ * degrades honestly until it exists, and stays correct afterwards.
  */
 export const BAND_WORK_WITH_ME = /* groq */ `
 	"workBand": coalesce(${LADDER('bandWorkWithMe')}){
 		message,
 		"clientLogos": clientLogos[]->{
 			name,
-			"image": tile{asset, crop, hotspot, altText}
+			"image": tile{asset, crop, hotspot, altText},
+			"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]
+				| order(pubDate desc)[0].slug.current
 		}
 	}
 `
