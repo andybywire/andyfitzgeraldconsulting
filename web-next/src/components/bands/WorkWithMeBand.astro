@@ -32,7 +32,14 @@ import SanityImage from '../SanityImage.astro'
 interface Props {
   message?: TypedObject[] | null
   /** `image` is the client's `tile` — the 5:3 lockup, not the square `logo` mark. */
-  clientLogos?: ({name?: string | null; image?: SanityImageSource | null} | null)[] | null
+  clientLogos?:
+    | ({
+        name?: string | null
+        image?: SanityImageSource | null
+        /** Slug of the client's most recent case study; see BAND_WORK_WITH_ME. */
+        caseStudy?: string | null
+      } | null)[]
+    | null
 }
 
 const {message, clientLogos}: Props = Astro.props
@@ -71,17 +78,41 @@ const logos = (clientLogos ?? []).filter((client) => client?.image?.asset)
           {logos.map((client) => (
             <li>
               {/*
+                ── A LINK WHEN THERE IS SOMEWHERE TO GO, A PLAIN BOX OTHERWISE ────
+
+                The wrapper is always present and always carries `work-logo-frame`, so
+                the box treatment does not depend on whether the client has a case study
+                — a linkless logo still sits in the same frame at the same size, and the
+                row cannot go ragged. Only the ELEMENT changes, and with it the hover and
+                focus states, which would be a lie on something you cannot follow.
+
                 Alt falls back to the client's NAME, not to empty. A logo here is not
                 decoration — the band's claim is who these clients are — so the name is
                 the honest description when no altText was authored. Passing it also
                 suppresses SanityImage's missing-altText warning, correctly: there is a
                 real alternative, it just is not stored on the asset.
+
+                That alt also becomes the LINK's accessible name, which is why it is not
+                emptied here: a link named "World Health Organization" is thin but true.
+                Flagged for Andy — it says who, not where.
               */}
-              <SanityImage
-                image={client!.image!}
-                alt={client!.image!.altText ?? client!.name ?? ''}
-                class="work-logo"
-              />
+              {client!.caseStudy ? (
+                <a class="work-logo-frame" href={`/insights/${client!.caseStudy}/`}>
+                  <SanityImage
+                    image={client!.image!}
+                    alt={client!.image!.altText ?? client!.name ?? ''}
+                    class="work-logo"
+                  />
+                </a>
+              ) : (
+                <div class="work-logo-frame">
+                  <SanityImage
+                    image={client!.image!}
+                    alt={client!.image!.altText ?? client!.name ?? ''}
+                    class="work-logo"
+                  />
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -211,17 +242,170 @@ const logos = (clientLogos ?? []).filter((client) => client?.image?.asset)
    * `max-inline-size` rather than a fixed width so a narrow phone can shrink them; 200
    * still fits the 343 column at 375, so it only binds below about 232.
    */
+  /*
+   * The cap that makes the frame's own `max-inline-size` mean something. A percentage on
+   * a flex item resolves against the FLEX CONTAINER's content box, so this one reads the
+   * real column width — and the frame inside then resolves its `100%` against a list item
+   * that is already correct. Without it the two percentages chase each other and neither
+   * clamps.
+   */
+  .work-logos li {
+    max-inline-size: 100%;
+  }
+
+  /*
+   * ── THE FRAME TAKES THE 200, SO THE LAYOUT DOES NOT MOVE ───────────────────
+   *
+   * The 200px used to be on the image. It moves to the frame, and the image fills it,
+   * which is what keeps this change invisible to the surrounding layout: the flex column
+   * still lays out 200px-wide items with a 16px gap, at the same coordinates as before.
+   * What changes is INSIDE that 200 — the mark loses 4px to the frame's border and its
+   * 1px inset, so it measures 196 rather than 200.
+   *
+   * The board draws each mark in a frame of 207 with 16 of padding, and this deliberately
+   * does NOT follow it there; see the note on `padding` below for why a text-sized pad is
+   * wrong around artwork. What the frame borrows from the board is that a frame exists at
+   * all — a card box needs something to be a box AROUND.
+   *
+   * ── IT IS <NoteCard>'s TREATMENT, AND DELIBERATELY THE SAME TOKENS ─────────
+   *
+   * Boxed at rest below md; from md the box goes transparent and returns on hover with
+   * the blunt 2px accent shadow. Same four properties, same values, same transition
+   * list. Not extracted into a shared component: a note card is a title, an eyebrow and
+   * a body, and this is a picture — they share a surface treatment, not a structure, and
+   * the second consumer rule is about the thing, not the paint.
+   *
+   * `transparent` rather than `none` for the same reason NoteCard gives: the border
+   * stays declared but invisible, so hover changes a colour rather than adding a
+   * property, and nothing shifts by a pixel.
+   *
+   * ── ONE HONEST DIFFERENCE FROM A NOTE CARD, ON THIS BAND ──────────────────
+   *
+   * `--color-surface` and `--color-surface-logo-band` are BOTH `--white` in light mode,
+   * so the card's fill is invisible here and the box reads as border plus shadow alone.
+   * In dark they differ — neutral-850 on neutral-900 — so it lifts as a note card does.
+   * That is a property of the band this sits on, not of these rules, and it is flagged
+   * rather than papered over with a colour the design system does not have.
+   */
+  .work-logo-frame {
+    display: block;
+
+    /*
+     * ── 350 STACKED, 200 FROM md, AND MOBILE-FIRST PUTS 350 HERE ─────────────
+     *
+     * Below md these are the only thing in their column and sit one above another, where
+     * 200 read as small and adrift in the width available (Andy, on screen). From md they
+     * move into the 4-column track beside the copy, where 200 is right and 350 would not
+     * fit — so the wide value is the BASE and md narrows it, per tokens.css's rule that an
+     * engine which never evaluates the query must be left with the phone layout.
+     *
+     * `max-inline-size: 100%` makes 350 a CEILING rather than a width: at 375 the column
+     * is 343, so the tile fills it and stops. The number only takes effect on the wider
+     * phones and small tablets between roughly 390 and 767, which is exactly the range
+     * that looked thin.
+     *
+     * THAT CEILING ONLY WORKS BECAUSE THE <li> IS ALSO CAPPED — see `.work-logos li`.
+     * The flex item is the list item, not this frame, and with `align-items: center` an
+     * uncapped item shrink-to-fits around its content. So `100%` here resolved against
+     * the frame's own 350 and clamped nothing: measured at 375, the tile came out 350
+     * wide at x=13 against a column running 16 to 359, bleeding into the grid margin
+     * rather than aligning to the content edge.
+     */
+    inline-size: 350px;
+    max-inline-size: 100%;
+
+    /*
+     * ── THE SYSTEM PAD STACKED, A 1px EXCEPTION FROM md ──────────────────────
+     *
+     * The two widths want opposite things, and both were settled on screen (Andy,
+     * 2026-09-04) rather than reasoned out:
+     *
+     *   stacked   the frame is the full column — 343 at 375 — and a mark filling it edge
+     *             to edge is outsized. `--card-pad` gives it the air a card normally has,
+     *             and the tile is large enough to spare 16.
+     *   from md   the frame is 200 in the 4-column track, and there `card-pad` is most of
+     *             the box: it drove the mark down to 166 and read worst in dark mode,
+     *             where a pale frame around a shrunken mark is the loudest thing in the
+     *             band.
+     *
+     * So this base rule is the ordinary card treatment, and the EXCEPTION lives in the md
+     * block below — which is the right way round for a system value: the deviation is the
+     * thing that has to justify itself, in the one place it applies.
+     *
+     * The reason `card-pad` stops working at 200 is what it is FOR: keeping text off a
+     * border. There is no text here, and a `tile` is a 5:3 lockup that already carries
+     * its own whitespace, so at small sizes the pad is a second margin the artwork never
+     * asked for. At 343 that second margin is affordable; at 200 it is the box.
+     */
+    padding: var(--card-pad);
+
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+  }
+
   .work-logo {
     /*
      * `radius-1`, the same 3px the button takes. It is doing real work rather than
      * decoration: a tile whose artwork has no dark variant sits as a light rectangle on
      * the dark logo band, and a hard 90-degree corner is what makes that read as a
      * pasted-on box. Softening the corner is the cheapest thing that helps.
+     *
+     * It keeps the SMALLER radius on purpose. The frame takes `radius-2`, as a note card
+     * does, and a mark tucked inside a rounder box wants a tighter corner than its
+     * container or the two curves fight.
      */
     border-radius: var(--radius-1);
-    inline-size: 200px;
-    max-inline-size: 100%;
+    display: block;
+    inline-size: 100%;
     block-size: auto;
+  }
+
+  @container style(--breakpoint-md: true) {
+    .work-logo-frame {
+      /* Back to 200 for the 4-column track beside the copy — see the base rule. */
+      inline-size: 200px;
+
+      /*
+       * ── THE 1px EXCEPTION, AND IT ONLY APPLIES AT THIS SIZE ────────────────
+       *
+       * Not a token and not trying to be one: it is the smallest inset that stops the
+       * frame's own `radius-2` corner clipping the tile behind it. Anything larger is
+       * padding, and padding is what a 200px frame around a wordmark is opting out of —
+       * the mark measures 196 of the 200 and carries the band, which is the point of
+       * showing a client's logo at all.
+       *
+       * A literal rather than a local custom property: a name would imply a value with a
+       * rule behind it, and this one's rule is "as close to nothing as the corner allows".
+       * <NoteCard>'s `--card-pad` is untouched and stays the system default, as does this
+       * component's own base rule above.
+       */
+      padding: 1px;
+
+      border-color: transparent;
+      background-color: transparent;
+
+      transition:
+        border-color 0.15s,
+        background-color 0.15s,
+        box-shadow 0.15s;
+    }
+
+    /*
+     * `:focus-visible` rather than `:focus-within`, which is what NoteCard uses. The
+     * difference is the element: a note card wraps a focusable TITLE and reacts when
+     * something inside it takes focus, where this frame IS the anchor. `:focus-within`
+     * would also match, but it would be describing a child that does not exist.
+     *
+     * A frame with no case study is a <div>, so neither state can fire on it — correct,
+     * since there is nothing to follow.
+     */
+    .work-logo-frame:hover,
+    .work-logo-frame:focus-visible {
+      border-color: var(--color-border);
+      background-color: var(--color-surface);
+      box-shadow: 2px 2px 0 0 var(--color-accent);
+    }
   }
 
   /*
