@@ -498,7 +498,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
          it. The noun follows the branch, so a note page reads "Related Notes". */
       relatedItems.length > 0 && (
         <RelatedBand
-          noun={branch === 'note' ? 'Notes' : 'Insights'}
+          noun={branch === 'note' ? 'Notes' : 'Articles'}
           isFallback={isFallback}
           items={relatedItems}
         />
