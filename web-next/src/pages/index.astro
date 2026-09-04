@@ -1,658 +1,787 @@
 ---
 /**
- * THROWAWAY — a specimen page for eyeballing phases 2 and 3. Delete or replace
- * when the real page types land in phase 4.
+ * The Home page — phase 4 item 3, and mostly composition.
  *
- * Its job is to exercise every rule in base.css against real prose so the type
- * scale, the rhythm ramp, the measure cap and all three theme states can be
- * checked in a browser rather than taken on trust — and now to exercise <Band>
- * and <Grid> too.
+ * ── FOUR BANDS ──────────────────────────────────────────────────────────────
+ *
+ *   Hero            this file — a statement and one button, on the accent ground
+ *   Insights        Articles and Notes, side by side           (not yet built)
+ *   Topics          Selected Topics and Genres, taxonomy-driven (not yet built)
+ *   Work With Me    <WorkWithMeBand>, already built             (not yet wired)
+ *
+ * ── `/` IS LOAD-BEARING BEYOND BEING THE HOME PAGE ──────────────────────────
+ *
+ * The masthead's `rel="home"` and, more importantly, the `<link rel="author" href="/">`
+ * on all 46 pages both resolve here. That author link is inert until this page carries
+ * the site's representative `h-card`, which is why CLAUDE.md files the h-card under the
+ * home page rather than under phase 8's microformats work. It lands with the last band.
+ *
+ * The throwaway specimen that used to occupy this route moved to `/specimen/`, not
+ * deleted — it is still the quickest way to eyeball the type and card system.
  */
+import {loadQuery} from '../sanity/load-query'
+import {SINGLETON_WORK_BAND_QUERY} from '../sanity/queries/singletons'
+import {
+  GENRE_TREE_QUERY,
+  HOME_AUTHOR_QUERY,
+  HOME_INSIGHTS_QUERY,
+  HOME_TAXONOMY_QUERY,
+} from '../sanity/queries/home'
+import {imageAttrs} from '../sanity/image'
+import {partitionGenres, pluralizeGenre} from '../lib/genres'
+import {selectTopics} from '../lib/topics'
+import {slugify} from '../lib/slug'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Band from '../components/Band.astro'
 import Grid from '../components/Grid.astro'
-import Logo from '../components/Logo.astro'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
-import SanityImage from '../components/SanityImage.astro'
-import SanityHero from '../components/SanityHero.astro'
-import {Search, Rss} from '@lucide/astro'
-import {loadQuery} from '../sanity/load-query'
-import {INSIGHTS_REVIEW_QUERY} from '../sanity/queries/insights'
+import Prose from '../components/prose/Prose.astro'
+import Button from '../components/Button.astro'
 import ArticleCard from '../components/cards/ArticleCard.astro'
 import NoteCard from '../components/cards/NoteCard.astro'
+import WorkWithMeBand from '../components/bands/WorkWithMeBand.astro'
 
-/**
- * THROWAWAY REVIEW INDEX — goes when this page goes.
- *
- * Every insight, with a badge for anything on the phase 4 open list, so reviewing
- * the serializers means clicking the flagged ones rather than opening 42 pages to
- * find out which are interesting.
- */
-const insights = await loadQuery(INSIGHTS_REVIEW_QUERY)
+/*
+  ── HOW MANY THE INSIGHTS BAND SHOWS. TUNE HERE. ────────────────────────────
 
-/**
- * COMPARED AS `string`, DELIBERATELY.
- *
- * TypeGen derives its unions from the SCHEMA, so it cannot describe data the schema
- * no longer allows — and a badge whose whole job is to find content the schema has
- * moved past therefore cannot be typed against those unions.
- *
- * `styles` is the live case: it comes back without 'h5', because phase 1 dropped
- * that style. Dropping a style does not remove it from published blocks — 27
- * survived until the data was corrected — so `includes('h5')` against the generated
- * union is a type error even though the value can genuinely appear. The badge
- * stays as a regression detector, and widening is the only way to write it.
- *
- * ONE OF THE TWO CASES HAS BEEN RETIRED, which is worth recording because it was
- * reported here as a TypeGen fault and was not one. `blockTypes` used to come back
- * typed 'code' where the data said 'pre'; the schema declared that member as
- * `{name: 'pre', type: 'code'}`, and Sanity stores an array member's NAME as its
- * `_type`. TypeGen was reporting the type correctly and the SCHEMA was
- * inconsistent. Both were renamed to `code` on 2026-08-26, data included, so that
- * union now matches and needs no widening of its own.
- */
-const typesOf = (d: {blockTypes: readonly (string | null)[] | null}) =>
-  (d.blockTypes ?? []).filter(Boolean) as string[]
-const stylesOf = (d: {styles: readonly (string | null)[] | null}) =>
-  (d.styles ?? []).filter(Boolean) as string[]
+  Andy's call (2026-09-03): easy to adjust, but not a CMS field — nobody needs to change
+  it from the Studio, and a setting nobody uses is a setting that can be set wrong. The
+  board draws four and five.
 
-type Flag = {label: string; why: string}
+  They reach GROQ as `[0...$n]` slice bounds, so changing a number here changes what is
+  FETCHED rather than what is rendered from an over-large result.
+*/
+const ARTICLE_COUNT = 4
+const NOTE_COUNT = 5
 
-const flagsFor = (d: (typeof insights)[number]): Flag[] => {
-  const types = typesOf(d)
-  const styles = stylesOf(d)
-  const flags: Flag[] = []
-  /* `image` and `pre` were badges here until 2026-08-26. Both are gone from the
-     schema — image folded into figure, pre renamed to code — and both are now
-     built, so a document can no longer carry either. `table` is the only block
-     type left with no serializer. */
-  if (types.includes('table')) flags.push({label: 'table', why: 'no serializer'})
-  if (styles.includes('h5')) flags.push({label: 'h5', why: 'dropped from schema, unstyled'})
-  if (d.hasUnderline) flags.push({label: 'underline', why: 'inline text-decoration'})
-  if (d.hasInlineCode) flags.push({label: 'inline code', why: 'no code rule in base.css'})
-  if (d.hasNestedList) flags.push({label: 'nested list', why: 'level 2 — untested'})
-  if (d._type === 'caseStudy') flags.push({label: 'case study', why: 'body fields not built'})
-  return flags
-}
+/*
+  ── TWO ROUND TRIPS, AND THE SECOND DEPENDS ON THE FIRST ────────────────────
 
-const rows = insights.map((d) => ({...d, flags: flagsFor(d)}))
-const flagged = rows.filter((r) => r.flags.length > 0)
+  The genre tree has to come back before the partition exists, and the partition is what
+  the Insights query filters on — so these cannot be a `Promise.all`. The singleton can,
+  and is, because it depends on neither.
+*/
+const [page, genreTree, author] = await Promise.all([
+  loadQuery(SINGLETON_WORK_BAND_QUERY, {slug: 'home'}),
+  loadQuery(GENRE_TREE_QUERY),
+  loadQuery(HOME_AUTHOR_QUERY),
+])
 
-const when = (iso: string | null) =>
-  iso
-    ? new Date(iso).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})
-    : '—'
+/*
+  ── THE REPRESENTATIVE h-card's PHOTO ───────────────────────────────────────
 
-/**
- * Real assets from production-26, hardcoded so the two image components can be
- * exercised against CHOSEN sources rather than whatever a document happens to
- * carry: `cs_hero` is 1262x840 and `NTD_after` is 3024x1890 — deliberately one
- * source that caps the ladder below its top rung and one that does not.
- *
- * (This note used to say "because this page runs no query". It does now — the
- * review index above is one — so the reason is the choice of asset, not the
- * absence of a data layer.)
- */
-const HERO = {
-  asset: {_ref: 'image-015d1f2e51f8a01adf8cbdfba67a4a05ebd1ceb3-1262x840-jpg'},
-  hotspot: {x: 0.5, y: 0.35, width: 0.6, height: 0.6},
-  altText: 'Placeholder hero — a case study cover image',
-}
-const INLINE = {
-  asset: {_ref: 'image-01f937b46ee5229705238745f2c29dc12da6cd20-3024x1890-png'},
-  altText: 'Placeholder in-prose image',
-}
+  This page is where `<link rel="author" href="/">` — emitted on all 46 pages — finally
+  resolves. <Masthead> carries the card when asked; see its own note for why it is opt-in
+  and why the name, role and URL are marked up on visible text rather than invented.
+
+  ── SQUARE, BECAUSE AN AVATAR IS SQUARE ─────────────────────────────────────
+
+  `authorImage` is the landscape studio portrait, 1262x823. A consumer showing a
+  webmention renders this small and almost always in a square or a circle, so it is
+  cropped here rather than left for someone else's CSS to cut arbitrarily — `aspect: '1/1'`
+  makes the hotspot live, which is the whole reason the field has one.
+
+  `imageAttrs` builds a srcset this has no use for; `.src` is the single URL `u-photo`
+  wants. Null when the field is unset, and <Masthead> then omits the property rather than
+  emitting an empty one — an h-card with a name and a URL is still valid and still
+  resolves, it just carries no avatar.
+*/
+const authorPhoto = author?.authorImage?.asset
+  ? (imageAttrs(author.authorImage, {aspect: '1/1'})?.src ?? null)
+  : null
+
+const {articleGenres, noteGenres, documentGenres} = partitionGenres(genreTree)
+
+const [insights, taxonomy] = await Promise.all([
+  loadQuery(HOME_INSIGHTS_QUERY, {
+    articleGenres,
+    noteGenres,
+    articleCount: ARTICLE_COUNT,
+    noteCount: NOTE_COUNT,
+  }),
+  loadQuery(HOME_TAXONOMY_QUERY, {documentGenres}),
+])
+
+/*
+  ── THE TOPICS BAND'S TWO LISTS ─────────────────────────────────────────────
+
+  Genres are every Document-branch concept something is actually tagged with, shown as
+  plurals because each labels a group. The COUNT is what filters — a genre added to the
+  taxonomy appears here the moment content carries it, and disappears again if that
+  content goes away, with no code change. It also removes the Document top concept, which
+  is in `documentGenres` but is never tagged.
+
+  ── THE LINK CARRIES THE SINGULAR, THE LABEL SHOWS THE PLURAL ──────────────
+
+  `/insights/?genre=book-note`, not `book-notes`. The facet index the Insights page filters
+  against is keyed on the slugified prefLabel, so pluralising the href would produce a
+  filter that matches nothing — a link that looks right and quietly returns an empty index.
+  Slugging `prefLabel` rather than the display label is what keeps them in step.
+*/
+const genres = taxonomy.genres
+  .flatMap((genre) => (genre.prefLabel && genre.count > 0 ? [genre.prefLabel] : []))
+  .map((prefLabel) => ({label: pluralizeGenre(prefLabel), slug: slugify(prefLabel)}))
+  .sort((a, b) => a.label.localeCompare(b.label))
+
+/*
+  ── EXACTLY TWICE AS MANY TOPICS AS GENRES ──────────────────────────────────
+
+  Andy's rule (2026-09-03), and it is a ratio rather than a number so the two columns stay
+  in proportion as the vocabulary grows: 7 genres today, so 14 topics. The board draws 15
+  against 8, which is the same shape from before the Presentation-branch genres were
+  unpublished.
+
+  Deriving it means the band cannot drift into a lopsided pair, and there is no second
+  constant to update when a genre is added.
+*/
+const topics = selectTopics(taxonomy.topics, genres.length * 2).map((topic) => ({
+  label: topic.label,
+  slug: slugify(topic.label),
+}))
+
+/*
+  ── THE CARD MAPPING IS INLINE, AND DELIBERATELY NOT SHARED ─────────────────
+
+  The Insights index builds the same three things — an `/insights/` href, a title fallback,
+  and a Clipping's source domain — and this is a second consumer, which is usually this
+  project's trigger to extract. It is not extracted, because the two callers need
+  different SHAPES: the index also carries facet slugs and masonry hints that exist only
+  there, so a shared helper would either return fields Home ignores or take a parameter
+  saying which caller it is.
+
+  What would justify extracting is a rule that is invisible when wrong — the reason
+  `formatDate` is a module. A wrong href is visible the first time anyone clicks it.
+
+  `slug` is narrowed rather than asserted: the query filters on `defined(slug.current)`
+  but TypeGen cannot see the filter, so it types the projection `string | null`.
+*/
+const articleCards = insights.articles.flatMap((item) =>
+  item.slug
+    ? [
+        {
+          href: `/insights/${item.slug}/`,
+          title: item.title ?? 'Untitled',
+          genre: item.genre,
+          date: item.pubDate,
+          description: item.shortDescription,
+          image: item.heroImage,
+        },
+      ]
+    : [],
+)
+
+const noteCards = insights.notes.flatMap((item) =>
+  item.slug
+    ? [
+        {
+          href: `/insights/${item.slug}/`,
+          title: item.title ?? 'Untitled',
+          genre: item.genre,
+          date: item.pubDate,
+          description: item.shortDescription,
+          /* A Clipping shows its source where a plain Note shows its description —
+             the ref's PRESENCE selects that, not the genre label, matching NoteCard. */
+          sourceDomain: item.clipRef?.publisher ?? null,
+        },
+      ]
+    : [],
+)
 ---
 
-<BaseLayout
-  title="Phase 2 specimen — design tokens and element role styles"
-  description="Throwaway page for verifying the global tier."
->
-  <Masthead />
+<BaseLayout title="Andy Fitzgerald — Information Architect" description={page?.lede ?? undefined}>
+  <Masthead microformats photo={authorPhoto} />
 
-  {
-    /* ── CARD SPECIMEN ─────────────────────────────────────────────────────────
-      Throwaway, and it goes when the real index pages land. Its job is to put the
-      whole variant matrix on one screen: the article card at BOTH of its real
-      widths, so the container query can be seen switching without resizing the
-      window, and the note card in all three of its shapes.
+  <main>
+    {
+      /*
+        ── THE HERO TAKES THE ACCENT GROUND ONLY FROM lg ───────────────────────
 
-      571 and 316 are the only widths the design actually produces — DESIGN.md's
-      computed wide column and `grid-span-4`. They are hardcoded here on purpose:
-      this is the one place that wants to defeat the layout and pin a card to a
-      known size.
-  */
-  }
-  <Band space="band">
-    <Grid>
-      <div class="card-spec">
-        <h2>Cards</h2>
+        The two boards genuinely differ, and it is a design rule rather than drift
+        (Andy, 2026-09-03): below lg the stacked navigation is ITSELF accent-coloured, so
+        an accent hero would run into it with no edge between them. The hero therefore
+        sits on the page ground until the nav unstacks at 1024, and takes the accent band
+        above it.
 
-        <h3>Article card — 571 (horizontal, inferred)</h3>
-        <div style="inline-size: 571px; max-inline-size: 100%">
-          <ArticleCard
-            href="#"
-            title="Structured Content and the Headless CMS"
-            genre="Method"
-            date="2026-01-01"
-            description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
-            image={INLINE}
-          />
-        </div>
+        ── WHICH IS WHY `tone` IS NOT USED, AND THE PAGE OWNS THE FILL ─────────
 
-        <h3>Article card — 316 (vertical, inferred)</h3>
-        <div style="inline-size: 316px; max-inline-size: 100%">
-          <ArticleCard
-            href="#"
-            title="Structured Content and the Headless CMS"
-            genre="Method"
-            date="2026-01-01"
-            description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
-            image={INLINE}
-          />
-        </div>
+        `tone` is a prop, so it becomes a static attribute and cannot vary by viewport.
+        The obvious fix — teaching <Band> a `toneFrom` — was considered and rejected:
+        Home is the only page with a hero band, and this is the only band in the design
+        that changes tone at a breakpoint, so a general prop would be built for a second
+        consumer that is not coming.
 
-        <h3>Article card — 316, no image (single column at any width)</h3>
-        <div style="inline-size: 571px; max-inline-size: 100%">
-          <ArticleCard
-            href="#"
-            title="A card whose document has no hero"
-            genre="Perspective"
-            date="2026-01-01"
-            description="The two-column form is guarded by :has(.card-media), so this stays single column instead of reserving an empty 145px track."
-          />
-        </div>
+        The usual objection to a page painting its own band is Band's own: "changing a
+        band's fill is never a one-property change — the text on it has to move in the
+        same breath," which is why `tone="accent"` re-points ELEVEN declarations. That
+        objection mostly does not apply here, and the reason is worth stating: those
+        eleven exist because a band holds arbitrary slotted content — links, borders,
+        icons, muted text, quotes. This band holds an h1 and a button. Two of the eleven
+        are reachable, so two is what the style block sets.
 
-        <h3>Note cards — 316. Unboxed at rest from md; hover for the box + highlight</h3>
-        <div class="note-spec">
-          <NoteCard
-            href="#"
-            title="Stability in Unstable Times"
-            genre="Note"
-            date="2026-02-28"
-            description="A short description to illustrate a short note."
-          />
-          <NoteCard
-            href="#"
-            title="Proust and the Squid"
-            genre="Book Note"
-            date="2026-02-28"
-            description="Learning to read creates physical changes in the brain that directly affect how we think."
-          />
-          <NoteCard
-            href="#"
-            title="Gall\u2019s Law When Complexity Comes Cheap"
-            genre="Clipping"
-            date="2026-02-28"
-            sourceDomain="jarango.com"
-          />
-        </div>
-      </div>
-    </Grid>
-  </Band>
-
-  {
-    /*
-    THROWAWAY REVIEW INDEX. First thing on the page so it is reachable without
-    scrolling past the specimen. Goes with the rest of this file.
-  */
-  }
-  <Band space="band">
-    <Grid>
-      <section class="review">
-        <h2>Insights — review index</h2>
-        <p class="review__lede">
-          All {rows.length} insight documents, rendered by the phase 4 stub route.{' '}
-          <strong>{flagged.length}</strong> exercise something on the open list.
-        </p>
-
-        {
-          flagged.length > 0 && (
-            <>
-              <h3>Flagged</h3>
-              <ul class="review__list" role="list">
-                {flagged.map((d) => (
-                  <li>
-                    <a href={`/insights/${d.slug}/`}>{d.title}</a>
-                    <span class="review__meta">
-                      {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
-                    </span>
-                    <span class="review__flags">
-                      {d.flags.map((f) => (
-                        <span class="review__flag" title={f.why}>
-                          {f.label}
-                        </span>
-                      ))}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )
-        }
-
-        <h3>Everything, newest first</h3>
-        <ul class="review__list" role="list">
-          {
-            rows.map((d) => (
-              <li>
-                <a href={`/insights/${d.slug}/`}>{d.title}</a>
-                <span class="review__meta">
-                  {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
-                  {!d.hasHero && ' · no hero'}
-                </span>
-              </li>
-            ))
-          }
-        </ul>
-      </section>
-    </Grid>
-  </Band>
-
-  {
-    /*
-    Full bleed, so it sits in the PAGE STACK and not inside a <Grid>. Resize
-    across 569px to watch 16:9 give way to the height cap.
-  */
-  }
-  <SanityHero image={HERO} />
-
-  <Band space="none">
-    <Grid>
-      <form class="controls">
-        <label for="probe">Native control</label>
-        <input id="probe" type="text" placeholder="checks color-scheme" />
-        <button type="button" aria-label="Search"><Search /></button>
-        <span class="muted-probe"><Rss class="icon-sm" /> 18px, inherits muted text</span>
-      </form>
-
-      {
-        /*
-        The mark, three ways, to check that the knockout is the GROUND rather than
-        a color. Left: on the page ground in `accent`, which is how the masthead
-        will set it. Middle: the same mark on a `surface` card, where the letters
-        should turn the card's white rather than staying page-gray. Right: no
-        color named at all, so it inherits body text — the proof that the mark
-        carries no color of its own.
+        `space="band"` with no override: the board draws 64 top and bottom at 1440 and
+        32 at 375, which is exactly what `--rhythm-band` clamps between.
       */
-      }
-      <div class="mark-probe">
-        <Logo class="mark-probe__accent" />
-        <span class="mark-probe__card"><Logo class="mark-probe__accent" /></span>
-        <Logo />
-      </div>
-    </Grid>
-  </Band>
+    }
+    <Band as="section" class="hero-band">
+      <Grid>
+        <div class="hero">
+          {
+            /*
+              ── THE STATEMENT IS THE h1 ─────────────────────────────────────
 
-  <Band space="section">
-    <Grid>
-      <header class="page-header">
-        <p class="eyebrow">Specimen | 21 August 2026</p>
-        <h1>The quiet option wins</h1>
-      </header>
-    </Grid>
+              The board draws no other heading on this page, and a page with no h1 has
+              no accessible name for its main region and a broken document outline. The
+              statement is what the page is about, so it is the honest h1 rather than an
+              invented "Home" nobody wants to read.
 
-    <Grid>
-      <article class="detail">
-        <p>
-          This page exists to be looked at. Every rule in <code>base.css</code> is exercised below, so
-          the type scale, the vertical rhythm and both themes can be checked against DESIGN.md by eye.
-          Paragraph text should cap at roughly sixty-seven characters — count a line if you like — while
-          headings deliberately run wider, because <code>ch</code> resolves against each element's own
-          font and a shared cap would mean something different for Lato than for Noto Serif.
-        </p>
+              It takes DESIGN.md's `display` role, NOT base.css's h1 — see the style
+              block for what that costs. Figma binds this node to the `Display` text
+              style, which is the confirmation that it is a role and not a one-off.
 
-        <p>
-          A second paragraph, to check the gap between siblings. It should be{' '}
-          <strong>24px</strong>, noticeably tighter than the space above the heading that follows
-          it. Inline links take the surrounding text color with a persistent underline and shift to
-          the accent on hover — <a href="#nowhere">this one, for instance</a> — because the underline
-          rather than the color carries the affordance. Tab to it to check the focus ring: two concentric
-          rings, the inner contrasting the control and the outer the page.
-        </p>
+              <Prose> renders it because `heroCopy` is Portable Text and may carry a
+              mark. It emits a <p>, so the h1 wraps it rather than replacing it — the
+              alternative is a serializer override for one block on one page.
+            */
+          }
+          <h1 class="hero-statement"><Prose value={page?.heroCopy} /></h1>
 
-        <h2>A major heading</h2>
+          {
+            /* `primary` is the BASE state, which mobile-first makes the right default:
+               it is what the board draws below lg, on the page ground. The style block
+               gives it the ghost treatment from lg, where it lands on the accent band.
 
-        <p>
-          The space above that h2 should be visibly larger than the space below it — 64px against
-          16px in raw token terms, though half-leading means the <em>apparent</em> ratio is closer to
-          2.5:1 than the 4:1 the numbers suggest. Check the apparent space, not the values.
-        </p>
+               The destination is fixed rather than content — there is one About page,
+               the same reasoning WorkWithMeBand gives for hardcoding /consulting. */
+          }
+          <Button href="/about" variant="primary" class="hero-cta">Read more about me</Button>
+        </div>
+      </Grid>
+    </Band>
 
-        <h3>A minor heading</h3>
+    {
+      /*
+        ── THE INSIGHTS BAND ───────────────────────────────────────────────────
 
-        <p>
-          Above this h3, 48px. Below it, the same 16px as the h2, because{' '}
-          <code>rhythm-heading-close</code> is last in source order and binds a heading to whatever follows
-          it regardless of level.
-        </p>
+        Two columns on the board's asymmetric split — 571 + skip-1 + 316, closing 996
+        exactly — which is the same split the Insights index uses for its facet groups
+        and the Work With Me band uses for its copy and logos.
 
-        <h4>A heading with no size step left</h4>
+        <div>s RATHER THAN NAMED <section>s. Each column is a thematic grouping and a
+        <section> would be defensible, but a NAMED one is a `region` landmark, and
+        CaseStudyEntry already settled that case: landmarks for content nothing navigates
+        to are noise. The Reviews page went the other way because its rail lists exactly
+        those four sections; nothing points at these two. The h2s carry the outline.
+      */
+    }
+    <Band as="section" class="insights-band">
+      <Grid>
+        <div class="insights-col">
+          {
+            /*
+              ── THE BLURBS STAY IN THE TEMPLATE. SETTLED, NOT DEFERRED ────────
 
-        <p>
-          The h4 above sits at exactly the same size as this paragraph. It differentiates by family,
-          weight and tracking alone — Lato 700 with 2% letter-spacing against Noto Serif 400. If it
-          reads as merely bold body text, the levers are uppercase, small caps, color or a rule,
-          never a smaller size.
-        </p>
-
-        <ul>
-          <li>An unordered list, to check the 48px block gap above it.</li>
-          <li>
-            A second item, checking the 16px between items. This one runs long enough to wrap, so
-            the leading inside an item can be compared against the gap between them.
-          </li>
-          <li>A third, shorter.</li>
-        </ul>
-
-        <p>And a paragraph after the list, which should also take the 48px block gap.</p>
-
-        <ol>
-          <li>Ordered lists take the same treatment.</li>
-          <li>Both keep the browser's own indent — DESIGN.md specifies none.</li>
-        </ol>
-
-        <blockquote>
-          <p>
-            The bar sits inside the indent, so the text starts 42px from the page edge rather than
-            48 — the 6px rule plus 42px of padding. On mobile that becomes a 4px rule and 20px, and
-            both come from one <code>calc()</code> so the relationship survives a change to either token.
+              Both column blurbs are hardcoded, following WorkWithMeBand's precedent for
+              copy that never varies. Raised as a possible singleton field, since unlike
+              a heading these are sentences of editorial prose — and decided against
+              (Andy, 2026-09-04): they describe the SECTIONS this template draws, not the
+              content underneath them, so they change when the template changes and not
+              when the writing does. A field would be a place to set them wrong.
+            */
+          }
+          <h2>Articles</h2>
+          <p class="col-lede">
+            Perspectives, guides, and case studies about information architecture for modern content
+            ecosystems.
           </p>
-        </blockquote>
 
-        <p>
-          Blockquote is an element rule rather than a component, and the indent is{' '}
-          <code>padding-inline-start</code> rather than margin — a margin would put the gap outside the
-          box and the bar would drift off the text block.
-        </p>
+          <div class="card-list">
+            {
+              articleCards.map((card) => (
+                <ArticleCard
+                  as="h3"
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  image={card.image}
+                />
+              ))
+            }
+          </div>
+        </div>
 
-        <figure>
-          <SanityImage image={INLINE} />
-          <figcaption>
-            A real Sanity image in the prose column, lazy with <code>sizes="auto, 100vw"</code>. The
-            browser measures this box rather than being told about it, so no breakpoint appears in
-            the markup. Its <code>width</code> and <code>height</code> carry the ratio, which is what
-            reserves the box before the bytes land.
-          </figcaption>
-        </figure>
+        <div class="insights-col">
+          <h2>Notes</h2>
+          <p class="col-lede">Brief observations and clippings from around the web.</p>
 
-        <figure>
-          <svg viewBox="0 0 640 300" role="img" aria-labelledby="fig-title">
-            <title id="fig-title">A placeholder rectangle standing in for a figure</title>
-            <rect width="640" height="300" fill="var(--color-surface-muted)"></rect>
-            <rect
-              x="0.5"
-              y="0.5"
-              width="639"
-              height="299"
-              fill="none"
-              stroke="var(--color-border)"
-              stroke-width="1"></rect>
-            <text
-              x="320"
-              y="158"
-              text-anchor="middle"
-              fill="var(--color-text-muted)"
-              style="font-family: var(--font-heading)"
-              font-size="16">640 × 300</text
-            >
-          </svg>
-          <figcaption>
-            Captions are Noto Serif italic at the 16px step in <code>text-muted</code> — apparatus around
-            the content rather than content. The figure is capped at the prose measure; the caption deliberately
-            is not, because its smaller font makes <code>ch</code> resolve narrower than its own image.
-          </figcaption>
-        </figure>
+          <div class="card-list note-list">
+            {
+              noteCards.map((card) => (
+                <NoteCard
+                  as="h3"
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  sourceDomain={card.sourceDomain}
+                />
+              ))
+            }
+          </div>
+        </div>
+      </Grid>
+    </Band>
 
-        <p>
-          Last paragraph. Switch the theme with the mode selector in the footer and check all of the
-          above again — every token has three places it can be wrong, and the native form control
-          above should re-skin along with the page because <code>color-scheme</code> is set.
-        </p>
-      </article>
+    {
+      /*
+        ── THE TOPICS BAND ─────────────────────────────────────────────────────
 
-      <aside class="sidebar">
-        <h3>A rail</h3>
-        <p>
-          Placed at <code>10 / span 3</code>, so column 9 is skipped — and that skipped column plus
-          its two gutters is <code>grid-skip-1</code>, 109px, without the number appearing anywhere.
-          Below the breakpoint <code>--col-rail</code> collapses to <code>1 / -1</code> on its own.
-        </p>
-      </aside>
-    </Grid>
-  </Band>
+        `space="section"` for the board's 96 above and 64 at 375 — the same value every
+        APPENDED band takes, which is what this is: the page's content is done and these
+        are ways back into it.
 
-  <!-- <Band tone="accent" space="band">
-    <Grid>
-      <div class="band-demo">
-        <h2>An accent band</h2>
-        <p>
-          Nothing here knows it is on a band. The heading, this paragraph and{' '}
-          <a href="#nowhere">this link</a> all read the same role tokens they always do — the band re-points
-          those tokens, so the text moves in the same breath as the fill. Captions would flatten to full
-          strength here, since DESIGN.md has no muted-on-accent role.
-        </p>
-      </div>
-    </Grid>
-  </Band> -->
+        `tone="accent"` UNCONDITIONALLY, unlike the hero. Both Figma variants carry
+        `color/accent/band`, so there is nothing viewport-dependent to express here and
+        the prop does the whole job — including re-pointing `--color-link-hover`, which is
+        what makes these links legible on the fill without this file naming a colour.
+        Footer.astro is the precedent: a real accent band holding a <nav>.
+
+        <nav> PER LIST, each named by its own visible heading. Two navigations, not one,
+        because no single label covers "Selected Topics" and "Genres" — the same shape and
+        the same reasoning the Insights index arrived at for its two facet groups. These
+        ARE navigation, so unlike the Insights band's columns the landmark is earned.
+      */
+    }
+    <Band as="section" space="section" tone="accent" class="topics-band">
+      <Grid>
+        <nav class="topics-col" aria-labelledby="home-topics">
+          <h2 id="home-topics">Selected Topics</h2>
+          <ul class="topic-grid" role="list">
+            {
+              topics.map((topic) => (
+                <li>
+                  <a href={`/insights/?topic=${topic.slug}`}>{topic.label}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+
+        <nav class="genres-col" aria-labelledby="home-genres">
+          <h2 id="home-genres">Genres</h2>
+          <ul class="genre-list" role="list">
+            {
+              genres.map((genre) => (
+                <li>
+                  <a href={`/insights/?genre=${genre.slug}`}>{genre.label}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </Grid>
+    </Band>
+
+    {
+      /*
+        ── WORK WITH ME ────────────────────────────────────────────────────────
+
+        The last band, and the only one on this page that was already built — it takes its
+        own <Band>, <Grid>, tone and spacing, so there is nothing to compose around it.
+
+        `workBand` arrives already RESOLVED. SINGLETON_WORK_BAND_QUERY runs the three-tier
+        ladder in GROQ — the document's own `bands`, then a page-type override in Settings,
+        then the Settings default — so this page never learns which tier produced it. Home
+        sets no `bands` of its own and Settings has no override for singletons, so it lands
+        on the site default, which is exactly the arrangement fragments.ts documents.
+
+        Rendered only when the ladder produced something. There is a site default, so the
+        only way to reach null is Settings carrying no Work With Me band at all — in which
+        case a heading and a button over empty space would be worse than no band.
+      */
+    }
+    {
+      page?.workBand && (
+        <WorkWithMeBand message={page.workBand.message} clientLogos={page.workBand.clientLogos} />
+      )
+    }
+  </main>
 
   <Footer />
 </BaseLayout>
 
 <style>
-  /* ── Card specimen (throwaway) ────────────────────────────────────────────── */
-  .card-spec {
+  /*
+   * ── FULL CONTENT WIDTH, AND THE MEASURE COMES FROM THE ROLE ────────────────
+   *
+   * `--col-full`, because there is no rail here and the board runs the statement the
+   * whole 996. DESIGN.md puts `display` at "~43 characters at 35px", and at 996 the
+   * real string lands at 42 per line over three lines — so the column IS the measure
+   * and a `ch` cap would only be a second, disagreeing statement of it.
+   *
+   * ── A COLUMN THAT END-ALIGNS, WHICH IS WHAT PUTS THE BUTTON RIGHT ──────────
+   *
+   * Mobile-first per tokens.css. The mobile board centres both the statement and the
+   * button; the desktop board ranges the statement left and pushes the button to the
+   * right edge — one frame with `counterAxisAlignItems: MAX`, not two alignments.
+   *
+   * `align-items` moves the button and `text-align` sets the statement, and the two are
+   * not redundant: the statement is a full-width block whose TEXT ranges left at
+   * desktop, while the button is a hug-width item that moves to the end. `align-items`
+   * alone would leave the statement ranged left at both widths.
+   *
+   * 32 is `--space-4`, the board's gap at both widths.
+   */
+  .hero {
+    grid-column: var(--col-full);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    text-align: center;
+  }
+
+  /*
+   * ── EVERYTHING ABOUT THE HERO CHANGES AT lg, IN ONE MOVE ───────────────────
+   *
+   * lg and not md, and the reason is the NAVIGATION: below 1024 it is stacked and
+   * accent-coloured, so an accent hero would run into it with no edge between them
+   * (Andy, 2026-09-03). The hero holds its narrow presentation until the nav unstacks.
+   *
+   * The alignment sat at md in a first pass, which left 768–1023 in a state no board
+   * draws — statement ranged left with a right-hand button, on the page ground. Moved
+   * here so the whole band turns over at one width rather than in two steps.
+   *
+   * ONE BLOCK, NOT TWO, because that is the claim: there is a single transition. Two
+   * `@container` blocks at the same width would read as a coincidence and invite the
+   * next person to move one of them.
+   *
+   * ── THE FILL IS TWO DECLARATIONS, NOT <Band>'s ELEVEN ──────────────────────
+   *
+   * The difference is what this band holds. `--color-text-heading` is the only role
+   * token anything inside reads: the h1 takes it from base.css's `:is(h1, h2, h3, h4)`,
+   * and the button sets its own colour. There is no link, border, icon, muted text or
+   * quote in here to re-point for.
+   *
+   * `--color-text` is deliberately NOT set. Nothing in this band renders body copy, and
+   * re-pointing a token no element reads is how a bundle grows into something that has
+   * to be kept in step with a component it no longer matches.
+   *
+   * No competing rule to outrank: <Band> styles `surface`, `logo` and `accent` and
+   * leaves its default `page` tone unstyled, so this adds rather than overrides.
+   */
+  @container style(--breakpoint-lg: true) {
+    .hero {
+      align-items: flex-end;
+      text-align: start;
+    }
+
+    .hero-band {
+      background-color: var(--color-surface-accent);
+      --color-text-heading: var(--color-text-on-accent);
+    }
+
+    /*
+     * ── AND THE BUTTON BECOMES THE GHOST ────────────────────────────────────
+     *
+     * `primary`'s fill IS `--color-surface-accent`, so on this band it would be an
+     * invisible box with white text. That is precisely what <Button>'s `ghost` variant
+     * exists for, and these four blocks are its rules, restated here because `variant`
+     * is a static attribute and one hero does not justify a `variantFrom` prop.
+     *
+     * THE COMPOUND SELECTOR IS LOAD-BEARING, NOT STYLE. `.button[data-variant='primary']`
+     * carries <Button>'s own scope attribute, so it is three simple selectors at
+     * (0,3,0); a page reaches the component's root with one class plus one scope
+     * attribute at (0,2,0) and loses silently, wherever it sits in the source. Matching
+     * the class AND the variant attribute here takes it to (0,4,0), which wins on
+     * specificity rather than on the bundler's ordering. Same trap `Band`'s `spaceEnd`
+     * documents.
+     *
+     * The focus pair is REVERSED against base.css's `2px offset, 4px ring`, and that is
+     * the ghost's own fix rather than a copying slip: on this ground the default paints
+     * a blue-500 ring onto a blue-500 band, invisible on exactly the control that most
+     * needs it. Reversed, the inner ring reads against the button and the outer white
+     * one against the band.
+     */
+    .button.hero-cta[data-variant='primary'] {
+      background-color: var(--color-surface-accent);
+      border-color: var(--color-border-on-accent);
+      color: var(--color-text-on-accent);
+    }
+
+    .button.hero-cta[data-variant='primary']:hover {
+      background-color: var(--color-surface);
+      color: var(--color-surface-accent);
+    }
+
+    .button.hero-cta[data-variant='primary']:active {
+      background-color: var(--color-surface-pressed);
+      color: var(--color-accent-hover);
+    }
+
+    .button.hero-cta[data-variant='primary']:focus-visible {
+      box-shadow:
+        0 0 0 2px var(--color-focus-ring),
+        0 0 0 4px var(--color-focus-offset);
+    }
+  }
+
+  /*
+   * ── DESIGN.md's `display` ROLE, WHICH FIGHTS THE HEADING DEFAULTS ──────────
+   *
+   * Step 5 (30 -> 35.15625), weight 500, leading 1.4, tracking 0 — measured off the
+   * board's `Display` text style, and matching DESIGN.md's leading table, where
+   * `display` is the "statement" register at 1.4.
+   *
+   * THREE OF THESE FOUR EXIST TO UNDO base.css, which is worth saying because a first
+   * draft of this file left them out on the theory that a serif statement would inherit
+   * body's family. It does not: `:is(h1, h2, h3, h4)` sets `font-family`,
+   * `font-weight: 700` and `color`, so an h1 arrives here as Lato Bold no matter what
+   * the element is being used to say.
+   *
+   *   font-family    back to `--font-prose`. Never a literal — CLAUDE.md's standing
+   *                  rule, and Astro's Fonts API scopes the real family name anyway.
+   *   font-weight    500, the only `fontWeight: 500` role in DESIGN.md, carried by
+   *                  Noto Serif's variable axis rather than by a fifth static face.
+   *   letter-spacing h1 sets -0.015em for Lato at display sizes. Noto Serif takes 0% at
+   *                  every size, so this is a cancellation, not a value.
+   *
+   * NO `color`, AND THAT IS WHAT MAKES THE TONE SWITCH FREE. The h1 takes
+   * `--color-text-heading` from base.css, so it is dark on the page ground below lg and
+   * white above it for the single reason that the band re-points that one token. Stating
+   * a colour here would pin it to one of the two grounds and break the other.
+   *
+   * Specificity is not close: `:is(h1, h2, h3, h4)` takes its highest argument, which is
+   * an element at (0,0,1), against this class plus its scope attribute at (0,2,0).
+   */
+  .hero-statement {
+    font-family: var(--font-prose);
+    font-size: var(--font-size-5);
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: normal;
+  }
+
+  /* ── The Insights band ────────────────────────────────────────────────────── */
+  /*
+   * Mobile-first: one column, both full width, Articles then Notes — the mobile board's
+   * order, which is also the DOM order, so nothing is reordered.
+   *
+   * ── THE SPLIT IS AT lg, AND md WAS MEASURABLY TOO EARLY ───────────────────
+   *
+   * A first pass split at md, matching the Insights index's facet groups on the same 7/4
+   * columns. It overflowed the page horizontally at 768 — 770px of content in a 768px
+   * viewport — and the outdent was not the cause: removing it changed nothing.
+   *
+   * A NOTE CARD HAS A MINIMUM WIDTH AND THE 4-COLUMN TRACK IS BELOW IT. The eyebrow and
+   * the source line do not wrap, so the card's min-content width measures about 278px
+   * including its padding. At 768 the notes track is 229px, so the card is forced wider
+   * than its own column and spills through the 16px grid margin. At 1024 the track is
+   * 315px and it fits, which is why that width measured clean.
+   *
+   * The index gets away with md because its columns hold facet CHIPS, which wrap freely.
+   * Cards do not. So this is a different question wearing the same 7/4 split.
+   *
+   * Landing on lg also puts the whole page on one breakpoint: the hero changes there
+   * because the navigation does, and below it Home is uniformly the narrow presentation
+   * the mobile board draws.
+   */
+  .insights-col {
     grid-column: var(--col-full);
   }
 
-  .card-spec > * + * {
-    margin-top: var(--rhythm-block);
-  }
-
-  /* 316 columns, so note cards sit at the width they are drawn at. */
-  .note-spec {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(316px, 316px));
-    gap: var(--rhythm-block);
-  }
-
   /*
-   * Page-local placement only — the grid itself lives in <Grid>. Every span is a
-   * placement token, so there is no media query on this page at all: the tokens
-   * collapse to full width in the single query in tokens.css.
+   * 16 from the heading to its lede, 48 from the lede to the cards. Both from the board,
+   * and both are ramp values rather than new numbers: `heading-close` is what binds a
+   * heading to what follows it, and 48 is the step the Reviews page uses between a
+   * group heading and its content.
+   *
+   * Written as margins rather than a `gap` on the column because the three parts want two
+   * different values, which is the same reason the client block on Reviews uses margins.
    */
-  .page-header {
-    grid-column: var(--col-main);
-
-    /* The gap after the header lives HERE, on an element this page authors.
-       Two reasons it is not on the Band. First, DESIGN.md: "the gap after the
-       header belongs to the parent band, not the component, so pages
-       legitimately differ there." Second, mechanics: a class passed to <Band>
-       does not inherit this page's style scope, so `.chrome { … }` here would
-       compile to `.chrome[data-astro-cid-thispage]` and match nothing.
-
-       The VALUE is a choice, not a transcription. DESIGN.md's rhythm ramp has no
-       rule for what follows an h1 — heading-close covers h2/h3/h4 only — so this
-       is the same gap that turned up as "h1 in prose has no rhythm rule". 24px
-       reads closest to the Figma board. */
-    margin-block-end: var(--rhythm-paragraph);
-  }
-
-  /* DESIGN.md's `label` role, in full: Lato 700 at the 16px step with +2% tracking,
-     in `text-muted`. The WEIGHT is the part that was wrong — this read 400 until
-     2026-08-26, which made it a small muted line rather than the small bold label
-     the Article board shows. `label` is one of the two Lato roles that takes
-     positive tracking, and at this size the tracking is what keeps 700 from
-     reading as cramped. */
-  .eyebrow {
-    color: var(--color-text-muted);
-    font-family: var(--font-heading);
-    font-size: var(--font-size-1);
-    font-weight: 700;
-    line-height: 1.5;
-    letter-spacing: 0.02em;
-    margin-block-end: var(--rhythm-tight);
-  }
-
-  /*
-   * The header sits in its own <Grid>, which is what makes the rail tuck under
-   * the title. The rail must share a row with the prose, so anything above both
-   * has to be outside that row — and a separate grid is cleaner than a separate
-   * row, because a grid has ONE row-gap: sharing one would force the 64px
-   * rhythm-heading-major between title and prose, where its stated premise
-   * ("what lands below always starts with a heading") does not hold.
-   */
-  .detail {
-    grid-column: var(--col-main);
-  }
-
-  /* No explicit grid-row needed: the header is in its own grid, so row 1 of THIS
-     grid holds only the prose and the rail — auto-placement cannot slide the rail
-     up beside the title. And no media query, because --col-rail collapses itself. */
-  .sidebar {
-    grid-column: var(--col-rail);
-  }
-
-  .band-demo {
-    grid-column: var(--col-main);
-  }
-
-  .sidebar > * + * {
+  .col-lede {
     margin-top: var(--rhythm-heading-close);
   }
 
-  .controls {
-    grid-column: var(--col-full);
+  .card-list {
+    margin-top: var(--space-5);
     display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    align-items: center;
-    margin-block-end: var(--rhythm-section);
-    padding-block-end: var(--space-3);
-    border-block-end: var(--border-width-hairline) solid var(--color-border);
-    font-family: var(--font-heading);
-    font-size: var(--font-size-1);
+    flex-direction: column;
+    gap: var(--space-4);
   }
 
-  .mark-probe {
+  @container style(--breakpoint-md: true) {
+    .insights-col:first-of-type {
+      grid-column: 1 / span 7;
+    }
+
+    .insights-col:last-of-type {
+      grid-column: 9 / span 4;
+    }
+  }
+
+  /*
+   * ── THE NOTE CARDS OUTDENT, AND THE CARD SAYS THIS IS OURS TO DECIDE ───────
+   *
+   * NoteCard's header: "Its outdent, which is the CONTEXT's call. On the home page it is
+   * pulled out by `card-pad` so its text sits flush with the column edge and the hover box
+   * bleeds past it." DESIGN.md states it as "outdent the card, never the column."
+   *
+   * `--card-pad` is 16, so a 316 column carries 348 cards — exactly what the board's own
+   * frame name says: "Note list — 348 outdent (span-4 + 2x card/pad)". The negative margin
+   * reads the same token the card pads with, so the two cannot drift.
+   *
+   * ── IT WAITS FOR THE PAGE MARGIN TO HAVE ROOM, NOT FOR THE SPLIT ───────────
+   *
+   * The outdent bleeds 16px OUTWARD, and on the end side it bleeds into the page margin.
+   * `--grid-margin` is a formula that floors at 16, so from md up to 1028 the margin IS
+   * 16 and the bleed consumes every pixel of it — the card lands flush against the
+   * viewport edge. Nothing overflows; it just looks wrong on a tablet (Andy, on screen).
+   *
+   *   vw     1024   1028   1029   1040   1060   1100   1440
+   *   margin   16     16   16.5     22     32     52    222
+   *   left      0      0    0.5      6     16     36    206
+   *
+   * So the condition is not the column split — it is whether the margin can afford the
+   * bleed, and that is a different width. 1028 is where `(100vw - 996) / 2` finally
+   * exceeds the 16px floor; clearance then ramps in, reaching a full `card-pad` at 1060.
+   *
+   * ── A MEDIA QUERY, WHERE tokens.css PREFERS A SIZE CONTAINER QUERY ─────────
+   *
+   * tokens.css calls this a MINOR breakpoint — "a single component adjusting to the space
+   * IT has" — and says to prefer a real size container query. That does not work here,
+   * and the reason is worth recording rather than looking like the rule was ignored.
+   *
+   * A size query answers to the container's own inline size, and `.grid`'s is CAPPED at
+   * 996: it reads identically at 1028 and at 1440. The quantity that varies is the margin
+   * OUTSIDE the grid, which no descendant container can see. Querying an ancestor that
+   * does span the viewport would mean putting `container-type: inline-size` on <main> or
+   * the band, which also changes what every `@container style(…)` inside them resolves
+   * against — a wide blast radius for one negative margin.
+   *
+   * The condition is genuinely viewport-derived, so a media query states it honestly.
+   * 64.25rem is 1028px at the 16px root this project assumes elsewhere for the grid
+   * formula, and it is NOT a new major breakpoint: nothing else keys off it.
+   */
+  @media (min-width: 64.25rem) {
+    .note-list {
+      margin-inline: calc(var(--card-pad) * -1);
+    }
+  }
+
+  /* ── The Topics band ──────────────────────────────────────────────────────── */
+  /*
+   * Mobile-first: both lists full width, stacked, Topics then Genres — the mobile board's
+   * order and the DOM's. The 7/4 split arrives at md, where these lists differ from the
+   * Insights band above them: a topic is a short link that wraps freely, so a narrow
+   * column costs it nothing. That is the same reason the Insights INDEX can split its
+   * facet groups at md while its cards cannot.
+   */
+  /*
+   * `container-type: inline-size` makes each column the reference for its own list's
+   * column count — see the note on the query below. It is safe on a grid item: the
+   * inline size still comes from the track, and block size is not contained, so the list
+   * grows the column normally.
+   */
+  .topics-col,
+  .genres-col {
+    container-type: inline-size;
     grid-column: var(--col-full);
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin-block-end: var(--rhythm-section);
   }
 
-  .mark-probe__card {
-    display: inline-flex;
-    padding: var(--card-pad);
-    border: var(--border-width-hairline) solid var(--color-border);
-    border-radius: var(--radius-2);
-    background-color: var(--color-surface);
-  }
-
-  .mark-probe__accent {
-    color: var(--color-accent);
-  }
-
-  .muted-probe {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    color: var(--color-text-muted);
-  }
-
-  .controls button {
-    display: inline-flex;
-    padding: var(--space-1);
-    border: var(--border-width-hairline) solid var(--color-border-control);
-    border-radius: var(--radius-1);
-    background: none;
-    color: inherit;
-    cursor: pointer;
-  }
-
-  .controls select,
-  .controls input {
-    font: inherit;
-    padding: var(--space-1);
-    border: var(--border-width-hairline) solid var(--color-border-control);
-    border-radius: var(--radius-1);
-  }
-
-  /* The local `code` rule that used to sit here is GONE. base.css now owns the
-     mono family and the 0.9em optical match, so it was dead — and it hardcoded a
-     font-family string, which this project forbids precisely because a literal
-     family name fails silently. It was also masking whether base.css worked. */
-  /* The local `code` rule that used to sit here is GONE. base.css now owns the
-     mono family, the 0.9em optical match and the chip's tinted ground, so it was
-     dead — and it hardcoded a font-family string, which this project forbids
-     precisely because a literal family name fails silently. */
-  /* ── Throwaway review index ─────────────────────────────────────────────── */
-  /* Local styles, not components. The badges LOOK like DESIGN.md's `tag` and are
-     deliberately not it: the real tag is a phase 4 component with its own file,
-     and building it inside a page that is scheduled for deletion would mean
-     writing it twice. */
-
-  .review {
-    grid-column: var(--col-main);
-  }
-
-  .review__lede {
-    margin-block: var(--rhythm-heading-close) var(--rhythm-block);
-  }
-
-  .review h3 {
-    margin-block: var(--rhythm-heading-minor) var(--rhythm-heading-close);
-  }
-
-  .review__list {
+  /* base.css keeps the UA's list indent for prose; a nav is not prose. */
+  .topic-grid,
+  .genre-list {
+    margin-top: var(--rhythm-heading-close);
     padding: 0;
     list-style: none;
   }
 
-  .review__list li + li {
-    margin-top: var(--rhythm-paragraph);
-    padding-top: var(--rhythm-paragraph);
-    border-top: var(--border-width-hairline) solid var(--color-border);
+  /*
+   * ── ROW-MAJOR, WHICH IS WHAT MAKES THE ALPHABET READ CORRECTLY ────────────
+   *
+   * Both lists are TWO COLUMNS filled LEFT TO RIGHT THEN DOWN, so the a-z runs across
+   * each row rather than down the first column. Andy's call (2026-09-03), citing the
+   * footer's site index — which does behave that way, though its own comment claims the
+   * opposite. `grid-auto-flow: column` appears nowhere in Footer.astro; the default `row`
+   * is doing the work, and the comment is stale rather than the code being wrong.
+   *
+   * NOTHING HERE SETS `grid-auto-flow`, and that is the point: row-major IS the default,
+   * so the DOM order is the reading order and the alphabet is already correct in the
+   * markup. A screen reader and a sighted reader get the same sequence, which is the
+   * property the Insights masonry was rebuilt to recover.
+   *
+   * `--grid-gutter-content` is the column gap, and it already carries the board's two
+   * values: DESIGN.md reserves it for gaps between real content columns and defines it
+   * "larger on mobile, not smaller" — 32 stacked, 24 at md. The boards draw exactly that,
+   * 156 + 32 + 156 at 375 and 274 + 24 + 274 at 1440. Nothing here restates either
+   * number.
+   */
+  /* One column is the base case, per tokens.css's mobile-first rule: an engine that never
+     evaluates the query below must be left with the narrow layout. */
+  .topic-grid,
+  .genre-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: var(--rhythm-heading-close);
+    column-gap: var(--grid-gutter-content);
   }
 
-  .review__list a {
-    display: block;
-    color: var(--color-text-title);
-    font-family: var(--font-heading);
-    font-weight: 700;
-    text-decoration: none;
+  /*
+   * ── A SIZE CONTAINER QUERY, WHICH IS THE MINOR-BREAKPOINT MODEL ───────────
+   *
+   * tokens.css: a MINOR breakpoint is "a single component adjusting to the space IT has",
+   * and it says to prefer a real size container query. This is the first one in the build,
+   * and it is the right tool because the question is genuinely local — does THIS list's
+   * column have room for two of its longest label?
+   *
+   * ── 26rem IS MEASURED, AND IT IS ALSO VERY NEARLY THE ONLY VALUE ──────────
+   *
+   * The longest labels are "Information Architecture" (198px at the desktop step) and
+   * "Conference Themes" (158px). Two columns plus the gutter therefore need about 416 and
+   * 348 of container. The link step is fluid, so the labels are ~5% narrower where this
+   * threshold bites, which the measurement accounts for:
+   *
+   *     vw    container   gap   topic col   longest topic
+   *     375     343        32     155.5         187      wraps  -> one column
+   *     448     416        32     192           188      fits   -> two columns
+   *     768     419        24     197.5         192      fits
+   *    1440     571        24     273.5         198      fits
+   *
+   * The window is narrow and worth naming, because the obvious larger number breaks
+   * something invisible: the 7-column TRACK at 768 is 419px, which is NARROWER than the
+   * stacked column at 475px viewport (443). Any threshold above 419 would quietly collapse
+   * the Topics list to one column at 768 as well. So 26rem is close to the ceiling, not a
+   * round number picked for looks — and Andy's 475px viewport figure is not reachable this
+   * way without that side effect. It switches at about 448px instead, which is where the
+   * measurement says the wrapping actually stops.
+   *
+   * ── IT ALSO RETIRES THE GENRES SPECIAL CASE ───────────────────────────────
+   *
+   * The genre list used to carry an explicit md rule dropping it to one column, with a
+   * comment explaining why it "inverts" — two columns stacked, one from md. That was a
+   * hand-written statement of something the container now derives: its md track is 229px
+   * and its lg track 316px, both under 26rem, so one column falls out on its own. The
+   * inversion was never a rule, only a consequence of the column being narrow, and it
+   * reads much better as one.
+   */
+  @container (inline-size >= 26rem) {
+    .topic-grid,
+    .genre-list {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
-  .review__list a:hover {
-    text-decoration: underline;
-  }
+  @container style(--breakpoint-md: true) {
+    .topics-col {
+      grid-column: 1 / span 7;
+    }
 
-  .review__meta {
-    display: block;
-    color: var(--color-text-muted);
-    font-family: var(--font-heading);
-    font-size: var(--font-size-0);
-  }
-
-  .review__flags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1);
-    margin-top: var(--rhythm-tight);
-  }
-
-  /* `help` rather than the default, because the `why` is on a title attribute and
-     nothing else signals it is there. */
-  .review__flag {
-    padding: 0 var(--space-1);
-    border-radius: var(--radius-1);
-    background-color: var(--color-surface-muted);
-    color: var(--color-text-muted);
-    font-family: var(--font-heading);
-    font-size: var(--font-size-0);
-    font-weight: 700;
-    cursor: help;
+    .genres-col {
+      grid-column: 9 / span 4;
+    }
   }
 </style>

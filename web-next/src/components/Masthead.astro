@@ -105,6 +105,44 @@ const navLink = (href: string): {href: string; 'aria-current'?: 'page' | 'true'}
   href,
   'aria-current': here === href ? 'page' : here.startsWith(href) ? 'true' : undefined,
 })
+
+/**
+ * ── THE REPRESENTATIVE h-card, AND WHY IT IS OPT-IN ─────────────────────────
+ *
+ * Every page emits `<link rel="author" href="/">`, and a consumer resolving the author
+ * of a post follows it here. What it looks for is a REPRESENTATIVE h-card: one whose
+ * `u-url` is the page it was found on. That is only true on `/`, so only the home page
+ * asks for it — the same opt-in shape `Eyebrow` and `TopicList` use for their mf2, and
+ * for the same reason. An h-card on every page would put a second, non-representative
+ * card on all 45 others, which a parser has to consider and discard.
+ *
+ * ── IT MARKS UP TEXT THAT IS ALREADY VISIBLE ────────────────────────────────
+ *
+ * `p-name`, `p-job-title` and `u-url` all land on the wordmark and its link, which a
+ * reader already sees. That is the IndieWeb's "visible data" principle satisfied rather
+ * than worked around — invisible markup is what rots, because nothing shows when it goes
+ * wrong. Only the photo has nothing to attach to; see `photo` below.
+ *
+ * The root goes on <header> rather than a new wrapper, so no element is added and the
+ * layout is untouched. The nav ends up inside the card, which is inert: its links carry
+ * no mf2 classes, and the implied-name and implied-url rules that might otherwise scrape
+ * them only fire when `p-name` and `u-url` are ABSENT. Both are explicit here.
+ */
+interface Props {
+  /** Emit the representative h-card. Home only — see the note above. */
+  microformats?: boolean
+  /**
+   * An absolute URL for `u-photo`, which is the avatar a site shows beside a webmention
+   * from here. It is the one property with no visible element to hang on, because the
+   * design carries no portrait — so it is emitted as data rather than as a picture.
+   *
+   * The PAGE resolves the URL, including the square crop an avatar wants. This component
+   * knows nothing about Sanity or image builders; it is handed a string.
+   */
+  photo?: string | null
+}
+
+const {microformats = false, photo = null}: Props = Astro.props
 ---
 
 {
@@ -121,14 +159,37 @@ const navLink = (href: string): {href: string; 'aria-current'?: 'page' | 'true'}
   against the board's shorter pair. Worth a decision before phase 4.
 */
 }
-<header class="masthead">
-  <a class="identity" href="/" rel="home">
+<header class:list={['masthead', microformats && 'h-card']}>
+  <a class:list={['identity', microformats && 'u-url']} href="/" rel="home">
     <Logo class="mark" />
     <span class="wordmark">
-      <span class="name">Andy Fitzgerald</span>
-      <span class="role">Information Architect</span>
+      <span class:list={['name', microformats && 'p-name']}>Andy Fitzgerald</span>
+      <span class:list={['role', microformats && 'p-job-title']}>Information Architect</span>
     </span>
   </a>
+
+  {
+    /*
+      ── `<data>`, NOT `<link>`, AND THAT IS AN HTML VALIDITY FIX ──────────────
+
+      `<link class="u-photo" href="…">` is the usual IndieWeb idiom for a URL that is data
+      rather than display, and it was the plan until it was checked against the HTML spec.
+      A <link> is only conforming inside <body> when it carries `itemprop` or a body-ok
+      `rel` — the list is dns-prefetch, modulepreload, pingback, preconnect, prefetch,
+      preload and stylesheet. A bare `class="u-photo"` link has neither, so it would ship
+      as invalid markup and fail the HTML validation gate phase 8 adds.
+
+      `<data value>` is in microformats2's own u-* parsing chain — after the href and src
+      elements, before text content — so parsers read it identically, and <data> is
+      ordinary phrasing content that validates anywhere. Same invisibility, same
+      semantics, no image request, no validity cost.
+
+      It sits OUTSIDE the anchor deliberately: inside, it would be a child of the `u-url`
+      element, which is fine for parsing but puts non-rendering data inside a link's
+      accessible name computation for no reason.
+    */
+  }
+  {microformats && photo && <data class="u-photo" value={photo} />}
 
   <div class="slot">
     <nav aria-label="Main">

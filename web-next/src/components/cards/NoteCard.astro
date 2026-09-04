@@ -182,4 +182,36 @@ const {
     font-size: var(--font-size-2);
     line-height: 1.5;
   }
+
+  /*
+   * ── A DOMAIN IS ONE UNBREAKABLE TOKEN, AND IT SET THE CARD'S MINIMUM WIDTH ─
+   *
+   * Browsers do not break at dots, so `productpicnic.beehiiv.com` is a single word about
+   * 220px wide at this size. As a flex item it also carried `min-width: auto`, which
+   * refuses to shrink below that — so the card's min-content width was the domain plus
+   * the icon and gap, roughly 278px including padding, and no narrower column could hold
+   * it. The card silently grew past its own column instead.
+   *
+   * Measured, not theorised: the Home page's Insights band split into a 229px notes
+   * column at md and pushed 770px of content through a 768px viewport, and the
+   * overflowing elements were exactly this line and its siblings stretched to match it.
+   *
+   * ── `anywhere`, NOT `break-word`, AND THE DIFFERENCE IS THE WHOLE FIX ──────
+   *
+   * `overflow-wrap: break-word` breaks a long word only once it is ALREADY overflowing;
+   * it does not change the element's min-content contribution, so intrinsic sizing still
+   * reserves the full domain and the card is still too wide. `anywhere` participates in
+   * min-content, which is what lets the card shrink. The two look interchangeable and are
+   * not.
+   *
+   * `min-inline-size: 0` on the span is the other half: without it the flex item's
+   * automatic minimum size keeps the floor no matter how the text is allowed to wrap.
+   *
+   * The cost is that a long domain can break mid-word, which is not pretty. It is the
+   * right trade against a card that cannot be placed in a narrow column at all.
+   */
+  .card-source span {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
 </style>
