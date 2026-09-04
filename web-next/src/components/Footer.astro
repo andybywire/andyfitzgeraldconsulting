@@ -43,14 +43,23 @@ const year = new Date().getFullYear()
 
 /**
  * Hardcoded, like the masthead nav and for the same reason: site structure is not
- * content. Alphabetical, and laid out COLUMN-MAJOR at lg — down the first column,
- * then down the second, the way an index reads — which `grid-auto-flow: column`
- * gives while leaving DOM order alphabetical, so reading order and visual order
- * agree without a second list.
+ * content. Alphabetical, and laid out ROW-MAJOR — across each row, then down, so
+ * the two columns read "About | Apologia" then "Colophon | Consulting". Nothing
+ * sets `grid-auto-flow`: `row` is the default, which means DOM order IS reading
+ * order and the alphabet is already correct in the markup, with no second list
+ * and no mismatch between visual and focus order.
  *
- * Five of these have no page yet: About, Apologia, Colophon, Reviews and RSS
- * Feeds. The paths are the obvious guesses and are NOT recorded in
+ * THIS COMMENT SAID COLUMN-MAJOR UNTIL 2026-09-04, and cited a
+ * `grid-auto-flow: column` that has never appeared in this file — so it described
+ * an intent that was either dropped or never written, against code that has always
+ * done the other thing. Corrected after measuring the rendered rows. The Home
+ * page's Topics band deliberately matches this behaviour, which is how the drift
+ * was found.
+ *
+ * Four of these have no page yet: About, Apologia, Colophon and RSS Feeds. The
+ * paths are the obvious guesses and are NOT recorded in
  * docs/urls-and-filtering.md — settle them there before anything links here.
+ * Reviews shipped in phase 4 and is no longer on that list.
  */
 const INDEX = [
   {href: '/about/', label: 'About'},
