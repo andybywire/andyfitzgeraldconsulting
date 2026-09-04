@@ -1200,6 +1200,144 @@ export type GENRE_NAV_QUERY_RESULT = {
     | null
 }
 
+// Source: ../web-next/src/sanity/queries/home.ts
+// Variable: GENRE_TREE_QUERY
+// Query: {		"topConcepts": *[_type == "skosConceptScheme" && title == "Genre"][0].topConcepts[]->{			_id,			prefLabel		},		"concepts": *[_type == "skosConcept"]{			_id,			prefLabel,			"broader": broader[]._ref		}	}
+export type GENRE_TREE_QUERY_RESULT = {
+  topConcepts: Array<{
+    _id: string
+    prefLabel: string | null
+  }> | null
+  concepts: Array<{
+    _id: string
+    prefLabel: string | null
+    broader: Array<string> | null
+  }>
+}
+
+// Source: ../web-next/src/sanity/queries/home.ts
+// Variable: HOME_AUTHOR_QUERY
+// Query: *[_type == "settings"][0]{		authorName,		"authorImage": authorImage{asset, crop, hotspot, altText}	}
+export type HOME_AUTHOR_QUERY_RESULT = {
+  authorName: string | null
+  authorImage: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+  } | null
+} | null
+
+// Source: ../web-next/src/sanity/queries/home.ts
+// Variable: HOME_TAXONOMY_QUERY
+// Query: {		"genres": *[_type == "skosConcept" && _id in $documentGenres]{			prefLabel,			"count": count(*[				_type in ["article", "caseStudy", "note"] && genre._ref == ^._id			])		},		"topics": *[			_type == "skosConcept"			&& count(*[_type in ["article", "caseStudy", "note"] && ^._id in topic[]._ref]) > 0		]{			prefLabel,			"count": count(*[				_type in ["article", "caseStudy", "note"] && ^._id in topic[]._ref			])		}	}
+export type HOME_TAXONOMY_QUERY_RESULT = {
+  genres: Array<{
+    prefLabel: string | null
+    count: number
+  }>
+  topics: Array<{
+    prefLabel: string | null
+    count: number
+  }>
+}
+
+// Source: ../web-next/src/sanity/queries/home.ts
+// Variable: HOME_INSIGHTS_QUERY
+// Query: {		"articles": *[			_type in ["article", "caseStudy", "note"]			&& defined(slug.current)			&& genre._ref in $articleGenres		] | order(pubDate desc)[0...$articleCount] {				_id,	_type,	"slug": slug.current,				pubDate,	_updatedAt,				"genre": genre->prefLabel,	"topics": topic[]->prefLabel,			title,			shortDescription,			heroImage { 	asset,	crop,	hotspot,	altText,	caption }		},		"notes": *[			_type in ["article", "caseStudy", "note"]			&& defined(slug.current)			&& genre._ref in $noteGenres		] | order(pubDate desc)[0...$noteCount] {				_id,	_type,	"slug": slug.current,				pubDate,	_updatedAt,				"genre": genre->prefLabel,	"topics": topic[]->prefLabel,			title,			shortDescription,			clipRef { publisher }		}	}
+export type HOME_INSIGHTS_QUERY_RESULT = {
+  articles: Array<
+    | {
+        _id: string
+        _type: 'article'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        genre: string | null
+        topics: Array<string | null> | null
+        title: string | null
+        shortDescription: string | null
+        heroImage: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+          caption: string | null
+        } | null
+      }
+    | {
+        _id: string
+        _type: 'caseStudy'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        genre: string | null
+        topics: Array<string | null> | null
+        title: string | null
+        shortDescription: string | null
+        heroImage: {
+          asset: SanityImageAssetReference | null
+          crop: SanityImageCrop | null
+          hotspot: SanityImageHotspot | null
+          altText: string | null
+          caption: string | null
+        } | null
+      }
+    | {
+        _id: string
+        _type: 'note'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        genre: string | null
+        topics: Array<string | null> | null
+        title: string | null
+        shortDescription: string | null
+        heroImage: null
+      }
+  >
+  notes: Array<
+    | {
+        _id: string
+        _type: 'article'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        genre: string | null
+        topics: Array<string | null> | null
+        title: string | null
+        shortDescription: string | null
+        clipRef: null
+      }
+    | {
+        _id: string
+        _type: 'caseStudy'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        genre: string | null
+        topics: Array<string | null> | null
+        title: string | null
+        shortDescription: string | null
+        clipRef: null
+      }
+    | {
+        _id: string
+        _type: 'note'
+        slug: string | null
+        pubDate: string | null
+        _updatedAt: string
+        genre: string | null
+        topics: Array<string | null> | null
+        title: string | null
+        shortDescription: string | null
+        clipRef: {
+          publisher: string | null
+        } | null
+      }
+  >
+}
+
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHTS_INDEX_QUERY
 // Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		shortDescription,		heroImage { 	asset,	crop,	hotspot,	altText,	caption },		clipRef { publisher }	}
@@ -1765,6 +1903,10 @@ declare module '@sanity/client' {
     '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tclient->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t},\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tatGlance,\n\t\twhatDid,\n\t\tprojectGoal,\n\t\tbeforeImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tprojectApproach,\n\t\tprojectOutcome,\n\t\tafterImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n, outline },\n\t\treview->{\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\t"slug": slug.current,\n\t\t\t"employer": employer->name,\n\t\t\tcondensedBody\n\t\t}\n\t}\n': CASE_STUDY_DETAIL_QUERY_RESULT
     '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t"workBand": coalesce(\n\tbands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t}\n\t}\n\n\t}\n': CASE_STUDY_BAND_QUERY_RESULT
     '\n\t{\n\t\t"prev": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate < $pubDate || (pubDate == $pubDate && _id < $id))\n\t\t] | order(pubDate desc, _id desc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t},\n\t\t"next": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate > $pubDate || (pubDate == $pubDate && _id > $id))\n\t\t] | order(pubDate asc, _id asc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t}\n\t}\n': GENRE_NAV_QUERY_RESULT
+    '\n\t{\n\t\t"topConcepts": *[_type == "skosConceptScheme" && title == "Genre"][0].topConcepts[]->{\n\t\t\t_id,\n\t\t\tprefLabel\n\t\t},\n\t\t"concepts": *[_type == "skosConcept"]{\n\t\t\t_id,\n\t\t\tprefLabel,\n\t\t\t"broader": broader[]._ref\n\t\t}\n\t}\n': GENRE_TREE_QUERY_RESULT
+    '\n\t*[_type == "settings"][0]{\n\t\tauthorName,\n\t\t"authorImage": authorImage{asset, crop, hotspot, altText}\n\t}\n': HOME_AUTHOR_QUERY_RESULT
+    '\n\t{\n\t\t"genres": *[_type == "skosConcept" && _id in $documentGenres]{\n\t\t\tprefLabel,\n\t\t\t"count": count(*[\n\t\t\t\t_type in ["article", "caseStudy", "note"] && genre._ref == ^._id\n\t\t\t])\n\t\t},\n\t\t"topics": *[\n\t\t\t_type == "skosConcept"\n\t\t\t&& count(*[_type in ["article", "caseStudy", "note"] && ^._id in topic[]._ref]) > 0\n\t\t]{\n\t\t\tprefLabel,\n\t\t\t"count": count(*[\n\t\t\t\t_type in ["article", "caseStudy", "note"] && ^._id in topic[]._ref\n\t\t\t])\n\t\t}\n\t}\n': HOME_TAXONOMY_QUERY_RESULT
+    '\n\t{\n\t\t"articles": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& genre._ref in $articleGenres\n\t\t] | order(pubDate desc)[0...$articleCount] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t\t},\n\t\t"notes": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& genre._ref in $noteGenres\n\t\t] | order(pubDate desc)[0...$noteCount] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\tclipRef { publisher }\n\t\t}\n\t}\n': HOME_INSIGHTS_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tclipRef { publisher }\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tlede,\n\t\tbodyText,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tclipRef {\n\t\t\tclipUrl,\n\t\t\tpublisher,\n\t\t\ttitle,\n\t\t\timg { asset, crop, hotspot, altText }\n\t\t},\n\t\tbookRef {\n\t\t\tbookUrl,\n\t\t\ttitle,\n\t\t\tauthor,\n\t\t\tpublisher,\n\t\t\tpubDate,\n\t\t\timg { asset, crop, hotspot, altText }\n\t\t}\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {\n\t\t\n\t"rssBand": coalesce(\n\tbands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bands[_type == "bandRss"][0]\n){title, message, buttonTarget}\n\n\t}\n': INSIGHT_RSS_BAND_QUERY_RESULT
