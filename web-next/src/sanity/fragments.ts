@@ -90,9 +90,9 @@ export const TAXONOMY = /* groq */ `
  * ── THE BAND LADDER ──────────────────────────────────────────────────────────
  *
  * Repeated bands — Work with Me, RSS, Get in Touch — resolve through three tiers, most
- * specific first: the document's own `bands`, then the page-type override in Settings,
- * then the Settings default. `coalesce()` IS that ladder; there is no template logic and
- * no precedence rule written twice.
+ * specific first: the document's own `customBands`, then the page-type `overrideBands` in
+ * Settings, then Settings' `defaultBands`. `coalesce()` IS that ladder; there is no
+ * template logic and no precedence rule written twice.
  *
  * ONE FRAGMENT SERVES EVERY DOCUMENT TYPE, and the reason is `^._type`. Inside the
  * Settings subquery a single `^` steps back out to the document being projected, so the
@@ -112,6 +112,12 @@ export const TAXONOMY = /* groq */ `
  * projecting onto a `coalesce()` result works; and nesting the call inside an object
  * literal does NOT shift the scope depth.
  *
+ * RE-RUN AGAINST THE PUBLISHED PERSPECTIVE AFTER THE 2026-09-04 RENAME, and the same
+ * three keys came back. Worth doing rather than assuming: a field rename is precisely the
+ * change that makes a rung read a missing field, return null and fall quietly to the next
+ * one — the table would still have LOOKED right, because every rung resolves to something.
+ * The article's `d58afffb05e2` is the tell, since only the override rung can produce it.
+ *
  * SINGLETONS NEED NO SPECIAL CASE. Settings offers no override tier for them — each is a
  * unique layout by definition — and that falls out for free, because a singleton simply
  * matches no `bandOverrides` entry and drops to the default.
@@ -121,11 +127,31 @@ export const TAXONOMY = /* groq */ `
  * every page pay up to six Settings lookups for bands it never shows.
  */
 
-/** The document's own `bands`, then its type's override, then the site default. */
+/**
+ * ── THE THREE RUNGS NOW NAME THEMSELVES ────────────────────────────────────
+ *
+ *     customBands     the document's own
+ *     overrideBands   its type's, from Settings
+ *     defaultBands    the site's, from Settings
+ *
+ * Which is the precedence order in three words, and is the point of the renaming done on
+ * 2026-09-04. Before it, all three were `bands` and the ladder could only be read by
+ * tracing which object each subscript hung off.
+ *
+ * THE ALTERNATIVE WAS `customBands` EVERYWHERE, and it was rejected on purpose. It is
+ * literally consistent and semantically wrong: Settings' defaults are the least custom
+ * thing in the system, and naming them `customBands` would have restored the ambiguity
+ * under a longer name. Consistency here means each array says what it is, not that they
+ * all say the same thing.
+ *
+ * Every rename made a field's `name` agree with a `title` it already carried — "Custom
+ * Bands" on the five document types, "Default Bands" and "Page Type Bands" in Settings —
+ * so this corrected the keys to the model rather than changing the model.
+ */
 const LADDER = (band: string) => `
-	bands[_type == "${band}"][0],
-	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "${band}"][0],
-	*[_type == "settings"][0].bands[_type == "${band}"][0]
+	customBands[_type == "${band}"][0],
+	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "${band}"][0],
+	*[_type == "settings"][0].defaultBands[_type == "${band}"][0]
 `
 
 /**
@@ -183,6 +209,87 @@ export const BAND_WORK_WITH_ME = /* groq */ `
 	}
 `
 
+/**
+ * ── `bandCopy` DECIDES WHETHER THE BAND SPEAKS FOR ITSELF ────────────────────
+ *
+ * The band is one component in two modes. With `bandCopy` true it carries its own h2 and
+ * message above the form — what every page appending it gets from the Settings default.
+ * With it false the form stands alone, because the HOST PAGE's title and lede are already
+ * doing that work. Contact is the case it was added for: its `page` document sets false,
+ * and its board (2562:2663) draws the component 451 tall with no heading.
+ *
+ * IT IS READ AS PLAIN TRUTHINESS ON THE FRONT END, AND THAT IS ONLY SAFE BECAUSE THE DATA
+ * WAS FIXED. `initialValue: true` applies to objects created after the field existed, and
+ * the Settings default band predates it — so it sat `null`, which would have given every
+ * page falling through to the site default a heading-less, message-less band. The inverse
+ * of the intent, and silent. Andy toggled it on in the Studio on 2026-09-04; re-verified
+ * against production-26 before this fragment was written.
+ *
+ * A `!== false` guard would have papered over that and made the stored value a lie. The
+ * fix belonged in the data, and that is where it went.
+ */
 export const BAND_GET_IN_TOUCH = /* groq */ `
-	"touchBand": coalesce(${LADDER('bandGetInTouch')}){message}
+	"touchBand": coalesce(${LADDER('bandGetInTouch')}){message, bandCopy}
+`
+
+/**
+ * ── A `page` RESOLVES ITS BANDS DIFFERENTLY, AND `LADDER` CANNOT SERVE IT ────
+ *
+ * `LADDER`'s whole virtue is that one fragment serves every document type, and `page` is
+ * the one exception. The reason is the opt-in gate below and NOTHING ELSE — the field
+ * names agree again.
+ *
+ * That is worth saying because it was briefly untrue. `page` introduced `customBands`
+ * while the other four types still said `bands`, which would have made `LADDER` read a
+ * missing field on a page and fall silently through to the Settings default. Andy renamed
+ * the other four the same day rather than let two names for one thing survive, so this
+ * fragment now differs from `LADDER` by exactly one idea instead of two.
+ *
+ * ── BANDS ARE OPT-IN PER PAGE, WHICH `LADDER` CANNOT EXPRESS ────────────────
+ *
+ * `pageBands` is an array of type names saying which bands this page carries AT ALL. A
+ * band absent from it does not render even when Settings defines a default — which is the
+ * inverse of `LADDER`, where the default always wins if nothing else does.
+ *
+ * The guard case Andy specified: a `customBands` entry whose type is NOT listed in
+ * `pageBands` does not render. The gate is outermost, so that falls out rather than being
+ * special-cased. Verified against production-26 — Work With Me and RSS both resolve to
+ * null on the Contact page despite Settings defining defaults for both. Studio validation
+ * to prevent the state is deferred; this degrades to "not shown", which is the safe way
+ * round.
+ *
+ * ── TWO RUNGS, NOT THREE, AND BOTH REASONS WERE MEASURED ────────────────────
+ *
+ * The middle rung — `bandOverrides[documentType == ^._type]` — is deliberately absent:
+ *
+ *   1. `bandOverrides.documentType` offers only note, article and caseStudy, so `page` is
+ *      not a selectable value and the rung could never match.
+ *   2. `^._type` DOES NOT SURVIVE `select()`. Verified rather than reasoned about:
+ *      `select(cond => ^._type)` returns null on a document whose `_type` is plainly
+ *      "page". So the rung would silently never match even where it should.
+ *
+ * (2) is the one to remember. If this gate is ever extended to article, note or caseStudy
+ * — which DO have override entries — the override tier will break silently. Test `^._type`
+ * inside the `select()` before trusting it there.
+ *
+ * ── SHAPE NOTES ─────────────────────────────────────────────────────────────
+ *
+ * `coalesce(pageBands, [])` because `in` against a null array is not the false it looks
+ * like. Contact carries the field; a page authored without it would not.
+ *
+ * Written inline rather than as a `PAGE_LADDER(band)` helper, because it has exactly one
+ * consumer. A second — Work With Me is the other type `pageBands` offers — is this
+ * project's stated trigger for extracting it, and `nav`'s promotion out of the component
+ * tier is the precedent.
+ *
+ * `select()` with a single condition and no fallback yields null when the gate is closed,
+ * and projecting onto null yields null. Both verified.
+ */
+export const PAGE_BAND_GET_IN_TOUCH = /* groq */ `
+	"touchBand": select(
+		"bandGetInTouch" in coalesce(pageBands, []) => coalesce(
+			customBands[_type == "bandGetInTouch"][0],
+			*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]
+		)
+	){message, bandCopy}
 `

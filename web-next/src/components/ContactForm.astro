@@ -1,0 +1,832 @@
+---
+/**
+ * The contact form. Five fields, a honeypot, and a real POST target.
+ *
+ * ── IT IS A REAL <form>, AND THAT IS THE WHOLE DESIGN ───────────────────────
+ *
+ * `action` and `method` are set in the markup, so this submits and sends mail with
+ * JavaScript disabled. The client script (a later piece) intercepts `submit` and
+ * `fetch`es instead, so the no-JS path is the FALLBACK rather than the only path —
+ * but it is a working fallback, not a courtesy.
+ *
+ * That is only possible because spam protection here is a honeypot plus rate
+ * limiting rather than a CAPTCHA (Andy, 2026-09-04). Every CAPTCHA — Turnstile and
+ * reCAPTCHA alike — needs JS to mint a token, and the server cannot tell a no-JS
+ * human from a bot that simply omitted one. The current 11ty form has exactly that
+ * problem: its Send button ships `disabled` and only the reCAPTCHA callback enables
+ * it, so with JS off it can never be submitted at all.
+ *
+ * NO `novalidate` HERE, DELIBERATELY. Styled error messages need the native bubbles
+ * suppressed, but putting `novalidate` in the markup would leave a no-JS visitor with
+ * no client validation whatsoever. The script sets `form.noValidate = true` at run
+ * time instead, so each visitor gets the best validation their browser can run. The
+ * server validates all five fields regardless; none of this is trusted.
+ *
+ * ── IT DOES NOT PLACE ITSELF ────────────────────────────────────────────────
+ *
+ * No `grid-column` anywhere in this file. The form fills whatever container it is
+ * given, and the parent decides where that container sits — `--col-main` on the
+ * Contact page and in the Get in Touch band, which is the 8-column cap the boards
+ * draw. Two reasons, and the second is the load-bearing one:
+ *
+ *   1. The band appears on many page types; placement is the page's business.
+ *   2. A rule here would COMPETE with the parent's. Both resolve to (0,2,0) — a
+ *      class plus a scope attribute — so the winner would be source order, which is
+ *      not something to rely on. Declaring nothing means there is nothing to fight.
+ *
+ * ── PLAIN ids, AND THE INVARIANT THAT MAKES THEM SAFE ───────────────────────
+ *
+ * `cf-name`, `cf-email` and so on are unprefixed, which is only correct if this
+ * component renders at most once per page. It does: `page.customBands` carries the
+ * `uniqueBandTypes` validation, and the Settings ladder in fragments.ts resolves to a
+ * single band, so no document can produce two. Verified against production-26 rather
+ * than assumed.
+ *
+ * If that ever changes the failure is duplicate ids, which is exactly what the HTML
+ * validation planned for phase 8 catches. Stated here so the invariant is written
+ * down rather than implicit in the markup.
+ */
+import Button from './Button.astro'
+import {SOCIAL_URLS} from '../lib/social'
+
+interface Props {
+  /**
+   * The level for the success and error headings. 2 when this form is the only thing in
+   * its region — the Contact page, where the band's own copy is suppressed — and 3 when
+   * the band carries its own "Get In Touch" h2 above it, which those messages then sit
+   * beneath. See the note on the blocks themselves.
+   */
+  headingLevel?: 2 | 3
+  class?: string
+  [key: string]: unknown
+}
+
+const {headingLevel = 2, class: className, ...rest}: Props = Astro.props
+
+const StateHeading = `h${headingLevel}` as 'h2' | 'h3'
+
+/*
+  ONE URL FOR EVERY ENVIRONMENT, which is why this is a constant rather than an
+  `astro:env` variable. It is relative, so it resolves same-origin on production and
+  on `preview.` alike — no CORS anywhere — and the dev-only mock route will answer at
+  this same path, so nothing about the form changes between dev and production.
+
+  `/api/contact` rather than `/mailhandler.php` (Andy, 2026-09-04): the URL should
+  not name the implementation, so a backend rewritten in something other than PHP
+  keeps the address. nginx maps this to web-next/server/ in phase 6.
+*/
+const ENDPOINT = '/api/contact'
+
+/*
+  ── ONE HIDDEN FIELD, TWO CONSUMERS ─────────────────────────────────────────
+
+  The page this form was submitted from, which the endpoint uses twice: as a line in
+  the email so Andy can see where people reach out from, and as the redirect target
+  on the no-JS path, so a reader at the foot of an article is returned to the article
+  rather than dumped on a standalone success page.
+
+  It is a RELATIVE path and the endpoint must validate it as one before redirecting —
+  leading `/`, no `//` and no backslash — or it is an open redirect. That check
+  belongs to the PHP and is noted here because the risk originates in this markup.
+*/
+const sourcePage = Astro.url.pathname
+---
+
+{
+  /*
+    ── THE ROOT IS A WRAPPER, NOT THE <form>, AND `:target` IS WHY ─────────────
+
+    It was the <form> until the states landed. The success block has to be able to hide
+    the form WITHOUT JavaScript — the no-JS path posts, the endpoint 303s back to
+    `…#contact-sent`, and `:target` does the rest — and a sibling combinator needs a
+    sibling. With the form as the root there was nothing for the success block to be a
+    sibling of.
+
+    ── BOTH STATE BLOCKS PRECEDE THE FORM IN THE DOM ──────────────────────────
+
+    Required for `~` to reach the form at all, since CSS has no previous-sibling
+    combinator. It is also the right reading order in both cases: the error is a banner
+    above a form the visitor still has to deal with, and the success message stands where
+    the form was.
+  */
+}
+<div class:list={['contact', className]} {...rest}>
+  {
+    /*
+      ── SUCCESS REPLACES THE FORM; ERROR SITS WITH IT ──────────────────────────
+
+      The asymmetry is the design (Andy, 2026-09-05) and both halves are deliberate.
+
+      On success the job is done, so the form goes — leaving a filled-in form after a
+      successful send is an invitation to send it twice.
+
+      On error the job is NOT done, and the form stays exactly as the visitor left it.
+      That is free on the JS path: `fetch` never navigates, so every character they typed
+      is still in the textarea and there is nothing to restore. It is also why this needs
+      no "here is a copy of your message" affordance — the message never went anywhere.
+
+      ── THE HEADING LEVEL FOLLOWS THE BAND, WHICH IS NOT FUSSINESS ────────────
+
+      With `bandCopy` false — the Contact page — nothing else in this region carries a
+      heading, so these sit directly under the page h1 and are h2s.
+
+      With `bandCopy` true the band renders its own "Get In Touch" h2 above the form, and
+      these messages replace what is BENEATH it, so they are h3s. That is also the case
+      the board draws, and the board agrees: its success heading measures 29 tall, which
+      is h3 (`font-size-3` x 1.3), not the 35 of the "Get In Touch" h2 above it. The
+      Figma layer is NAMED "H2" and is not one — frame names lie.
+
+      So the level is a prop rather than a guess, and each level takes its own size from
+      base.css. No new type treatment is invented for either.
+
+      `tabindex="-1"` on both so the script can move focus here after the swap. Without
+      it a screen reader user gets no signal that anything happened — the button they
+      pressed simply vanishes. Focus rather than `aria-live`, because the content is
+      replacing itself rather than being announced alongside; doing both double-announces.
+    */
+  }
+  <div class="contact-state contact-sent" id="contact-sent" tabindex="-1">
+    <StateHeading>Thanks for reaching out!</StateHeading>
+    <p>
+      Your message was sent. I look forward to reading your note and will usually respond back
+      within a couple days.
+    </p>
+  </div>
+
+  {
+    /*
+      NO `id` ON THE ERROR BLOCK, unlike its sibling. `#contact-sent` exists because the
+      endpoint redirects to it as a fragment; there is no equivalent for failure, because
+      the no-JS failure path never comes back to this page at all — it renders the
+      endpoint's own error page, the visitor having navigated away. So this block is
+      reachable only from the script, and needs no address.
+
+      The two profile URLs come from lib/social.ts. contact.php's own error page repeats
+      them because PHP cannot import the module; that duplication is noted in both files.
+    */
+  }
+  <div class="contact-state contact-failed" tabindex="-1">
+    <StateHeading>Message not sent</StateHeading>
+    <p>
+      There&rsquo;s been an error on my end and I wasn&rsquo;t able to send your message. You may
+      want to try again in a few minutes, or you can reach me on{' '}
+      <a href={SOCIAL_URLS.linkedIn}>LinkedIn</a> or <a href={SOCIAL_URLS.bluesky}>Bluesky</a>.
+    </p>
+  </div>
+
+  <form class="contact-form" action={ENDPOINT} method="POST">
+    <div class="field">
+      <label for="cf-name">Name</label>
+      <input
+        type="text"
+        id="cf-name"
+        name="name"
+        required
+        autocomplete="name"
+        aria-describedby="cf-name-error"
+      />
+      <p class="field-error" id="cf-name-error" hidden></p>
+    </div>
+
+    {
+      /*
+      ── THE ONLY OPTIONAL FIELD IS THE ONLY ONE MARKED ────────────────────────
+
+      The current 11ty form marks the four REQUIRED fields "(required)"; the Figma
+      board marks nothing at all. Neither is quite right — WCAG 3.3.2 wants required
+      fields identified, and four markers is four times the noise of one.
+
+      So it is inverted (Andy, 2026-09-04): the required fields carry the `required`
+      attribute and no visible marker, and the single optional one says so. Same
+      information, a quarter of the ink. This is a deliberate divergence from the
+      board rather than an oversight.
+
+      Inside the <label>, so the marker is part of the field's accessible name —
+      "Organization (optional)" — rather than orphaned text beside it.
+    */
+    }
+    <div class="field">
+      <label for="cf-org">Organization <span class="optional">(optional)</span></label>
+      <input type="text" id="cf-org" name="org" autocomplete="organization" />
+    </div>
+
+    <div class="field">
+      <label for="cf-email">Email</label>
+      <input
+        type="email"
+        id="cf-email"
+        name="email"
+        required
+        autocomplete="email"
+        aria-describedby="cf-email-error"
+      />
+      <p class="field-error" id="cf-email-error" hidden></p>
+    </div>
+
+    <div class="field">
+      <label for="cf-subject">Subject</label>
+      <input
+        type="text"
+        id="cf-subject"
+        name="subject"
+        required
+        aria-describedby="cf-subject-error"
+      />
+      <p class="field-error" id="cf-subject-error" hidden></p>
+    </div>
+
+    {
+      /*
+      The label is the board's, updated there on 2026-09-04 to match the live form's
+      longer prompt — it does real work eliciting a useful first message, which a bare
+      "Message" does not.
+
+      `rows` is the no-CSS fallback; the height below is what the board draws.
+    */
+    }
+    <div class="field field-wide">
+      <label for="cf-message">What kinds of issues do you need help with?</label>
+      <textarea id="cf-message" name="message" rows="5" required aria-describedby="cf-message-error"
+      ></textarea>
+      <p class="field-error" id="cf-message-error" hidden></p>
+    </div>
+
+    {
+      /*
+      ── THE HONEYPOT ─────────────────────────────────────────────────────────
+
+      A field no human ever sees and every naive bot fills. The endpoint rejects any
+      submission where it is non-empty. This is the JS-free half of the spam defense;
+      nginx rate limiting on the endpoint is the other half.
+
+      NAMED `website` ON PURPOSE. A bot fills fields it recognizes, and a URL field is
+      one of the most reliably auto-filled names there is. `org` could not do this job
+      — it is a real field carrying real data into the email.
+
+      ── OFF-SCREEN, NOT `display: none` ──────────────────────────────────────
+
+      A hidden or `display: none` input is trivially skipped, which defeats the point.
+      Positioning it out of the viewport keeps it in the DOM and in the form payload.
+
+      THREE ATTRIBUTES KEEP IT AWAY FROM REAL PEOPLE, and they are not redundant:
+      `tabindex="-1"` takes it out of the tab order, `aria-hidden` takes it out of the
+      accessibility tree so a screen reader user never meets it, and
+      `autocomplete="off"` stops a browser helpfully filling it and locking a real
+      visitor out of their own form. That last one is the failure that would be
+      hardest to diagnose, because it would look like the endpoint rejecting valid
+      mail at random.
+
+      `aria-hidden` around a focusable element is normally an ARIA violation. The
+      `tabindex="-1"` is what resolves it — the element cannot be reached — and this
+      pairing is the standard honeypot treatment. Noted because a linter may flag it.
+
+      NOT the `.visually-hidden` pattern, which would be the wrong tool even though it
+      looks similar: that exists for content that SHOULD be announced but not drawn.
+      This is the opposite — drawn nowhere and announced nowhere.
+    */
+    }
+    <div class="honeypot" aria-hidden="true">
+      <label for="cf-website">Website</label>
+      <input type="text" id="cf-website" name="website" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <input type="hidden" name="source_page" value={sourcePage} />
+
+    {
+      /*
+      The `.form-status` paragraph that used to sit here is gone. It was a placeholder
+      for "some form-level message, placement to be decided", written while neither
+      state was designed. Both are now, they are different shapes in different places,
+      and a single generic region could not have been either.
+    */
+    }
+    <div class="form-actions">
+      <Button type="submit" class="send">Send</Button>
+    </div>
+  </form>
+</div>
+
+<style>
+  /* ── The region ───────────────────────────────────────────────────────────── */
+  /*
+   * ── 48 BETWEEN A STATE BLOCK AND THE FORM, AND IT IS NOT A NEW NUMBER ─────
+   *
+   * `--rhythm-block` is what GetInTouchBand already puts between its own copy and the
+   * form — measured off the desktop board, where the header frame ends at 147 and the
+   * form starts at 195. The error block occupies exactly that position relative to the
+   * form, so it takes exactly that spacing. Nothing here is eyeballed.
+   *
+   * ── A `gap` RATHER THAN A MARGIN, BECAUSE IT COSTS NOTHING WHEN UNUSED ────
+   *
+   * All three states fall out of one declaration, because a `display: none` child is not
+   * a grid item and generates no gap:
+   *
+   *   resting     form only              one item,  no gap
+   *   error       error block + form     two items, 48 between them
+   *   success     success block only     one item,  no gap — the form is hidden
+   *
+   * A margin on the state blocks would have needed a rule per state to avoid leaving
+   * 48px of dead space above a form that has nothing above it.
+   */
+  .contact {
+    display: grid;
+    gap: var(--rhythm-block);
+  }
+
+  /* ── The form grid ────────────────────────────────────────────────────────── */
+  /*
+   * Mobile-first, per tokens.css: one column, every field full width. The board's
+   * mobile variant (757:1746, 343 wide) stacks all five.
+   *
+   * `--space-3` (24) rather than either gutter token, and the difference is real
+   * below md: `--grid-gutter` is 8 there and `--grid-gutter-content` is 32, while the
+   * board draws 24 between field rows at BOTH sizes. Only `--space-3` is 24
+   * everywhere. Picking by prefix and name rather than by value, as DESIGN.md asks.
+   */
+  .contact-form {
+    display: grid;
+    gap: var(--space-3);
+  }
+
+  /*
+   * Two columns from md, which is where the board's pairs come from: Name |
+   * Organization, then Email | Subject. `1fr 1fr` rather than anything measured —
+   * the container is 8 columns (656) and the gap is the 24 gutter, so each half
+   * resolves to exactly the 316 the board draws, and stays right if the container
+   * ever changes width.
+   */
+  @container style(--breakpoint-md: true) {
+    .contact-form {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* The message field and the button row span the pair. */
+    .field-wide,
+    .form-actions {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /* ── A field ──────────────────────────────────────────────────────────────── */
+  /*
+   * Label above control, 8 between them — the board's `label -> input` gap, and
+   * `--space-1` by name.
+   *
+   * `align-content: start` matters in the two-up rows: grid rows are equal-height, so
+   * a field whose sibling has grown (an error message under Email, say) would
+   * otherwise stretch its own label away from its input.
+   */
+  .field {
+    display: grid;
+    align-content: start;
+    gap: var(--space-1);
+  }
+
+  /*
+   * DESIGN.md's `label` role — Lato 1rem 700, and the one role in the file that
+   * carries positive tracking at a small size. Component-scoped rather than a global
+   * element rule: base.css names `label` explicitly as component-owned, and this is
+   * its only consumer. A second one is the trigger for promotion, not the first.
+   */
+  label {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+
+  /*
+   * The optional marker reads as secondary rather than as part of the label: regular
+   * weight, muted, and the tracking dropped since it is not doing the label's job.
+   */
+  .optional {
+    color: var(--color-text-muted);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* ── The controls ─────────────────────────────────────────────────────────── */
+  /*
+   * DESIGN.md's `input-field`: surface fill, `border-control` hairline, `radius-2`,
+   * body typography, and `--field-height` (48).
+   *
+   * THE FONT HAS TO BE RESTATED. Form controls do not inherit typography from their
+   * ancestors — they take a UA default — so without this the fields would render in
+   * the browser's small system font inside a correctly-sized box.
+   *
+   * `--font-size-2` bottoms out at 17px, which also keeps iOS from zooming the
+   * viewport on focus. That happens at anything under 16.
+   *
+   * `inline-size: 100%` plus `box-sizing: border-box` because a control's intrinsic
+   * width comes from its `size` attribute, not from its container.
+   */
+  input,
+  textarea {
+    inline-size: 100%;
+    box-sizing: border-box;
+    padding: 0 var(--space-2);
+    border: var(--border-width-hairline) solid var(--color-border-control);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-family: var(--font-prose);
+    font-size: var(--font-size-2);
+    font-weight: 400;
+  }
+
+  input {
+    block-size: var(--field-height);
+  }
+
+  /*
+   * 144 is measured off the board and is not on the space scale, so it is a named
+   * local custom property — the same treatment `.client-logo`'s 146px gets in
+   * reviews.astro, and for the same reason: one unexplained number, stated once.
+   *
+   * `block-size` RATHER THAN `min-block-size`, and it has to be. This first read
+   * `min-block-size`, which measured 180 instead of 144: `rows="5"` at the body's
+   * 1.8 leading is an intrinsic 180 tall, so it cleared the minimum and the board's
+   * height never applied. A minimum can only ever push a box taller, and `rows` had
+   * already done that.
+   *
+   * `rows` is kept at 5 as the no-CSS fallback — a sensible size when this rule does
+   * not load — and `block-size` pins the styled box to the board. `resize: vertical`
+   * still lets a visitor grow it past either, and keeps them from breaking the grid
+   * sideways.
+   *
+   * In `rem`, so it scales with a reader's font-size preference rather than clipping
+   * text at 144 physical pixels.
+   *
+   * The vertical padding is the body leading's own half-line, so typed text starts
+   * where the first line of a paragraph would.
+   */
+  textarea {
+    --message-height: 9rem; /* 144px */
+
+    block-size: var(--message-height);
+    padding-block: var(--space-1);
+    line-height: 1.8;
+    resize: vertical;
+  }
+
+  /*
+   * `input-field-hover` — the border goes to the accent. The focus ring is NOT
+   * declared here: base.css's global `:focus-visible` already draws the two-ring
+   * treatment on every focusable element, and a control-specific ring would be a
+   * second answer to a question the global tier has already settled.
+   */
+  input:hover,
+  textarea:hover {
+    border-color: var(--color-border-control-hover);
+  }
+
+  /* ── The error states ─────────────────────────────────────────────────────── */
+  /*
+   * `input-field-error`, driven by `aria-invalid` rather than a class. The attribute
+   * has to be set for screen readers anyway, so styling from it means the visible
+   * state and the announced state cannot drift apart — there is only one thing to
+   * set, and forgetting it fails loudly in both channels at once rather than quietly
+   * in one.
+   */
+  input[aria-invalid='true'],
+  textarea[aria-invalid='true'] {
+    border-color: var(--color-error-line);
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
+  }
+
+  /*
+   * The per-field message. Empty and `hidden` until the script fills it.
+   *
+   * NO `display` PROPERTY IN THIS RULE. `hidden` works by way of `display: none` in
+   * the UA stylesheet, and any `display` declared here would out-specify it and leave
+   * empty error paragraphs reserving space under every field.
+   *
+   * DESIGN.md: identify errors in text, never by color alone. The color is a second
+   * channel, not the message.
+   */
+  .field-error {
+    margin: 0;
+    color: var(--color-error-text);
+    font-size: var(--font-size-1);
+    line-height: 1.5;
+  }
+
+  /* ── The two state blocks ─────────────────────────────────────────────────── */
+  /*
+   * 16 from the heading to its copy — `--rhythm-heading-close`, and the board draws
+   * exactly that: the success heading is 29 tall ending at y=29, with the copy frame
+   * starting at y=45.
+   *
+   * Heading and copy both take their roles from base.css, so nothing here restates a
+   * size, a family or a color. These blocks are POSITIONED by this rule, not styled;
+   * the error carries no error coloring at all, because it is a paragraph of prose
+   * explaining what happened rather than a validation marker. DESIGN.md's error tokens
+   * belong to the FIELD state, which is where they are used.
+   *
+   * `:focus-visible` deliberately not suppressed even though these are only focusable
+   * programmatically: base.css's global ring is the right treatment if a visitor ever
+   * does reach one, and a `tabindex="-1"` element does not take a visible ring from a
+   * scripted `.focus()` anyway.
+   */
+  /*
+   * ── HIDDEN BY A CLASS, NOT BY THE `hidden` ATTRIBUTE ──────────────────────
+   *
+   * These two blocks are the one place in this component that must NOT use `hidden`, and
+   * base.css says why in its own words: it ships `[hidden] { display: none !important }`
+   * and closes with "use `[hidden]` for 'not applicable' and a class for 'styled away'."
+   *
+   * THIS WAS BUILT THE OTHER WAY FIRST AND WAS SILENTLY BROKEN. With `hidden` on the
+   * markup, the `:target` rule below could not reveal anything — `!important` outranks it
+   * whatever the specificity — so a no-JS visitor landing on `#contact-sent` got the form
+   * correctly hidden and the confirmation hidden too. An empty region, and nothing in the
+   * markup or the console said so. Caught by reading `display` rather than trusting that
+   * author styles beat the UA sheet, which is true in general and irrelevant against an
+   * `!important` the project added on purpose.
+   *
+   * `display: none` removes these from the accessibility tree exactly as `hidden` would,
+   * so nothing is lost semantically by using a class for it.
+   */
+  .contact-state {
+    display: none;
+    gap: var(--rhythm-heading-close);
+  }
+
+  /*
+   * Two ways in, one appearance. `.is-shown` is the script's; `:target` is the no-JS
+   * path's, reached when the endpoint 303s back to `<the page>#contact-sent`.
+   */
+  .contact-state.is-shown,
+  .contact-sent:target {
+    display: grid;
+  }
+
+  /*
+   * The other half of the no-JS success: hide the form the confirmation replaces. `~`
+   * rather than `+` because the error block sits between the two in the DOM, and CSS has
+   * no previous-sibling combinator — which is also why both blocks precede the form.
+   *
+   * The script does this with `form.hidden = true` instead, which needs no rule and wins
+   * outright thanks to that same `!important`. The two mechanisms never meet.
+   */
+  .contact-sent:target ~ .contact-form {
+    display: none;
+  }
+
+  /* ── The honeypot ─────────────────────────────────────────────────────────── */
+  /*
+   * Out of the viewport rather than out of the render tree — see the markup note.
+   * `position: absolute` needs no positioned ancestor here: the containing block is
+   * the initial one, which is exactly what "somewhere far off-screen" wants.
+   */
+  .honeypot {
+    position: absolute;
+    left: -9999px;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+  }
+
+  /* ── The button row ───────────────────────────────────────────────────────── */
+  /*
+   * NO WIDTH IS DECLARED ANYWHERE, and that is not an omission. <Button> already
+   * carries `min-width: 231px` — the board's Send width, which is `span-3` — so the
+   * two sizes fall out of alignment alone:
+   *
+   *   below md   a grid item's default `justify-self: stretch` fills the column,
+   *              which is the full-width mobile button the board draws
+   *   from md    `justify-items: end` shrinks it to fit-content, where the inherited
+   *              `min-width` holds it at 231 and the board's right alignment
+   *              (`counterAxisAlignItems: MAX`) is satisfied
+   *
+   * Worth stating because a width here would be a coin-flip: `.send` resolves to
+   * (0,2,0) and so does <Button>'s own `.button`, so source order would decide.
+   */
+  .form-actions {
+    display: grid;
+  }
+
+  @container style(--breakpoint-md: true) {
+    .form-actions {
+      justify-items: end;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Progressive enhancement for the contact form. Everything here is an UPGRADE — with
+   * this script absent the form still posts, still validates natively, and still confirms
+   * itself through `:target`. Nothing below is load-bearing for correctness.
+   *
+   * ── `querySelector`, NOT A LOOP ─────────────────────────────────────────────
+   *
+   * At most one contact form renders per page: `page.customBands` carries the
+   * `uniqueBandTypes` validation and the Settings ladder resolves to a single band, so no
+   * document can produce two. Same invariant the unprefixed `cf-*` ids depend on, and if
+   * it were ever broken the duplicate ids would fail HTML validation in phase 8.
+   */
+  const region = document.querySelector<HTMLElement>('.contact')
+  const form = region?.querySelector<HTMLFormElement>('.contact-form')
+
+  if (region && form) {
+    const sent = region.querySelector<HTMLElement>('.contact-sent')!
+    const failed = region.querySelector<HTMLElement>('.contact-failed')!
+    const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!
+
+    /**
+     * The five real controls. The honeypot is excluded by name rather than by position —
+     * it is a `<input name="website">` the same as any other to `elements`, and including
+     * it would mean validating a field no human can see.
+     */
+    const FIELDS = ['name', 'email', 'subject', 'message'] as const
+    const controls = FIELDS.map((n) => form.elements.namedItem(n)).filter(
+      (el): el is HTMLInputElement | HTMLTextAreaElement =>
+        el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement,
+    )
+
+    /**
+     * ── SUPPRESSING THE NATIVE BUBBLES HAPPENS HERE, NOT IN THE MARKUP ────────
+     *
+     * `novalidate` as an attribute would take client validation away from everyone,
+     * including visitors without JavaScript, who have no replacement for it. Setting it
+     * at run time means each visitor gets the best validation their browser can run: the
+     * styled messages below when this script is present, the native bubbles when it is
+     * not. One line, and it is the whole reason the attribute is absent upstairs.
+     */
+    form.noValidate = true
+
+    const errorFor = (el: Element) => document.getElementById(`${el.id}-error`)
+
+    /**
+     * The message is the BROWSER'S OWN `validationMessage`, not copy written here.
+     *
+     * It arrives already localized — a French visitor gets French — and it is the exact
+     * text the native bubble would have shown, so this restyles where the message appears
+     * without rewording it. Inventing copy would mean shipping English-only strings that
+     * Andy never designed.
+     *
+     * The trade-off, named because it is real: contact.php's own validation says "Enter
+     * your name." where Chrome says "Please fill out this field." Those differ. It only
+     * shows when client and server disagree, which needs this script running AND the
+     * server rejecting something the browser accepted.
+     */
+    function showError(el: HTMLInputElement | HTMLTextAreaElement, message: string) {
+      el.setAttribute('aria-invalid', 'true')
+      const slot = errorFor(el)
+      if (slot) {
+        slot.textContent = message
+        slot.hidden = false
+      }
+    }
+
+    function clearError(el: HTMLInputElement | HTMLTextAreaElement) {
+      el.removeAttribute('aria-invalid')
+      const slot = errorFor(el)
+      if (slot) {
+        slot.textContent = ''
+        slot.hidden = true
+      }
+    }
+
+    function validate(el: HTMLInputElement | HTMLTextAreaElement) {
+      if (el.checkValidity()) {
+        clearError(el)
+        return true
+      }
+      showError(el, el.validationMessage)
+      return false
+    }
+
+    /**
+     * ── REWARD EARLY, PUNISH LATE ────────────────────────────────────────────
+     *
+     * The timing rule, made literal. A field is NOT validated while it is being filled in
+     * for the first time — flagging "invalid email" at `a@` is punishing someone
+     * mid-thought. It is validated when they leave it, and from then on it re-validates
+     * on every keystroke, so a corrected field clears the moment it becomes valid rather
+     * than making them leave the field again to find out.
+     *
+     * `blur` rather than `change`, because `change` does not fire when someone leaves a
+     * field they never edited — which is exactly the empty-required case.
+     *
+     * The `input` listener checks `aria-invalid` first, so it is inert until the field
+     * has actually errored once. That attribute is the "has been punished" flag, and
+     * using it means there is no second piece of state to keep in sync with the styling.
+     */
+    controls.forEach((el) => {
+      el.addEventListener('blur', () => validate(el))
+      el.addEventListener('input', () => {
+        if (el.getAttribute('aria-invalid') === 'true') validate(el)
+      })
+    })
+
+    /**
+     * `.is-shown` rather than `block.hidden = false`, because base.css's
+     * `[hidden] { display: none !important }` means the attribute is not something CSS
+     * can undo — see the note on `.contact-state`. The reflow is forced before focusing
+     * because a `display: none` element cannot take focus, and the class change and the
+     * `.focus()` call are in the same task.
+     */
+    function showState(block: HTMLElement) {
+      block.classList.add('is-shown')
+      void block.offsetWidth
+      block.focus()
+    }
+
+    function hideState(block: HTMLElement) {
+      block.classList.remove('is-shown')
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault()
+
+      hideState(failed)
+
+      /* Validate everything, then focus the FIRST invalid control — not the last, which
+         is what a naive loop leaves focused, and not the one that happened to be blurred. */
+      const invalid = controls.filter((el) => !validate(el))
+      if (invalid.length > 0) {
+        invalid[0].focus()
+        return
+      }
+
+      submit.disabled = true
+      submit.textContent = 'Sending…'
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          headers: {Accept: 'application/json'},
+          /* Form-encoded, NOT JSON, so contact.php has one input shape to parse and the
+             no-JS POST and this one arrive identically. */
+          body: new URLSearchParams(new FormData(form) as unknown as Record<string, string>),
+        })
+
+        /**
+         * ── ANY UNPARSEABLE BODY IS A FAILURE, WHICH IS NOT PARANOIA ─────────
+         *
+         * nginx's rate limiter answers with its OWN HTML error page, not this endpoint's
+         * JSON — so a throttled visitor gets a 429 full of markup. Treating a parse
+         * failure as a generic failure is what makes that land correctly without anyone
+         * customizing nginx's error pages.
+         */
+        const payload = await response.json().catch(() => null)
+
+        if (response.ok && payload?.ok === true) {
+          form.hidden = true
+          showState(sent)
+          return
+        }
+
+        /* 422 carries per-field messages from the server. A 422 with no usable `errors`
+           object falls through to the generic block rather than showing nothing. */
+        const fieldErrors = payload?.errors
+        if (response.status === 422 && fieldErrors && typeof fieldErrors === 'object') {
+          let first: HTMLInputElement | HTMLTextAreaElement | undefined
+          controls.forEach((el) => {
+            const message = fieldErrors[el.name]
+            if (typeof message === 'string' && message !== '') {
+              showError(el, message)
+              first ??= el
+            }
+          })
+          if (first) {
+            first.focus()
+            return
+          }
+        }
+
+        showState(failed)
+      } catch {
+        /* Offline, DNS failure, timeout — `fetch` rejects rather than resolving. Same
+           block as a 500, because the visitor's options are identical either way. */
+        showState(failed)
+      } finally {
+        submit.disabled = false
+        submit.textContent = 'Send'
+      }
+    })
+
+    /**
+     * ── BFCACHE RESTORES THE DOM, INCLUDING STATE THAT SHOULD NOT SURVIVE ────
+     *
+     * Navigating away and coming Back can restore this page from memory exactly as it
+     * was — success block showing, form hidden, button mid-"Sending…". Resetting on
+     * `pageshow` with `persisted` is the only hook that fires for that restore; `load`
+     * does not run at all.
+     *
+     * The field VALUES are deliberately left alone. Restoring what someone typed is what
+     * bfcache is for, and it is the durability behaviour we want.
+     */
+    window.addEventListener('pageshow', (event) => {
+      if (!event.persisted) return
+      form.hidden = false
+      sent.hidden = true
+      hideState(failed)
+      submit.disabled = false
+      submit.textContent = 'Send'
+    })
+  }
+</script>

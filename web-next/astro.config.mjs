@@ -46,6 +46,124 @@ if (isPreview && !(process.env.SANITY_API_READ_TOKEN || fileEnv.SANITY_API_READ_
  */
 const SANITY_API_VERSION = '2026-08-18'
 
+/**
+ * ── THE DEV-ONLY STUB FOR /api/contact ──────────────────────────────────────
+ *
+ * In production and preview that path is served by `web-next/server/contact.php`, which
+ * exists only on the droplet. Locally there is no PHP and no nginx, so without this the
+ * contact form has nothing to talk to and none of its client behaviour can be developed.
+ *
+ * ── IT IS A VITE PLUGIN AND NOT AN ASTRO API ROUTE, WHICH IS NOT A STYLE CHOICE ──
+ *
+ * The obvious approach — `src/pages/api/contact.ts` with `export const prerender = false`
+ * — WOULD BREAK THE PRODUCTION BUILD. An on-demand route needs an adapter, and this config
+ * adds the Node adapter only when `isPreview` (see `output` below), because production is
+ * a static tar deployed behind nginx. So the route would build under preview and fail
+ * under production, which is the worst of both.
+ *
+ * `apply: 'serve'` confines this to the dev server. It is not present in either build
+ * output, and it answers at the SAME path the real endpoint uses — so nothing about
+ * ContactForm changes between local, preview and production. That is also why the form's
+ * endpoint is a plain relative constant rather than an environment variable.
+ *
+ * ── IT MIRRORS THE CONTRACT, INCLUDING THE PARTS THAT LOOK WRONG ────────────
+ *
+ * Same status codes and same bodies as the PHP, uniform 500 for every non-field failure
+ * included. A stub that returned friendlier errors than production would hide exactly the
+ * cases the client has to handle.
+ *
+ * It also honours `Accept`, so the no-JS full-page POST path can be exercised locally by
+ * disabling JavaScript — that path is otherwise only testable on the droplet.
+ *
+ * ── TWO TEST HOOKS, BECAUSE FAILURE IS OTHERWISE UNREACHABLE LOCALLY ───────
+ *
+ * A subject containing `!error` forces the generic 500; `!invalid` forces a 422 with
+ * field errors. Without them the error and validation states could not be developed at
+ * all, since a healthy stub always succeeds. Dev-only by construction.
+ *
+ * The `@returns` annotation is load-bearing rather than decorative: this file carries
+ * `// @ts-check`, so without it every callback parameter below is an implicit `any` and
+ * `astro check` fails the build.
+ *
+ * @returns {import('vite').Plugin}
+ */
+function contactEndpointStub() {
+  return {
+    name: 'afc:contact-endpoint-stub',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use('/api/contact', (req, res, next) => {
+        if (req.method !== 'POST') return next()
+
+        let raw = ''
+        req.on('data', (chunk) => (raw += chunk))
+        req.on('end', () => {
+          const form = new URLSearchParams(raw)
+          /** @param {string} key */
+          const field = (key) => (form.get(key) ?? '').trim()
+          const wantsJson = (req.headers.accept ?? '').includes('application/json')
+
+          /**
+           * @param {number} status
+           * @param {Record<string, unknown>} payload
+           */
+          const send = (status, payload) => {
+            res.statusCode = status
+            res.setHeader('Content-Type', 'application/json; charset=utf-8')
+            res.end(JSON.stringify(payload))
+          }
+
+          /** @param {string} reason */
+          const fail = (reason) => {
+            console.log(`\n[contact stub] REJECTED — ${reason}\n`)
+            if (wantsJson) return send(500, {ok: false})
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'text/html; charset=utf-8')
+            res.end('<h1>Message not sent</h1><p>Stubbed failure.</p>')
+          }
+
+          const subject = field('subject')
+
+          if (field('website') !== '') return fail('honeypot filled')
+          if (subject.includes('!error')) return fail('forced by "!error" in subject')
+
+          const errors = {}
+          if (field('name') === '') errors.name = 'Enter your name.'
+          if (field('email') === '') errors.email = 'Enter your email address.'
+          else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(field('email')))
+            errors.email = 'Enter a valid email address.'
+          if (subject === '') errors.subject = 'Enter a subject.'
+          if (field('message') === '') errors.message = 'Enter a message.'
+
+          if (subject.includes('!invalid')) {
+            errors.subject = 'Forced by "!invalid" in the subject.'
+          }
+
+          if (Object.keys(errors).length > 0) {
+            console.log('\n[contact stub] 422 —', errors, '\n')
+            if (wantsJson) return send(422, {ok: false, errors})
+            res.statusCode = 422
+            res.setHeader('Content-Type', 'text/html; charset=utf-8')
+            res.end('<h1>Message not sent</h1><p>Stubbed validation failure.</p>')
+          }
+
+          /* NOT SENT ANYWHERE. The whole point of the stub is that developing the form
+             never puts mail in Andy's inbox and never spends a real Gmail token. */
+          console.log('\n[contact stub] would send:', Object.fromEntries(form), '\n')
+
+          if (wantsJson) return send(200, {ok: true})
+
+          const source = field('source_page')
+          const safe = /^\/(?!\/)/.test(source) && !/[\\\r\n]/.test(source) ? source : '/contact/'
+          res.statusCode = 303
+          res.setHeader('Location', `${safe}#contact-sent`)
+          res.end()
+        })
+      })
+    },
+  }
+}
+
 export default defineConfig({
   site: isPreview
     ? 'https://preview.andyfitzgeraldconsulting.com'
@@ -129,6 +247,10 @@ export default defineConfig({
     }),
     react(),
   ],
+
+  vite: {
+    plugins: [contactEndpointStub()],
+  },
 
   env: {
     schema: {

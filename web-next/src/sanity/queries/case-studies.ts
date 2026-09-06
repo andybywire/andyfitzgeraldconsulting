@@ -52,7 +52,7 @@ import {BAND_WORK_WITH_ME, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
  * one document. Projecting it would imply it does something; whether it should is a
  * design question, not a query one.
  *
- * There is no RSS band because `caseStudy.bands` accepts only `bandWorkWithMe`, and
+ * There is no RSS band because `caseStudy.customBands` accepts only `bandWorkWithMe`, and
  * the Figma board agrees — it carries the board's RSS CTA instance marked
  * `hidden="true"` and a Connect/Work with me band in its place.
  *

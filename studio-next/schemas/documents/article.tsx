@@ -203,7 +203,7 @@ export default defineType({
       description: 'External site URL if article was first published elsewhere.',
     }),
     defineField({
-      name: 'bands',
+      name: 'customBands',
       title: 'Custom Bands',
       description:
         'Custom bands provide category-specific overrides for default bands defined in Settings.',

@@ -172,7 +172,7 @@ export default defineType({
       ],
     }),
     defineField({
-      name: 'bands',
+      name: 'customBands',
       title: 'Custom Bands',
       description:
         'Custom bands provide category-specific overrides for default bands defined in Settings.',

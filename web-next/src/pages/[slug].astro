@@ -1,0 +1,168 @@
+---
+/**
+ * The `page` template — website-generic scaffolding, one repeatable layout. Contact is
+ * the first and only document today; About, Colophon, Apologia and Projects follow.
+ *
+ * ── THE FRAME IS reviews.astro's, MINUS THE RAIL GYMNASTICS ─────────────────
+ *
+ * Both draw a title, a lead, optional intro copy, a main column and a reserved rail. The
+ * difference is that Reviews RENDERS something in its rail, so it needs the transparent
+ * <PageHeader> that lets the rail align to the lead rather than the h1, and the zeroed
+ * row gap that goes with it.
+ *
+ * Nothing is rendered in the rail here, so none of that machinery is needed and the
+ * default <Grid> produces the board's spacing on its own:
+ *
+ *     h1 -> lede    16   <PageHeader>'s own margin
+ *     lede -> form  64   <Grid>'s row gap, `rhythm-heading-major`
+ *
+ * Measured against the Contact board (2562:2663): Page Header 48 tall, the frame below it
+ * at y=64, and inside that the lede 72 tall with the form at y=136. Which is 16 and 64.
+ *
+ * ── THE RAIL IS RESERVED BY PLACING NOTHING IN IT ───────────────────────────
+ *
+ * On desktop a `page` always leaves columns 9-12 standing, with or without content
+ * (Andy, 2026-09-04), and the reason is measure: the prose column is `--col-main` (656),
+ * which lands near DESIGN.md's 66ch target, while `--col-full` (996) would push it well
+ * past. That is the opposite of the Insights index, which spans full width precisely
+ * BECAUSE cards have no measure to protect.
+ *
+ * THERE IS NO EMPTY <aside> HERE, DELIBERATELY. A grid column is reserved by nothing
+ * being placed in it — putting content at `--col-main` leaves 9-12 empty by definition.
+ * An empty <aside> would be an unnamed `complementary` landmark wrapping nothing, which
+ * is worse than no element at all. reviews.astro has a `.rail` only because it has a nav
+ * inside it.
+ *
+ * Below md `--col-main` collapses to `1 / -1` and there is nothing to reserve, which
+ * falls out for free.
+ *
+ * ── BANDS ARE OPT-IN, SO A NULL HERE IS A DECISION RATHER THAN A GAP ────────
+ *
+ * `pageBands` lists the bands a page carries at all (Andy, 2026-09-04). A band missing
+ * from that list resolves to null even when Settings defines a default, which inverts the
+ * ladder's usual "the default always wins if nothing else does". So the guard below is
+ * not defensive coding — null is the editor having said no.
+ *
+ * PLACED AS BODY CONTENT inside the page's single band, because that is what the Contact
+ * board draws: the form sits in the prose column beside the reserved rail, not in a band
+ * of its own.
+ *
+ * ── AND THAT PLACEMENT IS STILL AN OPEN QUESTION PAST CONTACT ───────────────
+ *
+ * Contact suppresses the band's own copy (`bandCopy: false`) so its page title and lede
+ * introduce the form. A page that does NOT suppress it — About, say, taking the Settings
+ * default — gets the form WITH its own "Get In Touch" heading in this same position,
+ * under the body copy. Whether that is right, or whether such a page wants it APPENDED as
+ * a separate full-bleed band the way RssBand and WorkWithMeBand are, is undecided.
+ *
+ * `bandCopy` looks like the natural discriminator and is deliberately not used as one:
+ * it would couple "does it carry its own copy" to "where does it sit", which are two
+ * questions and will not always have the same answer.
+ *
+ * NOT resolved here, because Contact is the only `page` document and an appended variant
+ * would be an unexercised code path shipped on a guess. Revisit when the second page
+ * lands.
+ */
+import {loadQuery} from '../sanity/load-query'
+import {PAGE_SLUGS_QUERY, PAGE_QUERY, PAGE_GET_IN_TOUCH_BAND_QUERY} from '../sanity/queries/pages'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Band from '../components/Band.astro'
+import Grid from '../components/Grid.astro'
+import Masthead from '../components/Masthead.astro'
+import Footer from '../components/Footer.astro'
+import PageHeader from '../components/PageHeader.astro'
+import GetInTouchBand from '../components/bands/GetInTouchBand.astro'
+
+export async function getStaticPaths() {
+  const rows = await loadQuery(PAGE_SLUGS_QUERY)
+  /* The query filters on `defined(slug.current)`, but TypeGen types a projected slug as
+     `string | null` because it cannot see the filter — and a null would become the
+     literal path `/null`. Narrowing rather than asserting, as insights/[slug] does. */
+  return rows
+    .filter((row): row is {params: {slug: string}} => Boolean(row.params.slug))
+    .map((row) => ({params: row.params}))
+}
+
+/* Two queries rather than one projection, and not by preference — folding the band into
+   PAGE_QUERY silently untypes it to `any`, with nothing in this file to reveal it. See
+   PAGE_GET_IN_TOUCH_BAND_QUERY for the mechanism and the probe that caught it. They are
+   independent, so they run concurrently. */
+const {slug} = Astro.params
+const [page, bands] = await Promise.all([
+  loadQuery(PAGE_QUERY, {slug}),
+  loadQuery(PAGE_GET_IN_TOUCH_BAND_QUERY, {slug}),
+])
+
+/* Loud rather than quiet. Every slug here came out of the dataset a moment ago, so a miss
+   means the two queries disagree — which should fail the build rather than ship a page
+   with an empty body. */
+if (!page) throw new Error(`[[slug]] no page document for slug "${slug}"`)
+---
+
+{
+  /*
+    ── 64 TOP, 96 BOTTOM — THE SAME ASYMMETRY REVIEWS HIT ─────────────────────
+
+    The Contact board's BodyBand is 811 tall with its content frame at y=64 and 651 tall,
+    leaving 96 below. `space="band"` supplies the 64 by default and only the end is
+    overridden, taking `--rhythm-section` — the token every other 96 in the build uses —
+    rather than a literal, so both clamp together at narrow widths.
+
+    Like Reviews, this page has nothing between its content and the footer, which is what
+    the extra 32 is for. Do NOT override this from a page rule: `.band[data-space='…']`
+    compiles with <Band>'s own scope attribute to (0,3,0) and a page reaching the root
+    gets (0,2,0), so it would lose wherever it sat in the source. `spaceEnd` exists for
+    exactly this.
+  */
+}
+<BaseLayout title={page.title ?? 'Page'} description={page.description ?? undefined}>
+  <Masthead />
+
+  <main>
+    <Band as="section" spaceEnd="section">
+      <Grid>
+        <PageHeader title={page.title ?? ''} lede={page.lede} body={page.bodyText} />
+
+        {
+          /*
+            `aria-labelledby` is NOT set on anything here. With `bandCopy` false there is
+            no heading to point at, and with it true the h2 sits inside the page's own
+            main region rather than in a band of its own — so there is no separate region
+            to name. RssBand puts the relationship on the <Band> it owns; this component
+            owns none, and the naming goes with the frame.
+          */
+        }
+        {
+          bands?.touchBand && (
+            <GetInTouchBand
+              class="page-touch-band"
+              message={bands.touchBand.message}
+              bandCopy={bands.touchBand.bandCopy}
+            />
+          )
+        }
+      </Grid>
+    </Band>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /*
+   * Both grid items take the main column — 8 of 12, which is the 656 the board draws and
+   * the 8-column cap the form keeps on every page, rail or no rail (Andy, 2026-09-04).
+   *
+   * <PageHeader> is an ordinary block here rather than transparent, so this places its
+   * own box; its internal `--page-header-span` rules are inert in that mode. Reaching it
+   * at all depends on the component spreading `{...rest}` onto its root, which is how
+   * Astro's scope attribute travels from a parent to a child's root.
+   *
+   * Nothing is placed in columns 9-12, which is how the rail is reserved. See the note
+   * at the top.
+   */
+  .page-header,
+  .page-touch-band {
+    grid-column: var(--col-main);
+  }
+</style>
