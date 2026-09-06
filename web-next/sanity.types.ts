@@ -180,7 +180,7 @@ export type Settings = {
     altText?: string
     _type: 'image'
   }
-  bands?: Array<
+  defaultBands?: Array<
     | ({
         _key: string
       } & BandRss)
@@ -193,7 +193,7 @@ export type Settings = {
   >
   bandOverrides?: Array<{
     documentType?: 'note' | 'article' | 'caseStudy'
-    bands?: Array<
+    overrideBands?: Array<
       | ({
           _key: string
         } & BandRss)
@@ -322,7 +322,7 @@ export type Singleton = {
         _key: string
       }
   >
-  bands?: Array<
+  customBands?: Array<
     | ({
         _key: string
       } & BandRss)
@@ -405,7 +405,8 @@ export type Page = {
         _key: string
       }
   >
-  bands?: Array<
+  pageBands?: Array<string>
+  customBands?: Array<
     | ({
         _key: string
       } & BandWorkWithMe)
@@ -589,7 +590,7 @@ export type CaseStudy = {
     outline?: boolean
     _type: 'image'
   }
-  bands?: Array<
+  customBands?: Array<
     {
       _key: string
     } & BandWorkWithMe
@@ -757,7 +758,7 @@ export type Article = {
       } & Table)
   >
   canonical?: string
-  bands?: Array<
+  customBands?: Array<
     {
       _key: string
     } & BandRss
@@ -831,7 +832,7 @@ export type Note = {
     publisher?: string
     pubDate?: string
   }
-  bands?: Array<
+  customBands?: Array<
     {
       _key: string
     } & BandRss
@@ -1203,7 +1204,7 @@ export type CASE_STUDY_DETAIL_QUERY_RESULT = {
 
 // Source: ../web-next/src/sanity/queries/case-studies.ts
 // Variable: CASE_STUDY_BAND_QUERY
-// Query: *[_type == "caseStudy" && slug.current == $slug][0] {			"workBand": coalesce(	bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]){		message,		"clientLogos": clientLogos[]->{			name,			"image": tile{asset, crop, hotspot, altText},			"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]				| order(pubDate desc)[0].slug.current		}	}	}
+// Query: *[_type == "caseStudy" && slug.current == $slug][0] {			"workBand": coalesce(	customBands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]){		message,		"clientLogos": clientLogos[]->{			name,			"image": tile{asset, crop, hotspot, altText},			"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]				| order(pubDate desc)[0].slug.current		}	}	}
 export type CASE_STUDY_BAND_QUERY_RESULT = {
   workBand: {
     message: Array<{
@@ -1634,7 +1635,7 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
 
 // Source: ../web-next/src/sanity/queries/insights.ts
 // Variable: INSIGHT_RSS_BAND_QUERY
-// Query: *[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {			"rssBand": coalesce(	bands[_type == "bandRss"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandRss"][0],	*[_type == "settings"][0].bands[_type == "bandRss"][0]){title, message, buttonTarget}	}
+// Query: *[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {			"rssBand": coalesce(	customBands[_type == "bandRss"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandRss"][0],	*[_type == "settings"][0].defaultBands[_type == "bandRss"][0]){title, message, buttonTarget}	}
 export type INSIGHT_RSS_BAND_QUERY_RESULT = {
   rssBand: {
     title: string | null
@@ -1702,6 +1703,99 @@ export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
     slug: string | null
   }
 }>
+
+// Source: ../web-next/src/sanity/queries/pages.ts
+// Variable: PAGE_SLUGS_QUERY
+// Query: *[_type == "page" && defined(slug.current)] {		"params": {"slug": slug.current}	}
+export type PAGE_SLUGS_QUERY_RESULT = Array<{
+  params: {
+    slug: string | null
+  }
+}>
+
+// Source: ../web-next/src/sanity/queries/pages.ts
+// Variable: PAGE_QUERY
+// Query: *[_type == "page" && slug.current == $slug][0] {		_id,		title,		lede,		"description": pt::text(lede),		bodyText	}
+export type PAGE_QUERY_RESULT = {
+  _id: string
+  title: string | null
+  lede: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: never
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  description: string
+  bodyText: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | {
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        _type: 'image'
+        _key: string
+      }
+  > | null
+} | null
+
+// Source: ../web-next/src/sanity/queries/pages.ts
+// Variable: PAGE_GET_IN_TOUCH_BAND_QUERY
+// Query: *[_type == "page" && slug.current == $slug][0] {			"touchBand": select(		"bandGetInTouch" in coalesce(pageBands, []) => coalesce(			customBands[_type == "bandGetInTouch"][0],			*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]		)	){message, bandCopy}	}
+export type PAGE_GET_IN_TOUCH_BAND_QUERY_RESULT = {
+  touchBand: {
+    message: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+    bandCopy: boolean | null
+  } | null
+} | null
 
 // Source: ../web-next/src/sanity/queries/related.ts
 // Variable: RELATED_POOL_QUERY
@@ -1862,7 +1956,7 @@ export type SINGLETON_HEADER_QUERY_RESULT = {
 
 // Source: ../web-next/src/sanity/queries/singletons.ts
 // Variable: SINGLETON_WORK_BAND_QUERY
-// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy),			"workBand": coalesce(	bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]){		message,		"clientLogos": clientLogos[]->{			name,			"image": tile{asset, crop, hotspot, altText},			"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]				| order(pubDate desc)[0].slug.current		}	}	}
+// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy),			"workBand": coalesce(	customBands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],	*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]){		message,		"clientLogos": clientLogos[]->{			name,			"image": tile{asset, crop, hotspot, altText},			"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]				| order(pubDate desc)[0].slug.current		}	}	}
 export type SINGLETON_WORK_BAND_QUERY_RESULT = {
   _id: string
   title: string | null
@@ -1979,7 +2073,7 @@ import '@sanity/client'
 declare module '@sanity/client' {
   interface SanityQueries {
     '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tclient->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t},\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tatGlance,\n\t\twhatDid,\n\t\tprojectGoal,\n\t\tbeforeImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tprojectApproach,\n\t\tprojectOutcome,\n\t\tafterImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n, outline },\n\t\treview->{\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\t"slug": slug.current,\n\t\t\t"employer": employer->name,\n\t\t\tcondensedBody\n\t\t}\n\t}\n': CASE_STUDY_DETAIL_QUERY_RESULT
-    '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t"workBand": coalesce(\n\tbands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': CASE_STUDY_BAND_QUERY_RESULT
+    '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t"workBand": coalesce(\n\tcustomBands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': CASE_STUDY_BAND_QUERY_RESULT
     '\n\t{\n\t\t"prev": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate < $pubDate || (pubDate == $pubDate && _id < $id))\n\t\t] | order(pubDate desc, _id desc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t},\n\t\t"next": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate > $pubDate || (pubDate == $pubDate && _id > $id))\n\t\t] | order(pubDate asc, _id asc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t}\n\t}\n': GENRE_NAV_QUERY_RESULT
     '\n\t{\n\t\t"topConcepts": *[_type == "skosConceptScheme" && title == "Genre"][0].topConcepts[]->{\n\t\t\t_id,\n\t\t\tprefLabel\n\t\t},\n\t\t"concepts": *[_type == "skosConcept"]{\n\t\t\t_id,\n\t\t\tprefLabel,\n\t\t\t"broader": broader[]._ref\n\t\t}\n\t}\n': GENRE_TREE_QUERY_RESULT
     '\n\t*[_type == "settings"][0]{\n\t\tauthorName,\n\t\t"authorImage": authorImage{asset, crop, hotspot, altText}\n\t}\n': HOME_AUTHOR_QUERY_RESULT
@@ -1987,13 +2081,16 @@ declare module '@sanity/client' {
     '\n\t{\n\t\t"articles": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& genre._ref in $articleGenres\n\t\t] | order(pubDate desc)[0...$articleCount] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t\t},\n\t\t"notes": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& genre._ref in $noteGenres\n\t\t] | order(pubDate desc)[0...$noteCount] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\tclipRef { publisher }\n\t\t}\n\t}\n': HOME_INSIGHTS_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tclipRef { publisher }\n\t}\n': INSIGHTS_INDEX_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tlede,\n\t\tbodyText,\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tclipRef {\n\t\t\tclipUrl,\n\t\t\tpublisher,\n\t\t\ttitle,\n\t\t\timg { asset, crop, hotspot, altText }\n\t\t},\n\t\tbookRef {\n\t\t\tbookUrl,\n\t\t\ttitle,\n\t\t\tauthor,\n\t\t\tpublisher,\n\t\t\tpubDate,\n\t\t\timg { asset, crop, hotspot, altText }\n\t\t}\n\t}\n': INSIGHT_DETAIL_QUERY_RESULT
-    '\n\t*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {\n\t\t\n\t"rssBand": coalesce(\n\tbands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bands[_type == "bandRss"][0]\n){title, message, buttonTarget}\n\n\t}\n': INSIGHT_RSS_BAND_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && slug.current == $slug][0] {\n\t\t\n\t"rssBand": coalesce(\n\tcustomBands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandRss"][0],\n\t*[_type == "settings"][0].defaultBands[_type == "bandRss"][0]\n){title, message, buttonTarget}\n\n\t}\n': INSIGHT_RSS_BAND_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
+    '\n\t*[_type == "page" && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': PAGE_SLUGS_QUERY_RESULT
+    '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\tlede,\n\t\t"description": pt::text(lede),\n\t\tbodyText\n\t}\n': PAGE_QUERY_RESULT
+    '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t\n\t"touchBand": select(\n\t\t"bandGetInTouch" in coalesce(pageBands, []) => coalesce(\n\t\t\tcustomBands[_type == "bandGetInTouch"][0],\n\t\t\t*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]\n\t\t)\n\t){message, bandCopy}\n\n\t}\n': PAGE_GET_IN_TOUCH_BAND_QUERY_RESULT
     '\n\t{\n\t\t"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {\n\t\t\t"tops": topConcepts[]->{_id, prefLabel},\n\t\t\t"concepts": concepts[]->{\n\t\t\t\t_id,\n\t\t\t\tprefLabel,\n\t\t\t\t"parent": broader[0]._ref\n\t\t\t}\n\t\t},\n\n\t\t"pool": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t] | order(pubDate desc) {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\t"genreId": genre._ref,\n\t\t\t"genre": genre->prefLabel,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"sourceDomain": clipRef.publisher,\n\t\t\t"topics": topic[]->{\n\t\t\t\t_id,\n\t\t\t\t"parent": broader[0]._ref,\n\t\t\t\t"parentIsTop": !defined(broader[0]->broader[0]._ref)\n\t\t\t}\n\t\t}\n\t}\n': RELATED_POOL_QUERY_RESULT
     '\n\t*[_type == "client" && count(*[_type == "review" && references(^._id)]) > 0] {\n\t\t_id,\n\t\tname,\n\t\trelationship,\n\t\trole,\n\t\t"logo": logo{asset, crop, hotspot, altText},\n\t\t"engagements": engagementDates[]{startDate, endDate},\n\t\t"latestEnd": engagementDates[].endDate | order(@ desc)[0],\n\t\t"reviews": *[_type == "review" && references(^._id)] {\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\tlinkedIn,\n\t\t\t"slug": slug.current,\n\t\t\tbody\n\t\t}\n\t} | order(latestEnd desc)\n': REVIEWS_BY_CLIENT_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
-    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\tbands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].bands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
+    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\tcustomBands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\tbodyText\n\t}\n': SINGLETON_INTRO_QUERY_RESULT
   }
 }

@@ -57,7 +57,7 @@ export default defineType({
       ],
     }),
     defineField({
-      name: 'bands',
+      name: 'defaultBands',
       title: 'Default Bands',
       description:
         'Default bands provide global messaging and titles for repeated bands across the site.',
@@ -94,7 +94,7 @@ export default defineType({
               },
             }),
             defineField({
-              name: 'bands',
+              name: 'overrideBands',
               title: 'Page Type Bands',
               type: 'array',
               of: [{type: 'bandRss'}, {type: 'bandWorkWithMe'}, {type: 'bandGetInTouch'}],
@@ -104,15 +104,18 @@ export default defineType({
           preview: {
             select: {
               title: 'documentType',
-              bands: 'bands',
+              bands: 'overrideBands',
             },
             prepare(selection) {
               const {title, bands} = selection
+              /* `bands` is undefined until the editor adds one, and `.length` on that
+                 throws rather than degrading — so an override row created but not yet
+                 filled in would break its own preview in the Studio. */
+              const count = bands?.length ?? 0
               // expand this in the future to list the individual band types as a subtitle.
               return {
                 title: `${title} band`,
-                subtitle:
-                  bands.length > 1 ? bands.length + ' overrides' : bands.length + ' override',
+                subtitle: count === 1 ? '1 override' : `${count} overrides`,
               }
             },
           },

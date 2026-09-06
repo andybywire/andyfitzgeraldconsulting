@@ -1,0 +1,145 @@
+---
+/**
+ * The Get in Touch band — an optional heading and message above <ContactForm>.
+ *
+ * Content resolves through the three-tier ladder in sanity/fragments.ts, so this receives
+ * one object and never learns which tier produced it.
+ *
+ * ── IT OWNS NO <Band>, AND THAT IS THE DIFFERENCE FROM THE OTHER THREE ──────
+ *
+ * RssBand and WorkWithMeBand each open with their own <Band> and <Grid>. This one does
+ * not, and the Contact board is why: there the component sits INSIDE the page's own body
+ * band, as a grid item beside a reserved rail —
+ *
+ *     BodyBand  (64 top / 96 bottom)
+ *       Page Header        the h1
+ *       Frame              Prose 656 | rail 231
+ *         Body Group       the lede
+ *         Contact          THIS, 451 tall, heading suppressed
+ *
+ * — so emitting a <Band> here would nest a full-bleed element inside a grid item and pay
+ * the band padding twice. One band is what the board draws.
+ *
+ * The principled version of that: the other two bands are ONLY ever appended to the foot
+ * of a page, so owning their frame costs nothing. This one is appended to some pages AND
+ * is body content on Contact, so its frame genuinely varies by caller. A component whose
+ * frame varies should not own one.
+ *
+ * The cost is that a caller appending it must supply the <Band> and <Grid> itself, and
+ * must place this root — no `grid-column` is declared here, for the same reason
+ * <ContactForm> declares none. See the Contact page for the composed case.
+ *
+ * NAMED `…Band` DESPITE NOT BEING ONE. The Sanity type is `bandGetInTouch` and the
+ * component sits with the other three; matching the schema is worth more than being
+ * pedantic about which element it emits.
+ *
+ * ── THE HEADING IS NOT CONTENT ──────────────────────────────────────────────
+ *
+ * "Get In Touch" is hardcoded, unlike RssBand's `title`, and that mirrors the schema
+ * exactly: `bandRss` carries a `title` field because the string genuinely varies by page
+ * — "Follow along with RSS" on an article, "Follow presentations with RSS" on a
+ * presentation — while `bandGetInTouch` carries only `message` and `bandCopy`. A field
+ * that does not exist should not be faked with a prop.
+ *
+ * The id is stable so a caller can point `aria-labelledby` at it from the <Band> it
+ * supplies, which is where RssBand puts the same relationship.
+ */
+import type {TypedObject} from 'astro-portabletext/types'
+import type {HTMLAttributes} from 'astro/types'
+import Prose from '../prose/Prose.astro'
+import ContactForm from '../ContactForm.astro'
+
+interface Props extends HTMLAttributes<'div'> {
+  /** The copy under the heading. Required by the schema whenever `bandCopy` is true. */
+  message?: TypedObject[] | null
+  /** False suppresses the heading and message; the host page's own title does that work. */
+  bandCopy?: boolean | null
+}
+
+const {message, bandCopy, class: className, ...rest}: Props = Astro.props
+
+/*
+  PLAIN TRUTHINESS, NOT `!== false`. See the note on BAND_GET_IN_TOUCH in fragments.ts:
+  the Settings default band sat `null` until 2026-09-04 because `initialValue` does not
+  reach objects that predate the field. That was fixed in the data rather than guarded
+  around here, so `null` now means only one thing — a band object older than the field,
+  which no longer exists — and a guard would make the stored value a lie.
+*/
+const showCopy = Boolean(bandCopy)
+---
+
+<div class:list={['get-in-touch', className]} {...rest}>
+  {
+    showCopy && (
+      <div class="get-in-touch-copy">
+        <h2 id="get-in-touch">Get In Touch</h2>
+        <div class="get-in-touch-message">
+          <Prose value={message} />
+        </div>
+      </div>
+    )
+  }
+
+  {
+    /*
+      ── THE BAND'S OWN HEADING DECIDES THE FORM'S STATE-HEADING LEVEL ─────────
+
+      With `bandCopy` true there is an h2 directly above, and the success and error
+      messages replace what sits BENEATH it — so they are h3s. With it false the form is
+      the whole region and they answer to the page h1 instead, so they are h2s.
+
+      This is the only thing <ContactForm> cannot work out for itself: it has no way to
+      see whether a sibling heading was rendered, and guessing would give one of the two
+      pages a broken outline. One prop, both cases correct.
+    */
+  }
+  <ContactForm headingLevel={showCopy ? 3 : 2} />
+</div>
+
+<style>
+  /*
+   * 48 between the copy and the form — the board's gap, and `--rhythm-block` by name,
+   * which is what any two adjacent blocks take. Measured off the desktop variant
+   * (506:4478): the header frame is 147 tall and the form frame starts at 195.
+   *
+   * A `gap` rather than a sibling margin because this component has real wrappers, which
+   * is the same division reviews.astro draws — the sibling-margin ramp exists for Portable
+   * Text's flat sequence, and there is no flat sequence here.
+   *
+   * With `bandCopy` false there is one child and the gap is inert, which is why nothing
+   * needs to switch it off.
+   */
+  .get-in-touch {
+    display: grid;
+    gap: var(--rhythm-block);
+  }
+
+  /*
+   * 16 from the h2 to its message — `--rhythm-heading-close`, the value everything else
+   * uses between a heading and the copy bound to it. The board draws the h2 text 35 tall
+   * ending at y=35 with the message starting at y=51.
+   *
+   * The h2 itself takes base.css's element role and is not styled here; there is nothing
+   * about this heading that differs from any other h2.
+   */
+  .get-in-touch-copy {
+    display: grid;
+    gap: var(--rhythm-heading-close);
+  }
+
+  /*
+   * The message is body copy and inherits everything, so only the multi-paragraph case
+   * needs stating — and it needs stating because <Prose> emits a flat sequence outside
+   * `.detail`, where two paragraphs would butt together with no space at all.
+   *
+   * `:global()` because these <p>s belong to <Prose>: a scope attribute reaches a
+   * component's root, never its descendants. Same rule, same reason, as RssBand.
+   *
+   * No measure cap. The container is already `--col-main` — 8 columns, 656 — which
+   * DESIGN.md's Measure section puts inside the 66ch target, so a cap here would be a
+   * second constraint that never binds.
+   */
+  .get-in-touch-message :global(p + p) {
+    margin-top: var(--rhythm-paragraph);
+  }
+</style>

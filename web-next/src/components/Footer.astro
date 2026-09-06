@@ -33,6 +33,7 @@
 import Band from './Band.astro'
 import Grid from './Grid.astro'
 import ThemeToggle from './ThemeToggle.astro'
+import {SOCIAL_URLS} from '../lib/social'
 
 /**
  * Baked at build time, not evaluated in the browser. A static build means a site
@@ -75,13 +76,6 @@ const INDEX = [
 ]
 
 /**
- * Andy's Bluesky handle is the ONE thing in this file that is a placeholder. The
- * mark, its path length and its wiring are all final; only this is a guess-free
- * blank. Fill it in and the entry is done.
- */
-const BLUESKY_HANDLE = 'andyfitzgerald.bsky.social'
-
-/**
  * Brand marks. NOT Lucide, and not ours to restyle — DESIGN.md carves them out of
  * the icon system for exactly that reason. GitHub, LinkedIn and Medium are copied
  * from web/_includes/icons/; Bluesky is the official butterfly, fetched
@@ -122,25 +116,31 @@ const BLUESKY_HANDLE = 'andyfitzgerald.bsky.social'
  * To add one: measure the true length as the ceiling, then come down by eye.
  *
  *     document.querySelector('.social path').getTotalLength()
+ *
+ * ── THE `href`s COME FROM lib/social.ts; EVERYTHING ELSE HERE IS LOCAL ───────
+ *
+ * The URLs moved out on 2026-09-05, when the contact form's error state became their
+ * second consumer. The geometry did not, and should not: it has exactly one consumer,
+ * and a "shared" module for something one file uses is just indirection.
  */
 const SOCIAL = [
   {
     name: 'GitHub',
-    href: 'https://github.com/andybywire',
+    href: SOCIAL_URLS.gitHub,
     viewBox: '0 0 100 100',
     length: 270,
     d: 'M50,2.69A48.52,48.52,0,0,0,34.65,97.23c2.46.44,3.35-1.07,3.35-2.34s-.06-5-.06-9c0,0-13.51,2.9-16.36-5.75,0,0-2.21-5.62-5.37-7.07,0,0-4.42-3,.32-3a10.17,10.17,0,0,1,7.45,5c4.23,7.45,11.3,5.3,14.08,4a10.49,10.49,0,0,1,3.09-6.5c-10.8-1.2-22.1-5.37-22.1-23.93a18.67,18.67,0,0,1,5-13c-.51-1.26-2.15-6.19.44-12.88,4.1-1.26,13.39,5,13.39,5a45.59,45.59,0,0,1,24.25,0s9.28-6.25,13.32-5c2.65,6.69,1,11.62.51,12.88a18.67,18.67,0,0,1,5,13c0,18.63-11.37,22.73-22.17,23.93,1.77,1.52,3.28,4.42,3.28,9V94.89c0,1.26.82,2.78,3.28,2.34A48.52,48.52,0,0,0,50,2.69Z',
   },
   {
     name: 'LinkedIn',
-    href: 'https://www.linkedin.com/in/andyfitzgerald',
+    href: SOCIAL_URLS.linkedIn,
     viewBox: '0 0 100 100',
     length: 170,
     d: 'M13.31,24.54h0c-7,0-11.61-5-11.61-11.27C1.7,6.8,6.27,2,13.31,2S24.75,6.8,24.93,13.27c.18,6.28-4.4,11.27-11.61,11.27ZM23.69,98.82H2.93V33.41H23.69V98.82Zm74.61,0H77.54V63.9c0-8.87-3-14.78-10.56-14.78-5.63,0-9.15,4.06-10.56,7.94a16.38,16.38,0,0,0-.7,5.36V99H35.13c.18-59.31,0-65.59,0-65.59H55.89v9.42h-.18c2.64-4.43,7.57-11.09,18.83-11.09,13.73,0,23.76,9.42,23.76,29.38V98.82Z',
   },
   {
     name: 'Bluesky',
-    href: `https://bsky.app/profile/${BLUESKY_HANDLE}`,
+    href: SOCIAL_URLS.bluesky,
 
     viewBox: '0 0 100 88',
     length: 219,
@@ -148,7 +148,7 @@ const SOCIAL = [
   },
   {
     name: 'Medium',
-    href: 'https://medium.com/@andybywire',
+    href: SOCIAL_URLS.medium,
     viewBox: '0 0 117 94',
     length: 325,
     d: 'M5.06783 0L15.2035 12.9311V74.3726L0 93.9653H35.4748L20.2713 74.3726V19.6819L53.2122 93.9653L53.2072 94L83.6191 19.1611V83.8069L73.4835 93.9653H116.56L106.424 83.8069L106.355 11.4381L116.214 0.0347211H85.7621L62.3481 57.7611L36.7318 0H5.06783Z',

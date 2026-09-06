@@ -80,7 +80,20 @@ export default defineType({
       ],
     }),
     defineField({
-      name: 'bands',
+      name: 'pageBands',
+      title: 'Page Bands',
+      type: 'array',
+      description: 'Select to include available bands on this page.',
+      of: [{type: 'string'}],
+      options: {
+        list: [
+          {title: 'Work With Me', value: 'bandWorkWithMe'},
+          {title: 'Get In Touch', value: 'bandGetInTouch'},
+        ],
+      },
+    }),
+    defineField({
+      name: 'customBands',
       title: 'Custom Bands',
       description:
         'Custom bands provide category-specific overrides for default bands defined in Settings.',

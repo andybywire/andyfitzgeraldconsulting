@@ -49,7 +49,7 @@ export const SINGLETON_HEADER_QUERY = defineQuery(`
  * always the site default whether or not anything renders it.
  *
  * The band resolves through the three-tier ladder in fragments.ts. For a singleton that
- * is really two tiers — its own `bands` or the site default — because Settings offers no
+ * is really two tiers — its own `customBands` or the site default — because Settings offers no
  * page-type override for singletons. Insights currently sets its own.
  */
 export const SINGLETON_WORK_BAND_QUERY = defineQuery(`
