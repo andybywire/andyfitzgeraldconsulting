@@ -148,49 +148,63 @@ export const TAXONOMY = /* groq */ `
  * Bands" on the five document types, "Default Bands" and "Page Type Bands" in Settings —
  * so this corrected the keys to the model rather than changing the model.
  */
-const LADDER = (band: string) => `
-	customBands[_type == "${band}"][0],
-	*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "${band}"][0],
-	*[_type == "settings"][0].defaultBands[_type == "${band}"][0]
-`
-
 /**
  * ┌──────────────────────────────────────────────────────────────────────────────┐
- * │  KNOWN DEFECT: EVERY QUERY BUILT THROUGH `LADDER` IS TYPED `any`.            │
- * │  Measured 2026-09-07. Not yet fixed — see below for the fix and the cost.     │
+ * │  THE LADDER IS WRITTEN OUT PER BAND, THREE TIMES, ON PURPOSE.                │
+ * │  DO NOT FOLD IT BACK INTO A `LADDER(band)` HELPER — A FUNCTION CALL IN A      │
+ * │  TEMPLATE LITERAL COSTS EVERY QUERY BUILT FROM IT ITS TYPE.                   │
  * └──────────────────────────────────────────────────────────────────────────────┘
  *
- * This note used to argue the function was harmless, on the grounds that TypeGen's parser
- * evaluates the module and so still sees a single string literal. That much is TRUE — and
- * it is exactly what makes the fault invisible, because TypeGen generates a correct
- * `_RESULT` type for each of these queries. The types are right; nothing looks them up.
+ * There WAS such a helper, from the day the ladder was written until 2026-09-07, and
+ * every query built through it was typed `any` for that whole time. The note here argued
+ * it was harmless because TypeGen's parser evaluates the module and still sees a single
+ * string literal — which is true, and is exactly what hid the fault: TypeGen generated a
+ * correct `_RESULT` type for each of these queries. The types were right the whole time.
+ * Nothing was looking them up.
  *
- * What it missed is TYPESCRIPT's view. `loadQuery` is typed `ClientReturn<Q>`, a lookup
- * into `SanityQueries` keyed by the query's LITERAL text, and TypeScript does not evaluate
- * a function call inside a template literal — so `${LADDER('bandRss')}` widens the type to
- * `string`, the lookup misses, and the result is `any`. Interpolating a const whose
- * initialiser is a plain literal is fine, which is why `${IMAGE}` and `${DATES}` cost
- * nothing.
+ * ── THE MECHANISM ──────────────────────────────────────────────────────────────
  *
- * MEASURED, subject and control in one `astro check` on the article page: a deliberate
- * bogus property on `INSIGHT_RSS_BAND_QUERY`'s result raised NOTHING, while the same line
- * against `INSIGHT_DETAIL_QUERY` raised ts(2339). Affected today:
+ * `loadQuery` is typed `ClientReturn<Q>`, a lookup into TypeGen's `SanityQueries` map
+ * keyed by the query's LITERAL TEXT. TypeScript does not evaluate a function call inside a
+ * template literal, so `${LADDER('bandRss')}` widened the query's type from a literal to
+ * `string`, the map lookup missed, and the result came back `any`.
  *
- *   BAND_RSS            -> INSIGHT_RSS_BAND_QUERY
- *   BAND_WORK_WITH_ME   -> CASE_STUDY_BAND_QUERY, SINGLETON_WORK_BAND_QUERY
- *   BAND_GET_IN_TOUCH   -> (no consumer yet)
+ * Interpolating a const whose initialiser is a plain literal is completely fine — the
+ * literal type survives — which is why `${IMAGE}`, `${DATES}`, `${IDENTITY}` and
+ * `${TAXONOMY}` have always cost nothing and are not the same hazard.
  *
- * THE FIX IS TO DELETE THE FUNCTION and write the three ladders out, which is what
- * PAGE_BAND_GET_IN_TOUCH and PAGE_BAND_WORK_WITH_ME below now do after the same helper was
- * built for them and rolled back. The cost is three copies of the precedence rule; the
- * gain is three typed queries. Left undone deliberately rather than folded into the `page`
- * template's branch, because it changes queries for the article, case-study and singleton
- * routes and wants its own verification pass.
+ * So the distinction is not "no interpolation" but:
  *
- * THE GENERAL RULE: A GROQ FRAGMENT MAY BE A `const`, NEVER A FUNCTION.
+ *     A GROQ FRAGMENT MAY BE A `const`, NEVER A FUNCTION.
+ *
+ * ── HOW IT WAS FOUND, AND HOW TO CHECK IT AGAIN ────────────────────────────────
+ *
+ * By probe, with a control, because a green `astro check` proves nothing here — an `any`
+ * result type-checks perfectly. A deliberate bogus property on `INSIGHT_RSS_BAND_QUERY`'s
+ * result raised nothing while the same line against `INSIGHT_DETAIL_QUERY` raised
+ * ts(2339). One subject, one control, opposite results.
+ *
+ * It surfaced sideways: the helper was rebuilt as `PAGE_LADDER` for the `page` template's
+ * two bands, and probing THAT change is what exposed the original. Worth remembering that
+ * the fault had been shipping silently for weeks and was found by accident.
+ *
+ * ── WHAT THIS COSTS ───────────────────────────────────────────────────────────
+ *
+ * Three copies of the precedence rule instead of one, which is a real loss — the whole
+ * point of the helper was that the ladder is a single idea. It buys three typed queries,
+ * and that is the better side of the trade: preserving these types is the reason band
+ * projections are split into their own queries at all, so a DRY ladder that untypes them
+ * defeats the arrangement it lives inside.
+ *
+ * IF THE LADDER CHANGES, IT CHANGES IN THREE PLACES. That is the maintenance burden this
+ * accepts. The rungs are documented once, above, rather than three times.
  */
 export const BAND_RSS = /* groq */ `
-	"rssBand": coalesce(${LADDER('bandRss')}){title, message, buttonTarget}
+	"rssBand": coalesce(
+		customBands[_type == "bandRss"][0],
+		*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandRss"][0],
+		*[_type == "settings"][0].defaultBands[_type == "bandRss"][0]
+	){title, message, buttonTarget}
 `
 
 /**
@@ -226,7 +240,11 @@ export const BAND_RSS = /* groq */ `
  * degrades honestly until it exists, and stays correct afterwards.
  */
 export const BAND_WORK_WITH_ME = /* groq */ `
-	"workBand": coalesce(${LADDER('bandWorkWithMe')}){
+	"workBand": coalesce(
+		customBands[_type == "bandWorkWithMe"][0],
+		*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],
+		*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]
+	){
 		message,
 		"clientLogos": clientLogos[]->{
 			name,
@@ -255,9 +273,35 @@ export const BAND_WORK_WITH_ME = /* groq */ `
  *
  * A `!== false` guard would have papered over that and made the stored value a lie. The
  * fix belonged in the data, and that is where it went.
+ *
+ * ── NO CONSUMER TODAY, BUT ONE TYPE CAN STILL ACQUIRE ONE ───────────────────
+ *
+ * No query composes this fragment. Both documents rendering a Get in Touch band —
+ * Consulting and Contact — are `page`s, and a `page` resolves through
+ * `PAGE_BAND_GET_IN_TOUCH` instead, which carries the `pageBands` opt-in gate and two
+ * rungs rather than three. Two fragments project the same BAND TYPE for different
+ * DOCUMENT types; do not conflate them.
+ *
+ * It is kept because `singleton` can carry this band — its `customBands` offers all three
+ * types (checked in the schema, 2026-09-07) — so Home, Insights, Reviews or Presentations
+ * could compose this tomorrow. That is a real prospective consumer rather than a guess,
+ * and it is the whole reason this is not dead code.
+ *
+ * The other three types cannot reach it: `article` and `note` offer only `bandRss`, and
+ * `caseStudy` only `bandWorkWithMe`. So a Get in Touch band on anything but a `page` or a
+ * `singleton` is not a state the schema can express.
+ *
+ * IT IS UNPROBEABLE UNTIL THEN — there is no query whose result type can be checked — so
+ * whichever singleton composes it first should be probed at that point rather than
+ * trusted. The ladder text here is hand-transcribed like the other two and has never been
+ * exercised.
  */
 export const BAND_GET_IN_TOUCH = /* groq */ `
-	"touchBand": coalesce(${LADDER('bandGetInTouch')}){message, bandCopy}
+	"touchBand": coalesce(
+		customBands[_type == "bandGetInTouch"][0],
+		*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandGetInTouch"][0],
+		*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]
+	){message, bandCopy}
 `
 
 /**
