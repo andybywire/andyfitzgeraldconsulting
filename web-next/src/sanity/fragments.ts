@@ -283,18 +283,28 @@ export const BAND_WORK_WITH_ME = /* groq */ `
  * DOCUMENT types; do not conflate them.
  *
  * It is kept because `singleton` can carry this band — its `customBands` offers all three
- * types (checked in the schema, 2026-09-07) — so Home, Insights, Reviews or Presentations
- * could compose this tomorrow. That is a real prospective consumer rather than a guess,
- * and it is the whole reason this is not dead code.
+ * types (checked in the schema, 2026-09-07) — and the consumer is now NAMED rather than
+ * hypothetical: THE PRESENTATIONS SINGLETON WILL COMPOSE THIS (Andy, 2026-09-07), with
+ * that work coming up next. So this is not dead code, and it is about to stop being
+ * unexercised.
  *
  * The other three types cannot reach it: `article` and `note` offer only `bandRss`, and
  * `caseStudy` only `bandWorkWithMe`. So a Get in Touch band on anything but a `page` or a
  * `singleton` is not a state the schema can express.
  *
- * IT IS UNPROBEABLE UNTIL THEN — there is no query whose result type can be checked — so
- * whichever singleton composes it first should be probed at that point rather than
- * trusted. The ladder text here is hand-transcribed like the other two and has never been
- * exercised.
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  PROBE THE PRESENTATIONS QUERY WHEN IT COMPOSES THIS.                        │
+ * │  Bogus property access on the result, with a known-good query as the control. │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Because this ladder is UNEXERCISED: hand-transcribed GROQ, no consumer, and no query
+ * whose result type anyone has ever checked. It is the one band fragment the 2026-09-07
+ * verification could not cover, for the plain reason that there was nothing to run.
+ *
+ * A wrong fragment here would not fail loudly. It would either return the wrong rung —
+ * which reads as a content problem, not a query one — or untype its query to `any` and
+ * leave `astro check` green. That is precisely how the `LADDER` defect above survived for
+ * weeks. Also recorded in CLAUDE.md → phase 4, so it is in context when that page starts.
  */
 export const BAND_GET_IN_TOUCH = /* groq */ `
 	"touchBand": coalesce(
