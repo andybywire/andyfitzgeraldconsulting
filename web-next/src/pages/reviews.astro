@@ -62,6 +62,7 @@ import Footer from '../components/Footer.astro'
 import PageHeader from '../components/PageHeader.astro'
 import SanityImage from '../components/SanityImage.astro'
 import Prose from '../components/prose/Prose.astro'
+import RailNav from '../components/RailNav.astro'
 
 /*
   TWO QUERIES, NOT ONE, and it is the ClientReturn ceiling rather than tidiness — see
@@ -232,18 +233,10 @@ const groups = groupByRelationship(clients)
           */
         }
         <aside class="rail">
-          <nav class="rail-contents" aria-labelledby="rail-contents">
-            <h3 id="rail-contents">On This Page</h3>
-            <ul role="list">
-              {
-                groups.map((group) => (
-                  <li>
-                    <a href={`#${group.id}`}>{group.label}</a>
-                  </li>
-                ))
-              }
-            </ul>
-          </nav>
+          <RailNav
+            items={groups.map((group) => ({id: group.id, label: group.label}))}
+            id="rail-contents"
+          />
         </aside>
       </Grid>
     </Band>
@@ -561,7 +554,14 @@ const groups = groupByRelationship(clients)
    * ABSENT BELOW md, not collapsed. The mobile board has no "On this page" — its content
    * frame holds one child. `display: none` rather than visually hiding it, because the
    * design says this is not AVAILABLE on mobile: it should be out of the accessibility
-   * tree too, exactly as the article rail's own contents nav is.
+   * tree too.
+   *
+   * KEPT EVEN THOUGH <RailNav> ALSO HIDES ITSELF, and the two are not redundant. This
+   * rule removes the <aside>; the component's removes its own contents. Without this one
+   * the aside would survive as an empty grid item — zero-height under `row-gap: 0`, so
+   * invisible, but still a stray element in the box tree. The rail holds nothing but the
+   * nav on this page, which is exactly why hiding the wrapper is safe here and is NOT on
+   * the article page, whose rail also carries Topics.
    */
   .rail {
     display: none;
@@ -600,23 +600,25 @@ const groups = groupByRelationship(clients)
       position: sticky;
       top: var(--rhythm-band);
     }
-
-    /* base.css keeps the UA's list indent for prose; a nav is not prose. */
-    .rail ul {
-      padding: 0;
-      list-style: none;
-    }
-
-    /* The ramp from base.css restated for a context it does not reach: 16 from a heading
-       to its list. `heading-close` by name, not by value. */
-    .rail h3 + ul {
-      margin-top: var(--rhythm-heading-close);
-    }
-
-    /* 16 between rail links. The board draws 43px baseline-to-baseline on an 18px/1.5
-       line — 27 of line box plus 16. */
-    .rail li + li {
-      margin-top: var(--rhythm-heading-close);
-    }
   }
+
+  /*
+   * ── THE LIST'S OWN RULES MOVED TO <RailNav> ON 2026-09-07 ──────────────────
+   *
+   * The list reset, the 16 from the heading to its list, and the item spacing were all
+   * written here and, independently, on the article page. The `page` template would have
+   * been the third copy, which is TopicList's stated trigger for promotion.
+   *
+   * They could not have stayed regardless: they addressed a component's descendants now,
+   * and an Astro scope attribute reaches a component's ROOT and never inside it.
+   *
+   * ── ONE DRIFT IS FIXED BY THE MOVE, AND IT WAS A REAL DIFFERENCE ───────────
+   *
+   * This page never opted its rail links out of the wipe-in underline and never restated
+   * `text-decoration-thickness`, while the article page did both. So rail links animated
+   * the wipe here and not there, from one design, and the item spacing was written as
+   * `heading-close` here against `rhythm-item` there — the same 16 by two names. Nobody
+   * chose either difference; they are what three copies of a rule cost. <RailNav> now
+   * states each once.
+   */
 </style>

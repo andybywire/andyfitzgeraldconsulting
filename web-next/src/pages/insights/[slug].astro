@@ -67,6 +67,7 @@ import TopicList from '../../components/TopicList.astro'
 import NoteEntry from '../../components/NoteEntry.astro'
 import CaseStudyEntry from '../../components/CaseStudyEntry.astro'
 import GenreNav from '../../components/GenreNav.astro'
+import RailNav from '../../components/RailNav.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import RelatedBand from '../../components/bands/RelatedBand.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
@@ -407,18 +408,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
                       See the .rail style block for the two invariants this depends on.
                     */}
                   <div class="rail-sticky">
-                    {contents.length > 0 && (
-                      <nav class="rail-contents" aria-labelledby="rail-contents">
-                        <h3 id="rail-contents">On This Page</h3>
-                        <ul role="list">
-                          {contents.map((heading) => (
-                            <li>
-                              <a href={`#${heading.id}`}>{heading.label}</a>
-                            </li>
-                          ))}
-                        </ul>
-                      </nav>
-                    )}
+                    {contents.length > 0 && <RailNav items={contents} id="rail-contents" />}
 
                     {topics.length > 0 && (
                       <TopicList
@@ -605,12 +595,6 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
     grid-column: var(--col-rail);
   }
 
-  /* base.css keeps the UA's list indent for prose; a nav is not prose. */
-  .rail ul {
-    padding: 0;
-    list-style: none;
-  }
-
   /* ── Below md: THE RAIL DOES NOT COLLAPSE, IT DISPERSES ─────────────────── */
   /*
    * The obvious implementation — let `--col-rail` collapse to `1 / -1` and drop the
@@ -638,10 +622,13 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
    * ── WHY THE MOBILE TREATMENT IS THE BASE AND md UNDOES IT ─────────────────
    *
    * Mobile-first, per tokens.css: an engine that never evaluates the query must be
-   * left with the phone layout. The cost is that md has to RESTATE h3's size and
-   * leading rather than unset them — `revert` would go to the UA's h3, not to
-   * base.css's. Those two declarations duplicate base.css deliberately; if the h3
-   * role ever moves, this is the second place.
+   * left with the phone layout. The cost is that md has to say `display: block`
+   * rather than unset anything.
+   *
+   * (This note used to end by warning that md RESTATES h3's size and leading, and
+   * that this file was "the second place" the h3 role lived. Those two declarations
+   * left with the TopicList extraction and are not here to find; the warning went
+   * stale rather than wrong. Nothing in this file styles an h3 now.)
    */
 
   .rail,
@@ -649,11 +636,11 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
     display: contents;
   }
 
-  /* Not `visibility` and not off-screen — the design says this is not AVAILABLE on
-     mobile, so it should be absent from the accessibility tree too. */
-  .rail-contents {
-    display: none;
-  }
+  /* "On This Page" HIDES ITSELF NOW, and it had to move: <RailNav>'s <nav>, <h3>, <ul>
+     and links are its own descendants, and an Astro scope attribute reaches a
+     component's ROOT and never inside it — so every rule this page used to write for
+     them (the list reset, the two spacing rules, the whole link treatment) would have
+     compiled, shipped and matched nothing. See RailNav.astro. */
 
   /*
    * PLACEMENT ONLY, below md. Everything the run looks like moved to TopicList,
@@ -675,20 +662,21 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
    * against the viewport edge; `rhythm-band` gives it the same breathing room the
    * bands have. **Judged on screen and settled** (Andy, 2026-08-26).
    *
-   * The group rhythm is the ramp from base.css restated for a context it does not
-   * reach: 16 from a heading to its list, 48 between the groups. `heading-minor`
-   * rather than `rhythm-block` because what follows is an h3 — both are 48, and
-   * DESIGN.md's rule is to pick by prefix and name, never by value.
+   * 48 between the groups is the ramp from base.css restated for a context it does
+   * not reach. `heading-minor` rather than `rhythm-block` because what follows is an
+   * h3 — both are 48, and DESIGN.md's rule is to pick by prefix and name, never by
+   * value.
    *
-   * `.rail h3 + ul` NOW SERVES ONLY "On This Page". TopicList's heading and list are
-   * its own descendants and never carry this page's scope attribute, so this rule
-   * cannot reach inside it — which is correct, and is why the component states its
-   * own version of the same 16.
+   * WHAT USED TO BE HERE AND IS NOT ANY MORE: the list reset, the 16 from the heading
+   * to its list, the item spacing and the whole link treatment. All four moved into
+   * <RailNav> on 2026-09-07, when the `page` template would have been the third copy
+   * — the promotion TopicList's header called for. None of them could have stayed:
+   * they addressed elements that are now a component's descendants, which a page's
+   * scope attribute cannot reach.
    */
   @container style(--breakpoint-md: true) {
     .rail,
-    .rail-sticky,
-    .rail-contents {
+    .rail-sticky {
       display: block;
     }
 
@@ -697,80 +685,8 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
       top: var(--rhythm-band);
     }
 
-    .rail h3 + ul {
-      margin-top: var(--rhythm-heading-close);
-    }
-
-    /*
-     * ── "On This Page" ASKS FOR ITS ITEM SPACING NOW ──────────────────────────
-     *
-     * It used to arrive for free from base.css's global `li + li`, and this list was
-     * the ONE place in the build genuinely relying on that rule. Removing it
-     * (2026-09-02) collapsed these entries against each other — visible immediately
-     * on any article with multi-line headings, and caught on screen by Andy rather
-     * than by the grep that found the rule's eight cancellations. A list that
-     * depended on a global by saying nothing is invisible to a search for overrides.
-     *
-     * `rhythm-item`, which is what it was getting and what TopicList's stacked form
-     * asks for a few rules down, so the two rail groups stay in step. That parity is
-     * the requirement: "On This Page" and "Topics" sit one above the other and any
-     * difference between them reads as a mistake.
-     */
-    .rail-contents li + li {
-      margin-top: var(--rhythm-item);
-    }
-
     .rail nav + nav {
       margin-top: var(--rhythm-heading-minor);
     }
-  }
-
-  /*
-   * OPTS OUT OF THE WIPE-IN UNDERLINE, which base.css's `nav` role provides for
-   * with exactly this escape hatch. The wipe is a chrome gesture for the masthead
-   * and footer; a dense list of links animating one by one under a moving pointer is
-   * noise rather than affordance.
-   *
-   * SCOPED TO "On This Page" NOW. The topic links moved into TopicList, which cannot
-   * be reached from here and states the same treatment itself. Two writings of one
-   * rule is the remainder the extraction did not remove; a THIRD dense link list is
-   * the signal to promote it rather than to copy it again.
-   *
-   * THE THICKNESS HAS TO BE RESTATED, and that is easy to miss. base.css gives
-   * every anchor `text-decoration-thickness: 0.06em`, then `nav :is(a, button)`
-   * resets it with the `text-decoration` SHORTHAND — which includes `-thickness`.
-   * Without the line below the rail's hover underline would come back at the UA's
-   * `auto` weight, so two underlines in the same viewport would read as two
-   * systems. `text-underline-offset` is NOT in the shorthand and survives.
-   *
-   * The hover COLOR is left to base.css's global `a:hover`. The rail is on the page
-   * ground, where `link-hover` is the right answer and the underline is not the
-   * only signal available.
-   */
-  .rail a::after {
-    content: none;
-  }
-
-  /*
-   * ── THE UNDERLINE IS ALWAYS THERE, AND ONLY ITS COLOUR MOVES ───────────────
-   *
-   * `text-decoration-line` cannot be animated from `none` to `underline` — it is a
-   * discrete keyword, so the underline appeared instantly while everything else on
-   * the page eased. Declaring the line at rest and animating
-   * `text-decoration-color` from `transparent` gives the same appearance with a real
-   * transition. base.css's `nav :is(a, button)` reset is what removes it in the
-   * first place, so this restates the line as well as the thickness.
-   */
-  .rail a {
-    text-decoration-line: underline;
-    text-decoration-thickness: 0.06em;
-    text-decoration-color: transparent;
-    transition:
-      color 0.15s,
-      text-decoration-color 0.15s;
-  }
-
-  .rail a:hover {
-    text-decoration-color: currentColor;
   }
 </style>
