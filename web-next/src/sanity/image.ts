@@ -165,6 +165,74 @@ export function maxRenderableWidth(
   return {width: Math.floor(limit), sourceAspect: cropW / cropH}
 }
 
+/**
+ * `object-position` for an image whose BOX is a different shape from its file —
+ * the hotspot, expressed in the coordinate space of what actually gets served.
+ *
+ * ── THE TWO SPACES ARE NOT THE SAME, AND THAT IS THE WHOLE FUNCTION ──────────
+ *
+ * A hotspot is stored as fractions of the ORIGINAL asset. The file the builder
+ * returns has already had the editor's crop applied, so its left edge is
+ * `crop.left` of the way into the original and its width is `1 - left - right` of
+ * it. Reading `hotspot.x` straight into a percentage therefore aims at the wrong
+ * place by however much the crop removed:
+ *
+ *     fx = (hotspot.x - crop.left) / (1 - crop.left - crop.right)
+ *
+ * On the Consulting hero — `crop.left` 0.565, `hotspot.x` 0.781 — the raw value
+ * is 78.1% where the correct one is 49.6%. A 28-point error, which at 1:1 puts
+ * the subject out of frame entirely.
+ *
+ * ── IT WAS WRONG IN <SanityHero> FIRST, AND MEASURABLY SO ────────────────────
+ *
+ * That component computed the percentage inline from the raw hotspot. 6 of the 20
+ * heroes carrying a hotspot also carry a non-zero crop (measured against
+ * `production-26`, 2026-09-07), so it was live rather than latent — it just never
+ * showed, because those crops are modest and their hotspots sit near the centre.
+ * `graphcon-2026-themes-takeaways` is the worst of them: `crop.top` 0.212 with
+ * `hotspot.y` 0.626 rendered at 62.6% where 52.5% is correct.
+ *
+ * IT LIVES HERE BECAUSE IT IS THE SAME ARITHMETIC THE CAP DOES. `maxRenderableWidth`
+ * already reasons about the crop rectangle, so a second consumer reading crop
+ * fractions belongs beside it rather than in whichever component needed it first.
+ *
+ * ── NULL MEANS "NO OPINION", NOT "CENTRE" ────────────────────────────────────
+ *
+ * With no hotspot this returns null and the caller emits no custom property, so
+ * the stylesheet's own `50% 50%` fallback applies. Two defaults for two different
+ * cases, which is the arrangement <SanityHero> already documented: this handles a
+ * hotspot that EXISTS with a member missing — which Sanity's schema permits and
+ * TypeGen therefore types `number | undefined` — while the CSS handles no hotspot
+ * at all. Defaulting per axis keeps a half-populated hotspot useful, since a
+ * present `x` can still aim the crop horizontally.
+ *
+ * CLAMPED, because the two fields are edited independently: moving a crop after
+ * setting a hotspot can leave the hotspot outside it, which would otherwise
+ * produce an out-of-range percentage. Clamping aims at the nearest edge, which is
+ * the closest thing to what the editor meant.
+ */
+export function focalPoint(image: SanityImageSource): string | null {
+  const hotspot = image?.hotspot
+  if (!hotspot) return null
+
+  const left = image?.crop?.left ?? 0
+  const right = image?.crop?.right ?? 0
+  const top = image?.crop?.top ?? 0
+  const bottom = image?.crop?.bottom ?? 0
+
+  const spanX = 1 - left - right
+  const spanY = 1 - top - bottom
+  /* A crop cannot legally remove everything, but the fields are four independent
+     numbers — so a zero denominator fails to "no opinion" rather than to NaN%. */
+  if (spanX <= 0 || spanY <= 0) return null
+
+  const clamp = (n: number) => Math.min(1, Math.max(0, n))
+  const x = clamp(((hotspot.x ?? 0.5) - left) / spanX)
+  const y = clamp(((hotspot.y ?? 0.5) - top) / spanY)
+
+  return `${(x * 100).toFixed(2)}% ${(y * 100).toFixed(2)}%`
+}
+
 export type ImageAttrs = {
   src: string
   srcset: string

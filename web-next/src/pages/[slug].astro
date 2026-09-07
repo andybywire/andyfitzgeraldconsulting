@@ -1,77 +1,106 @@
 ---
 /**
- * The `page` template — website-generic scaffolding, one repeatable layout. Contact is
- * the first and only document today; About, Colophon, Apologia and Projects follow.
+ * The `page` template — website-generic scaffolding, one repeatable layout. Contact and
+ * Consulting today; About, Colophon, Apologia and Projects follow.
  *
- * ── THE FRAME IS reviews.astro's, MINUS THE RAIL GYMNASTICS ─────────────────
+ * ── THE TWO DOCUMENTS EXERCISE DIFFERENT HALVES OF IT ───────────────────────
  *
- * Both draw a title, a lead, optional intro copy, a main column and a reserved rail. The
- * difference is that Reviews RENDERS something in its rail, so it needs the transparent
- * <PageHeader> that lets the rail align to the lead rather than the h1, and the zeroed
- * row gap that goes with it.
+ * Contact shipped the first pass and used almost none of the type: no `heroImg`, no
+ * `bodyText`, `bandCopy: false`. Consulting uses all three, which is why it is what
+ * finished the template rather than a second instance of it.
  *
- * Nothing is rendered in the rail here, so none of that machinery is needed and the
- * default <Grid> produces the board's spacing on its own:
+ *   Contact      h1, lede, the band with its copy suppressed
+ *   Consulting   h1, lede, 19 body blocks with h2s and h3s, a hero, the band WITH copy
  *
- *     h1 -> lede    16   <PageHeader>'s own margin
- *     lede -> form  64   <Grid>'s row gap, `rhythm-heading-major`
+ * So every rule below has to produce both, and the interesting cases are the ones where
+ * a row is simply absent.
  *
- * Measured against the Contact board (2562:2663): Page Header 48 tall, the frame below it
- * at y=64, and inside that the lede 72 tall with the form at y=136. Which is 16 and 64.
+ * ── THE FRAME IS reviews.astro's, RAIL GYMNASTICS INCLUDED NOW ──────────────
  *
- * ── THE RAIL IS RESERVED BY PLACING NOTHING IN IT ───────────────────────────
+ * The first pass said this page was "reviews.astro's frame MINUS the rail gymnastics",
+ * because nothing was rendered in the rail. Consulting renders two things in it, so the
+ * whole mechanism is needed after all: the transparent <PageHeader> that lets the rail
+ * align to the LEDE rather than to the h1, the zeroed row gap that goes with it, and the
+ * explicit rows that make the rail's `-1` mean anything.
  *
- * On desktop a `page` always leaves columns 9-12 standing, with or without content
- * (Andy, 2026-09-04), and the reason is measure: the prose column is `--col-main` (656),
- * which lands near DESIGN.md's 66ch target, while `--col-full` (996) would push it well
- * past. That is the opposite of the Insights index, which spans full width precisely
- * BECAUSE cards have no measure to protect.
+ * Both boards draw that alignment — the desktop board puts the h1 above a two-column
+ * region whose left column opens with the lede, and the rail's top edge is level with the
+ * lede's first line, 16 below the title.
  *
- * THERE IS NO EMPTY <aside> HERE, DELIBERATELY. A grid column is reserved by nothing
- * being placed in it — putting content at `--col-main` leaves 9-12 empty by definition.
- * An empty <aside> would be an unnamed `complementary` landmark wrapping nothing, which
- * is worse than no element at all. reviews.astro has a `.rail` only because it has a nav
- * inside it.
+ * ── `bodyText` IS PROSE IN THE MAIN COLUMN, NOT <PageHeader>'s THIRD SLOT ───
  *
- * Below md `--col-main` collapses to `1 / -1` and there is nothing to reserve, which
- * falls out for free.
+ * That slot is documented as "a short paragraph of intro copy under the lead" and is what
+ * Reviews passes a single block to. Consulting's 19 blocks include four headings, so
+ * routing them through it would put h2s and h3s inside <header> with no rhythm ramp to
+ * space them — `.page-body` covers `p + p` and nothing else.
  *
- * ── BANDS ARE OPT-IN, SO A NULL HERE IS A DECISION RATHER THAN A GAP ────────
+ * As `.detail` they take the ramp instead, and the ramp turns out to be exactly what the
+ * board draws: 24 between blocks, 64 before an h2, 48 before an h3, 16 after any heading.
+ * Verified gap by gap against the desktop board. Nothing new was needed for body rhythm,
+ * which is the useful result — the same finding the article page reported.
+ *
+ * ── THE HERO IS RELOCATED, NOT HIDDEN, AND THAT DRIVES THE DOM ORDER ────────
+ *
+ * The rail at md; a full-bleed band below it. "Consulting — Mobile" (757:1525) draws it as
+ * its own band between the header and the body, 375x375 — so reading order is
+ * h1 -> lede -> hero -> body -> band, and the DOM is authored in exactly that order with
+ * the grid moving the hero into the rail at md. Source order is reading order, which is
+ * the rule the footer and the article entry already follow; no `order` is involved.
+ *
+ * The cost is that the <aside> precedes the body in the DOM at md too. Accepted: "On This
+ * Page" before the content it indexes is useful rather than inverted, and the alternative
+ * is an `order` swap on a container holding a link list, which the article page's own note
+ * rules out for anything focusable.
+ *
+ * <aside> AND NOT <div>, and it costs no landmark. An unnamed <aside> maps to
+ * `complementary` only when its nearest sectioning ancestor is <body>; this one sits inside
+ * <Band as="section">, so it maps to `generic` and the <nav> inside stays the one landmark
+ * a screen-reader user navigates by.
+ *
+ * ── THE RAIL IS STILL RESERVED BY ABSENCE ON A PAGE THAT HAS NOTHING FOR IT ─
+ *
+ * On desktop a `page` always leaves columns 9-12 standing (Andy, 2026-09-04), and the
+ * reason is measure: the prose column is `--col-main` (656), near DESIGN.md's 66ch target,
+ * where `--col-full` (996) would push well past it.
+ *
+ * Contact has no hero and no h2s, so the <aside> is not rendered at all and 9-12 are empty
+ * by definition. THERE IS STILL NO EMPTY <aside> HERE — an unnamed `complementary`
+ * wrapping nothing would be worse than no element, and the guard on the element is what
+ * keeps that true as pages are added.
+ *
+ * ── BANDS ARE OPT-IN, SO A NULL IS A DECISION RATHER THAN A GAP ─────────────
  *
  * `pageBands` lists the bands a page carries at all (Andy, 2026-09-04). A band missing
  * from that list resolves to null even when Settings defines a default, which inverts the
- * ladder's usual "the default always wins if nothing else does". So the guard below is
- * not defensive coding — null is the editor having said no.
+ * ladder's usual "the default always wins if nothing else does". So the guard below is not
+ * defensive coding — null is the editor having said no.
  *
- * PLACED AS BODY CONTENT inside the page's single band, because that is what the Contact
- * board draws: the form sits in the prose column beside the reserved rail, not in a band
+ * PLACED AS BODY CONTENT inside the page's single band, at `--col-main`, because that is
+ * what both boards draw: the form sits in the prose column beside the rail, not in a band
  * of its own.
  *
- * ── AND THAT PLACEMENT IS STILL AN OPEN QUESTION PAST CONTACT ───────────────
- *
- * Contact suppresses the band's own copy (`bandCopy: false`) so its page title and lede
- * introduce the form. A page that does NOT suppress it — About, say, taking the Settings
- * default — gets the form WITH its own "Get In Touch" heading in this same position,
- * under the body copy. Whether that is right, or whether such a page wants it APPENDED as
- * a separate full-bleed band the way RssBand and WorkWithMeBand are, is undecided.
- *
- * `bandCopy` looks like the natural discriminator and is deliberately not used as one:
- * it would couple "does it carry its own copy" to "where does it sit", which are two
- * questions and will not always have the same answer.
- *
- * NOT resolved here, because Contact is the only `page` document and an appended variant
- * would be an unexercised code path shipped on a guess. Revisit when the second page
- * lands.
+ * A comment here used to speculate that `bandCopy` might discriminate between this
+ * in-flow placement and an appended full-bleed one, and wondered what a page taking the
+ * Settings default would want. RESOLVED BY CONSULTING, which is that page: `bandCopy` is
+ * true, the band renders its own "Get In Touch" heading, and it sits in exactly the same
+ * position Contact's copy-suppressed form does. Placement is identical either way, and
+ * `bandCopy` controls only whether the band carries its own copy.
  */
 import {loadQuery} from '../sanity/load-query'
 import {PAGE_SLUGS_QUERY, PAGE_QUERY, PAGE_GET_IN_TOUCH_BAND_QUERY} from '../sanity/queries/pages'
+import {focalPoint} from '../sanity/image'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Band from '../components/Band.astro'
 import Grid from '../components/Grid.astro'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
 import PageHeader from '../components/PageHeader.astro'
+import Prose from '../components/prose/Prose.astro'
+import RailNav from '../components/RailNav.astro'
+import SanityImage from '../components/SanityImage.astro'
 import GetInTouchBand from '../components/bands/GetInTouchBand.astro'
+import {GET_IN_TOUCH_HEADING, GET_IN_TOUCH_ID} from '../components/bands/getInTouch'
+import {headingId, headingText} from '../components/prose/headingId'
 
 export async function getStaticPaths() {
   const rows = await loadQuery(PAGE_SLUGS_QUERY)
@@ -97,6 +126,78 @@ const [page, bands] = await Promise.all([
    means the two queries disagree — which should fail the build rather than ship a page
    with an empty body. */
 if (!page) throw new Error(`[[slug]] no page document for slug "${slug}"`)
+
+/**
+ * ── "On This Page" — h2s ONLY, PLUS THE BAND ─────────────────────────────────
+ *
+ * The h3s are omitted deliberately: the board lists three entries and "Information
+ * architecture" is not among them. Consulting's two h2s and the band are exactly those
+ * three.
+ *
+ * `flatMap` with a 0-or-1 array rather than `filter().map()`, matching the article page:
+ * it narrows and projects in one pass, so `block.style` is only reached where TypeScript
+ * has already established the block is a text block rather than an image.
+ *
+ * LABELS COME THROUGH VERBATIM AND NOTHING REWRITES CASING (Andy, 2026-09-06). Title case
+ * is an editorial rule enforced in the Studio; a heading arriving in the wrong case should
+ * show in the wrong case in the rail, because that is the signal the content needs fixing.
+ */
+const bodyContents = (page.bodyText ?? []).flatMap((block) =>
+  block._type === 'block' && block.style === 'h2'
+    ? [{id: headingId(block), label: headingText(block)}]
+    : [],
+)
+
+/**
+ * The band's heading joins the list — but ONLY when the band actually renders one.
+ *
+ * With `bandCopy` false there is no h2 and therefore no `#get-in-touch` anchor, so an
+ * entry for it would be a link to nothing. It would also LOOK fine: a fragment with no
+ * target scrolls nowhere rather than erroring. Contact is that case.
+ *
+ * ── WORK WITH ME WOULD NOT BELONG HERE EVEN IF A PAGE CARRIED IT ────────────
+ *
+ * `pageBands` offers both, and only Get in Touch is listed (Andy, 2026-09-06). In light
+ * mode Work With Me uses a different background and reads as a separate part of the page,
+ * where Get in Touch shares the page ground and is the page's natural call to action — so
+ * it belongs in the outline with the other headings and Work With Me does not. That is a
+ * rule about the two bands rather than about this page, which is why it is written down
+ * here rather than left to whichever page adds the other band first.
+ */
+const contents = bands?.touchBand?.bandCopy
+  ? [...bodyContents, {id: GET_IN_TOUCH_ID, label: GET_IN_TOUCH_HEADING}]
+  : bodyContents
+
+/**
+ * ── ONE FILE SHAPE, TWO BOXES, AND THE CROP IS WHY ───────────────────────────
+ *
+ * The hero is 1:1 full bleed below md and 4:5 in the rail from md (Andy, 2026-09-07), and
+ * both boards now draw those exactly: 375x375 and 231x288.75.
+ *
+ * NO `aspect` IS PASSED, which is the decision worth understanding. `imageAttrs` builds
+ * one srcset for one shape — `srcset` varies resolution, never framing — so two aspects
+ * would mean two calls and a <picture> with `<source media>`, i.e. breakpoints written
+ * into an HTML attribute that cannot read a token. <SanityImage>'s own header names that
+ * as the thing to avoid.
+ *
+ * Instead the file arrives at the editor's CROPPED shape and CSS reframes it twice, with
+ * `object-fit: cover` absorbing the difference — the same arrangement <SanityHero> uses.
+ * It is nearly free here because the crop is already 549x938 -> 549x693, about 4:5: at md
+ * the file is the box's shape, and at the base only height is discarded.
+ *
+ * ── THE FOCUS POINT NEEDS THE COORDINATE TRANSFORM, NOT THE RAW HOTSPOT ─────
+ *
+ * `focalPoint` converts the hotspot out of the ORIGINAL asset's coordinate space and into
+ * the served file's. It matters more here than anywhere else in the build: this crop
+ * removes 56.5% of the width from the left, so the raw hotspot would read 78.1% where
+ * 49.6% is correct — a 28-point error that puts the subject out of frame at 1:1. See the
+ * function's own note.
+ *
+ * A custom property rather than an inline `object-position`, so the property name and its
+ * default stay in the stylesheet and only the DATA arrives from the document.
+ */
+const heroFocus = focalPoint(page.heroImg ?? {})
+const hasHero = Boolean(page.heroImg?.asset)
 ---
 
 {
@@ -104,9 +205,10 @@ if (!page) throw new Error(`[[slug]] no page document for slug "${slug}"`)
     ── 64 TOP, 96 BOTTOM — THE SAME ASYMMETRY REVIEWS HIT ─────────────────────
 
     The Contact board's BodyBand is 811 tall with its content frame at y=64 and 651 tall,
-    leaving 96 below. `space="band"` supplies the 64 by default and only the end is
-    overridden, taking `--rhythm-section` — the token every other 96 in the build uses —
-    rather than a literal, so both clamp together at narrow widths.
+    leaving 96 below; the Consulting board draws 64/96 on the same band. `space="band"`
+    supplies the 64 by default and only the end is overridden, taking `--rhythm-section` —
+    the token every other 96 in the build uses — rather than a literal, so both clamp
+    together at narrow widths.
 
     Like Reviews, this page has nothing between its content and the footer, which is what
     the extra 32 is for. Do NOT override this from a page rule: `.band[data-space='…']`
@@ -121,7 +223,84 @@ if (!page) throw new Error(`[[slug]] no page document for slug "${slug}"`)
   <main>
     <Band as="section" spaceEnd="section">
       <Grid>
-        <PageHeader title={page.title ?? ''} lede={page.lede} body={page.bodyText} />
+        <PageHeader title={page.title ?? ''} lede={page.lede} />
+
+        {
+          /*
+            ── THE RAIL: A HERO THAT SCROLLS AND A NAV THAT STICKS ────────────
+
+            Rendered only if it has something in it, so Contact emits no element. Both
+            children are independently optional: a page could have a hero and no h2s, or
+            h2s and no hero.
+
+            STICKINESS IS THE WRAPPER'S, NEVER THE RAIL'S. "On This Page" pins and the
+            hero scrolls away with the content (Andy, 2026-09-06), which is precisely the
+            arrangement the article page's rail was built to allow — its note calls this
+            page out by name: "on Services the image is an ordinary sibling above the
+            sticky child and scrolls away by itself". One `.rail-sticky` around the nav
+            alone, and the hero above it needs no rule at all.
+
+            THAT MAKES `.rail` A STRETCHED GRID ITEM, AND IT MUST STAY ONE. Do not add
+            `align-self: start`: a sticky element travels only inside its containing
+            block, so the rail's box has to be as tall as the prose beside it. The
+            failure is silent — the nav simply scrolls away like anything else. Reviews
+            does the opposite because there the aside IS the sticky element.
+          */
+        }
+        {
+          (hasHero || contents.length > 0) && (
+            <aside class="rail">
+              {hasHero && (
+                <div class="hero-frame">
+                  {/*
+                    THE FRAME EXISTS TO BE MEASURED. A container query never restyles its
+                    own container, so the element declaring `container-type` cannot be the
+                    one that responds to it — TopicList and ArticleCard both record the
+                    same wall. Its width is exactly the hero's, which is what lets the
+                    query below ask the only question that matters: has the image detached
+                    from the viewport edges?
+
+                    `alt` is not passed: <SanityImage> falls back to the asset's own
+                    `altText` and warns when there is none, which is the behaviour we want
+                    rather than an empty string asserted here. Consulting's hero has one.
+
+                    NO `sizes` EITHER. The default for a lazy image is `auto, 100vw`, and
+                    `auto` measures the real laid-out box — 375 or less at the base, 231 in
+                    the rail — so the layout stays the only description of the layout.
+                  */}
+                  <SanityImage
+                    image={page.heroImg!}
+                    class="page-hero"
+                    style={heroFocus ? `--page-hero-focus: ${heroFocus}` : undefined}
+                  />
+                </div>
+              )}
+
+              {contents.length > 0 && (
+                <div class="rail-sticky">
+                  <RailNav items={contents} id="rail-contents" />
+                </div>
+              )}
+            </aside>
+          )
+        }
+
+        {
+          /*
+            GUARDED, AND IT HAS TO BE. <Prose> renders nothing from a null array, but the
+            wrapper would still be a grid item — an empty row carrying its own top margin.
+            Measured on Contact, which has no `bodyText`: the lede-to-band gap came out at
+            88 instead of 64, the extra 24 being an invisible `.detail` row between them.
+            Nothing on screen says why, which is why this is a guard and not a comment.
+          */
+        }
+        {
+          page.bodyText && (
+            <div class="detail">
+              <Prose value={page.bodyText} />
+            </div>
+          )
+        }
 
         {
           /*
@@ -149,20 +328,269 @@ if (!page) throw new Error(`[[slug]] no page document for slug "${slug}"`)
 </BaseLayout>
 
 <style>
+  /* ── The frame ────────────────────────────────────────────────────────────── */
   /*
-   * Both grid items take the main column — 8 of 12, which is the 656 the board draws and
-   * the 8-column cap the form keeps on every page, rail or no rail (Andy, 2026-09-04).
+   * ── THE HEADER IS TRANSPARENT, SO THE RAIL CAN START AT THE LEDE ───────────
    *
-   * <PageHeader> is an ordinary block here rather than transparent, so this places its
-   * own box; its internal `--page-header-span` rules are inert in that mode. Reaching it
-   * at all depends on the component spreading `{...rest}` onto its root, which is how
-   * Astro's scope attribute travels from a parent to a child's root.
+   * A rail can only align to a row that exists. With <PageHeader> as one grid item the
+   * only row available is the header's, whose top is the h1; `display: contents` turns
+   * its two children into two grid ROWS, and the rail then starts from the second. The
+   * component ships the `.page-intro` wrapper for exactly this.
    *
-   * Nothing is placed in columns 9-12, which is how the rail is reserved. See the note
-   * at the top.
+   * `--page-header-span` is not set, so the header's children take their default
+   * `--col-main` — correct here, because this page has a rail.
+   *
+   * ── AND THE ROW GAP HAS TO GO TO ZERO, WHICH IS THE PRICE ──────────────────
+   *
+   * <Grid>'s row gap is `rhythm-heading-major` (64), correct for its usual job of
+   * separating whole bands of content and wrong between a title and its own lede, which
+   * want 16. Once the header is transparent that boundary IS a grid row boundary, and a
+   * gap cannot vary per row — so it is zeroed and every row states its own top margin.
+   * Five relationships, each named, none of them a remainder:
+   *
+   *     h1 -> .page-intro     16, from <PageHeader> (unchanged in flow or in grid)
+   *     .page-intro -> .rail  aligned, because both take `heading-close`
+   *     .page-intro -> hero   48, base only — the hero is in the rail from md
+   *     -> .detail            48 below the hero at the base, 24 below the lede from md
+   *     -> .page-touch-band   64, because a band opens with a heading
+   *
+   * This is a page-level decision about a shared component's spacing, so it is scoped to
+   * this page's <Grid> and nothing else inherits it.
    */
-  .page-header,
+  .grid {
+    row-gap: 0;
+
+    /*
+     * ── THE ROWS ARE EXPLICIT SO THE RAIL'S `-1` MEANS SOMETHING ─────────────
+     *
+     * Negative grid lines count from the end of the EXPLICIT grid, and a grid with no
+     * `grid-template-rows` has exactly one row line — so `grid-row: 2 / -1` would resolve
+     * its end to line 1, the browser would swap the reversed pair, and the rail would
+     * silently span row 1 instead of everything below it. Reviews hit this first.
+     *
+     * FOUR is the main column's row count from md: h1, lede, body, band. Consulting uses
+     * all four and Contact three, so Contact gets a zero-height fourth row — free, under
+     * `row-gap: 0`. Below md the hero is in the flow too and takes a fifth, implicit row,
+     * which costs nothing because `-1` is only used inside the md query.
+     */
+    grid-template-rows: repeat(4, auto);
+  }
+
+  .page-header {
+    display: contents;
+  }
+
+  .detail,
   .page-touch-band {
     grid-column: var(--col-main);
+  }
+
+  .page-touch-band {
+    margin-block-start: var(--rhythm-heading-major);
+  }
+
+  /*
+   * 48 below the hero at the base. From md the hero has left the flow and the lede sits
+   * directly above, which wants `rhythm-paragraph` instead — see the md query. The board
+   * draws the lede and the first paragraph as one Body Group with a 24 gap, so they read
+   * as continuous prose rather than as two sections.
+   */
+  .detail {
+    margin-block-start: var(--rhythm-block);
+  }
+
+  /*
+   * ── EVERY RAIL TARGET TAKES THE SAME SCROLL OFFSET ─────────────────────────
+   *
+   * Both h2s the rail can jump to — the body's and the band's — so a heading arrives
+   * `rhythm-band` below the viewport edge rather than flush against it, with the same
+   * breathing room the bands themselves have. `rhythm-band` is what reviews.astro
+   * already gives its own rail targets and what the sticky rail uses for its `top`.
+   *
+   * ── IT WAS REMOVED AND THEN PUT BACK, AND THE COST IS REAL ────────────────
+   *
+   * Dropped briefly on 2026-09-07 in favour of landing flush, which exposes more content
+   * below the heading, and because the offset aligns the h2's TOP with the top of "On
+   * This Page" while their BASELINES do not meet — near-alignment, which the eye reads
+   * as a miss rather than as alignment.
+   *
+   * REINSTATED the same day (Andy): consistency across the three rail-bearing page types
+   * is worth more than that baseline offset. So the offset is a deliberate choice with a
+   * known cost, not an unexamined default — and the cost is recorded here so that
+   * whoever revisits it starts from the argument rather than rediscovering it.
+   *
+   * A value that made the baselines meet would be derived from two line boxes rather
+   * than named, and would have to change with either font. That is the trade being
+   * declined, not overlooked.
+   *
+   * `:global()` because these h2s belong to <Prose> and to <GetInTouchBand>: a scope
+   * attribute reaches a component's ROOT and never its descendants.
+   */
+  .detail :global(h2),
+  .page-touch-band :global(h2) {
+    scroll-margin-block-start: var(--rhythm-band);
+  }
+
+  /* ── The rail, below md: IT DISPERSES RATHER THAN COLLAPSING ──────────────── */
+  /*
+   * `display: contents` erases a box while keeping its children, so `.rail` and
+   * `.rail-sticky` stop being layout at all and the hero becomes a grid item of <Grid> in
+   * its own right — free to place itself full bleed between the lede and the body, which
+   * is a position no collapsing rail could reach. <RailNav> removes itself.
+   *
+   * This is the mechanism the article page built and predicted this page would need. Both
+   * elements are plain containers with no role, so the historic `display: contents`
+   * accessibility bug has nothing to take.
+   */
+  .rail,
+  .rail-sticky {
+    display: contents;
+  }
+
+  /* ── The hero ─────────────────────────────────────────────────────────────── */
+  /*
+   * ── FULL BLEED TO 500px, THEN CAPPED AND CENTRED — WITH NO BREAKPOINT ──────
+   *
+   * A 1:1 image running full bleed all the way to md would be an uncomfortable amount of
+   * picture on a wide phone (Andy, 2026-09-07), so it detaches from the page margin and
+   * centres once it reaches its cap. The cap IS the switch point, which is why this needs
+   * no query: below 500 the width wins and the image bleeds, above it the cap wins and the
+   * remainder becomes margin. Same shape as <SanityHero>'s `max-block-size`, and correct
+   * for the same reason — a derived switch point cannot be out of step with itself.
+   *
+   * ── WHY THE BLEED IS A WIDTH AND NOT A NEGATIVE MARGIN ─────────────────────
+   *
+   * `margin-inline: calc(var(--grid-margin) * -1)` is the usual way to escape a grid's
+   * inset and it was the plan, but it cannot be combined with a centred cap: with
+   * `justify-self: stretch` a binding `max-width` pins the item to the START edge, and
+   * with `justify-self: center` an <img> at `width: auto` shrink-wraps to its intrinsic
+   * width instead of filling. Moving the arithmetic into the width lets one declaration
+   * pair serve both states, and `justify-self: center` then handles the overflow
+   * symmetrically — centring an item larger than its area overflows it equally on both
+   * sides, into <Grid>'s own padding rather than past the viewport.
+   *
+   * ┌──────────────────────────────────────────────────────────────────────────┐
+   * │  THE `100%` INSIDE `--grid-margin` RESOLVES AGAINST THIS ELEMENT'S GRID  │
+   * │  AREA, NOT THE GRID'S WIDTH — so this is only exactly right because the  │
+   * │  token is `max(16px, …)` and that floor governs everywhere below a 1028  │
+   * │  viewport, while this rule is scoped below md (768). Both sides read 16.  │
+   * │  It breaks if md moves above 1028 or if `--grid-content` shrinks.         │
+   * └──────────────────────────────────────────────────────────────────────────┘
+   *
+   * `--col-full` explicitly, because auto-placement would give this a ONE-COLUMN track:
+   * the h1 and the lede occupy rows 1 and 2 at `1 / -1`, so an item with no column
+   * position lands in row 3 spanning a single column.
+   */
+  .hero-frame {
+    /* 500px. Local rather than a token — one consumer, and DESIGN.md names no such
+       width. Same call as the client logo's `--logo-size`. */
+    --page-hero-max: 31.25rem;
+
+    grid-column: var(--col-full);
+    inline-size: min(calc(100% + 2 * var(--grid-margin)), var(--page-hero-max));
+    justify-self: center;
+    margin-block-start: var(--rhythm-block);
+
+    /* What makes the radius query below possible, and it contains the inline axis, which
+       is what we want: the frame takes its width from the rule above, never from the
+       image inside it. */
+    container-type: inline-size;
+  }
+
+  .page-hero {
+    inline-size: 100%;
+    aspect-ratio: 1 / 1;
+
+    /* Fills the box, which is a different shape from the file at both breakpoints.
+       `object-position` aims the crop; see the note on `focalPoint` in the frontmatter for
+       why the value cannot be the raw hotspot. */
+    object-fit: cover;
+    object-position: var(--page-hero-focus, 50% 50%);
+  }
+
+  /*
+   * ── THE RADIUS APPEARS WHEN THE IMAGE STOPS TOUCHING THE VIEWPORT ──────────
+   *
+   * At full bleed it carries none, and DESIGN.md's Elevation section gives the reason for
+   * a full-width band that generalises to this: it "carries no radius and no border — the
+   * viewport edges do the containing". Once the frame hits its cap there are no viewport
+   * edges doing that job, so the image takes `radius-1`, which Shapes gives content
+   * images. Confirmed against the boards (Andy, 2026-09-07).
+   *
+   * A SIZE CONTAINER QUERY RATHER THAN A MEDIA QUERY, which is what keeps tokens.css the
+   * only place a viewport width is written. It is also the more accurate question: this
+   * asks about the space the component occupies, which is what DESIGN.md nominates size
+   * queries for, and it would stay correct if the frame were ever placed somewhere else.
+   *
+   * THE THRESHOLD IS A LITERAL AND HAS TO BE. A query condition is evaluated outside any
+   * element's style context, so `var(--page-hero-max)` cannot resolve there — the same
+   * constraint that put the flags in tokens.css in the first place, and the same
+   * duplication TopicList carries with its `16rem`. The two numbers are coupled: if the
+   * cap moves, this moves with it.
+   *
+   * FALSE AT md, where the frame is 231px — so the rail's radius is set in the md query
+   * below rather than inherited from here. Two rules for two different reasons, each
+   * stated positively, with no ordering dependency between them.
+   */
+  @container (inline-size >= 31.25rem) {
+    .page-hero {
+      border-radius: var(--radius-1);
+    }
+  }
+
+  /* ── From md: the rail becomes a column ──────────────────────────────────── */
+  /*
+   * `grid-row: 2 / -1` starts the rail at the LEDE's row, which is the alignment both
+   * boards draw, and runs it to the end so the sticky nav has the page's full height to
+   * travel. `margin-block-start` then matches the 16 <PageHeader> puts between the h1 and
+   * the intro, so the two columns begin on the same line.
+   *
+   * `top` on the sticky child is a judgment the boards cannot show, since they draw no
+   * scroll position. `rhythm-band` is what the article rail settled on for the same
+   * reason: the masthead does not stick, so `top: 0` would pin the nav flush against the
+   * viewport edge.
+   *
+   * 48 from the hero to the nav — the board draws the image 288.75 tall with the nav
+   * frame at 336.75. `heading-minor` rather than `rhythm-block` because what follows is a
+   * heading; both are 48, and DESIGN.md's rule is to pick by prefix and name, never by
+   * value.
+   */
+  @container style(--breakpoint-md: true) {
+    .rail {
+      display: block;
+      grid-column: var(--col-rail);
+      grid-row: 2 / -1;
+      margin-block-start: var(--rhythm-heading-close);
+    }
+
+    .rail-sticky {
+      display: block;
+      position: sticky;
+      top: var(--rhythm-band);
+    }
+
+    /*
+     * The frame is no longer a grid item, so `grid-column` and `justify-self` go inert on
+     * their own and only these two need unsaying: the width becomes the rail column's,
+     * and the row margin gives way to `.rail`'s.
+     */
+    .hero-frame {
+      inline-size: 100%;
+      margin-block-start: 0;
+    }
+
+    .page-hero {
+      aspect-ratio: 4 / 5;
+      border-radius: var(--radius-1);
+    }
+
+    .hero-frame + .rail-sticky {
+      margin-top: var(--rhythm-heading-minor);
+    }
+
+    /* 24 now, not 48: the hero has moved to the rail and the lede sits directly above. */
+    .detail {
+      margin-block-start: var(--rhythm-paragraph);
+    }
   }
 </style>

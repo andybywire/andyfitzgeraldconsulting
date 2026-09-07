@@ -41,13 +41,19 @@
  * presentation — while `bandGetInTouch` carries only `message` and `bandCopy`. A field
  * that does not exist should not be faked with a prop.
  *
+ * IT MOVED OUT OF THIS FILE ON 2026-09-07, into getInTouch.ts, when the `page` template's
+ * rail had to list this heading in "On This Page". Still hardcoded and still not content
+ * — just no longer hardcoded in two files that could disagree. See that module.
+ *
  * The id is stable so a caller can point `aria-labelledby` at it from the <Band> it
- * supplies, which is where RssBand puts the same relationship.
+ * supplies, which is where RssBand puts the same relationship — and so a rail can
+ * address it as a fragment.
  */
 import type {TypedObject} from 'astro-portabletext/types'
 import type {HTMLAttributes} from 'astro/types'
 import Prose from '../prose/Prose.astro'
 import ContactForm from '../ContactForm.astro'
+import {GET_IN_TOUCH_HEADING, GET_IN_TOUCH_ID} from './getInTouch'
 
 interface Props extends HTMLAttributes<'div'> {
   /** The copy under the heading. Required by the schema whenever `bandCopy` is true. */
@@ -72,7 +78,7 @@ const showCopy = Boolean(bandCopy)
   {
     showCopy && (
       <div class="get-in-touch-copy">
-        <h2 id="get-in-touch">Get In Touch</h2>
+        <h2 id={GET_IN_TOUCH_ID}>{GET_IN_TOUCH_HEADING}</h2>
         <div class="get-in-touch-message">
           <Prose value={message} />
         </div>

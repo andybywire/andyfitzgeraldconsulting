@@ -1715,7 +1715,7 @@ export type PAGE_SLUGS_QUERY_RESULT = Array<{
 
 // Source: ../web-next/src/sanity/queries/pages.ts
 // Variable: PAGE_QUERY
-// Query: *[_type == "page" && slug.current == $slug][0] {		_id,		title,		lede,		"description": pt::text(lede),		bodyText	}
+// Query: *[_type == "page" && slug.current == $slug][0] {		_id,		title,		lede,		"description": pt::text(lede),		heroImg { 	asset,	crop,	hotspot,	altText,	caption },		bodyText	}
 export type PAGE_QUERY_RESULT = {
   _id: string
   title: string | null
@@ -1738,6 +1738,13 @@ export type PAGE_QUERY_RESULT = {
     _key: string
   }> | null
   description: string
+  heroImg: {
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+    caption: null
+  } | null
   bodyText: Array<
     | {
         children?: Array<{
@@ -2085,7 +2092,7 @@ declare module '@sanity/client' {
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
     '\n\t*[_type == "page" && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': PAGE_SLUGS_QUERY_RESULT
-    '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\tlede,\n\t\t"description": pt::text(lede),\n\t\tbodyText\n\t}\n': PAGE_QUERY_RESULT
+    '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\tlede,\n\t\t"description": pt::text(lede),\n\t\theroImg { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tbodyText\n\t}\n': PAGE_QUERY_RESULT
     '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t\n\t"touchBand": select(\n\t\t"bandGetInTouch" in coalesce(pageBands, []) => coalesce(\n\t\t\tcustomBands[_type == "bandGetInTouch"][0],\n\t\t\t*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]\n\t\t)\n\t){message, bandCopy}\n\n\t}\n': PAGE_GET_IN_TOUCH_BAND_QUERY_RESULT
     '\n\t{\n\t\t"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {\n\t\t\t"tops": topConcepts[]->{_id, prefLabel},\n\t\t\t"concepts": concepts[]->{\n\t\t\t\t_id,\n\t\t\t\tprefLabel,\n\t\t\t\t"parent": broader[0]._ref\n\t\t\t}\n\t\t},\n\n\t\t"pool": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t] | order(pubDate desc) {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\t"genreId": genre._ref,\n\t\t\t"genre": genre->prefLabel,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"sourceDomain": clipRef.publisher,\n\t\t\t"topics": topic[]->{\n\t\t\t\t_id,\n\t\t\t\t"parent": broader[0]._ref,\n\t\t\t\t"parentIsTop": !defined(broader[0]->broader[0]._ref)\n\t\t\t}\n\t\t}\n\t}\n': RELATED_POOL_QUERY_RESULT
     '\n\t*[_type == "client" && count(*[_type == "review" && references(^._id)]) > 0] {\n\t\t_id,\n\t\tname,\n\t\trelationship,\n\t\trole,\n\t\t"logo": logo{asset, crop, hotspot, altText},\n\t\t"engagements": engagementDates[]{startDate, endDate},\n\t\t"latestEnd": engagementDates[].endDate | order(@ desc)[0],\n\t\t"reviews": *[_type == "review" && references(^._id)] {\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\tlinkedIn,\n\t\t\t"slug": slug.current,\n\t\t\tbody\n\t\t}\n\t} | order(latestEnd desc)\n': REVIEWS_BY_CLIENT_QUERY_RESULT

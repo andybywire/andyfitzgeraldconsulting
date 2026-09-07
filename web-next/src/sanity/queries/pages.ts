@@ -1,5 +1,5 @@
 import {defineQuery} from 'groq'
-import {PAGE_BAND_GET_IN_TOUCH} from '../fragments'
+import {IMAGE, PAGE_BAND_GET_IN_TOUCH} from '../fragments'
 
 /**
  * `page` — website-GENERIC scaffolding on one repeatable template, as opposed to
@@ -53,7 +53,23 @@ export const PAGE_SLUGS_QUERY = defineQuery(`
  * be a way to drop a block type by omission. `bodyText` can also contain images. See the
  * note on IMAGE in fragments.ts.
  *
+ * `heroImg` is the opposite case and is exactly the trap that note names: a named image
+ * FIELD needs the fragment, because a bare projection is fine but `heroImg.asset->url`
+ * would silently discard crop and hotspot. Both matter here — the source is landscape and
+ * both breakpoints are portrait, so the reframe is doing real work.
+ *
  * ── NO BAND HERE. SEE THE QUERY BELOW; THE SPLIT IS FORCED ─────────────────
+ *
+ * ── AND `heroImg` DID NOT TIP IT, WHICH WAS WORTH ESTABLISHING ─────────────
+ *
+ * Adding a named image field to a query already carrying two Portable Text arrays and a
+ * `pt::text` is precisely the direction that pushes `ClientReturn` past its ceiling and
+ * yields `any`. RE-PROBED after this edit (2026-09-07), subject and control: a deliberate
+ * `page.thisFieldDoesNotExist` raised ts(2339) here, as did the same line against
+ * `bands` — so the lookup still resolves and the result is genuinely typed.
+ *
+ * Probe again before adding a fourth field. The failure is silent, and this page hands
+ * `heroImg` straight to a component with no callback over the result to reveal it.
  */
 export const PAGE_QUERY = defineQuery(`
 	*[_type == "page" && slug.current == $slug][0] {
@@ -61,6 +77,7 @@ export const PAGE_QUERY = defineQuery(`
 		title,
 		lede,
 		"description": pt::text(lede),
+		heroImg { ${IMAGE} },
 		bodyText
 	}
 `)

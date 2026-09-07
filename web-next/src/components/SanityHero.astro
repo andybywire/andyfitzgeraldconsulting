@@ -93,7 +93,7 @@
  * stack rather than anything this component knows about, and it is the page
  * template's job.
  */
-import {imageAttrs, type SanityImageSource} from '../sanity/image'
+import {focalPoint, imageAttrs, type SanityImageSource} from '../sanity/image'
 
 interface Props {
   image: SanityImageSource
@@ -152,20 +152,19 @@ const attrs = imageAttrs(image, {aspect, capHeight: HERO_MAX_BLOCK_REM * 16 * 2}
  * A custom property rather than `object-position` inline, so the property name and
  * its default stay in the stylesheet and only the DATA arrives from the document.
  *
- * PER-AXIS DEFAULTS, and the apparent duplication with the stylesheet's
- * `var(--hero-focus, 50% 50%)` is real but not redundant — the two cover different
- * cases. The CSS fallback handles NO HOTSPOT, where this emits nothing at all. The
- * `?? 0.5`s handle a hotspot that exists with a member missing, which Sanity's
- * schema permits and TypeGen therefore types as `number | undefined`. Defaulting
- * per axis rather than discarding the whole hotspot keeps a half-populated one
- * useful: a present `x` still aims the crop horizontally.
+ * ── THE ARITHMETIC MOVED TO image.ts, AND IT WAS WRONG WHILE IT WAS HERE ─────
  *
- * A `!` assertion would compile and then write `NaN%` into the style attribute.
+ * This file computed the percentage from the raw hotspot, which is in the ORIGINAL
+ * asset's coordinate space — while the file being positioned has already had the
+ * editor's crop applied. `focalPoint` reconciles the two; see its own note, which
+ * names the six heroes in this dataset that were affected and by how much.
+ *
+ * The two defaults that note describes are still two, and still for two different
+ * cases: `focalPoint` returns null for NO hotspot, where this emits nothing and
+ * the stylesheet's `var(--hero-focus, 50% 50%)` applies, and it defaults per axis
+ * for a hotspot that exists with a member missing.
  */
-const hotspot = image?.hotspot
-const focus = hotspot
-  ? `--hero-focus: ${((hotspot.x ?? 0.5) * 100).toFixed(2)}% ${((hotspot.y ?? 0.5) * 100).toFixed(2)}%`
-  : null
+const focus = focalPoint(image)
 
 /**
  * Both custom properties in one attribute — the design constant and, when there is
@@ -179,7 +178,9 @@ const focus = hotspot
  * silently disappear and the hero would run at 16/9 to any width. That is what the
  * attribute order in the template guards.
  */
-const style = [`--hero-max-block: ${HERO_MAX_BLOCK_REM}rem`, focus].filter(Boolean).join('; ')
+const style = [`--hero-max-block: ${HERO_MAX_BLOCK_REM}rem`, focus && `--hero-focus: ${focus}`]
+  .filter(Boolean)
+  .join('; ')
 
 const resolvedAlt = alt ?? image?.altText ?? ''
 if (alt === undefined && !image?.altText && attrs) {
