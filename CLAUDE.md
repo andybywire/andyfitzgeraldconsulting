@@ -312,6 +312,15 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    3. **Home** — mostly composition of bands that already exist by then.
    4. The rest — services, projects, case study, reviews, presentations, search.
 
+   **Presentations composes `BAND_GET_IN_TOUCH`, and that fragment has never been exercised.**
+   The Presentations *singleton* will carry the Get in Touch band (Andy, 2026-09-07), and it is
+   the first document outside `page` to do so — `page` resolves through the separate
+   `PAGE_BAND_GET_IN_TOUCH`, with a different gate. So `BAND_GET_IN_TOUCH`'s three-rung ladder is
+   hand-transcribed GROQ with no consumer and no query whose result type anyone has checked.
+   **Probe that query when it lands**, with a known-good control, per the box in
+   `web-next/src/sanity/fragments.ts`: a fragment that untypes its query fails silently and
+   `astro check` stays green. This is exactly how the `LADDER` defect survived for weeks.
+
    **Search behavior is already specified** — see DESIGN.md → Components → Search. Phase 3 ships the
    masthead icon inert; the spec covers expand-in-place replacing the nav, results replacing the page
    content, Fuse.js, `cmd + k`, and the mobile treatment. Don't redesign it from scratch here.
