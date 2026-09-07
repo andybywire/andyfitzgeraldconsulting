@@ -562,6 +562,34 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
     grid-column: var(--col-main);
   }
 
+  /*
+   * ── THE RAIL'S TARGETS NEED A SCROLL OFFSET, AND HAD NONE UNTIL NOW ────────
+   *
+   * Every "On This Page" link points at a body h2, so every one of them is a fragment
+   * target. Without this each one landed FLUSH against the viewport edge — technically
+   * correct, and it put the heading at the very top of the screen with nothing above it
+   * for context. base.css flags exactly this ("anything that is a fragment TARGET wants
+   * `scroll-margin-block-start`") and this page had simply never claimed it, which is
+   * why the rail has been landing hard since it was built.
+   *
+   * `rhythm-band`, the same offset reviews.astro gives its rail targets and the same one
+   * `.rail-sticky` takes for its `top`. Added 2026-09-07 with the `page` template, on
+   * consistency grounds across the three rail-bearing page types (Andy) — the deciding
+   * argument being that the three should not each land differently. See that file's own
+   * note for the trade this accepts: the offset aligns a heading's top with the rail
+   * heading's top rather than their baselines.
+   *
+   * ONLY THE ARTICLE ARM NEEDS IT. A note's rail is a source card and a case study's is
+   * a testimonial — neither renders a <RailNav>, so neither has an in-page target to
+   * offset.
+   *
+   * `:global()` because these h2s are <Prose>'s: a scope attribute reaches a component's
+   * ROOT and never its descendants.
+   */
+  .detail :global(h2) {
+    scroll-margin-block-start: var(--rhythm-band);
+  }
+
   /* ── The rail ───────────────────────────────────────────────────────────── */
   /*
    * ┌────────────────────────────────────────────────────────────────────────┐

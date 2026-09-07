@@ -400,23 +400,36 @@ const hasHero = Boolean(page.heroImg?.asset)
   }
 
   /*
-   * ── NO `scroll-margin` ON THE RAIL'S TARGETS, AND THAT IS A CHOICE ─────────
+   * ── EVERY RAIL TARGET TAKES THE SAME SCROLL OFFSET ─────────────────────────
    *
-   * A draft gave every h2 `scroll-margin-block-start: var(--rhythm-band)`, on the usual
-   * grounds that a fragment target lands flush against the viewport edge without one.
-   * REMOVED (Andy, 2026-09-07) for two reasons, and the second is the interesting one:
+   * Both h2s the rail can jump to — the body's and the band's — so a heading arrives
+   * `rhythm-band` below the viewport edge rather than flush against it, with the same
+   * breathing room the bands themselves have. `rhythm-band` is what reviews.astro
+   * already gives its own rail targets and what the sticky rail uses for its `top`.
    *
-   *   - Flush exposes more content below the heading, which is the more reader-friendly
-   *     result on a page someone is jumping around inside.
-   *   - The offset aligned the h2's TOP with the top of "On This Page", so their
-   *     BASELINES did not line up — near-alignment that reads as a mistake rather than
-   *     as alignment. An offset that made the baselines meet would be a different value
-   *     derived from two line boxes, not `rhythm-band`.
+   * ── IT WAS REMOVED AND THEN PUT BACK, AND THE COST IS REAL ────────────────
    *
-   * So the absence is deliberate and this note is what stops it being re-added as an
-   * oversight. reviews.astro still offsets its own rail targets by `rhythm-band`; that
-   * page has not been revisited against this preference.
+   * Dropped briefly on 2026-09-07 in favour of landing flush, which exposes more content
+   * below the heading, and because the offset aligns the h2's TOP with the top of "On
+   * This Page" while their BASELINES do not meet — near-alignment, which the eye reads
+   * as a miss rather than as alignment.
+   *
+   * REINSTATED the same day (Andy): consistency across the three rail-bearing page types
+   * is worth more than that baseline offset. So the offset is a deliberate choice with a
+   * known cost, not an unexamined default — and the cost is recorded here so that
+   * whoever revisits it starts from the argument rather than rediscovering it.
+   *
+   * A value that made the baselines meet would be derived from two line boxes rather
+   * than named, and would have to change with either font. That is the trade being
+   * declined, not overlooked.
+   *
+   * `:global()` because these h2s belong to <Prose> and to <GetInTouchBand>: a scope
+   * attribute reaches a component's ROOT and never its descendants.
    */
+  .detail :global(h2),
+  .page-touch-band :global(h2) {
+    scroll-margin-block-start: var(--rhythm-band);
+  }
 
   /* ── The rail, below md: IT DISPERSES RATHER THAN COLLAPSING ──────────────── */
   /*
