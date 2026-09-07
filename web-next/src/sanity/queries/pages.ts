@@ -1,5 +1,5 @@
 import {defineQuery} from 'groq'
-import {IMAGE, PAGE_BAND_GET_IN_TOUCH} from '../fragments'
+import {IMAGE, PAGE_BAND_GET_IN_TOUCH, PAGE_BAND_WORK_WITH_ME} from '../fragments'
 
 /**
  * `page` — website-GENERIC scaffolding on one repeatable template, as opposed to
@@ -115,5 +115,29 @@ export const PAGE_QUERY = defineQuery(`
 export const PAGE_GET_IN_TOUCH_BAND_QUERY = defineQuery(`
 	*[_type == "page" && slug.current == $slug][0] {
 		${PAGE_BAND_GET_IN_TOUCH}
+	}
+`)
+
+/**
+ * A page's Work With Me band, fetched separately for the same reason as the one above.
+ *
+ * ── ONE BAND PER QUERY IS THE HOUSE PATTERN, NOT CAUTION ────────────────────
+ *
+ * The two page bands could be projected together and it was tempting: they share a
+ * document and a `$slug`, so one round trip would do. Kept apart because this projection
+ * is the heaviest in the file — a dereferenced array with a correlated subquery inside it
+ * — and the `ClientReturn` ceiling is exactly the kind of thing that would swallow it.
+ *
+ * The failure would also be silent TODAY and invisible LATER: a combined query that types
+ * correctly now can tip the moment someone adds a field to either band, and nothing about
+ * the symptom points at the query. Two queries that each stay well inside the ceiling cost
+ * one extra round trip on three pages of a forty-nine page build, which is the cheaper
+ * side of that trade. INSIGHT_RSS_BAND_QUERY and CASE_STUDY_BAND_QUERY are the precedent.
+ *
+ * The three page queries are independent, so [slug].astro runs them concurrently.
+ */
+export const PAGE_WORK_WITH_ME_BAND_QUERY = defineQuery(`
+	*[_type == "page" && slug.current == $slug][0] {
+		${PAGE_BAND_WORK_WITH_ME}
 	}
 `)

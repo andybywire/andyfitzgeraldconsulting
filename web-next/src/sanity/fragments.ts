@@ -155,11 +155,39 @@ const LADDER = (band: string) => `
 `
 
 /**
- * `LADDER` is a function, which the note at the top of this file warns against — a
- * fragment built at runtime is invisible to TypeGen. These three are not: each is a
- * `const` whose initialiser is fully evaluated at module load, so what TypeGen's parser
- * sees is still a single string literal. The function only removes the copy-paste; it
- * never runs per query.
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  KNOWN DEFECT: EVERY QUERY BUILT THROUGH `LADDER` IS TYPED `any`.            │
+ * │  Measured 2026-09-07. Not yet fixed — see below for the fix and the cost.     │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * This note used to argue the function was harmless, on the grounds that TypeGen's parser
+ * evaluates the module and so still sees a single string literal. That much is TRUE — and
+ * it is exactly what makes the fault invisible, because TypeGen generates a correct
+ * `_RESULT` type for each of these queries. The types are right; nothing looks them up.
+ *
+ * What it missed is TYPESCRIPT's view. `loadQuery` is typed `ClientReturn<Q>`, a lookup
+ * into `SanityQueries` keyed by the query's LITERAL text, and TypeScript does not evaluate
+ * a function call inside a template literal — so `${LADDER('bandRss')}` widens the type to
+ * `string`, the lookup misses, and the result is `any`. Interpolating a const whose
+ * initialiser is a plain literal is fine, which is why `${IMAGE}` and `${DATES}` cost
+ * nothing.
+ *
+ * MEASURED, subject and control in one `astro check` on the article page: a deliberate
+ * bogus property on `INSIGHT_RSS_BAND_QUERY`'s result raised NOTHING, while the same line
+ * against `INSIGHT_DETAIL_QUERY` raised ts(2339). Affected today:
+ *
+ *   BAND_RSS            -> INSIGHT_RSS_BAND_QUERY
+ *   BAND_WORK_WITH_ME   -> CASE_STUDY_BAND_QUERY, SINGLETON_WORK_BAND_QUERY
+ *   BAND_GET_IN_TOUCH   -> (no consumer yet)
+ *
+ * THE FIX IS TO DELETE THE FUNCTION and write the three ladders out, which is what
+ * PAGE_BAND_GET_IN_TOUCH and PAGE_BAND_WORK_WITH_ME below now do after the same helper was
+ * built for them and rolled back. The cost is three copies of the precedence rule; the
+ * gain is three typed queries. Left undone deliberately rather than folded into the `page`
+ * template's branch, because it changes queries for the article, case-study and singleton
+ * routes and wants its own verification pass.
+ *
+ * THE GENERAL RULE: A GROQ FRAGMENT MAY BE A `const`, NEVER A FUNCTION.
  */
 export const BAND_RSS = /* groq */ `
 	"rssBand": coalesce(${LADDER('bandRss')}){title, message, buttonTarget}
@@ -277,13 +305,43 @@ export const BAND_GET_IN_TOUCH = /* groq */ `
  * `coalesce(pageBands, [])` because `in` against a null array is not the false it looks
  * like. Contact carries the field; a page authored without it would not.
  *
- * Written inline rather than as a `PAGE_LADDER(band)` helper, because it has exactly one
- * consumer. A second — Work With Me is the other type `pageBands` offers — is this
- * project's stated trigger for extracting it, and `nav`'s promotion out of the component
- * tier is the precedent.
- *
  * `select()` with a single condition and no fallback yields null when the gate is closed,
  * and projecting onto null yields null. Both verified.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  STAYS INLINE. A `PAGE_LADDER(band)` HELPER WAS BUILT AND ROLLED BACK.       │
+ * │  DO NOT RE-EXTRACT IT — A FUNCTION CALL HERE COSTS THE QUERY ITS TYPE.       │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * This note used to nominate its own extraction: "A second — Work With Me is the other
+ * type `pageBands` offers — is this project's stated trigger for extracting it." The
+ * Projects page made that two, the helper was written, and it broke both page band
+ * queries silently. Measured on 2026-09-07, subject and control in one `astro check`:
+ * with `PAGE_LADDER` interpolated, a deliberate bogus property on either band result
+ * raised NOTHING, while the same line against `PAGE_QUERY` raised ts(2339) as it should.
+ *
+ * THE MECHANISM IS THE INTERPOLATED TYPE, NOT THE GROQ. `loadQuery` is typed
+ * `ClientReturn<Q>`, a lookup into TypeGen's `SanityQueries` map keyed by the query's
+ * LITERAL TEXT. Interpolating a const whose initialiser is a plain literal preserves that
+ * literal type — which is why PAGE_QUERY types correctly with `${IMAGE}` folded in.
+ * Interpolating a FUNCTION CALL cannot: TypeScript does not evaluate calls in template
+ * literals, so the type widens to `string`, the map lookup misses, and the result is
+ * `any`.
+ *
+ * TypeGen itself is not the problem and is what makes this so quiet: its parser evaluates
+ * the module, so it generated a perfectly correct `_RESULT` type for each query. The types
+ * exist and are right; nothing is looking them up.
+ *
+ * ── SO THE DUPLICATION BELOW IS BOUGHT, NOT OVERLOOKED ──────────────────────
+ *
+ * Two nearly identical gates, differing only in a band name, in exchange for two typed
+ * queries. That is the correct side of the trade: preserving these types is the entire
+ * reason the page's queries are split across three round trips in the first place, so
+ * spending them on a DRY gate would be self-defeating.
+ *
+ * The general rule this leaves: A GROQ FRAGMENT MAY BE A `const`, NEVER A FUNCTION.
+ * `LADDER` above is a function, which is a live instance of this same fault — see its own
+ * note.
  */
 export const PAGE_BAND_GET_IN_TOUCH = /* groq */ `
 	"touchBand": select(
@@ -292,4 +350,45 @@ export const PAGE_BAND_GET_IN_TOUCH = /* groq */ `
 			*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]
 		)
 	){message, bandCopy}
+`
+
+/**
+ * A `page`'s Work With Me band — the same opt-in gate, the same projection as
+ * `BAND_WORK_WITH_ME`.
+ *
+ * ── WRITTEN OUT IN FULL, GATE AND PROJECTION BOTH ──────────────────────────────
+ *
+ * Neither half is shared with anything: not the gate, for the typing reason in the box
+ * above, and not the `clientLogos` projection, which BAND_WORK_WITH_ME also writes. A
+ * shared projection const WOULD be type-safe — it is a plain literal, unlike a function —
+ * so that one is a readability call rather than a forced hand: extracting it would leave a
+ * fragment existing only to be interpolated into two others, at which point the GROQ is
+ * assembled from pieces none of which can be read on its own.
+ *
+ * See BAND_WORK_WITH_ME for what `tile`, `image` and the `caseStudy` subquery are doing
+ * and why they are what they are.
+ *
+ * ── IT IS AN APPENDED BAND, WHICH GET IN TOUCH IS NOT ──────────────────────────
+ *
+ * Worth recording here because the two page bands differ in placement and the query gives
+ * no hint of it: <WorkWithMeBand> owns its own <Band> and <Grid> at full bleed with
+ * `tone="logo"`, so it is appended to the page stack, while <GetInTouchBand> owns no frame
+ * and sits in the prose column as body content. That difference is also why Work With Me
+ * stays out of the rail's "On This Page" — see the note in pages/[slug].astro.
+ */
+export const PAGE_BAND_WORK_WITH_ME = /* groq */ `
+	"workBand": select(
+		"bandWorkWithMe" in coalesce(pageBands, []) => coalesce(
+			customBands[_type == "bandWorkWithMe"][0],
+			*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]
+		)
+	){
+		message,
+		"clientLogos": clientLogos[]->{
+			name,
+			"image": tile{asset, crop, hotspot, altText},
+			"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]
+				| order(pubDate desc)[0].slug.current
+		}
+	}
 `

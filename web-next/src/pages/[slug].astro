@@ -87,7 +87,12 @@
  * `bandCopy` controls only whether the band carries its own copy.
  */
 import {loadQuery} from '../sanity/load-query'
-import {PAGE_SLUGS_QUERY, PAGE_QUERY, PAGE_GET_IN_TOUCH_BAND_QUERY} from '../sanity/queries/pages'
+import {
+  PAGE_SLUGS_QUERY,
+  PAGE_QUERY,
+  PAGE_GET_IN_TOUCH_BAND_QUERY,
+  PAGE_WORK_WITH_ME_BAND_QUERY,
+} from '../sanity/queries/pages'
 import {focalPoint} from '../sanity/image'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Band from '../components/Band.astro'
@@ -99,6 +104,7 @@ import Prose from '../components/prose/Prose.astro'
 import RailNav from '../components/RailNav.astro'
 import SanityImage from '../components/SanityImage.astro'
 import GetInTouchBand from '../components/bands/GetInTouchBand.astro'
+import WorkWithMeBand from '../components/bands/WorkWithMeBand.astro'
 import {GET_IN_TOUCH_HEADING, GET_IN_TOUCH_ID} from '../components/bands/getInTouch'
 import {headingId, headingText} from '../components/prose/headingId'
 
@@ -112,14 +118,16 @@ export async function getStaticPaths() {
     .map((row) => ({params: row.params}))
 }
 
-/* Two queries rather than one projection, and not by preference — folding the band into
+/* Three queries rather than one projection, and not by preference — folding a band into
    PAGE_QUERY silently untypes it to `any`, with nothing in this file to reveal it. See
-   PAGE_GET_IN_TOUCH_BAND_QUERY for the mechanism and the probe that caught it. They are
-   independent, so they run concurrently. */
+   PAGE_GET_IN_TOUCH_BAND_QUERY for the mechanism and the probe that caught it, and
+   PAGE_WORK_WITH_ME_BAND_QUERY for why the two bands stay apart from each other too.
+   All three are independent, so they run concurrently. */
 const {slug} = Astro.params
-const [page, bands] = await Promise.all([
+const [page, bands, workBands] = await Promise.all([
   loadQuery(PAGE_QUERY, {slug}),
   loadQuery(PAGE_GET_IN_TOUCH_BAND_QUERY, {slug}),
+  loadQuery(PAGE_WORK_WITH_ME_BAND_QUERY, {slug}),
 ])
 
 /* Loud rather than quiet. Every slug here came out of the dataset a moment ago, so a miss
@@ -155,14 +163,17 @@ const bodyContents = (page.bodyText ?? []).flatMap((block) =>
  * entry for it would be a link to nothing. It would also LOOK fine: a fragment with no
  * target scrolls nowhere rather than erroring. Contact is that case.
  *
- * ── WORK WITH ME WOULD NOT BELONG HERE EVEN IF A PAGE CARRIED IT ────────────
+ * ── WORK WITH ME IS EXCLUDED, AND A PAGE NOW ACTUALLY CARRIES IT ────────────
  *
- * `pageBands` offers both, and only Get in Touch is listed (Andy, 2026-09-06). In light
- * mode Work With Me uses a different background and reads as a separate part of the page,
- * where Get in Touch shares the page ground and is the page's natural call to action — so
- * it belongs in the outline with the other headings and Work With Me does not. That is a
- * rule about the two bands rather than about this page, which is why it is written down
- * here rather than left to whichever page adds the other band first.
+ * `pageBands` offers both and Projects uses Work With Me, so this is a live exclusion
+ * rather than a hypothetical one (Andy, 2026-09-06). In light mode Work With Me uses a
+ * different background and reads as a separate part of the page, where Get in Touch shares
+ * the page ground and is the page's natural call to action — so Get in Touch belongs in
+ * the outline with the other headings and Work With Me does not.
+ *
+ * It falls out of the structure rather than needing a filter: only the Get in Touch band
+ * is appended to `bodyContents` below. The rule is a fact about the two bands rather than
+ * about any one page, which is why it is written here and not left to be rediscovered.
  */
 const contents = bands?.touchBand?.bandCopy
   ? [...bodyContents, {id: GET_IN_TOUCH_ID, label: GET_IN_TOUCH_HEADING}]
@@ -202,7 +213,7 @@ const hasHero = Boolean(page.heroImg?.asset)
 
 {
   /*
-    ── 64 TOP, 96 BOTTOM — THE SAME ASYMMETRY REVIEWS HIT ─────────────────────
+    ── 64 TOP, AND THE BOTTOM DEPENDS ON WHAT FOLLOWS ─────────────────────────
 
     The Contact board's BodyBand is 811 tall with its content frame at y=64 and 651 tall,
     leaving 96 below; the Consulting board draws 64/96 on the same band. `space="band"`
@@ -210,18 +221,31 @@ const hasHero = Boolean(page.heroImg?.asset)
     the token every other 96 in the build uses — rather than a literal, so both clamp
     together at narrow widths.
 
-    Like Reviews, this page has nothing between its content and the footer, which is what
-    the extra 32 is for. Do NOT override this from a page rule: `.band[data-space='…']`
-    compiles with <Band>'s own scope attribute to (0,3,0) and a page reaching the root
-    gets (0,2,0), so it would lose wherever it sat in the source. `spaceEnd` exists for
-    exactly this.
+    THE 96 IS NOT ABOUT THIS BAND, IT IS ABOUT THE FOOTER. Reviews draws the same
+    asymmetry and for the same stated reason: the page has nothing between its content and
+    the footer, and the extra 32 is what that gap wants.
+
+    ── WHICH STOPS BEING TRUE THE MOMENT AN APPENDED BAND FOLLOWS ─────────────
+
+    Projects carries Work With Me, and that band brings its own `space="section"` — 96
+    above its own content. Leaving `spaceEnd="section"` here would put 96 + 96 between the
+    body copy and the band's heading. So the override is conditional: 96 when this band
+    runs into the footer, 64 when something else follows it.
+
+    64 IS NOT A GUESS. It is what the article page's content band takes at both edges
+    (`.article-grid { padding-block: var(--rhythm-band) }`) precisely because appended
+    bands follow it there — the same situation, already settled.
+
+    Do NOT try to do this from a page rule instead: `.band[data-space='…']` compiles with
+    <Band>'s own scope attribute to (0,3,0) and a page reaching the root gets (0,2,0), so
+    it would lose wherever it sat in the source. `spaceEnd` exists for exactly this.
   */
 }
 <BaseLayout title={page.title ?? 'Page'} description={page.description ?? undefined}>
   <Masthead />
 
   <main>
-    <Band as="section" spaceEnd="section">
+    <Band as="section" spaceEnd={workBands?.workBand ? 'band' : 'section'}>
       <Grid>
         <PageHeader title={page.title ?? ''} lede={page.lede} />
 
@@ -322,6 +346,38 @@ const hasHero = Boolean(page.heroImg?.asset)
         }
       </Grid>
     </Band>
+
+    {
+      /*
+        ── APPENDED, NOT PLACED IN THE PROSE COLUMN ───────────────────────────
+
+        OUTSIDE the content <Band>, unlike <GetInTouchBand>, and the two are not
+        inconsistent — they are different kinds of thing. This component owns its own
+        <Band tone="logo" space="section"> and <Grid>, so nesting it inside the content
+        band would put a full-bleed element inside a grid item and pay the band padding
+        twice. Get in Touch owns no frame precisely so it CAN sit in the column.
+
+        That difference is the design, not an implementation detail: `tone="logo"` lifts
+        this band off the page ground in both themes, which is what makes it read as a
+        separate part of the page — and is the reason it stays out of the rail's "On This
+        Page" while Get in Touch appears there. See the note on `contents` above.
+
+        It supplies its own <Band>, so the page states no spacing for it. What the page
+        does own is the band ABOVE it — see the note on `spaceEnd`.
+
+        Rendered only if the ladder produced one. `pageBands` is an opt-in gate, so null
+        means the editor did not list this band, and a heading over an empty band is worse
+        than no band. Matches the guard on Get in Touch.
+      */
+    }
+    {
+      workBands?.workBand && (
+        <WorkWithMeBand
+          message={workBands.workBand.message}
+          clientLogos={workBands.workBand.clientLogos}
+        />
+      )
+    }
   </main>
 
   <Footer />
