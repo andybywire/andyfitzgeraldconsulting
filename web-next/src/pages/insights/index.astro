@@ -66,6 +66,7 @@ import ArticleCard from '../../components/cards/ArticleCard.astro'
 import NoteCard from '../../components/cards/NoteCard.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
 import Chip from '../../components/Chip.astro'
+import VisuallyHidden from '../../components/VisuallyHidden.astro'
 
 /* Both fetches are independent, so they go together rather than in series. */
 const [page, insights] = await Promise.all([
@@ -476,7 +477,7 @@ const facets = [
             <Chip as="button" class="show-all" type="button" hidden>Show all</Chip>
           </div>
 
-          <div class="result-status" role="status"></div>
+          <VisuallyHidden as="div" class="result-status" role="status" />
         </div>
       </Grid>
     </Band>
@@ -945,28 +946,19 @@ const facets = [
   }
 
   /*
-   * ── VISUALLY HIDDEN, AND THE SECOND CONSUMER OF THIS BLOCK ──────────────────
+   * ── THE HIDING MOVED TO <VisuallyHidden> (2026-09-09) ───────────────────────
    *
-   * `Masthead.astro`'s `.search-label` is the first, with the same seven
-   * declarations. CLAUDE.md's promotion rule — a second consumer is the trigger —
-   * has therefore fired, and this belongs in base.css as a utility. Left scoped here
-   * deliberately so the count line lands as one reviewable change; Search will be the
-   * third consumer and is the natural moment to move it.
+   * This block held the seven declarations and a note predicting Search would be the
+   * third consumer and the moment to promote them to base.css. The card index's `+N`
+   * expansion got there first, and base.css turned out to be the wrong destination
+   * anyway: the global tier is element-level ROLE styles, and a utility class is not
+   * one — see the component for that argument.
    *
-   * NOT `display: none` and not `visibility: hidden` — both remove the element from
-   * the accessibility tree, which would make a live region silent. The 1px-clipped
-   * box is the only way to be invisible and still announced.
+   * `.result-status` survives as the SCRIPT'S HOOK and nothing else. It carries no
+   * declarations now, so no rule for it remains here; the selector at the bottom of
+   * this file still finds it because the class is passed through to the component's
+   * root. Masthead is NOT a consumer — its label hides conditionally, at `lg` only.
    */
-  .result-status {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
 </style>
 
 <script>
