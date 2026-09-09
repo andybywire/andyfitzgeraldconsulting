@@ -349,12 +349,18 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    rule from producing a "Design" chip that competes with an "Information Architecture" one.
 
    **A consistency invariant falls out of the Genre hierarchy, and it is worth a build-time check:**
-   a document's genre should sit under the top concept matching its structural family. **Four
-   documents violate it today** — `earley-ia-knowledge-graphs-and-ia`,
-   `the-informed-life-structured-content` and `content-strategy-insights-data-stories-meaning` are
-   genre *Interview*, and `cs-meetup` is genre *Talk*, all four stored as `article`. They are
-   presentations, and they move when `presentation` exists. Until then the Insights index
-   over-collects by four.
+   a document's genre should sit under the top concept matching its structural family — a document
+   stored as `article` should not carry a Presentation-branch genre.
+
+   **RESOLVED (verified 2026-09-09).** Four documents violated this while `presentation` did not
+   exist — three Interviews and one Talk, all stored as `article` — and the Insights index
+   over-collected by that many. No article carries a Presentation-branch genre now: the only genres
+   in use there are Perspective, Method and Conference Themes. The corpus stands at 42 insights
+   (30 articles, 5 notes, 7 case studies), 4 presentations and 41 events.
+
+   The invariant is still worth a build-time check, because nothing enforces it — the Studio will
+   happily accept a Presentation genre on an `article` again. It just has no violations to find
+   today.
 
    ### The five content types, and what separates them
 
@@ -397,25 +403,41 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    **`presentation` inverts `event`.** `event` records a date and location at which Andy spoke, with
    the talk title subordinate; `presentation` makes the delivered work the organizing principle — one
    presentation, many deliveries — and carries a description, takeaways, an optional deck link, and
-   the events at which it was given. Recordings and transcripts are a later iteration. **This is why
-   interviews are Presentations rather than Insights.** The 38 existing `event` documents are
-   deliveries, so they group under a smaller set of presentations; none carries a `genre` today.
+   the events at which it was given. **This is why interviews are Presentations rather than
+   Insights.** The 41 existing `event` documents are deliveries, so they group under a smaller set
+   of presentations; none carries a `genre`, which is now deliberate — `event.type` was deprecated
+   in favour of `presentation.genre` and the label a page shows comes from the work, not the
+   occasion.
+
+   **Recordings and transcripts are built** (2026-09-08), not a later iteration. `transcript` is
+   Portable Text on `presentation`; recordings are a `recording[]` array on `event`, because a
+   recording is a property of a DELIVERY — one talk given three times can have three. One object
+   covers audio and video, with `kind` selecting the section heading, the player and the JSON-LD
+   type; see `studio-next/schemas/objects/recording.ts`, which also records the poster ladder and
+   the GROQ trap under it.
 5. **Content parity check.** Render every document of every type; catch dangling references and
    fields that silently stopped rendering.
 
-   **Two content gaps to fix here, both enumerable rather than vague:**
-   - **16 of 42 heroes have no `altText`** (measured 2026-08-26) — `how-to-hire-an-ia`,
-     `earley-ia-knowledge-graphs-and-ia`, `structured-content-design`, `boutique-knowledge-graphs`,
-     `when-to-use-an-ia`, `cs-meetup`, `domain-modeling`, `what-is-information-architecture`,
-     `content-strategy-insights-data-stories-meaning`, `purpose-driven-taxonomy-design`,
-     `keyword-extraction-nlp`, `site-maps-connected-content`, `self-hosting-sanity-studio`,
-     `structured-content-design-22`, `conversations-with-robots`, `working-with-an-ia`. These are the
-     `[SanityHero] no altText` warnings the build already prints. **It costs twice now, not once:**
-     php-mf2 returns `u-photo` as `{value, alt}`, so the alt text travels into every syndicated copy —
-     verified against a real parse. Body figures are clean, 0 of 139.
-   - **`h5` residue.** Phase 1 dropped the style from `article`, `caseStudy` and `singleton`, but
-     dropping it from the schema does not remove it from published blocks. One query against
-     `production-26` settles whether any survive; they would render unstyled.
+   **One content gap to fix here, enumerable rather than vague:**
+   - **13 of 37 heroes have no `altText`** (re-measured 2026-09-09) — `boutique-knowledge-graphs`,
+     `conversations-with-robots`, `domain-modeling`, `how-to-hire-an-ia`, `keyword-extraction-nlp`,
+     `purpose-driven-taxonomy-design`, `self-hosting-sanity-studio`, `site-maps-connected-content`,
+     `structured-content-design`, `structured-content-design-22`, `what-is-information-architecture`,
+     `when-to-use-an-ia`, `working-with-an-ia`. These are the `[SanityHero] no altText` warnings the
+     build already prints. **It costs twice now, not once:** php-mf2 returns `u-photo` as
+     `{value, alt}`, so the alt text travels into every syndicated copy — verified against a real
+     parse. Body figures are clean, 0 of 139.
+
+     *Was "16 of 42" measured 2026-08-26. Three of that list —
+     `earley-ia-knowledge-graphs-and-ia`, `cs-meetup` and
+     `content-strategy-insights-data-stories-meaning` — were the mis-typed presentations and have
+     left the article corpus, so the gap shrank without anyone writing alt text.*
+
+   - **`h5` residue: NONE. Question closed** (2026-09-09). Phase 1 dropped the style from `article`,
+     `caseStudy` and `singleton`, and dropping it from a schema does not remove it from published
+     blocks — so this was carried as unverified. The query has now been run against `production-26`:
+     zero documents of those three types carry an `h5` block. Nothing renders unstyled, and nothing
+     needs doing at the parity check.
 6. **Cutover.** Rewrite CI for pnpm, Node 24 and the new build directory. **`mailhandler.php` must
    survive** — it stays PHP on the droplet, but becomes a backend endpoint called from JS rather
    than a form target with its own display pages, since mail forms now appear on several pages.
@@ -748,9 +770,9 @@ What remains is infrastructure, content-model constraints, and one measured inpu
 
 - **`h5` was dropped from the schema in phase 1** — `article`, `caseStudy` and `singleton` offer
   `h1`–`h4` only, matching DESIGN.md, so no h5 role is needed. `h4` renders from day one in
-  `web-next/src/styles/base.css`. **One residue: dropping the style from the schema does not remove it
-  from the data.** Any block already published as `h5` still carries that style and would render
-  unstyled. Unverified — worth one query against `production-26` at the phase 5 parity check.
+  `web-next/src/styles/base.css`. The residue this note used to warn about — dropping a style from a
+  schema does not remove it from published blocks — **was measured on 2026-09-09 and there is none.**
+  Zero documents of those three types carry an `h5`. No longer a phase 5 item.
 - **Portable Text emits a flat sequence with no section wrappers**, which is why vertical rhythm is
   sibling margins rather than `gap`. This is a constraint on the markup, not a preference — see
   DESIGN.md and docs/decisions/layout.md.
