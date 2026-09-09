@@ -118,7 +118,8 @@ export default defineType({
           type: 'block',
           styles: TRANSCRIPT_STYLES,
           marks: MARKS,
-        }
+        },
+        {type: 'figure'},
       ],
     }),
     // defineField({
