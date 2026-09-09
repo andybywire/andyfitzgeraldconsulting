@@ -18,9 +18,6 @@ export default defineType({
   type: 'document',
   title: 'Events',
   icon: MdEventAvailable,
-  initialValue: {
-    type: 'talk',
-  },
   fields: [
     defineField({
       name: 'event',
@@ -37,15 +34,61 @@ export default defineType({
       title: 'Event Location',
       type: 'object',
       fields: [
-        defineField({name: 'city', type: 'string', title: 'City'}),
-        defineField({name: 'state', type: 'string', title: 'State'}),
-        defineField({name: 'country', type: 'string', title: 'Country'}),
+        defineField({
+          name: 'online',
+          title: 'Online Event',
+          type: 'boolean',
+          description: 'Check if this was and online-only event',
+          initialValue: false,
+        }),
+        defineField({
+          name: 'city',
+          type: 'string',
+          title: 'City',
+          hidden: ({parent}) => parent?.online,
+        }),
+        defineField({
+          name: 'state',
+          type: 'string',
+          title: 'State',
+          hidden: ({parent}) => parent?.online,
+        }),
+        defineField({
+          name: 'country',
+          type: 'string',
+          title: 'Country',
+          initialValue: 'USA',
+          options: {
+            list: [
+              {title: 'United States', value: 'USA'},
+              {title: 'Canada', value: 'Canada'},
+              {title: 'United Kingdom', value: 'UK'},
+              {title: 'Switzerland', value: 'Switzerland'},
+              {title: 'Italy', value: 'Italy'},
+            ],
+          },
+          hidden: ({parent}) => parent?.online,
+        }),
       ],
+    }),
+    defineField({
+      name: 'eventRecordings',
+      type: 'array',
+      of: [{type: 'recording'}],
+    }),
+    defineField({
+      name: 'link',
+      title: 'Event Link',
+      description: 'If available, provide a link to the event detail page.',
+      type: 'url',
     }),
     defineField({
       name: 'title',
       title: 'Presentation Title',
       type: 'string',
+      deprecated: {
+        reason: 'As of the 2026 redesign, Presentation Title is carried by Presentation.',
+      },
     }),
     /* Overlaps the Genre scheme's Presentation branch — Keynote, Talk, Workshop,
        Panel — without being it. `podcast` here has no Genre counterpart and
@@ -65,12 +108,10 @@ export default defineType({
           {title: 'Podcast', value: 'podcast'},
         ],
       },
-    }),
-    defineField({
-      name: 'link',
-      title: 'Event Link',
-      description: 'If available, provide a link to the event detail page.',
-      type: 'url',
+      initialValue: 'talk',
+      deprecated: {
+        reason: 'As of the 2026 redesign, Presentation Type is carried by Presentation.',
+      },
     }),
   ],
   preview: {

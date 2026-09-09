@@ -82,3 +82,63 @@ export function headingText(block: SluggableBlock): string {
 export function headingId(block: SluggableBlock): string {
   return slugify(headingText(block)) || `h-${block._key ?? ''}`
 }
+
+/** One entry in an in-page navigation list: a fragment target and its label. */
+export interface HeadingLink {
+  id: string
+  label: string
+}
+
+/**
+ * Every heading of one style in a Portable Text array, as fragment links.
+ *
+ * ── PROMOTED ON ITS THIRD CONSUMER ───────────────────────────────────────────
+ *
+ * The article page and the `page` template each wrote this `flatMap` inline for
+ * their rail's "On This Page", and the Presentation transcript's table of
+ * contents is the third — over `h3` rather than `h2`, which is the only thing
+ * that ever varied between them. Two copies were tolerable; a third is this
+ * project's stated trigger.
+ *
+ * It belongs beside `headingId` rather than in `lib/` because it is the same
+ * agreement: `Heading.astro` writes these ids onto the rendered headings and
+ * this builds the list that points at them. Both callers must compute the same
+ * id from the same block, which is the reason that function is shared, and this
+ * is simply the other half of it.
+ *
+ * ── `flatMap` OVER `filter().map()` ──────────────────────────────────────────
+ *
+ * It narrows and projects in one pass, so `block.style` is only read where
+ * TypeScript has already established the block is a text block and not a
+ * `figure`, `code` or `table` — the members of the generated union that carry no
+ * `style` at all.
+ *
+ * ── THE PARAMETER TYPE IS STRUCTURAL, FOR THE REASON ABOVE ───────────────────
+ *
+ * Same argument as `SluggableBlock`: the callers hold these blocks under
+ * different generated names, and importing any one of them here would reject the
+ * others. `_type` is what every member of every union shares, which is also what
+ * keeps this from tripping TypeScript's weak-type rule.
+ *
+ * ── AN EMPTY RESULT IS ORDINARY, NOT AN ERROR ────────────────────────────────
+ *
+ * 13 of 42 insights have no h2 at all, Contact has no body, and a transcript
+ * with no h3s is exactly the case whose table of contents should not render. So
+ * callers guard on `length` and omit the whole group rather than rendering an
+ * empty heading.
+ *
+ * NO DEDUPE, inheriting `headingId`'s decision and its caveat — see that note.
+ * The risk is higher here than it was for article h2s: transcript headings are
+ * short and conversational, so a repeat is more plausible, and a collision would
+ * point both links at the first one.
+ */
+export function headingLinks(
+  blocks: readonly ({_type?: string; style?: string} & SluggableBlock)[] | null | undefined,
+  style: 'h2' | 'h3',
+): HeadingLink[] {
+  return (blocks ?? []).flatMap((block) =>
+    block._type === 'block' && block.style === style
+      ? [{id: headingId(block), label: headingText(block)}]
+      : [],
+  )
+}

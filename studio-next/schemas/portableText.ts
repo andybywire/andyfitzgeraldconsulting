@@ -80,6 +80,13 @@ export const BODY_STYLES = [
   {title: 'Quote', value: 'blockquote'},
 ]
 
+export const TRANSCRIPT_STYLES = [
+  {title: 'Normal', value: 'normal'},
+  {title: 'H3', value: 'h3'},
+  {title: 'H4', value: 'h4'},
+  {title: 'Quote', value: 'blockquote'},
+]
+
 /**
  * Paragraphs only — for fields that are one unit of prose rather than a document:
  * the article lede, a singleton's intro, a table cell. Sanity always prepends
