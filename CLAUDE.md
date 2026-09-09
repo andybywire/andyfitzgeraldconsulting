@@ -21,23 +21,39 @@ materials of the web** — HTML, CSS, JS, and Linked Data. That is a goal, not a
 
 ## How to work with Andy on this repo
 
-**Revised 2026-08-17 for the build phase.** The earlier rule — never write code into the repo,
-suggest it in chat for Andy to retype — was right for the design work, which was learning-dense and
-where he wanted a hand on every decision. Building from a finished spec is a different shape: much
-of it is mechanical transcription, where chat round-trips add friction and no learning.
+**Revised 2026-09-09. The split is now SEAMS and SURFACES, not who types what.**
 
-**Write code into the repo now — but in reviewable increments.** He is an information architect,
-not a professional web developer, and hands-on work is still how he learns. What changed is *which*
-work is worth his hands.
+Two earlier arrangements, kept because they explain the direction of travel. The original rule was
+never to write code into the repo at all — suggest it in chat for Andy to retype — which suited the
+design work, where every decision was learning-dense. **2026-08-17** replaced that with "write code,
+but layout mechanics and the cascade are Andy's to type," on the grounds that hands-on work is how
+he learns.
+
+That second rule has now outlived its usefulness in one direction. **Reviewing a real, working
+artifact turns out to teach more than typing one from a description does** — and it is far faster.
+So the surfaces move, and what stays with Andy is the joints.
 
 | | |
 |---|---|
-| **You write** | tokens transcribed from DESIGN.md, boilerplate, config, repetitive sweeps, query modules — anything mechanical |
-| **Andy writes** | **layout mechanics, the cascade, component boundaries**, plus content model, URL design and semantics |
+| **You draft** | **layout mechanics and the cascade**, components, markup, page templates — plus queries, tokens, config, boilerplate and repetitive sweeps |
+| **Andy decides** | **the seams**: component boundaries, the content model, URL and id design, semantics and accessibility, and where a value lives |
 
-For the second row: explain the reasoning and the underlying platform behavior, then let him write
-it. He may delegate one of these once he has the concept, but **let him offer** — don't assume, and
-don't do it for him.
+**Draft the UI, then hand it over.** Build the thing, get it green and integration-verified, and let
+him respond to something real. Do not wait to be invited — for surfaces, the invitation is standing.
+
+**The invitation is NOT standing for seams.** Surface those as decisions with a recommendation
+*before* building past them, and let him answer. A seam is anything where the question is "what is
+this, and what does it belong to" rather than "how should this look or behave": whether a treatment
+gets promoted to a shared component or stays local, what a field means, what a URL or a fragment id
+addresses, which element carries meaning, whether a number is a token.
+
+Two consequences worth stating, because they are easy to get backwards:
+
+- **Content modelling in Sanity is his**, unless he asks. Propose shapes, name overlaps and gaps,
+  hand him a drop-in object if he wants one — but do not edit the schema or the data on your own
+  initiative.
+- **A seam discovered mid-draft stops the draft.** If building a surface turns up a boundary
+  question, say so and recommend; don't quietly decide it because you were already typing.
 
 ### Cadence is the constraint, not volume
 
@@ -45,8 +61,10 @@ don't do it for him.
 > accept it.**
 
 - One coherent piece, then **stop and let him look.** When in doubt, smaller.
-- **Say what you're about to write before writing it**, so a wrong direction costs a message rather
-  than a file.
+- **Say what you're about to write before writing it** — a sentence or two on the shape, so a wrong
+  direction costs a message rather than a file. That is a HEADS-UP, not a request for permission:
+  for surfaces, state the shape and build it in the same turn. For seams it is a real question, and
+  the turn ends there.
 - **If the pace is too slow he will say so.** Absent that, assume he wants to see the changes — err
   toward pausing, never toward batching.
 - **Prototype in the scratchpad, not the repo**, when the point is to find out whether something
@@ -57,6 +75,12 @@ don't do it for him.
 Teach the *why*. Assume strong fluency in IA, semantics, structured content, and taxonomy
 (he works with SKOS professionally). Do not assume front-end idiom or performance intuition —
 he has named performant, scalable CSS/HTML as not his strong suit and wants to get better at it.
+
+**Now that he reviews rather than types, the *why* has to travel in the artifact.** It used to
+arrive in chat, before he wrote the code. It now belongs in the comment beside the rule and in the
+handoff message — which is why the comments in this build explain reasoning, name what was tried
+and rejected, and record what a failure would look like. That density is deliberate and is the
+learning channel; do not thin it out.
 
 **He values pushback explicitly.** Offer new angles and challenge assumptions. If he reaffirms
 a decision after you've raised a concern, that's his call — proceed with the full request.
