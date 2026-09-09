@@ -73,7 +73,7 @@ import RelatedBand from '../../components/bands/RelatedBand.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
 import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
 import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
-import {headingId, headingText} from '../../components/prose/headingId'
+import {headingLinks} from '../../components/prose/headingId'
 
 export async function getStaticPaths() {
   const rows = await loadQuery(INSIGHT_SLUGS_QUERY)
@@ -215,11 +215,7 @@ const {items: relatedItems, isFallback} = rankRelated(
  * so an empty list here is ordinary. The template omits the group rather than
  * rendering an empty heading.
  */
-const contents = (insight.bodyText ?? []).flatMap((block) =>
-  block._type === 'block' && block.style === 'h2'
-    ? [{id: headingId(block), label: headingText(block)}]
-    : [],
-)
+const contents = headingLinks(insight.bodyText, 'h2')
 
 /* TypeGen types a dereferenced prefLabel as `string | null`, so the nulls are
    filtered rather than asserted away. All 42 documents carry at least one topic. */

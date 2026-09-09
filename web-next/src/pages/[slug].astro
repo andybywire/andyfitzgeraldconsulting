@@ -106,7 +106,7 @@ import SanityImage from '../components/SanityImage.astro'
 import GetInTouchBand from '../components/bands/GetInTouchBand.astro'
 import WorkWithMeBand from '../components/bands/WorkWithMeBand.astro'
 import {GET_IN_TOUCH_HEADING, GET_IN_TOUCH_ID} from '../components/bands/getInTouch'
-import {headingId, headingText} from '../components/prose/headingId'
+import {headingLinks} from '../components/prose/headingId'
 
 export async function getStaticPaths() {
   const rows = await loadQuery(PAGE_SLUGS_QUERY)
@@ -150,11 +150,7 @@ if (!page) throw new Error(`[[slug]] no page document for slug "${slug}"`)
  * is an editorial rule enforced in the Studio; a heading arriving in the wrong case should
  * show in the wrong case in the rail, because that is the signal the content needs fixing.
  */
-const bodyContents = (page.bodyText ?? []).flatMap((block) =>
-  block._type === 'block' && block.style === 'h2'
-    ? [{id: headingId(block), label: headingText(block)}]
-    : [],
-)
+const bodyContents = headingLinks(page.bodyText, 'h2')
 
 /**
  * The band's heading joins the list — but ONLY when the band actually renders one.

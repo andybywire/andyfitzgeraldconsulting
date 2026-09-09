@@ -1,6 +1,6 @@
 ---
 /**
- * A body h2, with a fragment id.
+ * A body h2 or h3, with a fragment id.
  *
  * ── IT DOES NOT RESTATE A DEFAULT, WHICH IS THE BAR Prose.astro SETS ─────────
  *
@@ -9,11 +9,29 @@
  * library has no way to know it needs: the rail's "On This Page" links target these
  * ids, so without them half the rail points at nothing.
  *
- * ONLY h2, because the rail lists only h2s — that is what the Figma Article board
- * draws, and the three entries in its sidebar correspond to its three h2 sections.
- * If h3 ever joins the list this file takes `{h2: Heading, h3: Heading}` and reads
- * `node.style` for the tag; it is deliberately not built that way yet, on the same
- * rule that keeps `table` unwritten.
+ * ── h3 JOINED ON 2026-09-08, EXACTLY AS THIS FILE PREDICTED ─────────────────
+ *
+ * The note here used to say "ONLY h2 … if h3 ever joins the list this file takes
+ * `{h2: Heading, h3: Heading}` and reads `node.style` for the tag". The Presentation
+ * transcript is that case: its table of contents lists the transcript's h3s, so they
+ * need ids to point at.
+ *
+ * ── IT APPLIES TO EVERY h3 IN THE BUILD, NOT ONLY THE TRANSCRIPT'S ──────────
+ *
+ * Deliberate, and the cheaper of two designs. Scoping ids to the transcript would
+ * mean a second serializer component and a variant on <Prose>, because a serializer
+ * receives only `node`, `index` and `isInline` — it cannot see which field it is
+ * rendering. That machinery buys nothing: an id nothing links to is inert, and a
+ * deep-linkable heading is a small good on its own.
+ *
+ * A prefixed transcript id (`transcript-introduction`) was specified and then dropped
+ * (Andy, 2026-09-08) on the grounds that a collision is a vanishingly thin corner
+ * case, correctable editorially, and one that does not break a build. The failure
+ * mode is the one headingId.ts already records: two headings share an id, both links
+ * jump to the first, and phase 8's HTML validator is where it surfaces.
+ *
+ * The collision surface widened slightly with this change, since an h2 and an h3 in
+ * one document can now slug to the same string. Same failure, same answer.
  *
  * ── NO STYLING, AND NO SCOPED <style> BLOCK ──────────────────────────────────
  *
@@ -31,6 +49,12 @@ import {headingId} from './headingId'
 type Props = BlockProps
 
 const {node} = Astro.props
+
+/* The tag follows the stored style rather than being passed in, so ONE component
+   serves both entries in Prose's map. `h2` is the fallback rather than a `style`
+   lookup, because this component is only ever reached for the two styles the map
+   registers — and an unexpected third should degrade to a heading, not to nothing. */
+const Tag = node.style === 'h3' ? 'h3' : 'h2'
 ---
 
-<h2 id={headingId(node)}><slot /></h2>
+<Tag id={headingId(node)}><slot /></Tag>
