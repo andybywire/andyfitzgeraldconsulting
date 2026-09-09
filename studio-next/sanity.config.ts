@@ -26,6 +26,15 @@ export default defineConfig({
   projectId: '7v0qvet6',
   dataset: 'production-26',
 
+  mediaLibrary: {
+    enabled: true,
+    libraryId: 'mlqhNxrAcmMg',
+
+  },
+  auth: {
+    loginMethod: 'token',
+  },
+
   plugins: [
     structureTool({
       structure: (S) => {
