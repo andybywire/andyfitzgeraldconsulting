@@ -70,6 +70,7 @@ import Masthead from '../../components/Masthead.astro'
 import Footer from '../../components/Footer.astro'
 import EntryHeader from '../../components/EntryHeader.astro'
 import Prose from '../../components/prose/Prose.astro'
+import Rail from '../../components/Rail.astro'
 import RailNav from '../../components/RailNav.astro'
 import TopicList from '../../components/TopicList.astro'
 import SanityImage from '../../components/SanityImage.astro'
@@ -444,20 +445,18 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
           }
           {
             (sections.length > 0 || topics.length > 0) && (
-              <aside class="rail">
-                <div class="rail-sticky">
-                  {sections.length > 0 && <RailNav items={sections} id="rail-contents" />}
-                  {topics.length > 0 && (
-                    <TopicList
-                      topics={topics}
-                      id="rail-topics"
-                      as="h3"
-                      microformats
-                      class="rail-topics"
-                    />
-                  )}
-                </div>
-              </aside>
+              <Rail>
+                {sections.length > 0 && <RailNav items={sections} id="rail-contents" />}
+                {topics.length > 0 && (
+                  <TopicList
+                    topics={topics}
+                    id="rail-topics"
+                    as="h3"
+                    microformats
+                    class="rail-topics"
+                  />
+                )}
+              </Rail>
             )
           }
         </Grid>
@@ -633,44 +632,20 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
 
   /* ── The rail ─────────────────────────────────────────────────────────────── */
   /*
-   * The article page's mechanism, and its two invariants come with it:
+   * PLACEMENT ONLY. <Rail> owns the dispersal below md, the sticky child and the 48
+   * between groups, along with the two invariants that make the stickiness work. What
+   * stays here is which columns it occupies, which is a fact about this page's grid.
    *
-   *   1. `.rail` MUST REMAIN A STRETCHED GRID ITEM — no `align-self: start`, or the
-   *      sticky child has no box to travel in and silently scrolls away.
-   *   2. NO `overflow` other than `visible` on any ancestor of `.rail-sticky`.
-   *
-   * Below md both wrappers go transparent so each group becomes a grid item in its own
-   * right: <RailNav> removes itself, and Topics reappears at the foot of the prose as an
-   * inline run — TopicList chooses that from its OWN width, so nothing here says so.
+   * `.rail` reaches <Rail>'s root because that component spreads `{...rest}`, so this
+   * page's scope attribute travels to it.
    */
   .rail {
     grid-column: var(--col-rail);
   }
 
-  .rail,
-  .rail-sticky {
-    display: contents;
-  }
-
+  /* Below md Topics has left the rail and become a grid item of its own — TopicList
+     chooses the inline run from its OWN width, so only the placement is stated. */
   .rail-topics {
     grid-column: var(--col-main);
-  }
-
-  @container style(--breakpoint-md: true) {
-    .rail,
-    .rail-sticky {
-      display: block;
-    }
-
-    .rail-sticky {
-      position: sticky;
-      top: var(--rhythm-band);
-    }
-
-    /* 48 between the two rail groups — `heading-minor` because what follows is a
-       heading, per DESIGN.md's rule to pick by prefix and name rather than by value. */
-    .rail nav + nav {
-      margin-top: var(--rhythm-heading-minor);
-    }
   }
 </style>

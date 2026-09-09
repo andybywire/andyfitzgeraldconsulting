@@ -67,6 +67,7 @@ import TopicList from '../../components/TopicList.astro'
 import NoteEntry from '../../components/NoteEntry.astro'
 import CaseStudyEntry from '../../components/CaseStudyEntry.astro'
 import GenreNav from '../../components/GenreNav.astro'
+import Rail from '../../components/Rail.astro'
 import RailNav from '../../components/RailNav.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import RelatedBand from '../../components/bands/RelatedBand.astro'
@@ -387,36 +388,30 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
                 topics" would otherwise collide.
               */}
               {(contents.length > 0 || topics.length > 0) && (
-                <aside class="rail">
+                <Rail>
                   {/*
-                      ── STICKINESS IS A PROPERTY OF THIS CHILD, NEVER OF .rail ──────
+                      THE <aside>, THE STICKY WRAPPER AND THE DISPERSAL MOVED TO <Rail>
+                      on 2026-09-08, when the presentation page repeated all three byte
+                      for byte. What stays here is placement — see the .rail rule below —
+                      and the two groups themselves.
 
-                      One wrapper, because on an article BOTH groups pin together. That
-                      one indirection is also what makes the other two rails free: on
-                      Services the image is an ordinary sibling above the sticky child
-                      and scrolls away by itself, and a Note's rail simply marks nothing
-                      sticky. Three behaviors, one mechanism, no per-page branching.
-
-                      A <div> and not a <section>: it is a positioning wrapper with no
-                      thematic content of its own, and <section> is explicitly not a
-                      generic container — it would put a nameless entry in the outline.
-
-                      See the .rail style block for the two invariants this depends on.
+                      Both pin together, which is what <Rail>'s single slot expresses.
+                      The `page` template's rail is the shape that does not fit: its hero
+                      has to scroll away while the nav pins, so it keeps its own markup
+                      until that component grows a second slot.
                     */}
-                  <div class="rail-sticky">
-                    {contents.length > 0 && <RailNav items={contents} id="rail-contents" />}
+                  {contents.length > 0 && <RailNav items={contents} id="rail-contents" />}
 
-                    {topics.length > 0 && (
-                      <TopicList
-                        topics={topics}
-                        id="rail-topics"
-                        as="h3"
-                        microformats
-                        class="rail-topics"
-                      />
-                    )}
-                  </div>
-                </aside>
+                  {topics.length > 0 && (
+                    <TopicList
+                      topics={topics}
+                      id="rail-topics"
+                      as="h3"
+                      microformats
+                      class="rail-topics"
+                    />
+                  )}
+                </Rail>
               )}
             </Grid>
           </Band>
@@ -588,129 +583,38 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
 
   /* ── The rail ───────────────────────────────────────────────────────────── */
   /*
-   * ┌────────────────────────────────────────────────────────────────────────┐
-   * │  TWO INVARIANTS. BOTH FAIL SILENTLY.                                   │
-   * │                                                                        │
-   * │  1. .rail MUST REMAIN A STRETCHED GRID ITEM. Do not add                │
-   * │     `align-self: start`.                                               │
-   * │  2. NO `overflow` OTHER THAN `visible` on any ancestor between          │
-   * │     .rail-sticky and the page.                                         │
-   * └────────────────────────────────────────────────────────────────────────┘
+   * PLACEMENT ONLY. <Rail> owns the <aside>, the sticky wrapper, the `display: contents`
+   * dispersal below md and the 48 between groups — extracted there on 2026-09-08, when
+   * the presentation page repeated all of it byte for byte. It also carries the two
+   * invariants that make the stickiness work, including the one this page discovered:
+   * `.rail` must remain a STRETCHED grid item, because a sticky child travels only
+   * inside its containing block.
    *
-   * A sticky element can only travel inside its containing block, which is
-   * .rail's box. A grid item stretches to its row's height by default, so .rail is
-   * as tall as the prose beside it and the sticky child has the whole article to
-   * travel down. Measured at a 3000px prose column: stretched, the rail box is
-   * 3000px and the child pins; with `align-self: start` the box collapses to its
-   * own content height and the child scrolls away like anything else. There is
-   * nothing on screen to say why.
+   * What stays here is which columns the rail occupies, and where Topics goes once it
+   * has dispersed out of it. Both are facts about this page's grid rather than about a
+   * rail, which is why placement did not move — the `page` template needs
+   * `grid-row: 2 / -1` to start at its lede and states that itself.
    *
-   * <Band> and <Grid> set no `overflow`, deliberately, and neither does anything
-   * here. That is the second invariant, and it has the same failure shape.
-   *
-   * NO `grid-row` EITHER. Auto-placement is doing the right thing on its own: at md
-   * the two placement tokens do not overlap in columns, so both items land in row 1
-   * and share its height; at the base they are both `1 / -1`, so the rail is pushed
-   * to row 2 and takes <Grid>'s `rhythm-heading-major` row gap — which is correct,
-   * because what lands below genuinely does start with a heading.
+   * NO `grid-row` HERE. Auto-placement is doing the right thing: at md the two placement
+   * tokens do not overlap in columns, so both items land in row 1 and share its height;
+   * at the base they are both `1 / -1`, so the rail is pushed to row 2 and takes <Grid>'s
+   * row gap — correct, because what lands below does start with a heading.
    */
 
   .rail {
     grid-column: var(--col-rail);
   }
 
-  /* ── Below md: THE RAIL DOES NOT COLLAPSE, IT DISPERSES ─────────────────── */
   /*
-   * The obvious implementation — let `--col-rail` collapse to `1 / -1` and drop the
-   * whole rail under the prose — is the one the design rejects. "Insight Detail —
-   * Mobile" (674:5455) shows the two groups going SEPARATE WAYS: "On This Page" is
-   * gone entirely, and Topics reappears at the foot of the prose as an inline
-   * comma-separated run. They are not one block that reflows.
+   * PLACEMENT ONLY, below md, where Topics has left the rail and become a grid item in
+   * its own right. Everything the inline run looks like lives in TopicList, which chooses
+   * between the run and the stacked list from ITS OWN WIDTH — so this page states no h3
+   * role, no colon, no commas, and needs no breakpoint of its own.
    *
-   * ── `display: contents` IS THE MECHANISM, AND IT IS THE FORWARD PATH ───────
-   *
-   * It erases a box while keeping its children, so `.rail` and `.rail-sticky` stop
-   * being layout at all below md and each nav becomes a grid item of <Grid> in its
-   * own right — free to place itself, or to not render. One DOM, no duplicated
-   * link list, nothing hidden that a screen reader would still read.
-   *
-   * Both are plain <div>s with no role, so the historic `display: contents`
-   * accessibility bug — the element vanishing from the tree — has nothing to take.
-   * The <nav>s keep their boxes and their landmarks.
-   *
-   * THIS IS WHAT THE SINGLETON PAGE WILL NEED. Its rail image belongs between the
-   * lede and the body on mobile (Andy, 2026-08-26), which is a position no
-   * collapsing rail could reach and an ordinary `order` once the image is a grid
-   * item. Built for this page, but built the way that one will want.
-   *
-   * ── WHY THE MOBILE TREATMENT IS THE BASE AND md UNDOES IT ─────────────────
-   *
-   * Mobile-first, per tokens.css: an engine that never evaluates the query must be
-   * left with the phone layout. The cost is that md has to say `display: block`
-   * rather than unset anything.
-   *
-   * (This note used to end by warning that md RESTATES h3's size and leading, and
-   * that this file was "the second place" the h3 role lived. Those two declarations
-   * left with the TopicList extraction and are not here to find; the warning went
-   * stale rather than wrong. Nothing in this file styles an h3 now.)
-   */
-
-  .rail,
-  .rail-sticky {
-    display: contents;
-  }
-
-  /* "On This Page" HIDES ITSELF NOW, and it had to move: <RailNav>'s <nav>, <h3>, <ul>
-     and links are its own descendants, and an Astro scope attribute reaches a
-     component's ROOT and never inside it — so every rule this page used to write for
-     them (the list reset, the two spacing rules, the whole link treatment) would have
-     compiled, shipped and matched nothing. See RailNav.astro. */
-
-  /*
-   * PLACEMENT ONLY, below md. Everything the run looks like moved to TopicList,
-   * which chooses between the inline run and the stacked list from ITS OWN WIDTH —
-   * so this page no longer restates the h3 role, the colon, the commas or the flex
-   * row, and the md breakpoint that used to switch them is gone.
-   *
-   * It was never a viewport question. What changed at md was that this list moved
-   * from the main column into the rail; the component now measures that directly.
+   * It was never a viewport question. What changed at md was that this list moved from
+   * the main column into the rail; the component now measures that directly.
    */
   .rail-topics {
     grid-column: var(--col-main);
-  }
-
-  /* ── From md: the rail becomes a column ─────────────────────────────────── */
-  /*
-   * `top` is a judgment call the board cannot show, since it draws no scroll
-   * position. The masthead does not stick, so `top: 0` would pin the nav flush
-   * against the viewport edge; `rhythm-band` gives it the same breathing room the
-   * bands have. **Judged on screen and settled** (Andy, 2026-08-26).
-   *
-   * 48 between the groups is the ramp from base.css restated for a context it does
-   * not reach. `heading-minor` rather than `rhythm-block` because what follows is an
-   * h3 — both are 48, and DESIGN.md's rule is to pick by prefix and name, never by
-   * value.
-   *
-   * WHAT USED TO BE HERE AND IS NOT ANY MORE: the list reset, the 16 from the heading
-   * to its list, the item spacing and the whole link treatment. All four moved into
-   * <RailNav> on 2026-09-07, when the `page` template would have been the third copy
-   * — the promotion TopicList's header called for. None of them could have stayed:
-   * they addressed elements that are now a component's descendants, which a page's
-   * scope attribute cannot reach.
-   */
-  @container style(--breakpoint-md: true) {
-    .rail,
-    .rail-sticky {
-      display: block;
-    }
-
-    .rail-sticky {
-      position: sticky;
-      top: var(--rhythm-band);
-    }
-
-    .rail nav + nav {
-      margin-top: var(--rhythm-heading-minor);
-    }
   }
 </style>
