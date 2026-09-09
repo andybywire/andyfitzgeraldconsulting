@@ -525,24 +525,29 @@ export type Presentation = {
         _key: string
       } & Figure)
   >
-  transcript?: Array<{
-    children?: Array<{
-      marks?: Array<string>
-      text?: string
-      _type: 'span'
-      _key: string
-    }>
-    style?: 'normal' | 'h3' | 'h4' | 'blockquote'
-    listItem?: 'bullet' | 'number'
-    markDefs?: Array<{
-      href?: string
-      _type: 'link'
-      _key: string
-    }>
-    level?: number
-    _type: 'block'
-    _key: string
-  }>
+  transcript?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'normal' | 'h3' | 'h4' | 'blockquote'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+    | ({
+        _key: string
+      } & Figure)
+  >
   presentationDeck?: {
     asset?: SanityFileAssetReference
     media?: unknown
@@ -982,6 +987,50 @@ export type Note = {
   >
 }
 
+export type SanityVideoMetadataPlayback = {
+  _type: 'sanity.videoMetadata.playback'
+  policy?: string
+}
+
+export type SanityVideoMetadata = {
+  _type: 'sanity.videoMetadata'
+  duration?: number
+  framerate?: number
+  aspectRatio?: number
+  hasAudio?: boolean
+  codec?: string
+  bitrate?: number
+}
+
+export type SanityVideoAsset = {
+  _id: string
+  _type: 'sanity.videoAsset'
+  _createdAt: string
+  _updatedAt: string
+  _rev: string
+  originalFilename?: string
+  label?: string
+  title?: string
+  description?: string
+  altText?: string
+  creditLine?: string
+  metadata?: SanityVideoMetadata
+  sha1hash?: string
+  extension?: string
+  mimeType?: string
+  size?: number
+  assetId?: string
+  uploadId?: string
+  path?: string
+  url?: string
+}
+
+export type SanityVideo = {
+  _type: 'sanity.video'
+  asset?: unknown
+  media?: unknown
+}
+
 export type Code = {
   _type: 'code'
   language?: string
@@ -1166,6 +1215,10 @@ export type AllSanitySchemaTypes =
   | Client
   | Article
   | Note
+  | SanityVideoMetadataPlayback
+  | SanityVideoMetadata
+  | SanityVideoAsset
+  | SanityVideo
   | Code
   | SkosConceptScheme
   | SkosConcept
@@ -1998,6 +2051,47 @@ export type PAGE_WORK_WITH_ME_BAND_QUERY_RESULT = {
 } | null
 
 // Source: ../web-next/src/sanity/queries/presentations.ts
+// Variable: PRESENTATIONS_INDEX_QUERY
+// Query: *[_type == "presentation" && defined(slug.current)] | order(pubDate desc) {			_id,	_type,	"slug": slug.current,			pubDate,	_updatedAt,			"genre": genre->prefLabel,	"topics": topic[]->prefLabel,		title,		"poster": coalesce(			poster,			(eventDetail[]->eventRecordings[])[defined(poster)][0].poster		) { 	asset,	crop,	hotspot,	altText,	caption },		"venue": eventDetail[0]->{			"name": event,			"online": location.online,			"city": location.city,			"state": location.state,			"country": location.country		},		"eventCount": count(eventDetail),		"hasTranscript": defined(transcript),		"hasDeck": defined(presentationDeck.asset),		"recordingKinds": (eventDetail[]->eventRecordings[])[defined(kind)].kind	}
+export type PRESENTATIONS_INDEX_QUERY_RESULT = Array<{
+  _id: string
+  _type: 'presentation'
+  slug: string | null
+  pubDate: string | null
+  _updatedAt: string
+  genre: string | null
+  topics: Array<string | null> | null
+  title: string | null
+  poster:
+    | {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: null
+      }
+    | {
+        asset: SanityImageAssetReference | null
+        crop: SanityImageCrop | null
+        hotspot: SanityImageHotspot | null
+        altText: string | null
+        caption: string | null
+      }
+    | null
+  venue: {
+    name: string | null
+    online: boolean | null
+    city: string | null
+    state: string | null
+    country: 'Canada' | 'Italy' | 'Switzerland' | 'UK' | 'USA' | null
+  } | null
+  eventCount: number | null
+  hasTranscript: false | true
+  hasDeck: false | true
+  recordingKinds: Array<'audio' | 'video' | null> | null
+}>
+
+// Source: ../web-next/src/sanity/queries/presentations.ts
 // Variable: PRESENTATION_SLUGS_QUERY
 // Query: *[_type == "presentation" && defined(slug.current)] {		"params": {"slug": slug.current}	}
 export type PRESENTATION_SLUGS_QUERY_RESULT = Array<{
@@ -2078,24 +2172,29 @@ export type PRESENTATION_DETAIL_QUERY_RESULT = {
 // Variable: PRESENTATION_TRANSCRIPT_QUERY
 // Query: *[_type == "presentation" && slug.current == $slug][0] {		transcript	}
 export type PRESENTATION_TRANSCRIPT_QUERY_RESULT = {
-  transcript: Array<{
-    children?: Array<{
-      marks?: Array<string>
-      text?: string
-      _type: 'span'
-      _key: string
-    }>
-    style?: 'blockquote' | 'h3' | 'h4' | 'normal'
-    listItem?: 'bullet' | 'number'
-    markDefs?: Array<{
-      href?: string
-      _type: 'link'
-      _key: string
-    }>
-    level?: number
-    _type: 'block'
-    _key: string
-  }> | null
+  transcript: Array<
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+  > | null
 } | null
 
 // Source: ../web-next/src/sanity/queries/presentations.ts
@@ -2447,6 +2546,56 @@ export type SINGLETON_INTRO_QUERY_RESULT = {
   > | null
 } | null
 
+// Source: ../web-next/src/sanity/queries/singletons.ts
+// Variable: SINGLETON_RSS_TOUCH_QUERY
+// Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,			"rssBand": coalesce(		customBands[_type == "bandRss"][0],		*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandRss"][0],		*[_type == "settings"][0].defaultBands[_type == "bandRss"][0]	){title, message, buttonTarget},			"touchBand": coalesce(		customBands[_type == "bandGetInTouch"][0],		*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandGetInTouch"][0],		*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]	){message, bandCopy}	}
+export type SINGLETON_RSS_TOUCH_QUERY_RESULT = {
+  _id: string
+  rssBand: {
+    title: string | null
+    message: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+    buttonTarget: string | null
+  } | null
+  touchBand: {
+    message: Array<{
+      children?: Array<{
+        marks?: Array<string>
+        text?: string
+        _type: 'span'
+        _key: string
+      }>
+      style?: 'normal'
+      listItem?: 'bullet' | 'number'
+      markDefs?: Array<{
+        href?: string
+        _type: 'link'
+        _key: string
+      }>
+      level?: number
+      _type: 'block'
+      _key: string
+    }> | null
+    bandCopy: boolean | null
+  } | null
+} | null
+
 // Query TypeMap
 import '@sanity/client'
 declare module '@sanity/client' {
@@ -2467,6 +2616,7 @@ declare module '@sanity/client' {
     '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\tlede,\n\t\t"description": pt::text(lede),\n\t\theroImg { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tbodyText\n\t}\n': PAGE_QUERY_RESULT
     '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t\n\t"touchBand": select(\n\t\t"bandGetInTouch" in coalesce(pageBands, []) => coalesce(\n\t\t\tcustomBands[_type == "bandGetInTouch"][0],\n\t\t\t*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]\n\t\t)\n\t){message, bandCopy}\n\n\t}\n': PAGE_GET_IN_TOUCH_BAND_QUERY_RESULT
     '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t\n\t"workBand": select(\n\t\t"bandWorkWithMe" in coalesce(pageBands, []) => coalesce(\n\t\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t\t)\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': PAGE_WORK_WITH_ME_BAND_QUERY_RESULT
+    '\n\t*[_type == "presentation" && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\t"poster": coalesce(\n\t\t\tposter,\n\t\t\t(eventDetail[]->eventRecordings[])[defined(poster)][0].poster\n\t\t) { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t"venue": eventDetail[0]->{\n\t\t\t"name": event,\n\t\t\t"online": location.online,\n\t\t\t"city": location.city,\n\t\t\t"state": location.state,\n\t\t\t"country": location.country\n\t\t},\n\t\t"eventCount": count(eventDetail),\n\t\t"hasTranscript": defined(transcript),\n\t\t"hasDeck": defined(presentationDeck.asset),\n\t\t"recordingKinds": (eventDetail[]->eventRecordings[])[defined(kind)].kind\n\t}\n': PRESENTATIONS_INDEX_QUERY_RESULT
     '\n\t*[_type == "presentation" && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': PRESENTATION_SLUGS_QUERY_RESULT
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tdescription,\n\t\tposter { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tbodyText,\n\t\thighlights\n\t}\n': PRESENTATION_DETAIL_QUERY_RESULT
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\ttranscript\n\t}\n': PRESENTATION_TRANSCRIPT_QUERY_RESULT
@@ -2478,5 +2628,6 @@ declare module '@sanity/client' {
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\tbodyText\n\t}\n': SINGLETON_INTRO_QUERY_RESULT
+    '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\t\n\t"rssBand": coalesce(\n\t\tcustomBands[_type == "bandRss"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandRss"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandRss"][0]\n\t){title, message, buttonTarget}\n,\n\t\t\n\t"touchBand": coalesce(\n\t\tcustomBands[_type == "bandGetInTouch"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandGetInTouch"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]\n\t){message, bandCopy}\n\n\t}\n': SINGLETON_RSS_TOUCH_QUERY_RESULT
   }
 }

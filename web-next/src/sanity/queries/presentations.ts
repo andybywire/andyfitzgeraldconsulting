@@ -2,6 +2,90 @@ import {defineQuery} from 'groq'
 import {BAND_RSS, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
 
 /**
+ * The Presentations index — every presentation, as a card.
+ *
+ * ── THE POSTER LADDER IS RESOLVED HERE, WHICH THE DETAIL QUERY DELIBERATELY IS NOT ──
+ *
+ * PRESENTATION_DELIVERY_QUERY projects each recording's poster as itself, because the
+ * detail page shows every poster in its own player. A CARD has one image slot, so the
+ * ladder is a card concern and this is where it belongs — presentation poster first,
+ * else the first recording that carries one, walking events then recordings in STORED
+ * ORDER. Both arrays are user-sortable in the Studio and that sort is an editorial
+ * judgment, so this must not reorder by date.
+ *
+ * ── THE PARENTHESES ARE THE WHOLE TRAP, AND THEY ARE NOT OPTIONAL ────────────
+ *
+ * `eventDetail[]->eventRecordings[]` FLATTENS to one array of every recording, but a
+ * following `[filter][0]` DISTRIBUTES per parent unless the traversal is parenthesised
+ * first. Without the parens this returns one poster PER EVENT — an array where a single
+ * value is expected, which reads downstream as "no value" rather than as an error.
+ * Verified 2026-09-08; the long note is in studio-next/schemas/objects/recording.ts.
+ *
+ * VERIFIED AGAINST THE REAL FOUR, and they happen to cover all four outcomes, which is
+ * why this corpus is worth keeping as the test set:
+ *
+ *   language-arts     poster            -> rung 1
+ *   yes-and           poster            -> rung 1
+ *   taxonomy-mgmt     recording poster  -> rung 2, image-2b919a88…-1280x720-png
+ *   beyond-the-page   neither           -> null, and the card renders unboxed
+ *
+ * The null is not a defect to guard away: DESIGN.md's Elevation rule makes the BOX the
+ * signal, so a presentation with no poster is meant to sit on the page ground with no
+ * boundary. Same mechanism NoteCard already uses.
+ *
+ * ── `venue` IS THE FIRST EVENT, AND `eventCount` CARRIES THE REST ────────────
+ *
+ * The board draws one venue line per card — "Button Events • Online" — with the extra
+ * deliveries reduced to a `+N` chip. `eventDetail[0]` is therefore the FIRST STORED
+ * event, not the earliest or the latest; see above on why stored order is the editorial
+ * one. Location comes back RAW and `formatLocation` composes it, so the display rule
+ * lives in one place rather than being half in GROQ.
+ *
+ * `online` is projected first and must be READ first — Sanity's conditional `hidden`
+ * stops a field being edited, not stored, so an event switched to online keeps its old
+ * city. lib/location.ts carries the full note.
+ *
+ * ── THE CHIP FACTS, AND WHY `count()` IS NOT USED FOR THE RECORDINGS ─────────
+ *
+ * `count(eventDetail)` is safe: that is a plain reference array, so every entry is real.
+ *
+ * `count(eventDetail[]->eventRecordings[])` would NOT be, and this is the trap worth
+ * naming because it produces a plausible number rather than an error: an event carrying
+ * no recordings still contributes a NULL to the flattened array, so the count reports
+ * deliveries rather than recordings. `language-arts` has three events and no recordings
+ * at all, and would have come back as 3. Projecting the `kind` values through a
+ * `defined()` filter counts only what exists — it returns `[]` there, and `["audio"]`
+ * and `["video"]` on the two that do have one.
+ *
+ * `defined(transcript)` rather than `count(transcript) > 0`: on a document with no
+ * transcript `count()` returns null, and `null > 0` is null rather than false — so the
+ * flag would be three-valued where the card wants a boolean.
+ */
+export const PRESENTATIONS_INDEX_QUERY = defineQuery(`
+	*[_type == "presentation" && defined(slug.current)] | order(pubDate desc) {
+		${IDENTITY},
+		${DATES},
+		${TAXONOMY},
+		title,
+		"poster": coalesce(
+			poster,
+			(eventDetail[]->eventRecordings[])[defined(poster)][0].poster
+		) { ${IMAGE} },
+		"venue": eventDetail[0]->{
+			"name": event,
+			"online": location.online,
+			"city": location.city,
+			"state": location.state,
+			"country": location.country
+		},
+		"eventCount": count(eventDetail),
+		"hasTranscript": defined(transcript),
+		"hasDeck": defined(presentationDeck.asset),
+		"recordingKinds": (eventDetail[]->eventRecordings[])[defined(kind)].kind
+	}
+`)
+
+/**
  * `presentation` — the Presentation branch of the Genre vocabulary: a delivered work,
  * with `event` recording each occasion it was delivered.
  *

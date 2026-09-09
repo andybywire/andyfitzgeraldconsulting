@@ -1,0 +1,296 @@
+---
+/**
+ * The Presentations index — phase 4, and the Presentation branch's only index.
+ *
+ * ── NO FACET FILTERS, AND THAT IS A DECISION RATHER THAN AN OMISSION ─────────
+ *
+ * The board (767:1897) draws a Topic and a Genre filter above the masonry, and the
+ * kickoff called for reusing the Insights index's mechanism. Measured against the real
+ * corpus, that mechanism has almost nothing to cut here (Andy, 2026-09-09):
+ *
+ *   4 presentations
+ *   topics   Content Modeling 3, Taxonomy 2, Mental Models 2, then FIVE at 1 each
+ *   genres   Talk 2, Keynote 1, Interview 1
+ *
+ * So five of eight topic chips would reduce four cards to one. The board's chips are
+ * sketched at Insights volume — "Knowledge graphs (8)", "Select all (33)" — which is
+ * the collection the mechanism was designed for and not this one.
+ *
+ * The second reason is structural: roughly 1,100 of `insights/index.astro`'s 1,702
+ * lines are page-agnostic apparatus, so filters here mean either duplicating that or
+ * extracting it. Extraction is the right end state and is queued as ITS OWN change,
+ * agreed shape: <FacetFilters>, <CardMasonry> and <ResultsFooter>, with the
+ * cross-cutting filter script in one module both pages import. Designing that against
+ * two pages that exist beats designing it against one real consumer and one imagined.
+ *
+ * NOTHING HERE HAS TO BE UNDONE WHEN IT LANDS. The facet markup is additive, and the
+ * `data-genre` / `data-topics` attributes the filter reads are deliberately NOT emitted
+ * yet — they are the filter's index, and markup nothing reads is the same smell as a
+ * field that silently stopped rendering. They arrive with the reader.
+ *
+ * ── THE GRID IS <CardMasonry>, BUILT FOR THIS PAGE AND ADOPTED BY INSIGHTS LATER ──
+ *
+ * This first shipped as a plain row grid, on the reasoning that duplicating Insights'
+ * measuring script was the thing the extraction exists to prevent. That was right about
+ * the duplication and wrong about the cost: the slack under card 1 was estimated at 58px
+ * and measured on screen at ~117px, because "Yes, And…" wraps to three lines rather than
+ * two and sets the row height for everything beside it.
+ *
+ * So the masonry moved into <CardMasonry> — the first of the three components the
+ * apparatus is being split into — with this page as its first consumer. That writes the
+ * copy that SURVIVES rather than one to be deleted, and it leaves Insights untouched
+ * until the extraction change, where its filter coupling can be designed with both pages
+ * in view. See that component for what it does and does not yet answer.
+ */
+import {loadQuery} from '../../sanity/load-query'
+import {PRESENTATIONS_INDEX_QUERY} from '../../sanity/queries/presentations'
+import {SINGLETON_HEADER_QUERY, SINGLETON_RSS_TOUCH_QUERY} from '../../sanity/queries/singletons'
+import {formatLocation} from '../../lib/location'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Band from '../../components/Band.astro'
+import Grid from '../../components/Grid.astro'
+import Masthead from '../../components/Masthead.astro'
+import Footer from '../../components/Footer.astro'
+import PageHeader from '../../components/PageHeader.astro'
+import PresentationCard from '../../components/cards/PresentationCard.astro'
+import type {CardTag} from '../../components/cards/PresentationCard.astro'
+import CardMasonry from '../../components/cards/CardMasonry.astro'
+import RssBand from '../../components/bands/RssBand.astro'
+import GetInTouchBand from '../../components/bands/GetInTouchBand.astro'
+
+/* Three independent fetches, so they go together rather than in series. The header and
+   the bands are separate queries because a singleton's `heroCopy` plus two band
+   messages is three Portable Text arrays in one projection — past the shape
+   singletons.ts names as the ClientReturn ceiling. Split costs no wall time here. */
+const [page, bands, presentations] = await Promise.all([
+  loadQuery(SINGLETON_HEADER_QUERY, {slug: 'presentations'}),
+  loadQuery(SINGLETON_RSS_TOUCH_QUERY, {slug: 'presentations'}),
+  loadQuery(PRESENTATIONS_INDEX_QUERY),
+])
+
+/* Loud rather than quiet, matching the other index pages. The singleton is content, so
+   it can be unpublished or re-slugged in the Studio — and a page that silently lost its
+   own title and lead would look like a styling bug rather than a missing document. That
+   is not hypothetical here: this document replaced one slugged `speaking` on
+   2026-09-09, and a page addressing the old slug would have failed exactly this way. */
+if (!page) throw new Error('[presentations/index] no singleton with slug "presentations"')
+
+/**
+ * One flat shape per card, in date order, resolved here so the template does no data
+ * work beyond choosing a component.
+ *
+ * The query filters on `defined(slug.current)`, but TypeGen types a projected slug as
+ * `string | null` because it cannot see the filter — so this narrows rather than
+ * asserting, exactly as the other index pages do.
+ */
+const cards = presentations.flatMap((item) => {
+  if (!item.slug) return []
+
+  /*
+   * ── THE VENUE LINE: THE FIRST DELIVERY, NAME AND PLACE ────────────────────
+   *
+   * The board draws "Button Events • Online" — the event's name, then its location.
+   * `formatLocation` composes the place half and owns the whole display rule, including
+   * the one that matters most: `online` is read FIRST, because Sanity's conditional
+   * `hidden` stops a field being edited rather than stored. Two of today's four are
+   * online and BOTH still carry a stale `country: "USA"`, so anything inferring
+   * "in person" from a present country would print a location for a podcast.
+   *
+   * Joined in JS rather than in the template. The separator is then part of a single
+   * string, which sidesteps the whitespace-sensitive text node that made <Eyebrow> draw
+   * its pipe with generated content — Prettier reformats `{…}` expression blocks on
+   * every `pnpm format` and `<!-- prettier-ignore -->` does not apply to them.
+   */
+  const place = formatLocation(item.venue)
+  const venue = [item.venue?.name, place].filter(Boolean).join(' • ')
+
+  /*
+   * ── THE TAGS ARE DERIVED, AND ORDERED SMALLEST-CONTEXT FIRST ──────────────
+   *
+   * Every one is a fact the query already knows; none is authored, and none is
+   * clickable. Board order on the one card that shows three is `+1, transcript, audio`,
+   * which this follows, with `video` beside `audio` and `slides` last.
+   *
+   * `+N` COUNTS THE DELIVERIES THE VENUE LINE DID NOT NAME, so it is `eventCount - 1`
+   * rather than the count itself — it modifies the line directly above it. The board
+   * also prints an inline "(+1)" after the location; that is leftover sketching,
+   * superseded by this chip, and deliberately not reproduced.
+   *
+   * `recordingKinds` comes back as the flattened `kind` of every recording across every
+   * event, so it can hold duplicates — three deliveries of one talk can each carry
+   * audio. A Set collapses them to the question the tag actually asks: is there audio
+   * at all. It is also typed `("audio" | "video" | null)[]`, because the query's
+   * `defined()` filter is invisible to TypeGen, hence the Boolean narrowing.
+   *
+   * On today's corpus this produces, in order: ["video"], ["slides"],
+   * ["transcript", "audio"], ["+2", "transcript"] — so every tag kind is exercised.
+   */
+  const kinds = new Set((item.recordingKinds ?? []).filter(Boolean))
+  const extra = (item.eventCount ?? 0) - 1
+
+  const tags: CardTag[] = [
+    ...(extra > 0
+      ? [{label: `+${extra}`, hint: `${extra} more ${extra === 1 ? 'venue' : 'venues'}`}]
+      : []),
+    ...(item.hasTranscript ? [{label: 'transcript'}] : []),
+    ...(kinds.has('audio') ? [{label: 'audio'}] : []),
+    ...(kinds.has('video') ? [{label: 'video'}] : []),
+    ...(item.hasDeck ? [{label: 'slides'}] : []),
+  ]
+
+  return [
+    {
+      id: item._id,
+      href: `/presentations/${item.slug}/`,
+      title: item.title ?? 'Untitled',
+      genre: item.genre,
+      date: item.pubDate,
+      venue: venue || null,
+      /* The poster ladder is already resolved in the query — the presentation's own,
+         else the first recording carrying one. Null is a real outcome and is what
+         leaves the card unboxed; see PresentationCard. */
+      poster: item.poster,
+      tags,
+    },
+  ]
+})
+---
+
+<BaseLayout title={page.title ?? 'Presentations'} description={page.lede ?? undefined}>
+  <Masthead />
+
+  <main>
+    <Band as="section" class="index-band">
+      <Grid>
+        {
+          /*
+          ── FULL WIDTH, NOT THE BOARD'S 656 ──────────────────────────────────
+
+          The board draws the Page Header at 656 (`--col-main`), and DESIGN.md
+          overrides it: "the masonry-and-filters pattern has no rail, so a header
+          constrained to `--col-main` reserves space for nothing… on these pages the
+          header takes `--col-full`, and the lede takes `max-width: 66ch`." That rule
+          names this page explicitly, and the authority chain puts DESIGN.md above the
+          boards on a rule. The cap lives in <PageHeader>, so nothing is restated here.
+        */
+        }
+        <PageHeader title={page.title ?? 'Presentations'} lede={page.heroCopy} />
+
+        {
+          /*
+          `as="h2"` — the page has one h1 and no other headings, so the card titles sit
+          directly under it. That stays correct when the facet groups arrive: their
+          "Topics" and "Genres" headings are h2 as well, and Insights settled that a
+          flat run beats dropping cards to h3, which would situate every title as
+          subordinate to *Genres* rather than to the page.
+        */
+        }
+        <CardMasonry class="masonry">
+          {
+            cards.map((card) => (
+              <PresentationCard
+                as="h2"
+                href={card.href}
+                title={card.title}
+                genre={card.genre}
+                date={card.date}
+                venue={card.venue}
+                poster={card.poster}
+                tags={card.tags}
+              />
+            ))
+          }
+        </CardMasonry>
+      </Grid>
+    </Band>
+
+    {
+      /*
+      Owns its own <Band tone="accent" space="section">, so it is appended to the page
+      stack rather than placed on the grid — matching the board, where the RSS CTA is a
+      full-bleed 1440-wide instance.
+
+      Its content resolves through the band ladder in the query, and the page never
+      learns which rung produced it. Today that is rung ONE: the singleton sets its own
+      `bandRss`, which is why this reads "Follow Presentations with RSS" rather than the
+      site default's generic copy.
+
+      Rendered only when the ladder produced something. There is a site default, so the
+      only way to reach null is Settings carrying no RSS band at all — in which case a
+      heading and a button over empty space would be worse than no band.
+    */
+    }
+    {
+      bands?.rssBand && (
+        <RssBand
+          title={bands.rssBand.title}
+          message={bands.rssBand.message}
+          buttonTarget={bands.rssBand.buttonTarget}
+        />
+      )
+    }
+
+    {
+      /*
+      ── THIS ONE OWNS NO FRAME, SO THE PAGE SUPPLIES IT ──────────────────────
+
+      The inverse of <RssBand> directly above, and the difference is the design rather
+      than an inconsistency: <GetInTouchBand> is a form that sits in the prose column,
+      so it takes a <Band> and a <Grid> from its host and is placed at `--col-main` —
+      which is what the board draws, a full-bleed frame with the Contact instance at
+      x=222, width 656. `pages/[slug].astro` places it the same way for the same reason.
+
+      Resolves at rung THREE, the Settings default, since the singleton sets no
+      `bandGetInTouch` of its own. `bandCopy` is true there, so the band carries its own
+      h2 and message above the form rather than relying on a host page's title.
+    */
+    }
+    {
+      bands?.touchBand && (
+        <Band as="section">
+          <Grid>
+            <GetInTouchBand
+              class="index-touch-band"
+              message={bands.touchBand.message}
+              bandCopy={bands.touchBand.bandCopy}
+            />
+          </Grid>
+        </Band>
+      )
+    }
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* Full width, per DESIGN.md's rule for a masonry index with no rail. The lede's 66ch
+     cap is <PageHeader>'s own; this states only where the header sits on the grid,
+     which is a fact about the PAGE. Reaching the component's root through the scope
+     attribute Astro passes down. */
+  .page-header {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * ── ALL THIS PAGE OWNS IS WHERE THE GRID SITS ───────────────────────────────
+   *
+   * The column ladder, the gaps and the measured spans belong to <CardMasonry>, which
+   * defaults to the 3-column rung DESIGN.md → Card grids specifies for "Insights /
+   * Presentations index" — 3 x 316 + 2 x 24 closing the 996 content width exactly, as
+   * the board draws at x 0 / 340 / 680. So no `columns` prop is passed.
+   *
+   * Placement stays here for the reason it stays on every page: where a thing sits on
+   * the grid is a fact about the PAGE. Reaching the component's root through the scope
+   * attribute Astro passes down.
+   */
+  .masonry {
+    grid-column: var(--col-full);
+  }
+
+  /* The form sits on the prose measure, not the full content width — the board's 656.
+     <Band> supplies the vertical space, so nothing here sets it. */
+  .index-touch-band {
+    grid-column: var(--col-main);
+  }
+</style>
