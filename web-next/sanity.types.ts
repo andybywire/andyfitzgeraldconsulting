@@ -411,16 +411,9 @@ export type Page = {
         _type: 'block'
         _key: string
       }
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        altText?: string
-        _type: 'image'
+    | ({
         _key: string
-      }
+      } & Figure)
   >
   pageBands?: Array<string>
   customBands?: Array<
@@ -553,6 +546,15 @@ export type Presentation = {
     media?: unknown
     _type: 'file'
   }
+  presentationSlides?: Array<{
+    asset?: SanityImageAssetReference
+    media?: unknown
+    hotspot?: SanityImageHotspot
+    crop?: SanityImageCrop
+    altText?: string
+    _type: 'image'
+    _key: string
+  }>
   eventDetail?: Array<
     {
       _key: string
@@ -1956,6 +1958,9 @@ export type PAGE_QUERY_RESULT = {
     caption: null
   } | null
   bodyText: Array<
+    | ({
+        _key: string
+      } & Figure)
     | {
         children?: Array<{
           marks?: Array<string>
@@ -1972,16 +1977,6 @@ export type PAGE_QUERY_RESULT = {
         }>
         level?: number
         _type: 'block'
-        _key: string
-      }
-    | {
-        asset?: SanityImageAssetReference
-        media?: unknown
-        hotspot?: SanityImageHotspot
-        crop?: SanityImageCrop
-        caption?: string
-        altText?: string
-        _type: 'image'
         _key: string
       }
   > | null
@@ -2230,6 +2225,20 @@ export type PRESENTATION_DELIVERY_QUERY_RESULT = {
         caption: null
       } | null
     }> | null
+  }> | null
+} | null
+
+// Source: ../web-next/src/sanity/queries/presentations.ts
+// Variable: PRESENTATION_SLIDES_QUERY
+// Query: *[_type == "presentation" && slug.current == $slug][0] {		"slides": presentationSlides[]{			asset,			crop,			hotspot,			altText,			"assetAlt": asset->altText,			"filename": asset->originalFilename		}	}
+export type PRESENTATION_SLIDES_QUERY_RESULT = {
+  slides: Array<{
+    asset: SanityImageAssetReference | null
+    crop: SanityImageCrop | null
+    hotspot: SanityImageHotspot | null
+    altText: string | null
+    assetAlt: string | null
+    filename: string | null
   }> | null
 } | null
 
@@ -2621,6 +2630,7 @@ declare module '@sanity/client' {
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tdescription,\n\t\tposter { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tbodyText,\n\t\thighlights\n\t}\n': PRESENTATION_DETAIL_QUERY_RESULT
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\ttranscript\n\t}\n': PRESENTATION_TRANSCRIPT_QUERY_RESULT
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\t"deck": presentationDeck.asset->{url, originalFilename, size, extension},\n\t\t"events": eventDetail[]->{\n\t\t\t_id,\n\t\t\t"name": event,\n\t\t\tdate,\n\t\t\tlink,\n\t\t\t"online": location.online,\n\t\t\t"city": location.city,\n\t\t\t"state": location.state,\n\t\t\t"country": location.country,\n\t\t\t"recordings": eventRecordings[]{\n\t\t\t\tkind,\n\t\t\t\turl,\n\t\t\t\tmediaUrl,\n\t\t\t\tsourceName,\n\t\t\t\tduration,\n\t\t\t\tposter { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t\t\t}\n\t\t}\n\t}\n': PRESENTATION_DELIVERY_QUERY_RESULT
+    '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\t"slides": presentationSlides[]{\n\t\t\tasset,\n\t\t\tcrop,\n\t\t\thotspot,\n\t\t\taltText,\n\t\t\t"assetAlt": asset->altText,\n\t\t\t"filename": asset->originalFilename\n\t\t}\n\t}\n': PRESENTATION_SLIDES_QUERY_RESULT
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\t\n\t"rssBand": coalesce(\n\t\tcustomBands[_type == "bandRss"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandRss"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandRss"][0]\n\t){title, message, buttonTarget}\n\n\t}\n': PRESENTATION_RSS_BAND_QUERY_RESULT
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\t"prev": *[\n\t\t\t_type == "presentation"\n\t\t\t&& defined(slug.current)\n\t\t\t&& (pubDate < ^.pubDate || (pubDate == ^.pubDate && _id < ^._id))\n\t\t] | order(pubDate desc, _id desc)[0] {\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t},\n\t\t"next": *[\n\t\t\t_type == "presentation"\n\t\t\t&& defined(slug.current)\n\t\t\t&& (pubDate > ^.pubDate || (pubDate == ^.pubDate && _id > ^._id))\n\t\t] | order(pubDate asc, _id asc)[0] {\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t}\n\t}\n': PRESENTATION_NAV_QUERY_RESULT
     '\n\t{\n\t\t"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {\n\t\t\t"tops": topConcepts[]->{_id, prefLabel},\n\t\t\t"concepts": concepts[]->{\n\t\t\t\t_id,\n\t\t\t\tprefLabel,\n\t\t\t\t"parent": broader[0]._ref\n\t\t\t}\n\t\t},\n\n\t\t"pool": *[\n\t\t\t_type in ["article", "caseStudy", "note"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t] | order(pubDate desc) {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\t"genreId": genre._ref,\n\t\t\t"genre": genre->prefLabel,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"sourceDomain": clipRef.publisher,\n\t\t\t"topics": topic[]->{\n\t\t\t\t_id,\n\t\t\t\t"parent": broader[0]._ref,\n\t\t\t\t"parentIsTop": !defined(broader[0]->broader[0]._ref)\n\t\t\t}\n\t\t}\n\t}\n': RELATED_POOL_QUERY_RESULT
