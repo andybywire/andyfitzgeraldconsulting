@@ -1,4 +1,4 @@
-# Phase 4 — recording players, Related Presentations, JSON-LD
+# Phase 4 — recording players, then Related Presentations
 
 CLAUDE.md is loaded. **Re-read the schema, re-query the dataset, and re-walk the Figma
 boards before trusting anything below.** Every fact here was verified on **2026-09-10** and
@@ -7,7 +7,7 @@ the most expensive lines in past kickoffs have been the ones quoting counts that
 
 ## Start state
 
-Branch `presentations-index`, at `5b7a35a`, **pushed**. Build green: **56 pages**,
+Branch `presentations-index`, at `12540db`, **pushed**. Build green: **56 pages**,
 `astro check` 0 errors / 0 warnings, Prettier clean, with only the known
 `[SanityHero] no altText` warnings.
 
@@ -40,10 +40,50 @@ row-major grid with no JavaScript and a horizontal scroll-snap track with it, pl
 
 ## The job, in this order
 
-### 1. The audio player — first, because the data exists and is verified
+### 1. Settle how media is supported — a DISCUSSION, before any code
 
-**There is exactly one audio recording**, on `beyond-the-page-with-structured-content`, from
-the event "The Informed Life":
+Andy's instruction (2026-09-10): *"Let's start the next session with a discussion of how we
+support this range of media first so we don't spin on un-vetted solutions."* **Do not open
+with an implementation.**
+
+**The mockup and the schema currently disagree, and that is the whole question.** The
+Interview board (**874:4109**, player at **2398:11907**, 656 x 154) draws Apple's official
+Podcasts embed: purple Apple branding, cover art, "APRIL 9, 2023 - 42 MIN", a Play button, a
+"See More" link out, and a "See how your data is managed..." disclosure. It is an iframe.
+
+`recording.mediaUrl` exists to avoid exactly that. Its own schema note says a podcast's RSS
+enclosure means "pointing a native `<audio>` at it costs no third-party script and no
+tracking." Both routes are viable and they produce different products:
+
+| | native `<audio>` from `mediaUrl` | the platform embed on the board |
+|---|---|---|
+| looks like | whatever we style | Apple's widget, unstyleable |
+| third-party JS | none | an iframe on the page |
+| tracking | none | Apple's, plus a disclosure line |
+| bandwidth | **someone else's host**, 28.8 MB | theirs |
+| data needed | the enclosure URL | the platform id |
+| matches the board | no | yes |
+
+Things to settle in that conversation, none of which is decided:
+
+- **Which one ships.** The board says embed; the schema says native. Neither is wrong.
+- **If embeds: how the platform is identified.** Today `url` happens to be an Apple
+  Podcasts link, so the platform is derivable by matching a hostname — which is fragile.
+  Andy is open to altering the Event Recordings object to carry this properly. **Content
+  modelling is his**: propose shapes, do not edit the schema.
+- **How far to standardise.** Every recording so far has been on Apple Podcasts, so
+  standardising there is probably fine — Andy said as much — but "probably fine" is worth
+  making explicit rather than inheriting.
+- **Audio and video should feel like one pattern.** Video will be YouTube. A click-to-load
+  facade for video and an eagerly-loaded Apple iframe for audio would be two different
+  interaction models on one page, and the deck already established the facade idiom.
+- **Privacy.** An embed loads a third party on page view unless it is facaded. That is a
+  real decision on a site whose contact form dropped reCAPTCHA on the same grounds.
+
+### 2. The audio player
+
+**One audio recording**, on `beyond-the-page-with-structured-content`, event "The Informed
+Life":
 
 | | |
 |---|---|
@@ -53,76 +93,81 @@ the event "The Informed Life":
 | `duration` | `41:55` (a display string) |
 | poster | **none** — so this exercises the framed-placeholder path |
 
-**The enclosure is verified working**, which is the fact the whole native-player plan rests
-on: `200`, `content-type: audio/mpeg`, **30,224,178 bytes (28.8 MB)**, `accept-ranges:
-bytes`, and a range request returns `206`. So seeking works. A site `Referer` is accepted,
-so there is no hotlink block.
+**The enclosure is verified working**, which is what makes the native route real rather than
+theoretical: `200`, `content-type: audio/mpeg`, **30,224,178 bytes (28.8 MB)**,
+`accept-ranges: bytes`, and a range request returns `206`, so seeking works. A site
+`Referer` is accepted, so there is no hotlink block.
 
 > **A plain `curl` returns 403. It is a user-agent filter, not a broken URL.** Retry with a
 > browser UA and it is a clean 200. This will otherwise cost you twenty minutes and might
 > talk you out of a plan that is fine.
 
 The resting state is already built and correct — `[slug].astro` renders a poster or a framed
-panel, plus a "Listen on …" link and the duration. **The player layers onto that markup
-without changing it**, which is the point of having built it that way round.
+panel, plus a "Listen on ..." link and the duration. **Whatever is chosen layers onto that
+markup without changing it**, which is the point of having built it that way round.
 
-Two things to decide rather than assume:
+If the native route wins: `preload="none"`, so nothing is fetched until someone presses
+play. 28.8 MB is a lot to spend on a visitor who scrolled past — and `recording.ts` notes it
+is usually someone else's bandwidth, which is a courtesy call for Andy rather than a
+technical one.
 
-- **`preload="none"`.** Nothing should be fetched until someone presses play; 28.8 MB is a
-  large thing to spend on a visitor who scrolled past. This also makes the courtesy point
-  below mostly moot.
-- **It is someone else's bandwidth.** `recording.ts` already says so: "serving their file
-  from this page spends their bandwidth. Worth a word to the host rather than a silent
-  decision." That is Andy's call to make, not a technical one.
-
-`duration` is a display string. It stays that way for the page; JSON-LD needs ISO 8601
-(`PT41M55S`), which is a conversion, not a schema change.
-
-### 2. The video facade
+### 3. The video facade
 
 One video recording, on `taxonomy-management-and-use-in-sanity-studio` — YouTube,
 `sourceName` "The Sanity Showcase Meetup", `duration` 24:21, **and it has a poster**, so the
-placeholder path is not exercised here.
+placeholder path is not exercised here. **Andy is adding a video variant to the dataset and
+will mock one up**, so check both before building.
 
-Click-to-load from `youtube-nocookie.com`, matching the deck's idiom so the page has one
-interaction pattern for heavy third-party media. **Do not derive a thumbnail from YouTube** —
-it puts a request to Google on the page before anyone asked for the video, which is most of
-what the facade buys. The recording's own poster is what it uses.
+Click-to-load from `youtube-nocookie.com` was the original intent, matching the deck's idiom.
+**Do not derive a thumbnail from YouTube** — it puts a request to Google on the page before
+anyone asked for the video, which is most of what a facade buys. The recording's own poster
+is what it uses.
 
-### 3. Related Presentations — half of it already exists
+### 4. Related Presentations — half of it already exists
 
-`lib/related.ts` **already has a `presentation` branch**, and `genresForBranch` already
-keeps the Document and Presentation branches apart. What is missing is smaller than the
-original kickoff suggested:
+Deferred until the media controls are done (Andy, 2026-09-10).
+
+`lib/related.ts` **already has a `presentation` branch**, and `genresForBranch` already keeps
+the Document and Presentation branches apart. What is missing is smaller than the original
+kickoff suggested:
 
 - `RELATED_POOL_QUERY` filters `_type in ["article", "caseStudy", "note"]` — add
   `presentation`.
-- The presentation detail page does not render `<RelatedBand>` at all yet.
+- The presentation detail page does not render `<RelatedBand>` at all yet. The Interview
+  board draws it (**874:4144**) with a single card.
 
-Presentations relating only to presentations is the default behaviour of the existing
-branch logic, not a special case. Widening it later loosens a filter.
-
-### 4. JSON-LD — bigger than it looks
-
-**There is no JSON-LD anywhere in `web-next`.** Not a line. The original kickoff described
-this as adding `PodcastEpisode` or `VideoObject`, which reads like extending something; it
-is starting from zero on this build.
-
-`web/_includes/linked-data/` is the reference — CLAUDE.md says JSON-LD carries over from
-there, joined by microformats2. Treat "add a type for recordings" as the last step of that
-work rather than the first.
-
-`PostalAddress` needs `addressCountry` as ISO 3166-1 alpha-2, and the stored values are
-display strings (`USA`, `Canada`, `UK`, `Switzerland`, `Italy`), so a five-entry map is
-needed somewhere. `lib/location.ts` already owns the display rule and is the obvious home.
+Presentations relating only to presentations is the default behaviour of the existing branch
+logic, not a special case. Widening it later loosens a filter.
 
 ### 5. Vet the model
 
-Last, once the pages have exercised it. Look for fields that duplicate each other, fields
-nothing renders, and gaps the templates had to work around. Two known threads:
+Once the pages have exercised it. Look for fields that duplicate each other, fields nothing
+renders, and gaps the templates had to work around. Three threads:
 
 - `event.title` and `event.type` are deprecated but still hold data on some events.
 - `presentation.poster` does triple duty — card image, deck face, player fallback.
+- Whatever the media discussion decides the recording object needs.
+
+## JSON-LD is deferred to the end of phase 4
+
+**Not part of this work** (Andy, 2026-09-10). It becomes a **fifth step of phase 4**, after
+all the page templates exist, so it can be integrated holistically rather than one type at a
+time. CLAUDE.md's phase 4 list currently ends at "4. The rest" and wants that step added.
+
+Why it is worth deferring rather than doing per page: **there is no JSON-LD anywhere in
+`web-next`.** Not a line. The original presentations kickoff described this as adding
+`PodcastEpisode` or `VideoObject`, which reads like extending something; it is starting from
+zero on this build, and doing that once across every template is a different and better job
+than doing it five times.
+
+Two things to carry into it when it happens:
+
+- `web/_includes/linked-data/` is the reference — CLAUDE.md says JSON-LD carries over from
+  there, joined by microformats2.
+- `PostalAddress` needs `addressCountry` as ISO 3166-1 alpha-2, and the stored values are
+  display strings (`USA`, `Canada`, `UK`, `Switzerland`, `Italy`), so a five-entry map is
+  needed somewhere. `lib/location.ts` already owns the display rule and is the obvious home.
+  `duration` is a display string too (`41:55`) and JSON-LD wants `PT41M55S`.
 
 ## Settled — do not re-derive or re-litigate
 
@@ -171,9 +216,10 @@ nothing renders, and gaps the templates had to work around. Two known threads:
   read-only exception for Dev Mode ANNOTATIONS**, which are the one thing neither
   `get_metadata` nor a screenshot exposes. Take the annotation text, quote it back, and
   discard the generated React/Tailwind.
-- Known board ids: **767:1897** Presentations index, **843:3838** Talk detail (carries the
-  viewer control row at **2708:4342**), **2405:11933** Talk Short Format. **The board for the
-  recording players has not been located** — find it before designing the audio player.
+- Known board ids: **767:1897** Presentations index; **843:3838** Talk detail, whose viewer
+  control row is **2708:4342**; **2405:11933** Talk Short Format; and **874:4109** Interview,
+  which is the one that matters here — its audio player is **2398:11907** and its Related
+  band **874:4144**. No board exists for a VIDEO player yet; Andy is making one.
 
 ## Gotchas that cost real time
 
