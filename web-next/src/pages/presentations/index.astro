@@ -2,50 +2,48 @@
 /**
  * The Presentations index — phase 4, and the Presentation branch's only index.
  *
- * ── NO FACET FILTERS, AND THAT IS A DECISION RATHER THAN AN OMISSION ─────────
+ * ── A COMPOSITION OF FOUR SHARED COMPONENTS ──────────────────────────────────
  *
- * The board (767:1897) draws a Topic and a Genre filter above the masonry, and the
- * kickoff called for reusing the Insights index's mechanism. Measured against the real
- * corpus, that mechanism has almost nothing to cut here (Andy, 2026-09-09):
+ * <FacetFilters>, <CardMasonry>, <ResultsFooter> and the behaviour in
+ * scripts/card-index.ts are all shared with the Insights index, which is where every one
+ * of them was written before this page existed. What is this page's own is the query,
+ * how a presentation becomes a card, the venue line, the derived tags, and placement.
  *
- *   4 presentations
+ * The filters shipped one step after the rest of the page, deliberately. On four cards
+ * the mechanism has almost nothing to cut — five of eight topic chips reduce the set to
+ * one — so the first version went out without them rather than force the extraction
+ * early. The extraction then happened on its own terms, with both consumers in view,
+ * which is why <FacetFilters> and <ResultsFooter> arrived complete rather than as a
+ * second copy.
+ *
+ * The corpus it filters, measured 2026-09-09:
+ *
  *   topics   Content Modeling 3, Taxonomy 2, Mental Models 2, then FIVE at 1 each
  *   genres   Talk 2, Keynote 1, Interview 1
  *
- * So five of eight topic chips would reduce four cards to one. The board's chips are
- * sketched at Insights volume — "Knowledge graphs (8)", "Select all (33)" — which is
- * the collection the mechanism was designed for and not this one.
+ * The board's chips are sketched at Insights volume — "Knowledge graphs (8)", "Select
+ * all (33)" — which is the collection the mechanism was designed for and not this one.
+ * Worth remembering before reading much into how sparse the rows look.
  *
- * The second reason is structural: roughly 1,100 of `insights/index.astro`'s 1,702
- * lines are page-agnostic apparatus, so filters here mean either duplicating that or
- * extracting it. Extraction is the right end state and is queued as ITS OWN change,
- * agreed shape: <FacetFilters>, <CardMasonry> and <ResultsFooter>, with the
- * cross-cutting filter script in one module both pages import. Designing that against
- * two pages that exist beats designing it against one real consumer and one imagined.
+ * ── THE GRID WAS A ROW GRID FOR ONE STEP, AND THE ESTIMATE WAS WRONG ─────────
  *
- * NOTHING HERE HAS TO BE UNDONE WHEN IT LANDS. The facet markup is additive, and the
- * `data-genre` / `data-topics` attributes the filter reads are deliberately NOT emitted
- * yet — they are the filter's index, and markup nothing reads is the same smell as a
- * field that silently stopped rendering. They arrive with the reader.
+ * Worth keeping because the mistake was in the measurement, not the reasoning. This
+ * first shipped as a plain row grid, on the argument that duplicating Insights' measuring
+ * script was the thing the extraction exists to prevent. That was right about the
+ * duplication and wrong about the cost: the slack under card 1 was ESTIMATED at 58px and
+ * MEASURED on screen at ~117px, because "Yes, And…" wraps to three lines rather than two
+ * and sets the row height for everything beside it.
  *
- * ── THE GRID IS <CardMasonry>, BUILT FOR THIS PAGE AND ADOPTED BY INSIGHTS LATER ──
- *
- * This first shipped as a plain row grid, on the reasoning that duplicating Insights'
- * measuring script was the thing the extraction exists to prevent. That was right about
- * the duplication and wrong about the cost: the slack under card 1 was estimated at 58px
- * and measured on screen at ~117px, because "Yes, And…" wraps to three lines rather than
- * two and sets the row height for everything beside it.
- *
- * So the masonry moved into <CardMasonry> — the first of the three components the
- * apparatus is being split into — with this page as its first consumer. That writes the
- * copy that SURVIVES rather than one to be deleted, and it leaves Insights untouched
- * until the extraction change, where its filter coupling can be designed with both pages
- * in view. See that component for what it does and does not yet answer.
+ * <CardMasonry> came out of that, with this page as its first consumer — writing the copy
+ * that survives rather than one to be deleted. Insights has since adopted it, along with
+ * the other two components, so there is now exactly one implementation of each.
  */
 import {loadQuery} from '../../sanity/load-query'
 import {PRESENTATIONS_INDEX_QUERY} from '../../sanity/queries/presentations'
 import {SINGLETON_HEADER_QUERY, SINGLETON_RSS_TOUCH_QUERY} from '../../sanity/queries/singletons'
 import {formatLocation} from '../../lib/location'
+import {slugify} from '../../lib/slug'
+import {facetGroups} from '../../lib/facets'
 import BaseLayout from '../../layouts/BaseLayout.astro'
 import Band from '../../components/Band.astro'
 import Grid from '../../components/Grid.astro'
@@ -55,6 +53,8 @@ import PageHeader from '../../components/PageHeader.astro'
 import PresentationCard from '../../components/cards/PresentationCard.astro'
 import type {CardTag} from '../../components/cards/PresentationCard.astro'
 import CardMasonry from '../../components/cards/CardMasonry.astro'
+import FacetFilters from '../../components/FacetFilters.astro'
+import ResultsFooter from '../../components/ResultsFooter.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import GetInTouchBand from '../../components/bands/GetInTouchBand.astro'
 
@@ -151,9 +151,45 @@ const cards = presentations.flatMap((item) => {
          leaves the card unboxed; see PresentationCard. */
       poster: item.poster,
       tags,
+
+      /*
+       * ── THE FACETS, AS SLUGS, ON THE CARD ITSELF ───────────────────────────
+       *
+       * There is no JSON facet index and there does not need to be one: every document
+       * renders, so the DOM already holds the complete topic and genre sets that live
+       * counts need. It comes back when show-more stops rendering everything.
+       *
+       * SPACE-SEPARATED, which is a real choice: `~=` matches one word of a
+       * space-separated attribute natively, so `[data-topics~="taxonomy"]` is a
+       * selector rather than a parse. The script never splits a string to test
+       * membership, and these are clean slugs in an attribute — never rendered text —
+       * so preview mode's stega-encoded metadata cannot land in them.
+       */
+      genreSlug: item.genre ? slugify(item.genre) : null,
+      topicSlugs: (item.topics ?? [])
+        .filter((topic): topic is string => Boolean(topic))
+        .map(slugify),
     },
   ]
 })
+
+/**
+ * ── GENRE SHOWS ONLY THE PRESENTATION BRANCH, AND NOTHING ENFORCES IT ────────
+ *
+ * `facetGroups` tallies whatever the rows contain, and these rows are the result of a
+ * query selecting `_type == "presentation"` — so the genres are exactly the ones this
+ * corpus uses, today Talk, Keynote and Interview. There is no allow-list and there
+ * should not be one: an allow-list would be a second place for the vocabulary to live,
+ * and it would go stale the day a Workshop or a Panel is published.
+ *
+ * WHAT IT RESTS ON is the consistency invariant CLAUDE.md records — a document's genre
+ * sits under the top concept matching its structural family. Four documents violated it
+ * while `presentation` did not exist, all stored as `article`; they were re-typed and
+ * the corpus measured clean on 2026-09-09. If one regressed, a Document-branch genre
+ * would appear as a chip here, which is a content problem this page would surface rather
+ * than hide. That is the right way round.
+ */
+const facets = facetGroups(presentations)
 ---
 
 <BaseLayout title={page.title ?? 'Presentations'} description={page.lede ?? undefined}>
@@ -185,11 +221,30 @@ const cards = presentations.flatMap((item) => {
           subordinate to *Genres* rather than to the page.
         */
         }
-        <CardMasonry class="masonry">
+        {
+          /*
+          The same controls the Insights index carries, from the same component — which
+          owns its own grid placement, since both boards draw the identical 7 + skip-1 +
+          4 split. The vocabulary is this page's own; see the note on `facets`.
+        */
+        }
+        <FacetFilters facets={facets} basePath="/presentations/" label="Filter presentations" />
+
+        {
+          /*
+          `truncate` even though this corpus is far below one reveal step of 24. The
+          attribute is what the pre-paint rule keys on, and it is correct the day the
+          corpus passes 24 rather than something to remember to add then. It is inert
+          until then — `nth-child(n + 25)` matches nothing at four cards.
+        */
+        }
+        <CardMasonry class="masonry" truncate>
           {
             cards.map((card) => (
               <PresentationCard
                 as="h2"
+                data-genre={card.genreSlug}
+                data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
                 href={card.href}
                 title={card.title}
                 genre={card.genre}
@@ -201,6 +256,18 @@ const cards = presentations.flatMap((item) => {
             ))
           }
         </CardMasonry>
+
+        {
+          /*
+          ── THE BOTTOM BAR ───────────────────────────────────────────────────
+
+          Reads "Displaying all 4 presentations" today and wires up for growth: the
+          component ships both reveal controls `hidden`, and the script un-hides them
+          only once the corpus exceeds a step — `revealed + STEP >= cards.length` is
+          false at 4, so neither shows. Nothing here needs changing when it does.
+        */
+        }
+        <ResultsFooter total={cards.length} noun={{one: 'presentation', many: 'presentations'}} />
       </Grid>
     </Band>
 
@@ -285,6 +352,12 @@ const cards = presentations.flatMap((item) => {
    * attribute Astro passes down.
    */
   .masonry {
+    grid-column: var(--col-full);
+  }
+
+  /* Same full-width placement, and <Grid>'s `rhythm-heading-major` row gap is what
+     separates it from the masonry above. */
+  .results-footer {
     grid-column: var(--col-full);
   }
 
