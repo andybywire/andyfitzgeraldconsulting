@@ -38,8 +38,34 @@
  * alternative was a build-time partition into three column wrappers, which forces a
  * contiguous DOM slice per column and therefore a CSS `order` per card — buying visual
  * order at the cost of a focus mismatch, non-chronological screen-reader traversal, and
- * a future `h-feed` out of date order. See insights/index.astro for the full accounting
- * and the measurements across all three rungs.
+ * a future `h-feed` out of date order.
+ *
+ * MEASURED ON THE REAL 45-CARD INSIGHTS CORPUS, all three rungs, before that switch:
+ *
+ *                        ragged   wasted gap   height    DOM order
+ *   3 col, spans           219        0        6686      date
+ *   3 col, old wrappers    241        0        6686      partition
+ *   2 col, spans            89        0        9872      date
+ *   2 col, old wrappers    447      876       10489      partition
+ *   1 col, either            0        0       19687      date / partition
+ *
+ * The two-column rung is where it stops being close: the old approach could not serve a
+ * second partition from one DOM, so it fell back to a row grid there. This does not have
+ * that problem, which also retired the "tablet row gaps" question.
+ *
+ * ── THE NO-SCRIPT STATE IS A ROW GRID, AND THAT IS THE DESIGN ────────────────
+ *
+ * The spans need MEASURED heights, and measuring has to happen before the spans exist:
+ * once `grid-auto-rows: 1px` is in effect a card's grid area IS its span, so measuring
+ * then returns the span rather than the content. Build-time estimates were tried and
+ * cannot be made safe — any under-estimate makes a card overflow into its neighbour, and
+ * padding the estimate to guarantee over-estimation lands back at the row grid's gaps
+ * with extra steps.
+ *
+ * So with no JavaScript this is a row grid: correct order, nearly flush at the bottom
+ * (29px on that corpus), and airier than intended — a 59px median gap against the
+ * design's 32, about 16% of extra height. Accepted (Andy, 2026-08-28). Content is never
+ * hidden by it.
  */
 interface Props {
   /**
@@ -49,16 +75,28 @@ interface Props {
    * third consumer at 2.
    */
   columns?: 2 | 3
+  /**
+   * Hide everything past the first reveal step before any script runs. Set it on an
+   * index whose <ResultsFooter> offers "Show more" / "Show all"; see the rule below for
+   * why the truncation has to be in force at the FIRST paint rather than applied by JS.
+   */
+  truncate?: boolean
   class?: string
   /* Forwarded to the root — grid placement from the page, and the scope attribute that
      lets a page style this component at all. */
   [key: string]: unknown
 }
 
-const {columns = 3, class: className, ...rest}: Props = Astro.props
+const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.props
 ---
 
-<div class:list={['card-masonry', className]} data-card-masonry data-columns={columns} {...rest}>
+<div
+  class:list={['card-masonry', className]}
+  data-card-masonry
+  data-columns={columns}
+  data-truncate={truncate ? '' : undefined}
+  {...rest}
+>
   <slot />
 </div>
 
@@ -168,6 +206,42 @@ const {columns = 3, class: className, ...rest}: Props = Astro.props
 
   .card-masonry.is-measured > :global(*) {
     grid-row: span var(--card-span);
+  }
+
+  /*
+   * ── THE FIRST 24, BEFORE ANY SCRIPT RUNS ────────────────────────────────────
+   *
+   * The truncation has to be in force at the FIRST paint or it is a visible collapse
+   * rather than an initial state — a whole index drawn and then thrown away.
+   * `html.js` is set by the synchronous inline script in BaseLayout, which runs while
+   * <head> is still parsing, so this rule is true before <body> exists.
+   *
+   * THE FOUR PARTS ARE FOUR SEPARATE JOBS:
+   *
+   *   html.js               only where a script can undo it. Without JS the class never
+   *                         arrives, the rule never matches, and every card renders — no
+   *                         control the visitor cannot operate, and nothing unreachable.
+   *   [data-truncate]       opt-in. An index with no reveal controls must not hide cards
+   *                         it can never show again — the Presentations index has fewer
+   *                         cards than one step, so this is inert there, but a page
+   *                         without <ResultsFooter> would be broken by it.
+   *   :not([data-hydrated]) hands over cleanly. card-index.ts sets that attribute in the
+   *                         same synchronous pass in which it starts managing `hidden`,
+   *                         so exactly one mechanism truncates at any moment and the two
+   *                         cannot disagree.
+   *   :nth-child(n + 25)    plain `nth-child`, deliberately NOT the ladder's
+   *                         `of :not([hidden])`. Nothing is hidden yet at this point, so
+   *                         the two would count identically — and this one has to keep
+   *                         working before the script exists.
+   *
+   * 25 IS `STEP + 1`, AND STEP LIVES IN scripts/card-index.ts. CSS cannot read it, so
+   * the two are bound by this comment and its twin there. If one changes, both change.
+   *
+   * `:global()` on the child half for the reason every selector here needs it: the cards
+   * are slotted and carry the caller's scope, not this component's.
+   */
+  html.js .card-masonry[data-truncate]:not([data-hydrated]) > :global(:nth-child(n + 25)) {
+    display: none;
   }
 </style>
 

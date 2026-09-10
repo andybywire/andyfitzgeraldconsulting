@@ -1,0 +1,150 @@
+---
+/**
+ * The card index's bottom bar — the result count, the reveal controls, and the live
+ * region that announces changes.
+ *
+ * ── EXTRACTED FROM `insights/index.astro`; BOTH INDEXES COMPOSE IT ───────────
+ *
+ * The third of the three components the index apparatus is split into.
+ *
+ * ── IT SITS BELOW THE GRID, WHICH WAS A DECISION ────────────────────────────
+ *
+ * It started above and moved (Andy, 2026-08-31), on the reasoning that the chips report
+ * on the WHOLE collection by design, so the number of cards actually on screen is not
+ * information you need before you start — it is information you want at the point where
+ * you notice the grid ended. This is also where the reveal controls live, which is the
+ * second reason to group them.
+ *
+ * Moving it costs nothing for a screen-reader user, and that is worth stating because it
+ * is the non-obvious half: a live region announces wherever it sits. Position governs
+ * who SEES it, never who hears it.
+ *
+ * ── TWO ELEMENTS, AND THE SECOND IS NOT A DUPLICATE ─────────────────────────
+ *
+ * The visible line carries NO live role. The announcement comes from a separate region
+ * that ships EMPTY and is written only on a user-initiated change.
+ *
+ * This replaces a "promote to role=status after the first render" idea, and the reason
+ * is the case that idea does not cover: someone arriving on a shared `?topic=` link. The
+ * visible line is server-rendered for the no-JS truth — every card shown — so on that
+ * arrival JS rewrites it during load, and a region that was live by then would read its
+ * own count out before the page had been read. Starting empty makes that impossible by
+ * construction rather than by timing, and it costs one element.
+ *
+ * `role="status"` rather than a bare `aria-live="polite"`: it carries implicit `polite`
+ * and `atomic`, and is the better-supported of the two.
+ */
+import Chip from './Chip.astro'
+import VisuallyHidden from './VisuallyHidden.astro'
+
+interface Props {
+  /** How many cards the page rendered — the no-JS truth, since all of them show. */
+  total: number
+  /** The word for one of these things, and for several. */
+  noun: {one: string; many: string}
+  class?: string
+  [key: string]: unknown
+}
+
+const {total, noun, class: className, ...rest}: Props = Astro.props
+
+/*
+ * ── THE RESTING SENTENCE, AND WHY IT IS BUILT HERE ──────────────────────────
+ *
+ * Server-rendered and accurate as shipped: every card renders, so "all N" is true, and
+ * the script only ever narrows it. It mirrors `describe()`'s no-filter branch in
+ * scripts/card-index.ts, which is the only other place this sentence is written — and
+ * the noun below is handed to that script through `data-noun-*`, so the two cannot
+ * disagree about the word even though they build the sentence separately.
+ *
+ * ONE EXPRESSION, NOT TWO. Written as `{total} {…plural}` in the template this emitted
+ * "45insights" — Astro drops the whitespace BETWEEN adjacent expressions once a
+ * formatter puts them on separate lines. The browser never showed it, because the script
+ * rewrites this line on load; only the built HTML, which is to say only the no-JS state,
+ * carried the bug.
+ */
+const totalLabel = `Displaying all ${total} ${total === 1 ? noun.one : noun.many}`
+---
+
+<div
+  class:list={['results-footer', className]}
+  data-results-footer
+  data-noun-one={noun.one}
+  data-noun-many={noun.many}
+  {...rest}
+>
+  {
+    /*
+    `tabindex="-1"` takes it out of nothing — a negative index is unreachable by Tab and
+    only makes the element focusable PROGRAMMATICALLY. It is here so focus has somewhere
+    to land when "Show all" removes the button that was just pressed, which would
+    otherwise drop focus to the body.
+  */
+  }
+  <p class="result-count" tabindex="-1">{totalLabel}</p>
+
+  {
+    /*
+    Both `hidden` at rest, because the static page has already shown everything — a
+    control that would reveal what is on screen is worse than no control. The script
+    un-hides them when it truncates, which on a corpus smaller than one reveal step
+    (24) never happens: the Presentations index carries these and shows neither.
+
+    <button>, where the facet chips are links: these change how much of the page is
+    shown, not what the URL addresses, and the reveal is deliberately NOT in the URL
+    (Andy, 2026-08-31) — it resets on navigating away. A control with no address is a
+    button.
+  */
+  }
+  <div class="result-controls">
+    <Chip as="button" class="show-more" type="button" hidden>Show more</Chip>
+    <Chip as="button" class="show-all" type="button" hidden>Show all</Chip>
+  </div>
+
+  <VisuallyHidden as="div" class="result-status" role="status" />
+</div>
+
+<style>
+  /*
+   * ── DESIGN.md's `label` ROLE ────────────────────────────────────────────────
+   *
+   * Lato 700 at the 16px step with +2% tracking, in `text-muted` — the same role as the
+   * article page's eyebrow, and the style Andy applied on the board's *Card display
+   * controls* frame. It replaced an italic draft: a small bold label reads as apparatus
+   * about the page, where italic body reads as an aside within it.
+   *
+   * `text-muted` VERIFIED AGAINST THE BOARD rather than assumed. The frame renders the
+   * label's glyph cores at #505a5e, which is `--neutral-700` exactly, which is what
+   * `--color-text-muted` resolves to. Worth recording because the render reads darker
+   * than a mid gray by eye — the sample settled it and the eye did not.
+   *
+   * Family and tracking are declared here because this is the only place on the page
+   * that uses `label`; base.css's scope stops at h1-h4, body, links and nav, and names
+   * `label` among the roles that belong to the component that owns one.
+   */
+  .result-count {
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+
+  /*
+   * The board's *Card display controls* frame: the chip row sits at y=40 under a
+   * 24px-tall label, so 16 — `rhythm-heading-close`, the label being bound to the
+   * controls the way a heading is bound to its paragraph. The chips are 16 apart, which
+   * is the same `space-2` the facet rows use.
+   *
+   * `wrap` rather than a stacking rule at a breakpoint: the pair measures ~176px
+   * together, so they fit side by side at 360 and only ever stack if a longer label
+   * arrives. A media query would be asserting a wrap that does not happen.
+   */
+  .result-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--rhythm-heading-close);
+  }
+</style>

@@ -1,0 +1,301 @@
+---
+/**
+ * The Topic and Genre facet controls for a card index.
+ *
+ * ── EXTRACTED FROM `insights/index.astro`, SECOND CONSUMER IS PRESENTATIONS ──
+ *
+ * The second of the three components the index apparatus is being split into. Both
+ * pages now compose it, so unlike <CardMasonry> this one has no transitional period —
+ * duplicating ~600 lines of filter logic was never a serious option, and the original
+ * script was written to be ported ("everything else in it is addressed by class name or
+ * read from `location.pathname`").
+ *
+ * ── IT OWNS ITS PLACEMENT, BECAUSE BOTH BOARDS DRAW THE SAME SPLIT ──────────
+ *
+ * `display: contents` so each group is a grid item of the page's <Grid> in its own
+ * right, then 7 + skip-1 + 4 — the asymmetric split both index boards measure:
+ * 571 + 109 + 316 closes 996 exactly. The <nav> is a naming wrapper, not layout.
+ *
+ * That is a rule about the FACETS rather than about either page, which is why it lives
+ * here while <CardMasonry>'s grid column stays with its host. Verified on the
+ * Presentations board (767:1903): Topic Filter 571 at x 0, Genre Filter 316 at x 680.
+ *
+ * ── A <nav> PER GROUP, EACH NAMED BY ITS OWN VISIBLE HEADING ────────────────
+ *
+ * `aria-labelledby` pointing at the h2 the group already shows. One nav around both
+ * would need an invented label, because no single heading covers "Topics" and "Genres".
+ * A <fieldset> would be wrong; these are links, not form controls.
+ *
+ * ── EVERY CHIP IS A REAL ANCHOR CARRYING ITS OWN STATE'S URL ────────────────
+ *
+ * So the whole contract in docs/urls-and-filtering.md is inspectable from view-source
+ * before any behaviour exists, and a click landing before the script has booted still
+ * expresses the intent — the script reads the URL on load, so that navigation resolves
+ * rather than being swallowed.
+ */
+import Chip from './Chip.astro'
+import type {FacetGroup} from '../lib/facets'
+
+interface Props {
+  /** The tallied groups, from `facetGroups()`. */
+  facets: FacetGroup[]
+  /** The index's own path, e.g. `/insights/` — what a chip's href is built from and
+      where a reset with nothing selected points. The SCRIPT never uses this; it reads
+      `location.pathname`. This is only for the static, pre-script markup. */
+  basePath: string
+  /** Names the whole control region for assistive technology: "Filter insights". */
+  label: string
+}
+
+const {facets, basePath, label}: Props = Astro.props
+---
+
+<nav class="facets" aria-label={label}>
+  {
+    facets.map((group) => (
+      <div class="facet-group" data-facet-group={group.key}>
+        <div class="facet-head">
+          <h2 id={group.id}>{group.heading}</h2>
+          {/*
+            On the heading row and right-aligned, appearing only once the group has a
+            selection — so `hidden` in the static page, which has none.
+            urls-and-filtering.md rejected an icon-only control in the chip row because
+            inserting a leading item shifts every chip after it, including the one just
+            clicked.
+
+            Its href is the current URL minus this group's parameters, which with no
+            selection is the bare index.
+          */}
+          <a class="facet-reset" href={basePath} hidden>
+            {group.reset}
+          </a>
+        </div>
+
+        <ul class="facet-chips" role="list" aria-labelledby={group.id}>
+          {group.items.map((facet, i) => (
+            <li hidden={i >= group.initial}>
+              {/*
+                EVERY chip is in the DOM, not just the visible ones — the script grows
+                the set by unhiding rather than by fetching or building markup, so there
+                is one place the chip's shape is written.
+
+                `aria-label` carries no action verb yet, because in this state there is
+                no action: it reads "Structured Content, 15 results". The script appends
+                ", add filter" when it enables the control, and swaps it for ", selected,
+                remove filter" on selection — the same control means opposite things by
+                state and only the fill says so visually.
+
+                `aria-disabled`, not `disabled`, which anchors do not have. The href
+                stays so the URL contract is inspectable from view-source.
+              */}
+              <Chip
+                href={`${basePath}?${group.key}=${facet.slug}`}
+                data-facet={group.key}
+                data-slug={facet.slug}
+                aria-disabled="true"
+                aria-label={`${facet.label}, ${facet.count} results`}
+              >
+                <span class="chip-label">{facet.label}</span>
+                <span class="chip-count">{facet.count}</span>
+              </Chip>
+            </li>
+          ))}
+
+          {/*
+            <button>, where the chips are links — the honest split rather than an
+            inconsistency. A filter control has a natural href: the URL of the state
+            after the click. A disclosure goes nowhere. urls-and-filtering.md's "facet
+            controls are links, not buttons" is an argument about the things that change
+            the URL.
+
+            Both are `hidden` at rest and revealed by the script, so the no-JS page
+            carries no control that cannot work. In the markup rather than built in JS so
+            the chip's shape is written once.
+          */}
+          <li hidden>
+            <Chip as="button" class="chip-more" type="button">
+              {group.more}
+            </Chip>
+          </li>
+
+          <li hidden>
+            <Chip as="button" class="chip-fewer" type="button">
+              {group.fewer}
+            </Chip>
+          </li>
+        </ul>
+      </div>
+    ))
+  }
+</nav>
+
+<style>
+  /* Each group is a grid item of the host page's <Grid>; the <nav> is naming only. */
+  .facets {
+    display: contents;
+  }
+
+  .facet-group {
+    grid-column: var(--col-full); /* -> the split at md, below */
+  }
+
+  @container style(--breakpoint-md: true) {
+    .facet-group[data-facet-group='topic'] {
+      grid-column: 1 / span 7;
+    }
+
+    .facet-group[data-facet-group='genre'] {
+      grid-column: 9 / span 4;
+    }
+  }
+
+  /*
+   * The heading row: heading left, reset right. `space-between` rather than a float or
+   * an absolute position, so the reset wraps beneath instead of colliding when the
+   * column is narrow — "reset genres" is the longer label in the narrower column, which
+   * is the case docs/open-questions.md flags for intermediate widths.
+   */
+  .facet-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  /* base.css's `nav :is(a, button)` reset strips the underline for nav links; this is
+     apparatus rather than a chip, so it wants to look like a link again. */
+  .facet-reset {
+    font-size: var(--font-size-1);
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+  }
+
+  /*
+   * ── ONE UNDERLINE, NOT TWO ──────────────────────────────────────────────────
+   *
+   * base.css's nav reset removes `text-decoration` and replaces it with the wipe-in
+   * `::after` border, so restoring the text-decoration above without cancelling the
+   * pseudo-element gave this a static underline AND a 2px animated one under the
+   * pointer. The opt-out is the one base.css names — "a component whose nav links are
+   * not link-shaped opts out with `::after { content: none }`" — and it applies here for
+   * the opposite reason it applies to a chip: this link IS link-shaped, and a plain
+   * text-decoration underline is the shape it wants. The color still moves to
+   * `link-hover` on hover, from the global `a:hover`.
+   */
+  .facet-reset::after {
+    content: none;
+  }
+
+  .facet-chips {
+    /* base.css keeps the UA list indent for prose. A nav is not prose. `role="list"` is
+       on the element because `list-style: none` drops list semantics in Safari. */
+    margin-top: var(--rhythm-heading-close);
+    padding: 0;
+    list-style: none;
+
+    display: flex;
+    flex-wrap: wrap;
+    /* The boards draw 16 between chips in both axes. */
+    gap: var(--space-2);
+  }
+
+  /*
+   * ── WHAT STAYED BEHIND WHEN THE PILL MOVED TO <Chip> ────────────────────────
+   *
+   * The pill, the type role, `:hover`, `:active` and the wipe-in opt-out live in
+   * `components/Chip.astro`, shared with the genre prev/next nav. What is here is the
+   * FILTER's own, and the seam is what that second consumer lacks: `aria-current`
+   * (selected), `aria-disabled`, the count and `.is-zero`. A prev/next chip is never
+   * selected, and when there is no previous entry it is absent rather than dimmed.
+   *
+   * These rules reach <Chip>'s root because Astro passes this component's scope
+   * attribute down to a child component's root element.
+   */
+
+  /*
+   * SELECTED IS `aria-current`, not a class — DESIGN.md: "the fact belongs to the
+   * document, so the attribute that carries it to assistive technology should also draw
+   * the indicator."
+   */
+  .chip[aria-current='true'] {
+    border-color: var(--color-surface-accent);
+    background-color: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+  }
+
+  .chip[aria-current='true']:hover {
+    border-color: var(--color-accent-hover);
+    background-color: var(--color-accent-hover);
+  }
+
+  /*
+   * `aria-disabled`, not the `disabled` attribute, which anchors do not have.
+   * urls-and-filtering.md prefers it over dropping `href`: the chip stays focusable and
+   * discoverable rather than falling out of the tab order. Count-descending sort means
+   * this mostly only surfaces inside "See all".
+   */
+  .chip[aria-disabled='true'] {
+    border-color: var(--color-border);
+    background-color: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
+    pointer-events: none;
+  }
+
+  /* The count is quieter than the label but not muted into illegibility — it is data,
+     not decoration. Inherits `text-on-accent` when selected, which is why this is a
+     colour and not a token pointing at `text-muted`. */
+  .chip-count {
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /*
+   * ── A ZERO-HIT CHIP DROPS ITS COUNT AND WIDENS TO COMPENSATE ────────────────
+   *
+   * The zero is noise: the chip is already dimmed, and with chip order fixed at build
+   * time the excluded facets stay in the visible row rather than sinking, so a filtered
+   * view was showing a column of repeated "0"s (Andy, 2026-08-31).
+   *
+   * DROPPING IT ALONE MAKES THE CHIP NARROWER, and every chip narrowing at once slides
+   * the rest of the row leftward. `0.5rem` each side is very nearly the exact
+   * compensation: the count occupies one tabular digit plus the flex `gap`, which is
+   * 16.1px, and 0.5rem twice is 16. Measured across all 40 chips, unfiltered against
+   * `?topic=best-practices`:
+   *
+   *                                     total shift   max shrink   max grow   unchanged
+   *   drop the count, no compensation      509px         -24          0         7/40
+   *   padding-inline 0.75 -> 1rem          289px         -16          0         7/40
+   *   padding-inline 0.75 -> 1.75rem       521px          -8        +16         3/40
+   *   padding-inline 0.75 -> 1.25rem        36px          -8          0        36/40
+   *
+   * Under-compensating leaves most of the movement; over-compensating makes chips GROW,
+   * which is why 1.75rem scores worse than doing nothing. Holding the count's box with
+   * `visibility: hidden` scored a hair better (32px) and was rejected on the design: it
+   * leaves the chip padded on the right for a number that is not there, which reads as
+   * lopsided. Symmetry is worth 4px.
+   *
+   * ── WHY THIS IS A CLASS AND NOT `[aria-disabled]` ───────────────────────────
+   *
+   * Every chip carries `aria-disabled` in the static page — that is the honest resting
+   * state before any script runs — and those chips show REAL counts, which are the only
+   * thing telling a no-JS visitor what the collection holds. Keying off the attribute
+   * would blank all of them. `is-zero` is set only by the script, only for a facet with
+   * no hits in the current intersection.
+   */
+  .chip.is-zero {
+    padding-inline: 1.25rem;
+  }
+
+  .chip.is-zero .chip-count {
+    display: none;
+  }
+</style>
+
+<script>
+  /* The component that owns the controls boots the behaviour, so a page with no filters
+     ships none of this JavaScript. The module finds the grid and the footer by selector,
+     the same way the original inline script did. */
+  import {initCardIndex} from '../scripts/card-index'
+  initCardIndex()
+</script>
