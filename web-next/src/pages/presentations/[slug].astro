@@ -60,6 +60,7 @@ import {
   PRESENTATION_TRANSCRIPT_QUERY,
   PRESENTATION_DELIVERY_QUERY,
   PRESENTATION_RSS_BAND_QUERY,
+  PRESENTATION_SLIDES_QUERY,
   PRESENTATION_NAV_QUERY,
 } from '../../sanity/queries/presentations'
 import {MapPin} from '@lucide/astro'
@@ -76,6 +77,8 @@ import TopicList from '../../components/TopicList.astro'
 import SanityImage from '../../components/SanityImage.astro'
 import GenreNav from '../../components/GenreNav.astro'
 import RssBand from '../../components/bands/RssBand.astro'
+import SlideDeck from '../../components/SlideDeck.astro'
+import {deckSize, deckUrl} from '../../sanity/file'
 import {headingLinks, type HeadingLink} from '../../components/prose/headingId'
 import {formatLocation} from '../../lib/location'
 import {formatDate} from '../../lib/date'
@@ -96,12 +99,13 @@ export async function getStaticPaths() {
    own comparison key with `^.pubDate`, so prev/next joins the same round trip instead of
    costing a serial await. */
 const {slug} = Astro.params
-const [presentation, transcriptDoc, delivery, bands, nav] = await Promise.all([
+const [presentation, transcriptDoc, delivery, bands, nav, slideDoc] = await Promise.all([
   loadQuery(PRESENTATION_DETAIL_QUERY, {slug}),
   loadQuery(PRESENTATION_TRANSCRIPT_QUERY, {slug}),
   loadQuery(PRESENTATION_DELIVERY_QUERY, {slug}),
   loadQuery(PRESENTATION_RSS_BAND_QUERY, {slug}),
   loadQuery(PRESENTATION_NAV_QUERY, {slug}),
+  loadQuery(PRESENTATION_SLIDES_QUERY, {slug}),
 ])
 
 /* Loud rather than quiet, matching the other detail routes: every slug here came out of
@@ -124,6 +128,70 @@ const permalink = new URL(`/presentations/${slug}/`, Astro.site).href
 const events = (delivery?.events ?? []).filter((event) => Boolean(event))
 const deck = delivery?.deck ?? null
 const transcript = transcriptDoc?.transcript ?? null
+
+/**
+ * ── SLIDE ORDER IS DERIVED FROM THE FILENAME, NOT FROM THE ARRAY ─────────────
+ *
+ * The opposite of the poster ladder's rule, and deliberately so (Andy, 2026-09-10):
+ * there is no scenario where slides should sit in an order other than the deck's, so
+ * editorial ordering buys nothing here and costs vigilance.
+ *
+ * IT HAS TO BE DERIVED, BECAUSE STORED ORDER IS NOT RELIABLE. Dropping a batch of files
+ * on an array field uploads them concurrently and appends each item as its upload
+ * RESOLVES, so a heavy slide that started first lands after a light one that started
+ * later. Measured in the dataset: `.004` completed before `.003`, `.006` before `.005`.
+ * Nondeterministic, invisible, and nothing to do with the filenames.
+ *
+ * `localeCompare(…, {numeric: true})` RATHER THAN `| order()` IN GROQ. GROQ's string
+ * ordering is lexicographic with no natural-number mode, so it is correct only while
+ * every name is zero-padded — true of Keynote's export (`.001`…`.040`) and false the
+ * first time one slide is re-exported alone as `deck_7.png`. A natural sort handles both.
+ */
+const slides = [...(slideDoc?.slides ?? [])].sort((a, b) =>
+  (a.filename ?? '').localeCompare(b.filename ?? '', 'en', {numeric: true}),
+)
+
+/**
+ * ── THE BUILD REPORTS DROPPED UPLOADS, BECAUSE NOTHING ELSE WILL ─────────────
+ *
+ * Batch upload into an array silently loses files — measured, 8 of 40 on one attempt,
+ * and a second attempt of the same set landed clean. Intermittent, so it cannot be
+ * relied on to be noticed.
+ *
+ * A missing slide is far worse than a mis-ordered one: wrong order is visible the moment
+ * you look at the deck, and an absent slide 26 is invisible unless you count. Zero-padded
+ * contiguous filenames are what make it detectable at all — a gap in the run is the only
+ * trace a dropped upload leaves.
+ *
+ * A warning rather than a thrown error, matching `[SanityHero] no altText`: the page is
+ * still worth rendering, and the gap is a content problem for a person to fix in the
+ * Studio rather than a reason to fail the build.
+ *
+ * Reads the LAST number in the filename so a deck whose name contains digits does not
+ * confuse it. Decks that are not numbered at all simply produce no numbers and no check.
+ */
+const slideNumbers = slides
+  .map((slide) => slide.filename?.match(/(\d+)(?!.*\d)/)?.[1])
+  .filter((n): n is string => Boolean(n))
+  .map(Number)
+
+if (slideNumbers.length === slides.length && slides.length > 0) {
+  const gaps: number[] = []
+  for (let n = slideNumbers[0]; n < slideNumbers[slideNumbers.length - 1]; n++) {
+    if (!slideNumbers.includes(n)) gaps.push(n)
+  }
+  if (gaps.length > 0) {
+    console.warn(
+      `[presentations/${slug}] ${slides.length} slides, ${gaps.length} missing from the run: ` +
+        `${gaps.join(', ')} — likely dropped uploads, re-upload them in the Studio`,
+    )
+  }
+}
+
+/* The deck's URL goes through `deckUrl()` rather than being built here, so the phase 6
+   move to the droplet is one edit. `size` was already projected and unused. */
+const deckHref = deckUrl(deck)
+const deckWeight = deckSize(deck?.size)
 
 const hasHighlights = (presentation.highlights?.length ?? 0) > 0
 const hasTranscript = (transcript?.length ?? 0) > 0
@@ -218,7 +286,7 @@ const venueLabel = events.length > 1 ? 'Venues' : 'Venue'
 const sections: HeadingLink[] = []
 if (hasHighlights) sections.push({id: 'presentation-highlights', label: 'Presentation Highlights'})
 if (events.length > 0) sections.push({id: 'venue', label: venueLabel})
-if (deck) sections.push({id: 'view-slides', label: 'View Slides'})
+if (deck || slides.length > 0) sections.push({id: 'view-slides', label: 'View Slides'})
 for (const {id, label} of recordingSections) sections.push({id, label})
 if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
 ---
@@ -321,33 +389,49 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
 
             {
               /*
-                VIEW SLIDES — resting state only. The poster is the presentation's own,
-                which is also the first rung of the card image ladder, and the link is
-                the honest fallback for anyone who would rather have the file than page
-                through it. The click-to-load viewer replaces the poster's behaviour, not
-                this markup.
+                VIEW SLIDES. The slides are the viewer; the poster is the fallback for a
+                presentation that has a PDF but no slide images yet, which is a live state
+                in the corpus rather than a hypothetical.
 
-                `?dl=` asks Sanity's CDN to send a download disposition with a filename
-                rather than opening the PDF inline.
+                THE GATE IS `deck || slides`, NOT `deck`. All four combinations occur:
+                slides with a PDF, slides alone, a PDF alone, and neither. Gating on the
+                deck alone — as this did — renders nothing for a presentation whose slides
+                are uploaded but whose PDF is not.
+
+                <Fragment> and no <section>: the rhythm ramp is `.detail > * + h2` at 64,
+                a DIRECT-child selector, so a wrapper would silently collapse it to 24.
               */
             }
             {
-              deck && (
+              (slides.length > 0 || deck) && (
                 <Fragment>
                   <h2 id="view-slides">View Slides</h2>
-                  {presentation.poster?.asset && (
-                    <SanityImage
-                      image={presentation.poster}
-                      aspect="16/9"
-                      class="deck-poster"
-                      sizes="(min-width: 48rem) 656px, 100vw"
+                  {slides.length > 0 ? (
+                    <SlideDeck
+                      slides={slides}
+                      title={presentation.title ?? 'this presentation'}
+                      deckHref={deckHref}
+                      deckWeight={deckWeight}
                     />
+                  ) : (
+                    <Fragment>
+                      {presentation.poster?.asset && (
+                        <SanityImage
+                          image={presentation.poster}
+                          aspect="16/9"
+                          class="deck-poster"
+                          sizes="(min-width: 48rem) 656px, 100vw"
+                        />
+                      )}
+                      {deckHref && (
+                        <p class="deck-download-fallback">
+                          <a href={deckHref}>
+                            Download the slides{deckWeight && ` (${deckWeight})`}
+                          </a>
+                        </p>
+                      )}
+                    </Fragment>
                   )}
-                  <p class="deck-download">
-                    <a href={`${deck.url}?dl=${deck.originalFilename ?? 'presentation.pdf'}`}>
-                      Download the slides
-                    </a>
-                  </p>
                 </Fragment>
               )
             }
