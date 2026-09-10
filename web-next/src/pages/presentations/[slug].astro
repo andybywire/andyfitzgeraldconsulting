@@ -249,6 +249,7 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
         genre={genreLabel}
         date={presentation.pubDate}
         permalink={permalink}
+        basePath="/presentations/"
       />
 
       <Band as="div" space="none" class="entry-band">
@@ -451,6 +452,7 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
                   <TopicList
                     topics={topics}
                     id="rail-topics"
+                    basePath="/presentations/"
                     as="h3"
                     microformats
                     class="rail-topics"

@@ -53,6 +53,19 @@ interface Props {
    * are slugified from heading text — an h2 titled "Topics" would otherwise collide.
    */
   id: string
+  /**
+   * The index these topics belong to — `/insights/` or `/presentations/`.
+   *
+   * REQUIRED, AND WITH NO DEFAULT ON PURPOSE. It was hardcoded to `/insights/`, which
+   * meant the presentation detail page linked its topics into the wrong index without
+   * anything failing (Andy, 2026-09-09). A default would reproduce exactly that: the
+   * next index to arrive would inherit Insights' base silently. Required makes a
+   * forgotten base a build error instead.
+   *
+   * Only the BASE — this file keeps `?topic=` and the slugification, so the URL
+   * contract stays in one place.
+   */
+  basePath: string
   /** Outline level only. The component pins the type; see the note on the label. */
   as?: 'h2' | 'h3'
   /** Emit mf2 `p-category`. Only inside an `h-entry` — Eyebrow's `microformats`
@@ -70,6 +83,7 @@ interface Props {
 const {
   topics,
   id,
+  basePath,
   as: Heading = 'h3',
   microformats = false,
   class: className,
@@ -100,7 +114,7 @@ const {
             */}
             <a
               class:list={[microformats && 'p-category']}
-              href={`/insights/?topic=${slugify(topic)}`}
+              href={`${basePath}?topic=${slugify(topic)}`}
             >
               {topic}
             </a>

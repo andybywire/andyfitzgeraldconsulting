@@ -90,6 +90,15 @@ interface Props {
   /** The canonical permalink, for `u-url` / `u-uid`. Built by the page from `Astro.site`. */
   permalink: string
   /**
+   * The index this entry belongs to — `/insights/` or `/presentations/` — passed
+   * straight through to <Eyebrow>, whose genre link this header always enables.
+   *
+   * Required, and threaded rather than defaulted: the base was hardcoded inside Eyebrow
+   * and the presentation detail page inherited Insights' without anything failing
+   * (Andy, 2026-09-09). Every consumer now states which collection it is part of.
+   */
+  basePath: string
+  /**
    * The entry's hero. Absent on a note, present on an article or case study — and its
    * presence is what selects the title gap above, so this is a layout input and not
    * only content.
@@ -97,7 +106,55 @@ interface Props {
   hero?: (SanityImageSource & {caption?: string | null}) | null
 }
 
-const {title, genre, date, permalink, hero} = Astro.props as Props
+/*
+ * ┌──────────────────────────────────────────────────────────────────────────────┐
+ * │  THIS COMPONENT'S PROPS ARE NOT CHECKED AT ITS CALL SITES. MEASURED, NOT     │
+ * │  GUESSED — AND NOT YET EXPLAINED. Do not trust `astro check` to catch a      │
+ * │  missing or mistyped prop here.                                              │
+ * └──────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Found on 2026-09-09 while fixing the `/insights/` hardcode below. Against a page
+ * calling <EntryHeader>, all three of these passed `astro check` CLEAN:
+ *
+ *   omitting `permalink`, required since this file was written
+ *   `permalink={12345}`, where the type is string
+ *   an invented `bogusProp={true}`
+ *
+ * A positive control proves the file is being read: an undefined identifier inside the
+ * same tag raises ts(2304). So EXPRESSIONS in prop values are checked and the PROPS
+ * THEMSELVES are not — which is how a wrong `basePath` could have shipped as silently
+ * as the hardcode it replaced.
+ *
+ * ── IT IS NOT THE DESTRUCTURING STYLE, WHICH WAS THE OBVIOUS SUSPECT ─────────
+ *
+ * <TopicList> IS enforced — dropping its `basePath` raises ts(2322) naming the missing
+ * property — and it differs from this file in using `: Props = Astro.props`. But
+ * switching this file to the annotation only moved the error inside: `Astro.props` is
+ * typed `Record<string, any>` HERE and `Props` in TopicList, so the annotation fails to
+ * assign while call sites stay unchecked either way. Both forms were measured.
+ *
+ * So the real fault is that Astro is not associating this file's `Props` interface with
+ * the component at all, and the reason for that is NOT yet known. The assertion is kept
+ * because it is what the three sibling components do (CaseStudyEntry, NoteEntry,
+ * GenreNav — all likely unenforced for the same reason) and because the annotation buys
+ * nothing while erroring.
+ *
+ * Worth chasing separately: 26 components use the annotation form and are presumably
+ * fine, so this is a minority, but a silently unenforced prop contract is exactly the
+ * gap that let this file's bug through.
+ *
+ * ── WHAT SAVES THE `basePath` CHAIN ANYWAY, AND IT IS NOT THIS FILE ──────────
+ *
+ * Both LEAF components are enforced — measured: <Eyebrow>'s `genreLink`/`basePath`
+ * union raises ts(2322) naming the branch, and <TopicList>'s required `basePath` does
+ * the same. This file is only the pass-through.
+ *
+ * And if a future page does forget it here, the failure is safe rather than silent:
+ * `basePath` arrives `undefined`, <Eyebrow>'s `genre && basePath` guard yields no href,
+ * and the genre renders as PLAIN TEXT. A missing link is visible and harmless; a link
+ * to the wrong collection is neither, and that is the bug being fixed.
+ */
+const {title, genre, date, permalink, basePath, hero} = Astro.props as Props
 
 /* `hero.asset` and not `hero`, matching the article page's own guard: the field is an
    object on every document that has the field at all, so only the asset says whether
@@ -141,7 +198,7 @@ const hasHero = Boolean(hero?.asset)
              where `dt-published` is meaningful and where a genre link has room to
              live. Both are opt-in on Eyebrow for the CARDS' sake, not for this. */
         }
-        <Eyebrow genre={genre} date={date} microformats genreLink />
+        <Eyebrow genre={genre} date={date} microformats genreLink basePath={basePath} />
         <h1 class="p-name">{title}</h1>
 
         {

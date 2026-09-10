@@ -330,6 +330,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
             genre={genreLabel}
             date={insight.pubDate}
             permalink={permalink}
+            basePath="/insights/"
             hero={insight.heroImage}
           />
 
@@ -406,6 +407,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
                     <TopicList
                       topics={topics}
                       id="rail-topics"
+                      basePath="/insights/"
                       as="h3"
                       microformats
                       class="rail-topics"
