@@ -151,8 +151,8 @@ export default defineType({
       ],
       options: {
         sortable: false,
-        layout: 'grid'
-      }
+        layout: 'grid',
+      },
     }),
     defineField({
       name: 'eventDetail',
@@ -178,8 +178,16 @@ export default defineType({
   preview: {
     select: {
       title: 'title',
-      // subtitle: first location + number of additional locations
-      // media: first poster, if present
+      type: 'genre.prefLabel',
+      media: 'poster',
+    },
+    prepare(selection) {
+      const {title, type, media} = selection
+      return {
+        title,
+        subtitle: type,
+        media,
+      }
     },
   },
 })
