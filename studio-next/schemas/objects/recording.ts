@@ -103,7 +103,7 @@ export default defineType({
       title: 'Audio File URL',
       type: 'url',
       description:
-        'Optional. The episode’s enclosure URL from its RSS feed. Supplying it renders a native audio player instead of a third-party embed.',
+        'The episode’s enclosure URL from its RSS feed. Check https://podcastindex.org for easy access to the episode download link (mp3).',
       hidden: ({parent}) => parent?.kind !== 'audio',
       validation: (rule) => rule.uri({scheme: ['http', 'https']}),
     }),
@@ -180,7 +180,7 @@ export default defineType({
       name: 'sourceName',
       title: 'Source',
       type: 'string',
-      description: 'The show or channel name, e.g. “The Informed Life”. Shown with the link.',
+      description: 'Optional. The show, series or channel this belongs to, e.g. “The Informed Life”. Leave blank for a one-off upload — the link falls back to the platform name.',
     }),
 
     /*
