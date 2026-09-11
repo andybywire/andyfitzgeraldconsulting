@@ -1,0 +1,219 @@
+/**
+ * The site-level JSON-LD graph — Organization, Person, WebSite — plus the serializer
+ * every page's graph goes through.
+ *
+ * Piece 1 of four. The Document branch, the Presentation branch, and the remaining
+ * page types each land later; this file settles the two things they all depend on: how
+ * entities are identified, and how the graph reaches the page.
+ *
+ * ── ONE GRAPH PER PAGE, ENTITIES LINKED BY `@id` ────────────────────────────
+ *
+ * Carried over from `web/_includes/linked-data/`, which had this right. Every page emits
+ * a single `<script type="application/ld+json">` holding one `@graph`, and the nodes
+ * inside it refer to each other by `@id` rather than repeating themselves — so the
+ * article on a detail page points at the same Person the home page does, and a consumer
+ * merging the site's pages gets one author rather than forty-two copies.
+ *
+ * That is also why <BaseLayout> takes the page's nodes as a prop instead of each page
+ * emitting its own script. Two scripts would be two disconnected graphs, and the
+ * cross-references between them would dangle.
+ *
+ * ── TWO DEFECTS IN THE OLD BUILD, FIXED HERE RATHER THAN COPIED ─────────────
+ *
+ * Both are live on production today and would have come across unnoticed:
+ *
+ *   1. `website.json` writes `"publisher": { "id": … }` — no `@`. That is not a
+ *      reference; it is a literal property called `id`, so the WebSite has never had a
+ *      resolvable publisher. The kind of thing that validates as "no errors" because
+ *      an unknown property is simply ignored.
+ *
+ *   2. `addressCountry: "United States"`. schema.org wants ISO 3166-1 alpha-2 here.
+ *      Already flagged for `PostalAddress` in the phase 4 notes; fixed at the source.
+ *
+ * ── VALUES LIVE HERE, NOT IN SANITY (Andy, 2026-09-11) ──────────────────────
+ *
+ * `sameAs`, the phone number and the postal address carry no editorial judgment, change
+ * about once a year and are nobody's but Andy's to edit — the same argument that keeps
+ * the nav in code. Putting them in `settings` would be schema work for values that do
+ * not move.
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  FOUR OF THESE DO ALSO EXIST IN `settings`, AND THAT IS A REAL OVERLAP.   │
+ * │  `siteTitle`, `description`, `url` and `authorName` are editable there    │
+ * │  and constants here, so the two can disagree. Nothing reads `settings`    │
+ * │  for them today — no layout fetches it — so there is no live conflict,    │
+ * │  and the fix if one appears is a single settings query in <BaseLayout>    │
+ * │  feeding this module, which is why the constants are exported separately  │
+ * │  from the builders below.                                                 │
+ * │                                                                           │
+ * │  The question put to Andy covered `sameAs`, phone and address, which      │
+ * │  `settings` genuinely lacks. This overlap was found while building and    │
+ * │  is flagged rather than quietly decided.                                  │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ */
+import {PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID} from 'astro:env/client'
+
+/**
+ * A node in the graph. Deliberately loose: schema.org has thousands of properties and a
+ * faithful TypeScript model of it is a dependency and a maintenance burden, not a
+ * safety net. What is worth enforcing is that every node declares a type, and that the
+ * whole thing is JSON-serializable.
+ */
+export type GraphNode = Record<string, unknown> & {
+  '@type': string | string[]
+  '@id'?: string
+}
+
+/**
+ * Fragment identifiers, resolved against the SITE being built.
+ *
+ * `Astro.site` differs between modes — production is the real host, preview is
+ * `preview.andyfitzgeraldconsulting.com` — so a preview build's entities identify
+ * themselves as preview entities rather than claiming production's. That is the honest
+ * arrangement: preview is `noindex` and nothing consumes it, but a graph that asserted
+ * production `@id`s from a different host would be lying in a way no validator catches.
+ */
+export const nodeId = (site: URL, fragment: string) => new URL(`#${fragment}`, site).href
+
+/* The headshot, as the asset `settings.authorImage` holds — same hash in both datasets.
+   Built from the configured project and dataset rather than pasted as a URL: the old
+   build's `person.json` hardcoded one pointing at the `production` dataset with a crop
+   baked into the query string, which would survive the cutover only by luck. */
+const AUTHOR_IMAGE_REF = 'image-09e1fa5707b3fa56ad1522de8a923ff1d0182732-1262x823-jpg'
+
+function assetUrl(ref: string): string | null {
+  const parts = ref.split('-')
+  if (parts.length < 4 || parts[0] !== 'image') return null
+  const [, id, dimensions, extension] = parts
+  return `https://cdn.sanity.io/images/${PUBLIC_SANITY_PROJECT_ID}/${PUBLIC_SANITY_DATASET}/${id}-${dimensions}.${extension}`
+}
+
+/** The constants, exported so a future settings-fed version can override them in one place. */
+export const SITE_FACTS = {
+  organizationName: 'Andy Fitzgerald Consulting, LLC',
+  siteName: 'Andy Fitzgerald Consulting',
+  description: 'The professional consulting web site of information architect Andy Fitzgerald.',
+  telephone: '(971) 319-0799',
+  addressLocality: 'Seattle',
+  addressRegion: 'WA',
+  /* ISO 3166-1 alpha-2. The old build wrote "United States" here. */
+  addressCountry: 'US',
+  organizationSameAs: 'https://www.linkedin.com/company/andy-fitzgerald-consulting-llc',
+  personName: 'Andy Fitzgerald',
+  givenName: 'Andy',
+  familyName: 'Fitzgerald',
+  alternateName: 'andybywire',
+  jobTitle: 'Information Architect',
+  email: 'mailto:andy@andyfitzgeraldconsulting.com',
+  personDescription:
+    'Andy Fitzgerald is an independent user experience professional with applied expertise in ' +
+    'design research, information architecture, interaction design, and usability testing.',
+  disambiguatingDescription: 'User experience architecture and design consultant.',
+  personSameAs: [
+    'https://www.oreilly.com/pub/au/6128',
+    'https://alistapart.com/author/andyfitzgerald/',
+    'http://www.iasummit.org/person/andy-fitzgerald/',
+    'https://www.worldiaday.org/people/andy-fitzgerald',
+    'https://www.uxbooth.com/author/andyfitzgerald/',
+    'https://aycl.uie.com/experts/andy_fitzgerald',
+    'https://www.theiaconference.com/person/andy-fitzgerald/',
+    'https://www.crunchbase.com/person/andy-fitzgerald',
+  ],
+} as const
+
+/**
+ * The three nodes every page carries.
+ *
+ * `additionalType` on the Organization points at a productontology term for "consulting
+ * firm", which is the old build's way of saying something schema.org has no type for.
+ * Kept: it is valid, it is cheap, and it is the only statement here about what the
+ * business actually does.
+ */
+export function siteGraph(site: URL): GraphNode[] {
+  const organization = nodeId(site, 'organization')
+  const person = nodeId(site, 'person')
+  const logo = nodeId(site, 'logo')
+  const image = assetUrl(AUTHOR_IMAGE_REF)
+
+  return [
+    {
+      '@id': organization,
+      '@type': 'Organization',
+      additionalType: 'http://www.productontology.org/doc/Consulting_firm',
+      name: SITE_FACTS.organizationName,
+      description: SITE_FACTS.description,
+      url: new URL('/', site).href,
+      address: {
+        '@type': 'PostalAddress',
+        '@id': nodeId(site, 'locality'),
+        addressLocality: SITE_FACTS.addressLocality,
+        addressRegion: SITE_FACTS.addressRegion,
+        addressCountry: SITE_FACTS.addressCountry,
+      },
+      telephone: SITE_FACTS.telephone,
+      sameAs: SITE_FACTS.organizationSameAs,
+      logo: {
+        '@type': 'ImageObject',
+        '@id': logo,
+        url: new URL('/icons/icon_x512.png', site).href,
+        caption: SITE_FACTS.siteName,
+      },
+      image: {'@id': logo},
+    },
+    {
+      '@id': person,
+      '@type': 'Person',
+      name: SITE_FACTS.personName,
+      givenName: SITE_FACTS.givenName,
+      familyName: SITE_FACTS.familyName,
+      alternateName: SITE_FACTS.alternateName,
+      jobTitle: SITE_FACTS.jobTitle,
+      email: SITE_FACTS.email,
+      description: SITE_FACTS.personDescription,
+      disambiguatingDescription: SITE_FACTS.disambiguatingDescription,
+      url: new URL('/', site).href,
+      ...(image ? {image} : {}),
+      sameAs: SITE_FACTS.personSameAs,
+    },
+    {
+      '@id': nodeId(site, 'website'),
+      '@type': 'WebSite',
+      additionalType: 'CreativeWork',
+      url: new URL('/', site).href,
+      name: SITE_FACTS.siteName,
+      inLanguage: 'en-US',
+      description: SITE_FACTS.description,
+      author: {'@id': person},
+      /* `@id`, not `id`. See the header — the old build's missing `@` meant this
+         reference never resolved. */
+      publisher: {'@id': organization},
+      /* NO `potentialAction`/SearchAction yet. It names the URL a site search accepts a
+         query at, and search is not built (the masthead toggle is still inert from
+         phase 3). Purely additive when it lands; the old build has none either. */
+    },
+  ]
+}
+
+/**
+ * Serialize a graph for a `<script type="application/ld+json">`.
+ *
+ * ── TWO SUBSTITUTIONS, BOTH LOAD-BEARING ────────────────────────────────────
+ *
+ * `<` becomes `<`. Inside a script element the parser is looking for `</script`,
+ * and it does not care that the sequence sits inside a JSON string — a title containing
+ * one would end the script early and dump the rest of the graph into the document as
+ * markup. Escaping the character is the standard fix and JSON-equivalent, so a consumer
+ * reads exactly the same string. It closes `<!--` at the same time.
+ *
+ * Then the Unicode tag block, U+E0000–U+E007F, is stripped. That is where Sanity's stega
+ * encoding hides its edit references: invisible characters woven into every string the
+ * preview build fetches. They would be invisible in rendered text and NOT invisible to a
+ * structured-data validator, which is exactly where someone would go looking for a
+ * problem that is not there. Production disables stega, so this only ever fires in
+ * preview — which is precisely the build a person inspects by hand.
+ */
+export function serializeGraph(nodes: GraphNode[]): string {
+  return JSON.stringify({'@context': 'https://schema.org', '@graph': nodes})
+    .replace(/</g, '\\u003c')
+    .replace(/[\u{E0000}-\u{E007F}]/gu, '')
+}
