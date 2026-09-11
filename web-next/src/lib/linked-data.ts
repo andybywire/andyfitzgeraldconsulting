@@ -85,11 +85,26 @@ export const nodeId = (site: URL, fragment: string) => new URL(`#${fragment}`, s
    baked into the query string, which would survive the cutover only by luck. */
 const AUTHOR_IMAGE_REF = 'image-09e1fa5707b3fa56ad1522de8a923ff1d0182732-1262x823-jpg'
 
-function assetUrl(ref: string): string | null {
+/**
+ * A CDN URL for an asset ref, capped rather than served at source size.
+ *
+ * The cap is not cosmetic. These URLs are FETCHED — by Google for rich results, by a
+ * social card renderer, by anything that reads the graph — and the originals are large:
+ * `who-kap`'s hero is a 3494 x 1964 PNG. Google asks for at least 1200px wide, so 1200
+ * satisfies the guidance and stops several megabytes being the thing a consumer pulls.
+ *
+ * `auto=format` lets the CDN negotiate — WebP in practice here, measured during the deck
+ * work. No crop or hotspot: this is an identifying image for a machine, not a rendered
+ * one, and applying a crop would need the image object rather than just its ref.
+ */
+function assetUrl(ref: string, width = 1200): string | null {
   const parts = ref.split('-')
   if (parts.length < 4 || parts[0] !== 'image') return null
   const [, id, dimensions, extension] = parts
-  return `https://cdn.sanity.io/images/${PUBLIC_SANITY_PROJECT_ID}/${PUBLIC_SANITY_DATASET}/${id}-${dimensions}.${extension}`
+  return (
+    `https://cdn.sanity.io/images/${PUBLIC_SANITY_PROJECT_ID}/${PUBLIC_SANITY_DATASET}/` +
+    `${id}-${dimensions}.${extension}?w=${width}&auto=format`
+  )
 }
 
 /** The constants, exported so a future settings-fed version can override them in one place. */
@@ -194,6 +209,161 @@ export function siteGraph(site: URL): GraphNode[] {
          phase 3). Purely additive when it lands; the old build has none either. */
     },
   ]
+}
+
+/* ── PIECE 2: THE DOCUMENT BRANCH ─────────────────────────────────────────── */
+
+/** A note's `clipRef` — the piece it comments on. */
+export interface ClipSource {
+  url?: string | null
+  title?: string | null
+  publisher?: string | null
+}
+
+/** A note's `bookRef` — the book it is about. */
+export interface BookSource {
+  url?: string | null
+  title?: string | null
+  author?: string | null
+  publisher?: string | null
+  pubDate?: string | null
+}
+
+export interface DocumentNodeInput {
+  site: URL
+  /** The canonical URL, already built by the page. */
+  permalink: string
+  title?: string | null
+  /** Becomes `abstract`. See the note below on why it is not `description`. */
+  shortDescription?: string | null
+  pubDate?: string | null
+  updatedAt?: string | null
+  genre?: string | null
+  topics?: string[]
+  /** The hero's asset `_ref`, or null. Notes have no hero. */
+  heroRef?: string | null
+  /** Case study only — the client the work was for. */
+  clientName?: string | null
+  /** Web Clipping only. */
+  clip?: ClipSource | null
+  /** Book Note only. */
+  book?: BookSource | null
+}
+
+/**
+ * One node for an `article`, `caseStudy` or `note`.
+ *
+ * ── ALL THREE ARE `Article`, AND THE DISTINCTIONS RIDE ELSEWHERE ────────────
+ *
+ * schema.org has no CaseStudy and nothing that fits a book note, and inventing a split
+ * with `BlogPosting` would put a guess where the site already has an answer: the Genre
+ * vocabulary is what distinguishes a Method from a Web Clipping, and it travels on the
+ * node as `genre`. So the type stays `Article` throughout and the SKOS concept does the
+ * work it was built for.
+ *
+ * What DOES differ per variant is what the document points AT — a clipping is about
+ * someone else's piece, a book note is about a book, a case study is about work done
+ * for a client. Those are three different properties, below.
+ *
+ * ── `abstract`, NOT `description`, AND THAT IS THE OLD BUILD'S CHOICE ───────
+ *
+ * `article.json` uses `abstract: shortDescription`, which is right: `shortDescription`
+ * is card copy — a summary of the piece — where the `description` field is the meta
+ * tag's text, aimed at a search snippet. They read similarly and are not the same job.
+ *
+ * It also sidesteps the gap Andy expected to surface here. `note` has no `description`
+ * field at all, but all five notes carry `shortDescription`, so nothing is missing — and
+ * the page already falls back to `shortDescription` for the meta tag too.
+ *
+ * ── TOPICS AND GENRE AS PLAIN STRINGS (Andy, 2026-09-11) ────────────────────
+ *
+ * `keywords` and `genre` rather than `about` with DefinedTerm nodes. DefinedTerm is the
+ * faithful SKOS mapping and would be better linked data, but every concept would need an
+ * `@id`, and concepts are NOT addressable on this site — filtering is a query parameter
+ * on the index, and `docs/urls-and-filtering.md` rules out per-topic pages. Minting
+ * `/#topic-taxonomy` would assert an identifier for something the site does not publish.
+ *
+ * Revisit if topics ever become addressable. Until then the structure has nowhere to
+ * point, and `keywords` is what search engines read anyway.
+ *
+ * ── NO `Review` NODES (Andy, 2026-09-11) ────────────────────────────────────
+ *
+ * Five of seven case studies carry a client testimonial and none of them appears here. A
+ * `Review` whose `itemReviewed` is your own Organization is self-serving review markup:
+ * Google ignores it for rich results and lists it among practices that can draw a manual
+ * action. It buys nothing and carries a real risk. The testimonials stay on the page,
+ * which is where they do their work.
+ *
+ * The CLIENT still appears, via `about` — that is a fact about the engagement rather
+ * than an opinion about it, and it is the case study's actual subject. Emitted as an
+ * inline Organization with no `@id`, because these are other people's organizations and
+ * this site is not the right place to mint identifiers for them.
+ */
+export function documentNode(input: DocumentNodeInput): GraphNode {
+  const {site, permalink} = input
+  const image = input.heroRef ? assetUrl(input.heroRef) : null
+
+  const node: GraphNode = {
+    '@id': `${permalink}#article`,
+    '@type': 'Article',
+    url: permalink,
+    /* Defines a minimal WebPage inline rather than referencing one declared elsewhere —
+       there is no WebPage node in the graph, and this is the idiomatic way to say "this
+       article is the main thing on that page" without inventing one. */
+    mainEntityOfPage: {'@type': 'WebPage', '@id': `${permalink}#webpage`},
+    author: {'@id': nodeId(site, 'person')},
+    publisher: {'@id': nodeId(site, 'organization')},
+  }
+
+  if (input.title) node.headline = input.title
+  if (input.shortDescription) node.abstract = input.shortDescription
+  if (input.pubDate) node.datePublished = input.pubDate
+  /* `_updatedAt`, which the DATES fragment already projects. Honest about revision in a
+     way `pubDate` alone is not, and the same field mf2's `dt-updated` will read. */
+  if (input.updatedAt) node.dateModified = input.updatedAt
+  if (input.genre) node.genre = input.genre
+  if (input.topics?.length) node.keywords = input.topics
+
+  if (image) {
+    node.image = {
+      '@type': 'ImageObject',
+      '@id': `${permalink}#primaryimage`,
+      inLanguage: 'en-US',
+      url: image,
+    }
+  }
+
+  /* A Web Clipping comments on someone else's piece: `isBasedOn` is the property for a
+     work this one derives from, which is exactly the relationship. */
+  if (input.clip?.url) {
+    node.isBasedOn = {
+      '@type': 'Article',
+      url: input.clip.url,
+      ...(input.clip.title ? {name: input.clip.title} : {}),
+      ...(input.clip.publisher
+        ? {publisher: {'@type': 'Organization', name: input.clip.publisher}}
+        : {}),
+    }
+  }
+
+  /* A Book Note is ABOUT a book — `about`, not `isBasedOn`: the note is not derived from
+     the book, it discusses it. `bookRef` carries enough for a real Book node. */
+  if (input.book?.title) {
+    node.about = {
+      '@type': 'Book',
+      name: input.book.title,
+      ...(input.book.url ? {url: input.book.url} : {}),
+      ...(input.book.author ? {author: {'@type': 'Person', name: input.book.author}} : {}),
+      ...(input.book.publisher
+        ? {publisher: {'@type': 'Organization', name: input.book.publisher}}
+        : {}),
+      ...(input.book.pubDate ? {datePublished: input.book.pubDate} : {}),
+    }
+  } else if (input.clientName) {
+    node.about = {'@type': 'Organization', name: input.clientName}
+  }
+
+  return node
 }
 
 /**
