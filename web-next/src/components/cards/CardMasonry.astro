@@ -1,0 +1,359 @@
+---
+/**
+ * The card masonry — a three-column grid whose cards pack by measured row spans.
+ *
+ * ── EXTRACTED FROM `insights/index.astro`, FIRST CONSUMER IS PRESENTATIONS ───
+ *
+ * The first of the three components the index apparatus is being split into
+ * (<FacetFilters>, <CardMasonry>, <ResultsFooter>). It is built here because the
+ * Presentations index needs a masonry NOW and the alternative was a throwaway second
+ * copy of the script — so the copy that gets written is the one that survives.
+ *
+ * INSIGHTS HAS NOT ADOPTED IT YET, and that is deliberate rather than unfinished. Its
+ * grid is coupled to its filter in two ways this component does not yet answer: the
+ * filter calls `relayout()` after changing which cards are hidden, and the truncation
+ * rule (`html.js .masonry:not([data-hydrated]) > :nth-child(n + 25)`) belongs to the
+ * reveal rather than to the grid. Both want designing with both pages in view, which is
+ * the extraction change. `onRelayout` below is the provisional answer to the first.
+ *
+ * ── EVERY CHILD SELECTOR IS `:global()`, AND IT IS NOT OPTIONAL ──────────────
+ *
+ * The cards arrive through <slot />, and SLOTTED CONTENT CARRIES THE CALLER'S SCOPE,
+ * not this component's. So `.card-masonry > :nth-child(3n + 1)` compiles to
+ * `…[data-astro-cid-THIS] > …[data-astro-cid-THIS]`, the card carries the PAGE's cid,
+ * and the rule matches nothing — silently. It compiles, it ships, and the columns
+ * simply never apply.
+ *
+ * `:global()` is therefore wrapped around the child half of every one of these
+ * selectors, anchored under `.card-masonry`, which IS this component's root and so
+ * still carries the scope. That keeps the rules from leaking to other grids while
+ * letting them reach the slotted cards. This was the failure CLAUDE.md names; it was
+ * verified in the built CSS rather than assumed — see the handoff.
+ *
+ * ── THE DOM IS IN DATE ORDER, AND EVERYTHING FOLLOWS FROM THAT ───────────────
+ *
+ * Native CSS masonry does not ship, so three columns are built by hand. Cards are
+ * emitted FLAT, in date order, into one grid; columns come from `nth-child`, and the
+ * packing from `grid-auto-rows: 1px` plus a per-card `grid-row: span`. The rejected
+ * alternative was a build-time partition into three column wrappers, which forces a
+ * contiguous DOM slice per column and therefore a CSS `order` per card — buying visual
+ * order at the cost of a focus mismatch, non-chronological screen-reader traversal, and
+ * a future `h-feed` out of date order.
+ *
+ * MEASURED ON THE REAL 45-CARD INSIGHTS CORPUS, all three rungs, before that switch:
+ *
+ *                        ragged   wasted gap   height    DOM order
+ *   3 col, spans           219        0        6686      date
+ *   3 col, old wrappers    241        0        6686      partition
+ *   2 col, spans            89        0        9872      date
+ *   2 col, old wrappers    447      876       10489      partition
+ *   1 col, either            0        0       19687      date / partition
+ *
+ * The two-column rung is where it stops being close: the old approach could not serve a
+ * second partition from one DOM, so it fell back to a row grid there. This does not have
+ * that problem, which also retired the "tablet row gaps" question.
+ *
+ * ── THE NO-SCRIPT STATE IS A ROW GRID, AND THAT IS THE DESIGN ────────────────
+ *
+ * The spans need MEASURED heights, and measuring has to happen before the spans exist:
+ * once `grid-auto-rows: 1px` is in effect a card's grid area IS its span, so measuring
+ * then returns the span rather than the content. Build-time estimates were tried and
+ * cannot be made safe — any under-estimate makes a card overflow into its neighbour, and
+ * padding the estimate to guarantee over-estimation lands back at the row grid's gaps
+ * with extra steps.
+ *
+ * So with no JavaScript this is a row grid: correct order, nearly flush at the bottom
+ * (29px on that corpus), and airier than intended — a 59px median gap against the
+ * design's 32, about 16% of extra height. Accepted (Andy, 2026-08-28). Content is never
+ * hidden by it.
+ */
+interface Props {
+  /**
+   * How many columns at the widest rung. Both index pages use 3; the prop exists
+   * because the ladder is the one thing DESIGN.md says differs per index ("Card grids
+   * — the breakpoint ladder differs per index"), and Home's card band is a plausible
+   * third consumer at 2.
+   */
+  columns?: 2 | 3
+  /**
+   * Hide everything past the first reveal step before any script runs. Set it on an
+   * index whose <ResultsFooter> offers "Show more" / "Show all"; see the rule below for
+   * why the truncation has to be in force at the FIRST paint rather than applied by JS.
+   */
+  truncate?: boolean
+  class?: string
+  /* Forwarded to the root — grid placement from the page, and the scope attribute that
+     lets a page style this component at all. */
+  [key: string]: unknown
+}
+
+const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.props
+---
+
+<div
+  class:list={['card-masonry', className]}
+  data-card-masonry
+  data-columns={columns}
+  data-truncate={truncate ? '' : undefined}
+  {...rest}
+>
+  <slot />
+</div>
+
+<style>
+  .card-masonry {
+    display: grid;
+    grid-template-columns: 1fr;
+
+    /* Horizontal is grid, vertical is rhythm. The boards draw 24 between columns and
+       32 between cards, which is exactly this pair. `row-gap` applies in the row-grid
+       state; once spans arrive the gap is built into the span instead. */
+    column-gap: var(--grid-gutter);
+    row-gap: var(--rhythm-list);
+
+    /*
+     * REQUIRED, at every rung. In the row-grid state it stops cards stretching to their
+     * row's height — a bare card stretched to a boxed card's height would reveal that
+     * whole box on hover. In the span state it stops a card stretching to fill its span,
+     * which is what leaves the trailing 32 as the gap.
+     */
+    align-items: start;
+  }
+
+  /*
+   * ── THE LADDER ──────────────────────────────────────────────────────────────
+   *
+   * Mobile-first, reading the `--breakpoint-*` flags rather than restating 48rem and
+   * 64rem, so tokens.css stays the only place those widths are written.
+   *
+   * COLUMNS COME FROM `nth-child`, NOT FROM A DATA ATTRIBUTE PER CARD. The cycle is
+   * exactly a card's position among its siblings, which `nth-child` reads directly —
+   * nothing to generate, nothing in the markup, and it cannot drift out of step with
+   * source order.
+   *
+   * The EXPLICIT column is what keeps the columns independent once the spans arrive: a
+   * card whose definite column sits left of the placement cursor pushes the cursor down
+   * a row, so each column stacks on its own instead of sharing a row height.
+   *
+   * ── `of :not([hidden])` IS WHAT WILL MAKE A FILTER WORK ──────────────────────
+   *
+   * Plain `nth-child` counts every sibling, hidden ones included, so a filtered view
+   * would keep whatever columns its survivors held in the full set — at worst leaving
+   * all of them in one column. Measured on Insights before it was added: a 1789px
+   * ragged bottom against 478 once the count is taken over the visible set alone.
+   *
+   * IT IS CARRIED HERE THOUGH NOTHING HIDES CARDS YET, deliberately. It is inert on an
+   * unfiltered page and identical in behaviour, and it is part of the measured design
+   * rather than something to remember to add back. Baseline widely available — Safari
+   * 9, Chrome 111, Firefox 113.
+   */
+  @container style(--breakpoint-md: true) {
+    .card-masonry {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .card-masonry > :global(:nth-child(2n + 1 of :not([hidden]))) {
+      grid-column: 1;
+    }
+
+    .card-masonry > :global(:nth-child(2n of :not([hidden]))) {
+      grid-column: 2;
+    }
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .card-masonry[data-columns='3'] {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .card-masonry[data-columns='3'] > :global(:nth-child(3n + 1 of :not([hidden]))) {
+      grid-column: 1;
+    }
+
+    .card-masonry[data-columns='3'] > :global(:nth-child(3n + 2 of :not([hidden]))) {
+      grid-column: 2;
+    }
+
+    .card-masonry[data-columns='3'] > :global(:nth-child(3n of :not([hidden]))) {
+      grid-column: 3;
+    }
+  }
+
+  /*
+   * ── THE JS-ENHANCED STATE ───────────────────────────────────────────────────
+   *
+   * Added by the script once it has measured every card. 1px rows are small enough that
+   * no two cards can share one, so the shared-row height that makes the base state a row
+   * grid stops existing. `row-gap: 0` because the 32 is inside each span.
+   *
+   * `dense` was chosen on the eye and is paid for in tab order. Sparse packing
+   * guarantees a card never appears above an earlier one, but lets a card be held down
+   * by a taller card in a PREVIOUS column — measured on a corpus with one unusually tall
+   * card, sparse left a 287.75px worst gap and 511px of total excess against dense's
+   * 32.88 and zero. Dense can float a later card above an earlier one (21 of 45
+   * positions differed on Insights, no card moving more than two slots); DOM order is
+   * untouched, so screen-reader traversal and a future `h-feed` stay chronological.
+   * Revisitable in one word — nothing structural depends on it.
+   */
+  .card-masonry.is-measured {
+    grid-auto-rows: 1px;
+
+    /* `row dense` rather than the equivalent bare `dense`, which is valid — the grammar
+       is `[row | column] || dense` — but leaves the axis implied. */
+    grid-auto-flow: row dense;
+    row-gap: 0;
+  }
+
+  .card-masonry.is-measured > :global(*) {
+    grid-row: span var(--card-span);
+  }
+
+  /*
+   * ── THE FIRST 24, BEFORE ANY SCRIPT RUNS ────────────────────────────────────
+   *
+   * The truncation has to be in force at the FIRST paint or it is a visible collapse
+   * rather than an initial state — a whole index drawn and then thrown away.
+   * `html.js` is set by the synchronous inline script in BaseLayout, which runs while
+   * <head> is still parsing, so this rule is true before <body> exists.
+   *
+   * THE FOUR PARTS ARE FOUR SEPARATE JOBS:
+   *
+   *   html.js               only where a script can undo it. Without JS the class never
+   *                         arrives, the rule never matches, and every card renders — no
+   *                         control the visitor cannot operate, and nothing unreachable.
+   *   [data-truncate]       opt-in. An index with no reveal controls must not hide cards
+   *                         it can never show again — the Presentations index has fewer
+   *                         cards than one step, so this is inert there, but a page
+   *                         without <ResultsFooter> would be broken by it.
+   *   :not([data-hydrated]) hands over cleanly. card-index.ts sets that attribute in the
+   *                         same synchronous pass in which it starts managing `hidden`,
+   *                         so exactly one mechanism truncates at any moment and the two
+   *                         cannot disagree.
+   *   :nth-child(n + 25)    plain `nth-child`, deliberately NOT the ladder's
+   *                         `of :not([hidden])`. Nothing is hidden yet at this point, so
+   *                         the two would count identically — and this one has to keep
+   *                         working before the script exists.
+   *
+   * 25 IS `STEP + 1`, AND STEP LIVES IN scripts/card-index.ts. CSS cannot read it, so
+   * the two are bound by this comment and its twin there. If one changes, both change.
+   *
+   * `:global()` on the child half for the reason every selector here needs it: the cards
+   * are slotted and carry the caller's scope, not this component's.
+   */
+  html.js .card-masonry[data-truncate]:not([data-hydrated]) > :global(:nth-child(n + 25)) {
+    display: none;
+  }
+</style>
+
+<script>
+  /**
+   * Measure every VISIBLE card and hand it a row span. That is the whole job — the
+   * columns are the style block's `nth-child` ladder at every state, so nothing here
+   * writes a `grid-column`.
+   *
+   * ── WHY THIS CANNOT HAPPEN AT BUILD TIME ─────────────────────────────────────
+   *
+   * A card's height depends on how its title and description wrap, which depends on the
+   * column width and the loaded font. Only the browser knows. Prediction is not good
+   * enough here: with `grid-auto-rows: 1px` a span is a hard track size, so any
+   * under-estimate makes a card overflow into its neighbour.
+   *
+   * ── AND WHY IT MEASURES BEFORE IT APPLIES ────────────────────────────────────
+   *
+   * Once the class is on, a card's grid area IS its span, so `offsetHeight` would return
+   * the span rather than the content. Hence the remove / measure / add sequence.
+   * `align-items: start` is what keeps the measured height the natural one rather than
+   * the row's.
+   */
+  function enhance(grid: HTMLElement) {
+    const cards = Array.from(grid.children) as HTMLElement[]
+
+    function layout() {
+      /* Back to the row grid so each card reports its own height. */
+      grid.classList.remove('is-measured')
+
+      /* Read from the cascade rather than hardcoded, so it follows `--rhythm-list` if
+         that moves. Read while the row gap still applies — `is-measured` sets it to 0. */
+      const gap = Math.round(parseFloat(getComputedStyle(grid).rowGap)) || 0
+
+      /* Only what a filter left standing. A hidden card is `display: none`, so it holds
+         no grid cell and reports no height — measuring one would write a span of just
+         the gap. The COLUMNS are not this function's business: the ladder's
+         `:nth-child(… of :not([hidden]))` counts the same visible set in CSS. */
+      const visible = cards.filter((card) => !card.hidden)
+
+      /*
+       * `ceil` OF THE FRACTIONAL HEIGHT, not `offsetHeight`.
+       *
+       * `offsetHeight` is rounded to the nearest integer, so it rounds DOWN as often as
+       * up — and a span one pixel short of its card is the one error this mechanism
+       * cannot absorb, because with 1px rows the span is a hard track size and the card
+       * overflows into its neighbour. Measured on Insights at the 2-column rung with
+       * `offsetHeight`, the median gap came out at 30 rather than 32.
+       *
+       * `getBoundingClientRect().height` is fractional and `ceil` always errs long, so
+       * gaps land in [32, 33) and overlap is impossible.
+       *
+       * Two passes on purpose: read every height, THEN write every span. Interleaving
+       * would invalidate layout on each write and force a reflow per card.
+       */
+      const spans = visible.map((card) => Math.ceil(card.getBoundingClientRect().height) + gap)
+      visible.forEach((card, i) => card.style.setProperty('--card-span', String(spans[i])))
+
+      grid.classList.add('is-measured')
+    }
+
+    /* Fonts first: the metric-matched fallback and the real face wrap differently, so
+       measuring before the swap would bake in spans for the wrong face. */
+    document.fonts.ready.then(layout)
+
+    /*
+     * Column width changes with the rung, and wrapping changes with width, so spans go
+     * stale on resize. ResizeObserver on the grid rather than a window listener: it
+     * catches a rung crossing and anything else that changes the grid's box.
+     *
+     * ── THE WIDTH GUARD IS NOT AN OPTIMISATION, IT BREAKS A FEEDBACK LOOP ──────
+     *
+     * ResizeObserver watches BOTH axes, and applying spans changes the grid's HEIGHT —
+     * so an unguarded callback re-triggers itself. It would settle rather than spin,
+     * since the second pass computes identical spans, but it costs a second full measure
+     * of every card and is exactly the shape that logs "ResizeObserver loop completed
+     * with undelivered notifications". Only a WIDTH change can alter wrapping.
+     *
+     * rAF rather than a timeout because this is layout work that should land before a
+     * paint. It does not fire in a background tab, which is correct: the deferred
+     * measure runs when the tab becomes visible, so a stale span is never displayed.
+     */
+    let queued = 0
+    let lastWidth = 0
+    new ResizeObserver((entries) => {
+      const width = Math.round(entries[0].contentRect.width)
+      if (width === lastWidth) return
+      lastWidth = width
+      cancelAnimationFrame(queued)
+      queued = requestAnimationFrame(layout)
+    }).observe(grid)
+
+    /*
+     * ── THE FILTER HOOK, AND IT IS PROVISIONAL ─────────────────────────────────
+     *
+     * On Insights `enhance()` RETURNS `layout` and the filter script calls it directly
+     * after changing which cards are hidden. That cannot work across a component
+     * boundary: an Astro component's <script> is its own module, so a page script holds
+     * no reference to anything in here.
+     *
+     * A DOM event is the cheapest bridge that does not put a function on `window`, and
+     * it is dispatched AT the grid, so a page with two of them addresses each one. The
+     * extraction change should confirm this is the shape it wants before <FacetFilters>
+     * is written against it — hence "provisional". Nothing dispatches it today.
+     */
+    grid.addEventListener('card-masonry:relayout', layout)
+  }
+
+  /* `querySelectorAll`, so a page may hold more than one grid. The data attribute rather
+     than the class is the hook, so restyling never breaks the behaviour — and so this
+     cannot collide with the `.masonry` that Insights still owns. */
+  for (const grid of document.querySelectorAll<HTMLElement>('[data-card-masonry]')) {
+    enhance(grid)
+  }
+</script>

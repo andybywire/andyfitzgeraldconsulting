@@ -14,6 +14,20 @@ import {defineQuery} from 'groq'
  * Pages and singletons never call it. They carry no Genre concept at all — CLAUDE.md
  * makes that the testable disqualifier for `page` — so there is nothing to be the
  * previous or next of.
+ *
+ * ── IT RETURNS `older` AND `newer`, NOT `prev` AND `next` ────────────────────
+ *
+ * Deliberate, and the rename is the fix for a real defect rather than tidying. These
+ * projections were called `prev` and `next`, with `prev` meaning OLDER — so the chip
+ * labelled "Next" walked backwards through the index, toward the top of the page and
+ * off the left of a LTR reading order. Andy caught it from using the site (2026-09-11);
+ * it was the design's intent rather than a coding slip, which is why nothing here was
+ * wrong, only misnamed.
+ *
+ * A date is a fact and a direction is a decision, so this query now reports only the
+ * fact. Which one reads as "next" belongs to the page, where it is one visible line —
+ * rather than buried in the direction of a `<` and a matching `| order()`, where
+ * changing it means reading two clauses and trusting they agree.
  */
 
 /**
@@ -59,7 +73,7 @@ import {defineQuery} from 'groq'
  */
 export const GENRE_NAV_QUERY = defineQuery(`
 	{
-		"prev": *[
+		"older": *[
 			_type in $types
 			&& defined(slug.current)
 			&& defined(pubDate)
@@ -70,7 +84,7 @@ export const GENRE_NAV_QUERY = defineQuery(`
 			"slug": slug.current,
 			title
 		},
-		"next": *[
+		"newer": *[
 			_type in $types
 			&& defined(slug.current)
 			&& defined(pubDate)

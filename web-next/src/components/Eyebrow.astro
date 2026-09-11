@@ -34,44 +34,78 @@
 import {formatDate} from '../lib/date'
 import {slugify} from '../lib/slug'
 
-interface Props {
+/**
+ * ── `genreLink` AND `basePath` ARE ONE DECISION, SO THE TYPE PAIRS THEM ──────
+ *
+ * A union rather than two independent optional props, which makes "linked, but to
+ * nowhere in particular" unrepresentable. Setting `genreLink` without `basePath` is a
+ * COMPILE ERROR rather than a link that silently points at the wrong index — which is
+ * the exact bug this replaces: the base was hardcoded to `/insights/`, and the
+ * presentation detail page inherited it without anything failing.
+ */
+type Props = {
   genre?: string | null
   /** ISO date string, straight from `pubDate`. */
   date?: string | null
   /** Emit mf2 `dt-published`. Only inside an `h-entry`. */
   microformats?: boolean
-  /**
-   * Link the genre to the Insights index filtered to it.
-   *
-   * ── OPT-IN, AND THE CARDS ARE WHY ────────────────────────────────────────
-   *
-   * A detail page's eyebrow is loose text and can hold a link. A CARD's cannot:
-   * both cards stretch their title anchor over the whole card with
-   * `::after { inset: 0 }`, so a second link inside sits UNDER that overlay and
-   * is unclickable. ArticleCard's own note says as much — "any second link in a
-   * card would need lifting above this with `z-index`". Rather than lift it and
-   * give a card two competing targets, the cards simply do not opt in; the index
-   * already has genre chips doing this job.
-   */
-  genreLink?: boolean
   class?: string
-}
+} & (
+  | {
+      /**
+       * Link the genre to its own index, filtered to it.
+       *
+       * ── OPT-IN, AND THE CARDS ARE WHY ────────────────────────────────────
+       *
+       * A detail page's eyebrow is loose text and can hold a link. A CARD's cannot:
+       * the cards stretch their title anchor over the whole card with
+       * `::after { inset: 0 }`, so a second link inside sits UNDER that overlay and is
+       * unclickable. ArticleCard's own note says as much — "any second link in a card
+       * would need lifting above this with `z-index`". Rather than lift it and give a
+       * card two competing targets, the cards simply do not opt in; the index already
+       * has genre chips doing this job.
+       */
+      genreLink: true
+      /**
+       * The index this entry belongs to — `/insights/` or `/presentations/`. Only the
+       * BASE, because the component keeps owning the `?genre=` shape and the
+       * slugification; handing it a finished href would put the URL contract in two
+       * files, which is the thing the original note wanted to avoid.
+       */
+      basePath: string
+    }
+  | {genreLink?: false; basePath?: never}
+)
 
-const {genre, date, microformats = false, genreLink = false, class: className}: Props = Astro.props
+const {
+  genre,
+  date,
+  microformats = false,
+  genreLink = false,
+  basePath,
+  class: className,
+}: Props = Astro.props
 const dateLabel = formatDate(date)
 
 /**
  * `?genre=` carries a slugified prefLabel, which is the settled filter contract —
- * docs/urls-and-filtering.md, and the same shape the index's own chips and
- * `data-genre` attributes use. Composed HERE rather than taken as an href, matching
+ * docs/urls-and-filtering.md, and the same shape the index's own chips and `data-genre`
+ * attributes use. Composed HERE rather than taken as a finished href, matching
  * TopicList: one place owns the URL shape, so a change to it is one edit.
  *
- * The caveat, recorded rather than designed around: this hardcodes `/insights/`, and
- * a Presentation's genre may eventually want `/presentations/`. At that point this
- * becomes an href prop. It is not one now because a second base does not exist yet
- * and inventing the seam early would put the URL shape in two files.
+ * ── THE BASE IS THE CALLER'S, AND IT USED TO BE HARDCODED ───────────────────
+ *
+ * This read `/insights/` literally, with a note saying "a Presentation's genre may
+ * eventually want `/presentations/`. At that point this becomes an href prop." The
+ * second base arrived with the Presentations index and the note did not — so the
+ * presentation detail page shipped an eyebrow linking into Insights, which is a wrong
+ * destination rather than a missing one and therefore looked fine (Andy, 2026-09-09).
+ *
+ * It became a BASE prop rather than an href prop, which is the same fix the note
+ * intended without the cost it feared: the caller says which index it belongs to, and
+ * this file still owns `?genre=` and the slugification.
  */
-const genreHref = genre ? `/insights/?genre=${slugify(genre)}` : null
+const genreHref = genre && basePath ? `${basePath}?genre=${slugify(genre)}` : null
 ---
 
 <p class:list={['eyebrow', className]}>

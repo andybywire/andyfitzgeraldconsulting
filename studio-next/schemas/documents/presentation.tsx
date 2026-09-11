@@ -1,4 +1,4 @@
-import { PiMicrophone } from "react-icons/pi";
+import {PiMicrophone} from 'react-icons/pi'
 import {
   branchFilter,
   schemeFilter,
@@ -26,7 +26,7 @@ export default defineType({
       title: 'Date Published',
       name: 'pubDate',
       type: 'date',
-      validation: rule => rule.required(),
+      validation: (rule) => rule.required(),
     }),
     defineField({
       name: 'genre',
@@ -57,7 +57,8 @@ export default defineType({
       title: 'Poster',
       name: 'poster',
       type: 'image',
-      description: 'Optional poster for this presentation. If not provided here, the poster of the first available recording will be used.',
+      description:
+        'Optional poster for this presentation. If not provided here, the poster of the first available recording will be used.',
       options: {
         hotspot: true,
         collapsible: true,
@@ -72,7 +73,7 @@ export default defineType({
           name: 'caption',
           type: 'string',
           title: 'Caption',
-          deprecated: {reason: 'No longer used as of 2026 redesign.'}
+          deprecated: {reason: 'No longer used as of 2026 redesign.'},
         },
       ],
     }),
@@ -134,8 +135,24 @@ export default defineType({
       title: 'Presentation Deck (PDF)',
       type: 'file',
       options: {
-        accept: 'application/pdf'
-      }
+        accept: 'application/pdf',
+      },
+    }),
+    defineField({
+      name: 'presentationSlides',
+      title: 'Presentation Slides',
+      type: 'array',
+      of: [
+        {
+          type: 'image',
+          fields: [defineField({name: 'altText', type: 'string', title: 'Alt Text'})],
+          preview: {select: {media: 'asset', title: 'asset.originalFilename'}},
+        },
+      ],
+      options: {
+        sortable: false,
+        layout: 'grid',
+      },
     }),
     defineField({
       name: 'eventDetail',
@@ -144,8 +161,8 @@ export default defineType({
       of: [
         {
           type: 'reference',
-          to: {type: 'event'}
-        }
+          to: {type: 'event'},
+        },
       ],
     }),
     defineField({
@@ -161,9 +178,16 @@ export default defineType({
   preview: {
     select: {
       title: 'title',
-      // subtitle: first location + number of additional locations
-      // media: first poster, if present
+      type: 'genre.prefLabel',
+      media: 'poster',
     },
-
+    prepare(selection) {
+      const {title, type, media} = selection
+      return {
+        title,
+        subtitle: type,
+        media,
+      }
+    },
   },
 })

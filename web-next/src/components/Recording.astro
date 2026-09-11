@@ -1,0 +1,536 @@
+---
+/**
+ * One recording section on the presentation detail page: a heading, a face, a player
+ * where there is something to play, and a line pointing at where the recording lives.
+ *
+ * Three top-level nodes and NO wrapper element, because Astro components emit their
+ * roots flat into the caller's DOM and the page depends on that. The rhythm ramp is
+ * `.detail  direct-child  h2` at 64 (base.css) — a direct-child selector — so a div
+ * around this group would push the heading one level down and silently collapse 64 to
+ * 24. Same constraint the page header records for its own sections.
+ *
+ * ── WHY A NATIVE PLAYER AND NOT APPLE'S EMBED ───────────────────────────────
+ *
+ * The Interview board (874:4109, player frame 2398:11907) draws Apple's Podcasts
+ * widget. Two things say not to build that, and Andy confirmed the call on 2026-09-10.
+ *
+ * The board is not a spec for it. That frame is a text layer plus node 874:4216 — a
+ * rounded rectangle named `image 69`, i.e. a pasted screenshot of the widget. The only
+ * hard statement it makes is dimensional, 656 by 154, and a native control is 656 by
+ * about 54. So this section lands ~100px shorter than Figma. That is expected, not a
+ * regression; the board is outdated (Andy, 2026-09-10).
+ *
+ * And the schema already chose. `recording.mediaUrl` says supplying an enclosure
+ * "renders a native audio player instead of a third-party embed", and without one "the
+ * section falls back to a click-to-load embed". Native is not one of two options — it
+ * is the branch an enclosure selects, and the one audio recording in the corpus has
+ * one. The Apple widget is the FALLBACK, drawn on a board for content that does not
+ * need it.
+ *
+ * ── SO THE FALLBACK IS NOT BUILT, DELIBERATELY ──────────────────────────────
+ *
+ * Nothing in the dataset reaches it. Writing an Apple iframe path now would be the
+ * mistake `recording.ts` refuses for `alsoAt[]` twenty lines above the field this
+ * reads: "a field written against no content is a guess at what the content would have
+ * looked like."
+ *
+ * It also deletes a real problem rather than solving one. An embed has to identify its
+ * platform, and today that could only be done by matching a hostname on `url`. Not
+ * building it means never having to decide how fragile that is.
+ *
+ * Enclosure-less audio therefore renders a heading and the source line, with no face
+ * and no player. That is a working section, not a broken one.
+ *
+ * ── THE AUDIO AND VIDEO INTERIORS DIFFER ON PURPOSE ─────────────────────────
+ *
+ * Do not "fix" the asymmetry. Audio is a file served from the show's own host with no
+ * third party involved, so it needs no gate and no JavaScript. Video is YouTube, so it
+ * must be click-to-load or it puts Google on the page before anyone asked. Making them
+ * symmetrical means either facading audio for no privacy reason or loading YouTube
+ * eagerly, and both are worse.
+ *
+ * What IS shared is the container — this file. Same heading, same face, same source
+ * line, same column. That is where "one pattern" lives.
+ *
+ * ── THE PLACEHOLDER IS A FACADE'S FACE, WHICH SETTLES ALL FOUR BRANCHES ─────
+ *
+ * It stands in for a player that will replace it, so only video gets one:
+ *
+ *   video, poster           the poster, a facade lands on it later
+ *   video, no poster        the framed panel
+ *   audio, enclosure        the poster if there is one, then the player
+ *   audio, no enclosure     heading and source line only
+ *
+ * It used to render for audio too, which put a 656 by 369 empty gray box above a
+ * control bar 54px tall.
+ *
+ * NOTE THAT IT RENDERS NOWHERE TODAY. Both videos in the corpus have a poster, so the
+ * panel branch is unexercised markup — the facade covers it and would work, but nothing
+ * has proved that on a real page. A poster-less video is the content that would.
+ *
+ * ── WHAT IS VERIFIED AND WHAT IS NOT ────────────────────────────────────────
+ *
+ * Exercised by real content: audio with an enclosure and no poster; audio with an
+ * enclosure and a poster; video with a poster.
+ *
+ * NOT exercised: video with no poster (the panel above), audio with no enclosure, and
+ * any `url` that is not a recognized YouTube form. All three fall back rather than
+ * fail, which is why they are acceptable to ship unproven — but they are unproven.
+ */
+import {Play} from '@lucide/astro'
+import SanityImage from './SanityImage.astro'
+import type {PRESENTATION_DELIVERY_QUERY_RESULT} from '../../sanity.types'
+
+/**
+ * Taken from the generated query type rather than hand-declared, so a field added to
+ * the projection cannot silently be typed as absent here. CaseStudyEntry and NoteEntry
+ * set the precedent for the same reason.
+ */
+type Delivery = NonNullable<PRESENTATION_DELIVERY_QUERY_RESULT>
+type RecordingData = NonNullable<NonNullable<Delivery['events']>[number]['recordings']>[number]
+
+interface Props {
+  /** Fragment id, computed by the page so the rail can link to it before this renders. */
+  id: string
+  /** The h2 text — "Listen to the Interview", "Watch the Talk". */
+  label: string
+  /**
+   * Passed down rather than recomputed, and that is load-bearing. `kind` is
+   * audio | video | null, so testing for one is NOT the complement of testing for the
+   * other. The page derives this flag once to build `label`; deriving it again here
+   * with a different test would let a null-kind recording take the audio heading, no
+   * player and no placeholder — three parts of one section disagreeing. `kind` is
+   * required in the schema, so this is the document-mid-edit case `genreLabel` guards.
+   */
+  isVideo: boolean
+  recording: RecordingData
+}
+
+const {id, label, isVideo, recording}: Props = Astro.props
+
+/* `poster.asset` and not `poster`: the field is an object on any recording that has it
+   at all, so only the asset says whether an image was actually chosen. Matches the
+   guard the article and presentation pages already use for their heroes. */
+const poster = recording.poster?.asset ? recording.poster : null
+
+/* `mediaUrl` is hidden in the Studio unless kind is audio, but a value set before the
+   kind changed would survive, so gate on the flag rather than trusting the field. */
+const mediaUrl = isVideo ? null : recording.mediaUrl
+
+/**
+ * ── THE VIDEO ID IS PARSED HERE, AT BUILD TIME, AND NOT STORED ──────────────
+ *
+ * `recording.url` holds the watch URL and the front end derives the embed from it. That
+ * is the schema's instruction, and its reason is worth keeping in view: storing the id
+ * instead would be `article.podcastId` again under a new name — a rendering instruction
+ * in the content model, which can only ever build one platform's embed.
+ *
+ * Build time rather than in the browser, so a URL nobody anticipated costs a missing
+ * button rather than a runtime throw. Returning null is a real branch: no id means no
+ * button ships, and the section falls back to the poster and the link out, which is a
+ * working section.
+ *
+ * Inline rather than in `lib/`, because there is one consumer. `sanity/file.ts` earns
+ * its own module by being a choke point several call sites reach through; this is six
+ * lines read once. If a second consumer appears, that is the trigger to extract it.
+ */
+function youtubeId(url: string | null): string | null {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.replace(/^www\./, '')
+    /* youtu.be/ID and /embed/ID both carry the id as the first path segment; the watch
+       URL carries it in `v`. Anything else is deliberately unhandled. */
+    if (host === 'youtu.be') return parsed.pathname.slice(1).split('/')[0] || null
+    if (host !== 'youtube.com' && host !== 'youtube-nocookie.com') return null
+    if (parsed.pathname.startsWith('/embed/')) return parsed.pathname.slice(7).split('/')[0] || null
+    return parsed.searchParams.get('v')
+  } catch {
+    return null
+  }
+}
+
+const videoId = isVideo ? youtubeId(recording.url) : null
+
+/**
+ * ── WHERE THE LINK GOES, WHEN `sourceName` IS EMPTY ─────────────────────────
+ *
+ * Decided with Andy 2026-09-11, after the model vet found `sourceName` doing two jobs:
+ * half the recordings named the SHOW ("The Informed Life") and half named the PLATFORM
+ * ("YouTube"). Both read fine in "Watch on ___", which is why it went unnoticed, but
+ * they are different facts and only one of them is a property of the work.
+ *
+ * So `sourceName` now means the show or channel, and is left EMPTY for a one-off upload
+ * that belongs to no publication — which is the honest answer, where "YouTube" pretended
+ * the platform was a publisher. The link label falls back to this instead.
+ *
+ * That split is the same argument `recording.ts` makes against `podcastId`: `url`
+ * already carries the destination, so the platform is derivable and storing it would be
+ * a rendering instruction in the content model.
+ *
+ * ── ONE NAMED PLATFORM, AND THE HOSTNAME FOR EVERYTHING ELSE ────────────────
+ *
+ * YouTube is the only platform with content, so it is the only one named. A map of
+ * Vimeo, Spotify, SoundCloud and the rest would be a guess at what recordings that do
+ * not exist would look like — the objection this file already makes to `alsoAt[]`.
+ *
+ * The fallback is the bare hostname, which reads acceptably ("Watch on vimeo.com") and
+ * is never wrong. If it ever looks shabby the fix is a filled-in `sourceName`, which is
+ * an editor's decision rather than a code change.
+ *
+ * USED FOR THE LINK ONLY. The placeholder panel and the play button keep their own
+ * fallbacks, because a destination is not a source: a gray panel reading "YouTube" and a
+ * button announcing "Play YouTube" are both worse than what they say now.
+ */
+function sourceLabelFor(recording: RecordingData): string | null {
+  const named = recording.sourceName?.trim()
+  if (named) return named
+  if (!recording.url) return null
+  try {
+    const host = new URL(recording.url).hostname.replace(/^www\./, '')
+    if (host === 'youtube.com' || host === 'youtu.be' || host === 'youtube-nocookie.com') {
+      return 'YouTube'
+    }
+    return host || null
+  } catch {
+    /* An unparseable URL gets no suffix at all, so the link reads "Watch" — which is
+       what it read before this function existed. */
+    return null
+  }
+}
+
+const sourceLabel = sourceLabelFor(recording)
+
+/* The button's accessible name. `sourceName` distinguishes two videos on one page in a
+   way `label` cannot — both would read "Watch the Talk". Deliberately NOT `sourceLabel`:
+   "Play YouTube" names the platform rather than the thing being played, where "Play the
+   recording" is at least true. */
+const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
+---
+
+<h2 id={id}>{label}</h2>
+
+{
+  /*
+    THE FACE, AND — FOR VIDEO — THE THING THE PLAYER REPLACES.
+
+    Wrapped in a positioned frame only when there is a video id to play, so the audio
+    branch keeps emitting a bare image and the wrapper never exists without a reason.
+    The frame sits where the poster sat in the ramp, so the 16 above it is unchanged.
+
+    The button ships `hidden` and the script reveals it — the contract SlideDeck and
+    <FacetFilters> use. Inverted from the usual reading and worth saying plainly: with
+    no script this button would do nothing, and a control that does nothing is worse
+    than no control. The poster and the link out are the no-JS state, and they work.
+  */
+}
+{
+  videoId ? (
+    <div class="video-frame" data-video-frame data-video-id={videoId} data-video-title={label}>
+      {poster ? (
+        <SanityImage
+          image={poster}
+          aspect="16/9"
+          class="recording-poster"
+          sizes="(min-width: 48rem) 656px, 100vw"
+        />
+      ) : (
+        <div class="recording-placeholder">
+          <span>{recording.sourceName ?? label}</span>
+        </div>
+      )}
+      <button class="video-play" type="button" data-video-play aria-label={playLabel} hidden>
+        <span class="video-play-badge" aria-hidden="true">
+          <Play />
+        </span>
+      </button>
+    </div>
+  ) : poster ? (
+    <SanityImage
+      image={poster}
+      aspect="16/9"
+      class="recording-poster"
+      sizes="(min-width: 48rem) 656px, 100vw"
+    />
+  ) : (
+    isVideo && (
+      <div class="recording-placeholder">
+        <span>{recording.sourceName ?? label}</span>
+      </div>
+    )
+  )
+}
+
+{
+  /*
+    `preload="none"` so NOTHING is fetched until someone presses play. This episode is
+    30,224,178 bytes — 28.8 MB — which is a lot to spend on a visitor who scrolled past,
+    and `recording.ts` makes the sharper point that it is the show's bandwidth, not ours.
+
+    The cost is that the control shows no duration until playback starts. That is
+    covered: `.recording-meta` below already prints the stored `duration`.
+
+    `aria-label` because a bare control announces only as a media player; the heading
+    beside it is not its accessible name.
+
+    No `crossorigin`. It would demand CORS headers from the host and break playback
+    silently if they are absent, and nothing here reads the media from script.
+  */
+}
+{
+  mediaUrl && (
+    <audio class="recording-audio" controls preload="none" src={mediaUrl} aria-label={label} />
+  )
+}
+
+{
+  /*
+    KEEP THIS LINE once a player exists. A broken enclosure is undetectable: with
+    `preload="none"` there is no network activity until play, so a 404 or an unplayable
+    content-type renders a control that looks normal and does nothing. There is no
+    build-time signal either. This link is the path that always works.
+  */
+}
+<p class="recording-meta">
+  <a href={recording.url ?? undefined}>
+    {isVideo ? 'Watch' : 'Listen'}
+    {sourceLabel && ` on ${sourceLabel}`}
+  </a>
+  {recording.duration && <span class="recording-duration">{recording.duration}</span>}
+</p>
+
+<style>
+  /*
+   * 16:9 at the prose width, which is what the Talk board draws (656 x 369). The aspect
+   * is forced rather than taken from the asset because these are resting states for
+   * players that will impose their own box.
+   *
+   * DUPLICATED FROM THE PAGE ON PURPOSE. This was one grouped rule with `.deck-poster`,
+   * which is authored in [slug].astro and stays there. Astro scopes by authoring file,
+   * so the grouped rule compiles to `.recording-poster[cid-of-the-page]` and would
+   * match nothing once the element moved here — and the failure is nearly invisible,
+   * because base.css's `img { max-width: 100% }` still caps the image to the column.
+   * Only the corners would quietly go square. Each component owning its own copy is the
+   * two-tier rule working, not something to hoist into a shared layer.
+   */
+  .recording-poster {
+    inline-size: 100%;
+    border-radius: var(--radius-1);
+  }
+
+  /*
+   * The no-poster face, video only — see the file header. A framed panel rather than a
+   * derived thumbnail: pulling one from YouTube would put a request to Google on the
+   * page before anyone asked for the video, which is most of what the click-to-load
+   * pattern exists to avoid.
+   *
+   * Same surface treatment as a boxed card, so it reads as a deliberate control rather
+   * than a failed image.
+   */
+  .recording-placeholder {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-1);
+    background-color: var(--color-surface);
+    color: var(--color-text-muted);
+  }
+
+  /*
+   * `display: block` IS NOT OPTIONAL, and `inline-size` alone does not do the job.
+   *
+   * A control-bearing audio element is an INLINE REPLACED element, so it sits on a
+   * baseline and collects the line box's descender underneath it — the classic image
+   * gap. At this site's 1.8 line-height that is ~11.5px of space nobody declared,
+   * sitting between the player and the source line and making the declared 24px read as
+   * ~35px with nothing in the CSS to explain it. Measured, not assumed.
+   *
+   * base.css resets `img, picture, svg, video` to block and misses `audio` — it is the
+   * one media element the reset does not neutralize, which is why this has to be said
+   * here.
+   *
+   * Intrinsic width is ~300px, so the inline size is what fills the 656 column.
+   *
+   * Deliberately absent: `block-size`, because the control's height is the UA's to pick
+   * and Chrome, Safari and Firefox disagree; and `border-radius`, because a UA control
+   * shell draws its own and `radius-1` is DESIGN.md's rule for content IMAGES.
+   */
+  .recording-audio {
+    display: block;
+    inline-size: 100%;
+  }
+
+  /*
+   * ── THE VIDEO FACADE ───────────────────────────────────────────────────────
+   *
+   * The frame owns the box so the poster and the iframe that replaces it cannot
+   * disagree about its height. Without `aspect-ratio` here the height would come from
+   * the poster, and would vanish the moment the poster did.
+   *
+   * EVERY CHILD IS ABSOLUTELY POSITIONED WITH ITS SIZE STATED, and the stating is not
+   * redundant. An iframe is a REPLACED element, so `inline-size: auto` resolves to its
+   * intrinsic width (300 x 150 by spec) rather than to the insets — insets alone will
+   * not stretch it. Same trap the full-screen slide hit from the other direction.
+   *
+   * `object-fit: cover` because the frame's ratio is fixed and a poster's may not be.
+   * Every poster in the corpus is 1280x720, so this is insurance rather than a fix.
+   */
+  .video-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+  }
+
+  .video-frame > :global(img),
+  .video-frame > :global(iframe),
+  .video-frame > .recording-placeholder {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+    object-fit: cover;
+  }
+
+  /*
+   * The button covers the whole frame, so the poster IS the click target rather than a
+   * small badge being the only hit area. The badge is the visible affordance and is
+   * `aria-hidden`; the accessible name lives on the button.
+   */
+  .video-play {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-1);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  /*
+   * An opaque badge rather than a tint over the whole poster: the poster is the only
+   * picture of the talk the page has, and dimming all of it to advertise one control is
+   * a poor trade. The badge carries its own contrast instead.
+   */
+  .video-play-badge {
+    display: grid;
+    place-items: center;
+    inline-size: 4rem;
+    block-size: 4rem;
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: 50%;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    transition: transform 120ms ease-out;
+  }
+
+  .video-play:is(:hover, :focus-visible) .video-play-badge {
+    transform: scale(1.06);
+  }
+
+  /*
+   * ── THE FOCUS RING IS MOVED TO THE BADGE, NOT SUPPRESSED ───────────────────
+   *
+   * base.css gives every `:focus-visible` a two-ring box-shadow, and the derivation is
+   * good — spread grows the shadow's radius with the element's, so the rings stay
+   * concentric for free. The problem is only WHERE it lands here: this button is the
+   * size of the whole poster, so the default ring traces the image and reads as the
+   * picture being selected rather than a control being focused.
+   *
+   * So the same two rings, same tokens, re-hung on the badge — which is round, and gets
+   * a round ring out of that derivation without a single calc. The button's own shadow
+   * is cleared rather than its `outline`: base.css already set `outline: none`, so
+   * clearing the outline would suppress nothing and leave the real ring in place.
+   */
+  .video-play:focus-visible {
+    box-shadow: none;
+  }
+
+  .video-play:focus-visible .video-play-badge {
+    box-shadow:
+      0 0 0 2px var(--color-focus-offset),
+      0 0 0 4px var(--color-focus-ring);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .video-play-badge {
+      transition: none;
+    }
+
+    .video-play:is(:hover, :focus-visible) .video-play-badge {
+      transform: none;
+    }
+  }
+
+  /*
+   * 24px, matching the deck's control row. base.css sizes `svg.lucide` at 20 with one
+   * opt-out at 18, so this is set locally rather than by adding a third global step —
+   * the promotion rule's usual direction. `:global(svg)` because Lucide renders its own
+   * element, which is not guaranteed to carry this component's scope.
+   */
+  .video-play-badge :global(svg) {
+    inline-size: 24px;
+    block-size: 24px;
+    /* The glyph's mass sits left of its box; nudged so it reads as centered in a circle. */
+    margin-inline-start: 3px;
+  }
+
+  .recording-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  .recording-duration {
+    color: var(--color-text-muted);
+  }
+</style>
+
+<script>
+  /**
+   * CLICK TO LOAD. Nothing reaches Google until someone asks for the video — which is
+   * the whole point, and why the poster is the recording's own image rather than one
+   * derived from `i3.ytimg.com`. Deriving the thumbnail would put a request to Google
+   * on the page at load and give back most of what this pattern buys.
+   *
+   * `youtube-nocookie.com` rather than `youtube.com`: same player, no cookie set until
+   * playback begins.
+   *
+   * The iframe REPLACES the frame's children rather than being layered over them. One
+   * element in the box means there is no poster left underneath to show through a
+   * player that fails to load, and nothing to keep in sync.
+   */
+  for (const frame of document.querySelectorAll<HTMLElement>('[data-video-frame]')) {
+    const button = frame.querySelector<HTMLButtonElement>('[data-video-play]')
+    const videoId = frame.dataset.videoId
+    if (!button || !videoId) continue
+
+    button.hidden = false
+
+    button.addEventListener(
+      'click',
+      () => {
+        const iframe = document.createElement('iframe')
+        /* `autoplay=1` because the click WAS the play gesture. Without it the visitor
+           presses play twice — once on our button, once on YouTube's. */
+        iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1`
+        iframe.title = frame.dataset.videoTitle ?? 'Video player'
+        iframe.allow =
+          'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+        iframe.allowFullscreen = true
+
+        frame.replaceChildren(iframe)
+
+        /* Focus follows the replacement. The button that had focus no longer exists, so
+           without this the focus ring falls back to the document and a keyboard visitor
+           is returned to the top of the page by their next Tab. */
+        iframe.focus()
+      },
+      {once: true},
+    )
+  }
+</script>

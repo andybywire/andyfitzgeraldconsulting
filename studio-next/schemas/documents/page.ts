@@ -59,24 +59,7 @@ export default defineType({
           styles: BODY_STYLES,
           marks: MARKS,
         },
-        {
-          type: 'image',
-          options: {
-            hotspot: true,
-          },
-          fields: [
-            {
-              name: 'caption',
-              type: 'string',
-              title: 'Caption',
-            },
-            {
-              name: 'altText',
-              type: 'string',
-              title: 'Alt Text',
-            },
-          ],
-        },
+        {type: 'figure'},
       ],
     }),
     defineField({

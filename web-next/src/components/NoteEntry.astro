@@ -181,7 +181,13 @@ const hasCard = Boolean(sourceCard?.href && sourceCard.title)
        than only at lg — see that component's header. This file had reasoned its
        way to the same value independently, which is what triggered the move. */
   }
-  <EntryHeader title={title} genre={genre} date={date} permalink={permalink} />
+  <EntryHeader
+    title={title}
+    genre={genre}
+    date={date}
+    permalink={permalink}
+    basePath="/insights/"
+  />
 
   <Band as="div" space="none" class="content-band">
     <Grid class="content-grid">
@@ -277,7 +283,14 @@ const hasCard = Boolean(sourceCard?.href && sourceCard.title)
       }
       {
         topics.length > 0 && (
-          <TopicList topics={topics} id="note-topics" as="h2" microformats class="note-topics" />
+          <TopicList
+            topics={topics}
+            id="note-topics"
+            basePath="/insights/"
+            as="h2"
+            microformats
+            class="note-topics"
+          />
         )
       }
     </Grid>

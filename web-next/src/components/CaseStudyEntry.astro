@@ -155,7 +155,14 @@ const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
 ---
 
 <article class="h-entry">
-  <EntryHeader title={title} genre={genre} date={date} permalink={permalink} hero={hero} />
+  <EntryHeader
+    title={title}
+    genre={genre}
+    date={date}
+    permalink={permalink}
+    basePath="/insights/"
+    hero={hero}
+  />
 
   {
     /*

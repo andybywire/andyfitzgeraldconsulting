@@ -49,7 +49,15 @@ import Chip from './Chip.astro'
 interface Props {
   /** The genre prefLabel, which is the chip copy: "Previous Case Study". */
   genre: string
-  /** From GENRE_NAV_QUERY. Either may be null — the oldest and newest in a genre. */
+  /**
+   * The two neighbours, as DIRECTIONS rather than dates. Either may be null — the two
+   * boundary documents of a sequence have only one neighbour each.
+   *
+   * The queries return `older` and `newer`; both routes pass `prev={newer}` and
+   * `next={older}`, because the sequence a reader is in is the index and the index runs
+   * newest first. This component takes the decision already made and never re-derives
+   * it — which is why it can stay ignorant of dates entirely.
+   */
   prev?: {slug: string | null; title: string | null} | null
   next?: {slug: string | null; title: string | null} | null
   /**
@@ -90,6 +98,11 @@ const nextLink = next?.slug ? next : null
         {/*
           `rel="prev"` / `rel="next"` — the HTML relationship for exactly this, which
           costs nothing and says what two links called "Previous" and "Next" mean.
+
+          WORTH NOTING THAT THE 2026-09-11 SWAP MADE THESE MORE CORRECT, not less. `rel`
+          names position in a SERIES, and the series is the index — newest first. So the
+          next document in it is the older one, which is what `next` now points at. The
+          old wiring had `rel="next"` walking back toward the top of the index.
 
           THE `aria-label` ADDS THE TITLE, which the visible chip cannot show: "Previous
           Case Study" does not say WHICH one, and the entry title is already fetched. It

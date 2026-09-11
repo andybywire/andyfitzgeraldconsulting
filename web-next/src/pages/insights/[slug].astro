@@ -330,6 +330,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
             genre={genreLabel}
             date={insight.pubDate}
             permalink={permalink}
+            basePath="/insights/"
             hero={insight.heroImage}
           />
 
@@ -406,6 +407,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
                     <TopicList
                       topics={topics}
                       id="rail-topics"
+                      basePath="/insights/"
                       as="h3"
                       microformats
                       class="rail-topics"
@@ -438,8 +440,21 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
     */
     }
     {
+      /*
+        NEXT IS OLDER, AND THE CROSSING HERE IS THE WHOLE POINT — see genre-nav.ts.
+        The sequence a reader is in is the INDEX, which runs newest first, so moving
+        "next" means moving further down it, to something published earlier. The query
+        reports the dates and this line makes them a direction.
+      */
+    }
+    {
       genreNav && (
-        <GenreNav genre={genreLabel} prev={genreNav.prev} next={genreNav.next} base="/insights/" />
+        <GenreNav
+          genre={genreLabel}
+          prev={genreNav.newer}
+          next={genreNav.older}
+          base="/insights/"
+        />
       )
     }
 
@@ -480,6 +495,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
       relatedItems.length > 0 && (
         <RelatedBand
           noun={branch === 'note' ? 'Notes' : 'Articles'}
+          basePath="/insights"
           isFallback={isFallback}
           items={relatedItems}
         />

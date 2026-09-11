@@ -758,6 +758,20 @@ const {microformats = false, photo = null}: Props = Astro.props
      * Visually hidden, NOT removed — the icon is `aria-hidden`, so this text is
      * the button's entire accessible name.
      *
+     * ── IT DOES NOT USE <VisuallyHidden>, AND THAT IS DELIBERATE ────────────
+     *
+     * That component carries these same seven declarations and two others use it.
+     * This one cannot, because it hides CONDITIONALLY — only inside this container
+     * query, from `lg`. Below it the button shows the word "Search" and reads as one
+     * of six nav labels, so the icon-only form is the exception rather than the rule.
+     *
+     * A nav label that collapses at one rung is a different thing from text that is
+     * never drawn, however identical the declarations look. Serving it from the
+     * component would need a `when` prop keyed to a condition the component cannot
+     * see — this is a container query on the NAV — which is the "consumer restates a
+     * breakpoint the component could measure" shape the card components argue
+     * against. Sharing a technique is not sharing a job.
+     *
      * NEITHER `visibility: hidden` NOR `width: 0` can do this job:
      *
      *   - `visibility: hidden` takes an element out of the ACCESSIBILITY TREE as
