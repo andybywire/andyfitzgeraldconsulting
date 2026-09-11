@@ -32,10 +32,14 @@
  *
  * ── VALUES LIVE HERE, NOT IN SANITY (Andy, 2026-09-11) ──────────────────────
  *
- * `sameAs`, the phone number and the postal address carry no editorial judgment, change
- * about once a year and are nobody's but Andy's to edit — the same argument that keeps
- * the nav in code. Putting them in `settings` would be schema work for values that do
- * not move.
+ * `sameAs` and the postal address carry no editorial judgment, change about once a year
+ * and are nobody's but Andy's to edit — the same argument that keeps the nav in code.
+ * Putting them in `settings` would be schema work for values that do not move.
+ *
+ * The Organization carried a `telephone` until 2026-09-11, when Andy removed it. Worth
+ * a line because its absence is a decision rather than an oversight: schema.org treats
+ * it as optional, so nothing is now under-specified, and a phone number is the one fact
+ * here that publishing makes harvestable.
  *
  * ┌──────────────────────────────────────────────────────────────────────────┐
  * │  FOUR OF THESE DO ALSO EXIST IN `settings`, AND THAT IS A REAL OVERLAP.   │
@@ -93,7 +97,6 @@ export const SITE_FACTS = {
   organizationName: 'Andy Fitzgerald Consulting, LLC',
   siteName: 'Andy Fitzgerald Consulting',
   description: 'The professional consulting web site of information architect Andy Fitzgerald.',
-  telephone: '(971) 319-0799',
   addressLocality: 'Seattle',
   addressRegion: 'WA',
   /* ISO 3166-1 alpha-2. The old build wrote "United States" here. */
@@ -150,7 +153,6 @@ export function siteGraph(site: URL): GraphNode[] {
         addressRegion: SITE_FACTS.addressRegion,
         addressCountry: SITE_FACTS.addressCountry,
       },
-      telephone: SITE_FACTS.telephone,
       sameAs: SITE_FACTS.organizationSameAs,
       logo: {
         '@type': 'ImageObject',
