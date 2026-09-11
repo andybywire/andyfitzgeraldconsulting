@@ -44,10 +44,14 @@
  *
  * ── WHAT IS DELIBERATELY NOT BUILT YET ───────────────────────────────────────
  *
- * The deck viewer and the recording players render their RESTING STATE only: a poster
- * (or a titled panel where there is none) and a link out. That is a complete, working,
- * no-JS page, and the click-to-load facades layer onto it without changing this markup
- * — which is the point of building it this way round.
+ * This page was first built with the deck and the recordings in their RESTING STATE
+ * only: a poster (or a titled panel where there is none) and a link out. That was a
+ * complete, working, no-JS page, and it paid off exactly as intended — both the slide
+ * viewer and the audio player layered onto that markup without changing it.
+ *
+ * What is left is the VIDEO facade: click-to-load from youtube-nocookie.com, landing on
+ * the placeholder that <Recording> still renders for a poster-less video. Audio needed
+ * no facade — see that component's header for why the two interiors differ.
  *
  * Related Presentations is also absent. It needs `presentation` added to
  * RELATED_POOL_QUERY and a third branch in lib/related.ts, and that is index-page work
@@ -78,6 +82,7 @@ import SanityImage from '../../components/SanityImage.astro'
 import GenreNav from '../../components/GenreNav.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import SlideDeck from '../../components/SlideDeck.astro'
+import Recording from '../../components/Recording.astro'
 import {deckSize, deckUrl} from '../../sanity/file'
 import {headingLinks, type HeadingLink} from '../../components/prose/headingId'
 import {formatLocation} from '../../lib/location'
@@ -238,6 +243,11 @@ const recordingSections = recordings.map((recording, index) => {
   return {
     id: priorOfKind === 0 ? base : `${base}-${priorOfKind + 1}`,
     label: `${isVideo ? 'Watch' : 'Listen to'} the ${genreLabel}`,
+    /* Returned rather than discarded so <Recording> can take it as a prop. `kind` is
+       `'audio' | 'video' | null`, so testing for one kind is not the complement of
+       testing for the other — deriving the flag twice would let a null-kind recording
+       get this heading and the other branch's body. See the component's Props. */
+    isVideo,
     recording,
   }
 })
@@ -438,40 +448,16 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
 
             {
               /*
-                RECORDINGS — one section each, heading following `kind`. Resting state
-                again: a poster where the recording has one, a titled panel where it does
-                not, and a link to where the recording lives. A native <audio> for an
-                enclosure and the YouTube facade both layer onto this.
+                RECORDINGS — one section each. <Recording> owns the heading, the face,
+                the player and the source line, and emits them as direct children of
+                `.detail` with no wrapper, which the ramp above requires.
+
+                Extracted once the audio player landed: the video facade brings its own
+                script and styles, and the two interiors differ enough that keeping the
+                shared container in one file is what makes them read as one pattern.
               */
             }
-            {
-              recordingSections.map(({id, label, recording}) => (
-                <Fragment>
-                  <h2 id={id}>{label}</h2>
-                  {recording!.poster?.asset ? (
-                    <SanityImage
-                      image={recording!.poster}
-                      aspect="16/9"
-                      class="recording-poster"
-                      sizes="(min-width: 48rem) 656px, 100vw"
-                    />
-                  ) : (
-                    <div class="recording-placeholder">
-                      <span>{recording!.sourceName ?? label}</span>
-                    </div>
-                  )}
-                  <p class="recording-meta">
-                    <a href={recording!.url ?? undefined}>
-                      {recording!.kind === 'video' ? 'Watch' : 'Listen'}
-                      {recording!.sourceName && ` on ${recording!.sourceName}`}
-                    </a>
-                    {recording!.duration && (
-                      <span class="recording-duration">{recording!.duration}</span>
-                    )}
-                  </p>
-                </Fragment>
-              ))
-            }
+            {recordingSections.map((section) => <Recording {...section} />)}
 
             {
               /*
@@ -644,48 +630,26 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
     margin-top: var(--rhythm-heading-close);
   }
 
-  /* ── The deck and the recordings ──────────────────────────────────────────── */
+  /* ── The deck ─────────────────────────────────────────────────────────────── */
   /*
    * 16:9 at the prose width, which is what the Talk board draws (656 x 369). The aspect
-   * is forced here rather than taken from the asset because these are resting states for
-   * players that will impose their own box — see the file header. When the viewer lands,
+   * is forced here rather than taken from the asset because this is a resting state for
+   * a viewer that will impose its own box — see the file header. When the viewer lands,
    * the poster's real dimensions should drive this instead, so an older 4:3 deck is not
    * letterboxed.
    *
    * `radius-1`, which DESIGN.md gives content images.
+   *
+   * THIS WAS ONE RULE WITH `.recording-poster` until the recordings moved into their own
+   * component. It could not move with them and it could not stay grouped: Astro scopes by
+   * authoring file, so the grouped selector would have compiled against THIS file's id
+   * and stopped matching an element authored elsewhere — while still looking right,
+   * because base.css's `img { max-width: 100% }` caps the width anyway and only the
+   * corners would have gone square. Recording.astro carries its own copy.
    */
-  .deck-poster,
-  .recording-poster {
+  .deck-poster {
     inline-size: 100%;
     border-radius: var(--radius-1);
-  }
-
-  /*
-   * The no-poster face. A framed panel rather than a derived thumbnail: pulling one from
-   * YouTube would put a request to Google on the page before anyone asked for the video,
-   * which is most of what the click-to-load pattern exists to avoid.
-   *
-   * Same surface treatment as a boxed card, so it reads as a deliberate control rather
-   * than a failed image.
-   */
-  .recording-placeholder {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 16 / 9;
-    border: var(--border-width-hairline) solid var(--color-border);
-    border-radius: var(--radius-1);
-    background-color: var(--color-surface);
-    color: var(--color-text-muted);
-  }
-
-  .recording-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-1) var(--space-2);
-  }
-
-  .recording-duration {
-    color: var(--color-text-muted);
   }
 
   /* ── The transcript's contents ────────────────────────────────────────────── */
