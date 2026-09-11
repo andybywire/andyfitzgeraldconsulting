@@ -180,7 +180,8 @@ export default defineType({
       name: 'sourceName',
       title: 'Source',
       type: 'string',
-      description: 'Optional. The show, series or channel this belongs to, e.g. “The Informed Life”. Leave blank for a one-off upload — the link falls back to the platform name.',
+      description:
+        'Optional. The show, series or channel this belongs to, e.g. “The Informed Life”. Leave blank for a one-off upload — the link falls back to the platform name.',
     }),
 
     /*
