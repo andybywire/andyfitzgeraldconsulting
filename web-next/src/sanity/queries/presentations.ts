@@ -340,7 +340,7 @@ export const PRESENTATION_RSS_BAND_QUERY = defineQuery(`
  */
 export const PRESENTATION_NAV_QUERY = defineQuery(`
 	*[_type == "presentation" && slug.current == $slug][0] {
-		"prev": *[
+		"older": *[
 			_type == "presentation"
 			&& defined(slug.current)
 			&& (pubDate < ^.pubDate || (pubDate == ^.pubDate && _id < ^._id))
@@ -348,7 +348,7 @@ export const PRESENTATION_NAV_QUERY = defineQuery(`
 			"slug": slug.current,
 			title
 		},
-		"next": *[
+		"newer": *[
 			_type == "presentation"
 			&& defined(slug.current)
 			&& (pubDate > ^.pubDate || (pubDate == ^.pubDate && _id > ^._id))

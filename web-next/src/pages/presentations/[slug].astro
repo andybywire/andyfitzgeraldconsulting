@@ -53,9 +53,9 @@
  * the placeholder that <Recording> still renders for a poster-less video. Audio needed
  * no facade — see that component's header for why the two interiors differ.
  *
- * Related Presentations is also absent. It needs `presentation` added to
- * RELATED_POOL_QUERY and a third branch in lib/related.ts, and that is index-page work
- * rather than a detail-page concern. The RSS band below it is built.
+ * Related Presentations IS built, as of 2026-09-11, and needed no third branch in
+ * lib/related.ts — that arm already existed. It took `presentation` in the pool query
+ * and a `basePath` on <RelatedBand>. The RSS band above it is built.
  */
 import {loadQuery} from '../../sanity/load-query'
 import {
@@ -101,11 +101,11 @@ export async function getStaticPaths() {
     .map((row) => ({params: row.params}))
 }
 
-/* FIVE QUERIES, CONCURRENTLY. The split is forced by the `ClientReturn` ceiling — see
+/* SEVEN QUERIES, CONCURRENTLY. The split is forced by the `ClientReturn` ceiling — see
    the header of queries/presentations.ts, where each one is probed. Unlike the article
    route, none of them depends on another's result: PRESENTATION_NAV_QUERY resolves its
-   own comparison key with `^.pubDate`, so prev/next joins the same round trip instead of
-   costing a serial await. */
+   own comparison key with `^.pubDate`, so the nav joins the same round trip instead of
+   costing a serial await, and RELATED_POOL_QUERY takes no parameters at all. */
 const {slug} = Astro.params
 const [presentation, transcriptDoc, delivery, bands, nav, slideDoc, related] = await Promise.all([
   loadQuery(PRESENTATION_DETAIL_QUERY, {slug}),
@@ -585,8 +585,13 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
          prop is only the chip copy. */
     }
     {
+      /* NEXT IS OLDER — the crossing is deliberate and matches the Insights route. The
+         sequence is the index, which runs newest first, so "next" moves further down it.
+         See genre-nav.ts for why the query reports dates rather than directions. */
+    }
+    {
       nav && (
-        <GenreNav genre="Presentation" prev={nav.prev} next={nav.next} base="/presentations/" />
+        <GenreNav genre="Presentation" prev={nav.newer} next={nav.older} base="/presentations/" />
       )
     }
 
