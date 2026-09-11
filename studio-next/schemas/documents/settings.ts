@@ -90,6 +90,7 @@ export default defineType({
                   {title: 'Note', value: 'note'},
                   {title: 'Article', value: 'article'},
                   {title: 'Case Study', value: 'caseStudy'},
+                  {title: 'Presentation', value: 'presentation'},
                 ],
               },
             }),
