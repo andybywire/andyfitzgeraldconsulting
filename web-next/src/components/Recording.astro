@@ -62,12 +62,22 @@
  *   audio, no enclosure     heading and source line only
  *
  * It used to render for audio too, which put a 656 by 369 empty gray box above a
- * control bar 54px tall. Note what that means today: the corpus has one video
- * recording and it HAS a poster, so this branch now renders NOWHERE. It is kept
- * because the facade is the next piece and lands directly on it — but it is
- * unexercised markup until a poster-less video exists, which is the objection
- * SlideDeck raises against its own unbuilt full-screen button.
+ * control bar 54px tall.
+ *
+ * NOTE THAT IT RENDERS NOWHERE TODAY. Both videos in the corpus have a poster, so the
+ * panel branch is unexercised markup — the facade covers it and would work, but nothing
+ * has proved that on a real page. A poster-less video is the content that would.
+ *
+ * ── WHAT IS VERIFIED AND WHAT IS NOT ────────────────────────────────────────
+ *
+ * Exercised by real content: audio with an enclosure and no poster; audio with an
+ * enclosure and a poster; video with a poster.
+ *
+ * NOT exercised: video with no poster (the panel above), audio with no enclosure, and
+ * any `url` that is not a recognized YouTube form. All three fall back rather than
+ * fail, which is why they are acceptable to ship unproven — but they are unproven.
  */
+import {Play} from '@lucide/astro'
 import SanityImage from './SanityImage.astro'
 import type {PRESENTATION_DELIVERY_QUERY_RESULT} from '../../sanity.types'
 
@@ -106,12 +116,85 @@ const poster = recording.poster?.asset ? recording.poster : null
 /* `mediaUrl` is hidden in the Studio unless kind is audio, but a value set before the
    kind changed would survive, so gate on the flag rather than trusting the field. */
 const mediaUrl = isVideo ? null : recording.mediaUrl
+
+/**
+ * ── THE VIDEO ID IS PARSED HERE, AT BUILD TIME, AND NOT STORED ──────────────
+ *
+ * `recording.url` holds the watch URL and the front end derives the embed from it. That
+ * is the schema's instruction, and its reason is worth keeping in view: storing the id
+ * instead would be `article.podcastId` again under a new name — a rendering instruction
+ * in the content model, which can only ever build one platform's embed.
+ *
+ * Build time rather than in the browser, so a URL nobody anticipated costs a missing
+ * button rather than a runtime throw. Returning null is a real branch: no id means no
+ * button ships, and the section falls back to the poster and the link out, which is a
+ * working section.
+ *
+ * Inline rather than in `lib/`, because there is one consumer. `sanity/file.ts` earns
+ * its own module by being a choke point several call sites reach through; this is six
+ * lines read once. If a second consumer appears, that is the trigger to extract it.
+ */
+function youtubeId(url: string | null): string | null {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.replace(/^www\./, '')
+    /* youtu.be/ID and /embed/ID both carry the id as the first path segment; the watch
+       URL carries it in `v`. Anything else is deliberately unhandled. */
+    if (host === 'youtu.be') return parsed.pathname.slice(1).split('/')[0] || null
+    if (host !== 'youtube.com' && host !== 'youtube-nocookie.com') return null
+    if (parsed.pathname.startsWith('/embed/')) return parsed.pathname.slice(7).split('/')[0] || null
+    return parsed.searchParams.get('v')
+  } catch {
+    return null
+  }
+}
+
+const videoId = isVideo ? youtubeId(recording.url) : null
+
+/* The button's accessible name. `sourceName` distinguishes two videos on one page in a
+   way `label` cannot — both would read "Watch the Talk". */
+const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
 ---
 
 <h2 id={id}>{label}</h2>
 
 {
-  poster ? (
+  /*
+    THE FACE, AND — FOR VIDEO — THE THING THE PLAYER REPLACES.
+
+    Wrapped in a positioned frame only when there is a video id to play, so the audio
+    branch keeps emitting a bare image and the wrapper never exists without a reason.
+    The frame sits where the poster sat in the ramp, so the 16 above it is unchanged.
+
+    The button ships `hidden` and the script reveals it — the contract SlideDeck and
+    <FacetFilters> use. Inverted from the usual reading and worth saying plainly: with
+    no script this button would do nothing, and a control that does nothing is worse
+    than no control. The poster and the link out are the no-JS state, and they work.
+  */
+}
+{
+  videoId ? (
+    <div class="video-frame" data-video-frame data-video-id={videoId} data-video-title={label}>
+      {poster ? (
+        <SanityImage
+          image={poster}
+          aspect="16/9"
+          class="recording-poster"
+          sizes="(min-width: 48rem) 656px, 100vw"
+        />
+      ) : (
+        <div class="recording-placeholder">
+          <span>{recording.sourceName ?? label}</span>
+        </div>
+      )}
+      <button class="video-play" type="button" data-video-play aria-label={playLabel} hidden>
+        <span class="video-play-badge" aria-hidden="true">
+          <Play />
+        </span>
+      </button>
+    </div>
+  ) : poster ? (
     <SanityImage
       image={poster}
       aspect="16/9"
@@ -227,6 +310,124 @@ const mediaUrl = isVideo ? null : recording.mediaUrl
     inline-size: 100%;
   }
 
+  /*
+   * ── THE VIDEO FACADE ───────────────────────────────────────────────────────
+   *
+   * The frame owns the box so the poster and the iframe that replaces it cannot
+   * disagree about its height. Without `aspect-ratio` here the height would come from
+   * the poster, and would vanish the moment the poster did.
+   *
+   * EVERY CHILD IS ABSOLUTELY POSITIONED WITH ITS SIZE STATED, and the stating is not
+   * redundant. An iframe is a REPLACED element, so `inline-size: auto` resolves to its
+   * intrinsic width (300 x 150 by spec) rather than to the insets — insets alone will
+   * not stretch it. Same trap the full-screen slide hit from the other direction.
+   *
+   * `object-fit: cover` because the frame's ratio is fixed and a poster's may not be.
+   * Every poster in the corpus is 1280x720, so this is insurance rather than a fix.
+   */
+  .video-frame {
+    position: relative;
+    aspect-ratio: 16 / 9;
+  }
+
+  .video-frame > :global(img),
+  .video-frame > :global(iframe),
+  .video-frame > .recording-placeholder {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+    object-fit: cover;
+  }
+
+  /*
+   * The button covers the whole frame, so the poster IS the click target rather than a
+   * small badge being the only hit area. The badge is the visible affordance and is
+   * `aria-hidden`; the accessible name lives on the button.
+   */
+  .video-play {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    inline-size: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-1);
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  /*
+   * An opaque badge rather than a tint over the whole poster: the poster is the only
+   * picture of the talk the page has, and dimming all of it to advertise one control is
+   * a poor trade. The badge carries its own contrast instead.
+   */
+  .video-play-badge {
+    display: grid;
+    place-items: center;
+    inline-size: 4rem;
+    block-size: 4rem;
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: 50%;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    transition: transform 120ms ease-out;
+  }
+
+  .video-play:is(:hover, :focus-visible) .video-play-badge {
+    transform: scale(1.06);
+  }
+
+  /*
+   * ── THE FOCUS RING IS MOVED TO THE BADGE, NOT SUPPRESSED ───────────────────
+   *
+   * base.css gives every `:focus-visible` a two-ring box-shadow, and the derivation is
+   * good — spread grows the shadow's radius with the element's, so the rings stay
+   * concentric for free. The problem is only WHERE it lands here: this button is the
+   * size of the whole poster, so the default ring traces the image and reads as the
+   * picture being selected rather than a control being focused.
+   *
+   * So the same two rings, same tokens, re-hung on the badge — which is round, and gets
+   * a round ring out of that derivation without a single calc. The button's own shadow
+   * is cleared rather than its `outline`: base.css already set `outline: none`, so
+   * clearing the outline would suppress nothing and leave the real ring in place.
+   */
+  .video-play:focus-visible {
+    box-shadow: none;
+  }
+
+  .video-play:focus-visible .video-play-badge {
+    box-shadow:
+      0 0 0 2px var(--color-focus-offset),
+      0 0 0 4px var(--color-focus-ring);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .video-play-badge {
+      transition: none;
+    }
+
+    .video-play:is(:hover, :focus-visible) .video-play-badge {
+      transform: none;
+    }
+  }
+
+  /*
+   * 24px, matching the deck's control row. base.css sizes `svg.lucide` at 20 with one
+   * opt-out at 18, so this is set locally rather than by adding a third global step —
+   * the promotion rule's usual direction. `:global(svg)` because Lucide renders its own
+   * element, which is not guaranteed to carry this component's scope.
+   */
+  .video-play-badge :global(svg) {
+    inline-size: 24px;
+    block-size: 24px;
+    /* The glyph's mass sits left of its box; nudged so it reads as centered in a circle. */
+    margin-inline-start: 3px;
+  }
+
   .recording-meta {
     display: flex;
     flex-wrap: wrap;
@@ -237,3 +438,48 @@ const mediaUrl = isVideo ? null : recording.mediaUrl
     color: var(--color-text-muted);
   }
 </style>
+
+<script>
+  /**
+   * CLICK TO LOAD. Nothing reaches Google until someone asks for the video — which is
+   * the whole point, and why the poster is the recording's own image rather than one
+   * derived from `i3.ytimg.com`. Deriving the thumbnail would put a request to Google
+   * on the page at load and give back most of what this pattern buys.
+   *
+   * `youtube-nocookie.com` rather than `youtube.com`: same player, no cookie set until
+   * playback begins.
+   *
+   * The iframe REPLACES the frame's children rather than being layered over them. One
+   * element in the box means there is no poster left underneath to show through a
+   * player that fails to load, and nothing to keep in sync.
+   */
+  for (const frame of document.querySelectorAll<HTMLElement>('[data-video-frame]')) {
+    const button = frame.querySelector<HTMLButtonElement>('[data-video-play]')
+    const videoId = frame.dataset.videoId
+    if (!button || !videoId) continue
+
+    button.hidden = false
+
+    button.addEventListener(
+      'click',
+      () => {
+        const iframe = document.createElement('iframe')
+        /* `autoplay=1` because the click WAS the play gesture. Without it the visitor
+           presses play twice — once on our button, once on YouTube's. */
+        iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1`
+        iframe.title = frame.dataset.videoTitle ?? 'Video player'
+        iframe.allow =
+          'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+        iframe.allowFullscreen = true
+
+        frame.replaceChildren(iframe)
+
+        /* Focus follows the replacement. The button that had focus no longer exists, so
+           without this the focus ring falls back to the document and a keyboard visitor
+           is returned to the top of the page by their next Tab. */
+        iframe.focus()
+      },
+      {once: true},
+    )
+  }
+</script>
