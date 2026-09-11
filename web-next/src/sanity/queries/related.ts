@@ -38,7 +38,7 @@ export const RELATED_POOL_QUERY = defineQuery(`
 		},
 
 		"pool": *[
-			_type in ["article", "caseStudy", "note"]
+			_type in ["article", "caseStudy", "note", "presentation"]
 			&& defined(slug.current)
 			&& defined(pubDate)
 		] | order(pubDate desc) {
@@ -54,7 +54,22 @@ export const RELATED_POOL_QUERY = defineQuery(`
 				_id,
 				"parent": broader[0]._ref,
 				"parentIsTop": !defined(broader[0]->broader[0]._ref)
-			}
+			},
+			"poster": coalesce(
+				poster,
+				(eventDetail[]->eventRecordings[])[defined(poster)][0].poster
+			) { ${IMAGE} },
+			"venue": eventDetail[0]->{
+				"name": event,
+				"online": location.online,
+				"city": location.city,
+				"state": location.state,
+				"country": location.country
+			},
+			"eventCount": count(eventDetail),
+			"hasTranscript": defined(transcript),
+			"hasDeck": defined(presentationDeck.asset),
+			"recordingKinds": (eventDetail[]->eventRecordings[])[defined(kind)].kind
 		}
 	}
 `)

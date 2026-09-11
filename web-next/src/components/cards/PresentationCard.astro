@@ -59,14 +59,12 @@ import Eyebrow from '../Eyebrow.astro'
 import VisuallyHidden from '../VisuallyHidden.astro'
 import type {SanityImageSource} from '../../sanity/image'
 
-/**
- * A derived marker. `label` is what shows; `hint` is the expansion for assistive
- * technology, and only `+N` needs one — see the note on `.visually-hidden` below.
- */
-export interface CardTag {
-  label: string
-  hint?: string
-}
+/* `CardTag` moved to `presentationCard.ts` when the tag derivation did — a type belongs
+   with whatever constructs it, and both consumers now build tags through that helper.
+   Re-exported so the existing import path keeps working; see the note on
+   `.visually-hidden` below for what `hint` is for. */
+export type {CardTag} from './presentationCard'
+import type {CardTag} from './presentationCard'
 
 interface Props {
   href: string

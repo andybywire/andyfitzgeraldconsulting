@@ -18,6 +18,12 @@ import Band from '../Band.astro'
 import Grid from '../Grid.astro'
 import ArticleCard from '../cards/ArticleCard.astro'
 import NoteCard from '../cards/NoteCard.astro'
+import PresentationCard from '../cards/PresentationCard.astro'
+import {
+  presentationTags,
+  presentationVenueLine,
+  type PresentationVenue,
+} from '../cards/presentationCard'
 
 export type RelatedItem = {
   _id: string
@@ -29,17 +35,37 @@ export type RelatedItem = {
   shortDescription?: string | null
   heroImage?: SanityImageSource | null
   sourceDomain?: string | null
+  /* Presentation-only, and null on every other row. RELATED_POOL_QUERY projects these
+     flat rather than behind a `_type ==` conditional, so TypeGen returns one union
+     discriminated on `_type` whose article members type these as literal `null` — which
+     is both honest and directly assignable here. */
+  poster?: SanityImageSource | null
+  venue?: PresentationVenue | null
+  eventCount?: number | null
+  hasTranscript?: boolean | null
+  hasDeck?: boolean | null
+  recordingKinds?: (string | null)[] | null
 }
 
 interface Props {
   /** Plural, as it appears in the heading — "Insights", "Notes", "Presentations". */
   noun: string
+  /**
+   * Where these items live, without a trailing slash — "/insights", "/presentations".
+   *
+   * The path used to be hardcoded, which was correct while only the insight detail page
+   * rendered this band. The presentation page is the second consumer, and its items live
+   * somewhere else. Passed rather than derived from `_type`, matching the `basePath`
+   * chain <EntryHeader>, <TopicList> and <Eyebrow> already use: the collection a link
+   * belongs to is a fact about the PAGE doing the linking, not about the row.
+   */
+  basePath: string
   /** The ranker found nothing, so these are simply the most recent eligible documents. */
   isFallback?: boolean
   items: RelatedItem[]
 }
 
-const {noun, isFallback = false, items}: Props = Astro.props
+const {noun, basePath, isFallback = false, items}: Props = Astro.props
 
 const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
 ---
@@ -59,10 +85,27 @@ const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
       {
         items.map((item) => (
           <li>
-            {item._type === 'note' ? (
+            {item._type === 'presentation' ? (
+              /* The same card the Presentations index renders, with the venue line and
+                 the tag row built by the same two functions — which is what keeps `+N`,
+                 the tag order and the `online` rule from drifting between the two. The
+                 board draws this card bare here, without poster or tags; Andy's call
+                 (2026-09-11) was to follow the index instead, so one card type behaves
+                 the same wherever it appears. */
+              <PresentationCard
+                as="h3"
+                href={`${basePath}/${item.slug}/`}
+                title={item.title ?? 'Untitled'}
+                genre={item.genre}
+                date={item.pubDate}
+                venue={presentationVenueLine(item)}
+                poster={item.poster}
+                tags={presentationTags(item)}
+              />
+            ) : item._type === 'note' ? (
               <NoteCard
                 as="h3"
-                href={`/insights/${item.slug}/`}
+                href={`${basePath}/${item.slug}/`}
                 title={item.title ?? 'Untitled'}
                 genre={item.genre}
                 date={item.pubDate}
@@ -72,7 +115,7 @@ const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
             ) : (
               <ArticleCard
                 as="h3"
-                href={`/insights/${item.slug}/`}
+                href={`${basePath}/${item.slug}/`}
                 title={item.title ?? 'Untitled'}
                 genre={item.genre}
                 date={item.pubDate}

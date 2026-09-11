@@ -81,8 +81,11 @@ import TopicList from '../../components/TopicList.astro'
 import SanityImage from '../../components/SanityImage.astro'
 import GenreNav from '../../components/GenreNav.astro'
 import RssBand from '../../components/bands/RssBand.astro'
+import RelatedBand from '../../components/bands/RelatedBand.astro'
 import SlideDeck from '../../components/SlideDeck.astro'
 import Recording from '../../components/Recording.astro'
+import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
+import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
 import {deckSize, deckUrl} from '../../sanity/file'
 import {headingLinks, type HeadingLink} from '../../components/prose/headingId'
 import {formatLocation} from '../../lib/location'
@@ -104,13 +107,14 @@ export async function getStaticPaths() {
    own comparison key with `^.pubDate`, so prev/next joins the same round trip instead of
    costing a serial await. */
 const {slug} = Astro.params
-const [presentation, transcriptDoc, delivery, bands, nav, slideDoc] = await Promise.all([
+const [presentation, transcriptDoc, delivery, bands, nav, slideDoc, related] = await Promise.all([
   loadQuery(PRESENTATION_DETAIL_QUERY, {slug}),
   loadQuery(PRESENTATION_TRANSCRIPT_QUERY, {slug}),
   loadQuery(PRESENTATION_DELIVERY_QUERY, {slug}),
   loadQuery(PRESENTATION_RSS_BAND_QUERY, {slug}),
   loadQuery(PRESENTATION_NAV_QUERY, {slug}),
   loadQuery(PRESENTATION_SLIDES_QUERY, {slug}),
+  loadQuery(RELATED_POOL_QUERY),
 ])
 
 /* Loud rather than quiet, matching the other detail routes: every slug here came out of
@@ -133,6 +137,41 @@ const permalink = new URL(`/presentations/${slug}/`, Astro.site).href
 const events = (delivery?.events ?? []).filter((event) => Boolean(event))
 const deck = delivery?.deck ?? null
 const transcript = transcriptDoc?.transcript ?? null
+
+/**
+ * ── RELATED PRESENTATIONS ────────────────────────────────────────────────────
+ *
+ * The same three calls the article page makes, against the same pool. Presentations
+ * relating only to presentations needs no special case: `branchForType` maps this
+ * `_type` to the Presentation branch and `genresForBranch` admits only genres whose
+ * parent is that top concept, so Talk, Keynote, Interview, Workshop and Panel are in and
+ * every Document-branch genre is out.
+ *
+ * This document's own topic row is taken FROM THE POOL rather than from
+ * PRESENTATION_DETAIL_QUERY, which projects topics as labels for display and not in the
+ * shape the ranker needs. One projection to keep in step instead of two.
+ *
+ * ── THE DATE FALLBACK IS A LIVE PATH HERE, WHICH IT IS NOT ON AN ARTICLE ─────
+ *
+ * `lib/related.ts` records that nothing in the corpus ever fails to score. That was
+ * measured on insights. `rankRelated` skips any candidate with an empty topic set, so a
+ * presentation carrying NO topics scores nothing against anything and falls through to
+ * the most recent eligible rows under a "Recent Presentations" heading. Two of nine
+ * presentations are in that state today.
+ *
+ * Left as it is rather than special-cased: the fallback is the designed behaviour and a
+ * page with no way forward would be worse. The real fix is content — those documents
+ * want topics, which would also put them into the index's facets, where they are
+ * currently just as invisible.
+ */
+const branch = branchForType(presentation._type)
+const eligibleGenres = genresForBranch(branch, related.genres?.tops, related.genres?.concepts)
+const self = related.pool.find((row) => row._id === presentation._id)
+const {items: relatedItems, isFallback} = rankRelated(
+  {_id: presentation._id, topics: self?.topics},
+  related.pool,
+  eligibleGenres,
+)
 
 /**
  * ── SLIDE ORDER IS DERIVED FROM THE FILENAME, NOT FROM THE ARRAY ─────────────
@@ -554,8 +593,7 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
     {
       /* `presentation.customBands` accepts only `bandRss`, matching the boards. Rendered
          only if the ladder produced one; a heading over an empty band is worse than no
-         band. Related Presentations belongs after this and is not built — see the file
-         header. */
+         band. */
     }
     {
       bands?.rssBand && (
@@ -563,6 +601,26 @@ if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
           title={bands.rssBand.title}
           message={bands.rssBand.message}
           buttonTarget={bands.rssBand.buttonTarget}
+        />
+      )
+    }
+
+    {
+      /* AFTER the RSS band, which is where both presentation boards put it — the
+         Interview's Related band is at y=4032 against the RSS CTA's 3725. Worth noting
+         it is the other way round on an article, where Related comes first and Work
+         with Me follows; the order is per board rather than a site-wide rule.
+
+         Omitted entirely when nothing ranks, same as the article page: a heading over no
+         cards is worse than no band. */
+    }
+    {
+      relatedItems.length > 0 && (
+        <RelatedBand
+          noun="Presentations"
+          basePath="/presentations"
+          isFallback={isFallback}
+          items={relatedItems}
         />
       )
     }

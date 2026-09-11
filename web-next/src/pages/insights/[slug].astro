@@ -482,6 +482,7 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
       relatedItems.length > 0 && (
         <RelatedBand
           noun={branch === 'note' ? 'Notes' : 'Articles'}
+          basePath="/insights"
           isFallback={isFallback}
           items={relatedItems}
         />
