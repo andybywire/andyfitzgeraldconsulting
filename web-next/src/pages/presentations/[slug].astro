@@ -88,7 +88,9 @@ import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
 import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
 import {deckSize, deckUrl} from '../../sanity/file'
 import {headingLinks, type HeadingLink} from '../../components/prose/headingId'
-import {formatLocation} from '../../lib/location'
+import {formatLocation, isoCountry} from '../../lib/location'
+import {slugify} from '../../lib/slug'
+import {presentationGraph} from '../../lib/linked-data'
 import {formatDate} from '../../lib/date'
 
 export async function getStaticPaths() {
@@ -338,11 +340,88 @@ if (events.length > 0) sections.push({id: 'venue', label: venueLabel})
 if (deck || slides.length > 0) sections.push({id: 'view-slides', label: 'View Slides'})
 for (const {id, label} of recordingSections) sections.push({id, label})
 if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
+
+/**
+ * ── THE PRESENTATION'S JSON-LD: THE WORK, ITS DELIVERIES, THEIR RECORDINGS ───
+ *
+ * Three entities mirroring the content model — see lib/linked-data.ts for why that
+ * mapping is exact rather than convenient. The builder takes plain values; assembling
+ * them from the query shape is this route's job, as it is on the insights route.
+ *
+ * ── RECORDINGS ARE MATCHED BACK TO THEIR EVENT BY IDENTITY ──────────────────
+ *
+ * `recordingSections` above is FLAT — `events.flatMap(...)` — because the page renders
+ * one section per recording in editorial order and does not care which delivery each
+ * came from. The graph does care: `recordedAt` is the whole point of hanging a
+ * recording off a delivery rather than off the work.
+ *
+ * `flatMap` does not clone, so the objects in that flat list are the same objects still
+ * sitting on each event. A Map keyed on the object recovers the grouping exactly, with
+ * no index arithmetic to drift out of step if either list is ever reordered.
+ */
+const fragmentFor = new Map(recordingSections.map((section) => [section.recording, section.id]))
+
+/* Slugged from the event's own name and date: stable when the array is reordered —
+   which it is designed to be — readable, and free of internal ids. The counter is the
+   tie-break for two deliveries that slug identically; nothing in the corpus does, but a
+   duplicate `@id` would silently merge two Events into one. */
+const usedFragments = new Map<string, number>()
+const deliveries = events.map((event, index) => {
+  const stem = slugify([event?.name, event?.date].filter(Boolean).join(' '))
+  const base = stem ? `event-${stem}` : `event-${index + 1}`
+  const seen = usedFragments.get(base) ?? 0
+  usedFragments.set(base, seen + 1)
+
+  return {
+    fragment: seen === 0 ? base : `${base}-${seen + 1}`,
+    name: event?.name,
+    date: event?.date,
+    link: event?.link,
+    online: event?.online,
+    city: event?.city,
+    state: event?.state,
+    /* Mapped to ISO 3166-1 alpha-2 here rather than in the builder, because
+       lib/location.ts already owns every rule about this field. */
+    countryCode: isoCountry(event?.country),
+    recordings: (event?.recordings ?? []).filter(Boolean).flatMap((recording) => {
+      const fragment = fragmentFor.get(recording)
+      /* No fragment means the recording never rendered a section, which cannot happen —
+         both lists come from the same source. Skipped rather than given a made-up id,
+         since a node addressing nothing is worse than a node absent. */
+      if (!fragment) return []
+      return [
+        {
+          fragment,
+          kind: recording.kind,
+          url: recording.url,
+          mediaUrl: recording.mediaUrl,
+          sourceName: recording.sourceName,
+          duration: recording.duration,
+          posterRef: recording.poster?.asset?._ref ?? null,
+        },
+      ]
+    }),
+  }
+})
+
+const jsonLd = presentationGraph({
+  site: Astro.site,
+  permalink,
+  title: presentation.title,
+  description: presentation.description,
+  pubDate: presentation.pubDate,
+  updatedAt: presentation._updatedAt,
+  genre: presentation.genre,
+  topics,
+  posterRef: presentation.poster?.asset?._ref ?? null,
+  deliveries,
+})
 ---
 
 <BaseLayout
   title={presentation.title ?? 'Presentation'}
   description={presentation.description ?? undefined}
+  jsonLd={jsonLd}
 >
   <Masthead />
 
