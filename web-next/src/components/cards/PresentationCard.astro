@@ -13,9 +13,14 @@
  * THAT IS A THIRD, DISTINCT BOX RULE, which is why this is its own component rather
  * than an ArticleCard variant. The three differ in KIND, not in degree:
  *
- *   ArticleCard        boxed always                    unconditional
- *   NoteCard           boxed below md, bare from md    viewport-conditional
- *   PresentationCard   boxed iff it has a poster       content-conditional
+ *   ArticleCard        boxed always                           unconditional
+ *   NoteCard           boxed below md, bare from md           viewport-conditional
+ *   PresentationCard   boxed below md, poster-conditional     both
+ *                      from md
+ *
+ * The third rule gained its viewport half on 2026-09-11: the content rule distinguishes
+ * cards from each OTHER, which means nothing in a single column, where an unboxed card
+ * reads as unstyled rather than as the quieter of two treatments. See the box rule.
  *
  * A shared component expressing all three would need a `variant` prop, which is the
  * thing ArticleCard's own header argues against — "makes every consumer restate a
@@ -176,12 +181,13 @@ const {
     /* Containing block for the full-card link overlay. */
     position: relative;
 
-    /* Padding is on BOTH variants — see the header. The border is declared and
-       transparent so promoting it changes a colour rather than adding a property. */
+    /* Padding is on BOTH variants — see the header. The border is always DECLARED so
+       that turning it off below changes a colour rather than removing a property; a
+       border that came and went would shift the contents 1px. */
     padding: var(--card-pad);
-    border: var(--border-width-hairline) solid transparent;
+    border: var(--border-width-hairline) solid var(--color-border);
     border-radius: var(--radius-2);
-    background-color: transparent;
+    background-color: var(--color-surface);
 
     /* Eased at the 0.15s affordance end of DESIGN.md's convention, on the resting
        rule so it eases both in and out. */
@@ -191,10 +197,31 @@ const {
       box-shadow 0.15s;
   }
 
-  /* THE POSTER PROMOTES THE BOX. Nothing else does. */
-  .preso-card:has(.card-media) {
-    border-color: var(--color-border);
-    background-color: var(--color-surface);
+  /*
+   * ── EVERY CARD IS BOXED IN ONE COLUMN; THE POSTER RULE STARTS AT `md` ───────
+   *
+   * The content rule — boxed iff it has a poster — is about DISTINGUISHING cards from
+   * each other, and that only means something when there are cards side by side to
+   * compare. In one column there is no row to differ from: an unboxed card has nothing
+   * bounding it and nothing beside it, so it reads as unstyled rather than as the
+   * quieter of two treatments. Reported from the phone view of both the index masonry
+   * and the related band (Andy, 2026-09-11).
+   *
+   * So the base state is now BOXED and this rule takes the box away, rather than the
+   * other way round. That ordering matters: it makes single column the fallback, which
+   * is the state a container query cannot fail into.
+   *
+   * `--breakpoint-md` is the same switch both grids use to go from one column to two,
+   * so the card's treatment and the column count change together by construction rather
+   * than by two numbers being kept in step. It is also exactly what NoteCard does,
+   * inverted — that card is boxed below `md` and bare above it unconditionally, where
+   * this one is boxed below `md` and content-conditional above.
+   */
+  @container style(--breakpoint-md: true) {
+    .preso-card:not(:has(.card-media)) {
+      border-color: transparent;
+      background-color: transparent;
+    }
   }
 
   /*
