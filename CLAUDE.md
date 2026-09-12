@@ -335,6 +335,25 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    2. **Index pages** — cards, chips, pagination.
    3. **Home** — mostly composition of bands that already exist by then.
    4. The rest — services, projects, case study, reviews, presentations, search.
+   5. **JSON-LD, across every template at once** — deliberately last, so the entity model is
+      settled in one pass rather than five. **Built 2026-09-12**, in four pieces: the site
+      graph (Organization, Person, WebSite), the Document branch, the Presentation branch,
+      then breadcrumbs and page-level types. `web-next/src/lib/linked-data.ts` holds it and
+      records the reasoning; `<BaseLayout>` takes a page's nodes as a prop so every page
+      emits ONE `@graph` whose cross-references resolve. Validated by Andy.
+
+      Three decisions worth not re-deriving. Topics and genre ride as plain `keywords` and
+      `genre` strings rather than `DefinedTerm` nodes, because concepts are not addressable
+      — `docs/urls-and-filtering.md` rules out per-topic pages, so a `DefinedTerm` `@id`
+      would identify something the site does not publish. No `Review` nodes, though five
+      case studies carry testimonials: a review of your own Organization is self-serving
+      markup that Google ignores and can penalize. And a page gets a page-level node only
+      where its type says more than `WebPage` does, which is why `/apologia`, `/consulting`
+      and `/projects` carry none.
+
+      **`WebSite.potentialAction` / `SearchAction` is the one piece still missing**, and it
+      waits on search rather than on this work — it names the URL a site search accepts a
+      query at, and the masthead toggle has been inert since phase 3. Purely additive.
 
    **Presentations composes `BAND_GET_IN_TOUCH`, and that fragment has never been exercised.**
    The Presentations *singleton* will carry the Get in Touch band (Andy, 2026-09-07), and it is
