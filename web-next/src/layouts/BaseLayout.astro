@@ -12,6 +12,7 @@
  * organization with no delivery cost.
  */
 import {Font} from 'astro:assets'
+import {serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
 
 import '../styles/tokens.css'
 import '../styles/base.css'
@@ -19,9 +20,24 @@ import '../styles/base.css'
 interface Props {
   title: string
   description?: string
+  /**
+   * The page's own JSON-LD nodes, appended to the site graph below.
+   *
+   * A prop rather than each page emitting its own script, because two scripts are two
+   * disconnected graphs: an Article here referring to `#person` by `@id` only resolves
+   * if the Person is in the SAME `@graph`. Pages contribute nodes; this layout owns the
+   * one graph they all land in.
+   */
+  jsonLd?: GraphNode[]
 }
 
-const {title, description} = Astro.props
+const {title, description, jsonLd} = Astro.props
+
+/* `Astro.site` is set in astro.config for both modes, so this cannot be null in
+   practice — but typing says otherwise, and a graph whose `@id`s silently became
+   `undefined#person` would validate as a set of unrelated nodes rather than fail. */
+if (!Astro.site) throw new Error('[BaseLayout] `site` is unset in astro.config.mjs')
+const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
 ---
 
 <html lang="en">
@@ -98,6 +114,29 @@ const {title, description} = Astro.props
 
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+
+    {
+      /*
+      ── THE JSON-LD GRAPH ────────────────────────────────────────────────────
+
+      One script, one `@graph`, on every page — Organization, Person and WebSite from
+      lib/linked-data.ts, plus whatever nodes the page contributed. See that file for
+      why the graph is assembled here rather than per page, and for the two defects in
+      the old build that are fixed rather than carried across.
+
+      `set:html` because the content is already a JSON string and must reach the
+      document verbatim; Astro's normal interpolation would HTML-escape the quotes and
+      produce a script body no parser can read. `serializeGraph` does the escaping that
+      actually matters — `<` so nothing can close this element early.
+    */
+    }
+    <script type="application/ld+json" is:inline set:html={graph} />
+
+    {
+      /* PLACED AFTER <title> AND THE META DESCRIPTION deliberately. Those two are what a
+         crawler and a preview card need first, and a graph that grows with every page
+         type should not sit between the document's name and its summary. */
+    }
 
     {
       /*

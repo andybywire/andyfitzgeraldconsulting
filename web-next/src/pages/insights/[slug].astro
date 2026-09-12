@@ -74,6 +74,7 @@ import RelatedBand from '../../components/bands/RelatedBand.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
 import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
 import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
+import {breadcrumbs, documentNode} from '../../lib/linked-data'
 import {headingLinks} from '../../components/prose/headingId'
 
 export async function getStaticPaths() {
@@ -238,11 +239,67 @@ const topics = (insight.topics ?? []).filter((topic): topic is string => Boolean
  */
 if (!Astro.site) throw new Error('[insights/[slug]] `site` is unset in astro.config.mjs')
 const permalink = new URL(`/insights/${slug}/`, Astro.site).href
+
+/**
+ * ── THE DOCUMENT'S JSON-LD NODE ──────────────────────────────────────────────
+ *
+ * One Article node, appended to the site graph <BaseLayout> owns — see
+ * lib/linked-data.ts for why there is one graph per page rather than a second script.
+ *
+ * The mapping happens HERE rather than in the builder, so the builder stays free of
+ * query shapes. It takes plain values and knows nothing about INSIGHT_DETAIL_QUERY's
+ * union or CASE_STUDY_DETAIL_QUERY, which is what lets the presentation route reuse
+ * the same module in the next piece.
+ *
+ * `clipRef` and `bookRef` come back on every insight and are null for anything that is
+ * not the matching note variant, so no branching is needed here: the builder emits the
+ * property only when the source has a URL or a title.
+ *
+ * `client` is the one value NOT on INSIGHT_DETAIL_QUERY — it lives on the case study's
+ * own projection, which is fetched only for a case study and is null otherwise.
+ */
+const jsonLd = [
+  /* Insights > this document. Home is not a crumb and the last crumb carries no link —
+     both are Google's guidance; see lib/linked-data.ts. */
+  breadcrumbs(permalink, [
+    {name: 'Insights', url: new URL('/insights/', Astro.site).href},
+    {name: insight.title ?? 'Untitled'},
+  ]),
+  documentNode({
+    site: Astro.site,
+    permalink,
+    title: insight.title,
+    shortDescription: insight.shortDescription,
+    pubDate: insight.pubDate,
+    updatedAt: insight._updatedAt,
+    genre: insight.genre,
+    topics,
+    heroRef: insight.heroImage?.asset?._ref ?? null,
+    clientName: caseStudy?.client?.name ?? null,
+    clip: insight.clipRef
+      ? {
+          url: insight.clipRef.clipUrl,
+          title: insight.clipRef.title,
+          publisher: insight.clipRef.publisher,
+        }
+      : null,
+    book: insight.bookRef
+      ? {
+          url: insight.bookRef.bookUrl,
+          title: insight.bookRef.title,
+          author: insight.bookRef.author,
+          publisher: insight.bookRef.publisher,
+          pubDate: insight.bookRef.pubDate,
+        }
+      : null,
+  }),
+]
 ---
 
 <BaseLayout
   title={insight.title ?? 'Untitled'}
   description={insight.description ?? insight.shortDescription ?? undefined}
+  jsonLd={jsonLd}
 >
   <Masthead />
 

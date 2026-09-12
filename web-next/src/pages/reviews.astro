@@ -63,6 +63,7 @@ import PageHeader from '../components/PageHeader.astro'
 import SanityImage from '../components/SanityImage.astro'
 import Prose from '../components/prose/Prose.astro'
 import RailNav from '../components/RailNav.astro'
+import {pageNode} from '../lib/linked-data'
 
 /*
   TWO QUERIES, NOT ONE, and it is the ClientReturn ceiling rather than tidiness — see
@@ -74,9 +75,22 @@ const [page, clients] = await Promise.all([
 ])
 
 const groups = groupByRelationship(clients)
+
+/* A CollectionPage — this page lists things rather than being one. No ItemList: see
+   pageNode for why enumerating the entries would restate the anchors for real weight. */
+if (!Astro.site) throw new Error('[reviews.astro] `site` is unset in astro.config.mjs')
+const jsonLd = [
+  pageNode({
+    site: Astro.site,
+    url: new URL('/reviews/', Astro.site).href,
+    type: 'CollectionPage',
+    name: page?.title,
+    description: page?.lede,
+  }),
+]
 ---
 
-<BaseLayout title={page?.title ?? 'Reviews'} description={page?.lede ?? undefined}>
+<BaseLayout title={page?.title ?? 'Reviews'} description={page?.lede ?? undefined} jsonLd={jsonLd}>
   <Masthead />
 
   <main>

@@ -107,6 +107,7 @@ import GetInTouchBand from '../components/bands/GetInTouchBand.astro'
 import WorkWithMeBand from '../components/bands/WorkWithMeBand.astro'
 import {GET_IN_TOUCH_HEADING, GET_IN_TOUCH_ID} from '../components/bands/getInTouch'
 import {headingLinks} from '../components/prose/headingId'
+import {pageNode} from '../lib/linked-data'
 
 export async function getStaticPaths() {
   const rows = await loadQuery(PAGE_SLUGS_QUERY)
@@ -205,6 +206,25 @@ const contents = bands?.touchBand?.bandCopy
  */
 const heroFocus = focalPoint(page.heroImg ?? {})
 const hasHero = Boolean(page.heroImg?.asset)
+
+/* Only the two slugs whose schema.org type says more than `WebPage` does. `/apologia`,
+   `/consulting` and `/projects` get no page node at all — see pageNode for why a generic
+   one is ceremony. Keyed on slug, which is what distinguishes these pages; a `page`
+   carries no field that could say it another way. */
+const SPECIFIC_PAGE_TYPES = {about: 'AboutPage', contact: 'ContactPage'} as const
+const pageType = SPECIFIC_PAGE_TYPES[slug as keyof typeof SPECIFIC_PAGE_TYPES]
+if (!Astro.site) throw new Error('[pages/[slug]] `site` is unset in astro.config.mjs')
+const jsonLd = pageType
+  ? [
+      pageNode({
+        site: Astro.site,
+        url: new URL(`/${slug}/`, Astro.site).href,
+        type: pageType,
+        name: page.title,
+        description: page.description,
+      }),
+    ]
+  : undefined
 ---
 
 {
@@ -237,7 +257,11 @@ const hasHero = Boolean(page.heroImg?.asset)
     it would lose wherever it sat in the source. `spaceEnd` exists for exactly this.
   */
 }
-<BaseLayout title={page.title ?? 'Page'} description={page.description ?? undefined}>
+<BaseLayout
+  title={page.title ?? 'Page'}
+  description={page.description ?? undefined}
+  jsonLd={jsonLd}
+>
   <Masthead />
 
   <main>

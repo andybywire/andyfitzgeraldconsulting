@@ -62,6 +62,35 @@ export interface EventLocation {
 /** Countries whose subdivisions are named instead of the country itself. */
 const SUBDIVISION_COUNTRIES = new Set(['USA', 'Canada'])
 
+/**
+ * ── THE STORED COUNTRY IS A DISPLAY STRING; schema.org WANTS ISO ────────────
+ *
+ * `event.location.country` is a five-value list written for an editor to read — "USA",
+ * "UK" — where `PostalAddress.addressCountry` wants ISO 3166-1 alpha-2. This maps the
+ * one to the other, and it lives here because this module already owns the rule for
+ * turning that field into something a consumer sees.
+ *
+ * NOTE "UK" BECOMES "GB". The ISO code for the United Kingdom is GB; UK is a reserved
+ * alias, not the standard code. The kind of thing that looks correct and is not — which
+ * is the same failure the site graph's "United States" had before piece 1 fixed it.
+ *
+ * An unknown value returns null rather than being passed through, so a sixth entry
+ * added to the Studio list without being added here omits `addressCountry` instead of
+ * emitting an invalid one. Silent either way, but the quiet version is the honest one.
+ */
+const ISO_COUNTRY: Record<string, string> = {
+  USA: 'US',
+  Canada: 'CA',
+  UK: 'GB',
+  Switzerland: 'CH',
+  Italy: 'IT',
+}
+
+export function isoCountry(country: string | null | undefined): string | null {
+  if (!country) return null
+  return ISO_COUNTRY[country.trim()] ?? null
+}
+
 export function formatLocation(location: EventLocation | null | undefined): string | null {
   if (!location) return null
   if (location.online) return 'Online'
