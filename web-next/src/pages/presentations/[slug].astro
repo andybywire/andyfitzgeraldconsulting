@@ -90,7 +90,7 @@ import {deckSize, deckUrl} from '../../sanity/file'
 import {headingLinks, type HeadingLink} from '../../components/prose/headingId'
 import {formatLocation, isoCountry} from '../../lib/location'
 import {slugify} from '../../lib/slug'
-import {presentationGraph} from '../../lib/linked-data'
+import {breadcrumbs, presentationGraph} from '../../lib/linked-data'
 import {formatDate} from '../../lib/date'
 
 export async function getStaticPaths() {
@@ -404,18 +404,24 @@ const deliveries = events.map((event, index) => {
   }
 })
 
-const jsonLd = presentationGraph({
-  site: Astro.site,
-  permalink,
-  title: presentation.title,
-  description: presentation.description,
-  pubDate: presentation.pubDate,
-  updatedAt: presentation._updatedAt,
-  genre: presentation.genre,
-  topics,
-  posterRef: presentation.poster?.asset?._ref ?? null,
-  deliveries,
-})
+const jsonLd = [
+  breadcrumbs(permalink, [
+    {name: 'Presentations', url: new URL('/presentations/', Astro.site).href},
+    {name: presentation.title ?? 'Presentation'},
+  ]),
+  ...presentationGraph({
+    site: Astro.site,
+    permalink,
+    title: presentation.title,
+    description: presentation.description,
+    pubDate: presentation.pubDate,
+    updatedAt: presentation._updatedAt,
+    genre: presentation.genre,
+    topics,
+    posterRef: presentation.poster?.asset?._ref ?? null,
+    deliveries,
+  }),
+]
 ---
 
 <BaseLayout

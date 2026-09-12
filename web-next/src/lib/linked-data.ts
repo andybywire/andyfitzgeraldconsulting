@@ -595,6 +595,92 @@ export function presentationGraph(input: PresentationGraphInput): GraphNode[] {
   return nodes
 }
 
+/* ── PIECE 4: BREADCRUMBS AND PAGE TYPES ──────────────────────────────────── */
+
+export interface Crumb {
+  name: string
+  /** Omitted on the final crumb — see below. */
+  url?: string
+}
+
+/**
+ * A BreadcrumbList for a detail page.
+ *
+ * ── THE ONE REMAINING ITEM WITH A SUPPORTED RICH RESULT ─────────────────────
+ *
+ * Google renders breadcrumbs in the result itself, replacing the bare URL with a
+ * readable trail. That makes this worth more than every page-level node in this piece
+ * put together, which is why it was added to the plan rather than left out of it.
+ *
+ * ── HOME IS NOT A CRUMB, AND THE LAST CRUMB HAS NO `item` ───────────────────
+ *
+ * Both follow Google's guidance and both look like omissions otherwise. The homepage is
+ * not part of a breadcrumb trail — the trail describes where a page sits WITHIN the
+ * site, and "the site" is not a level inside itself. And the final crumb is the page
+ * you are already on, so it carries a name but no link: a breadcrumb pointing at the
+ * current URL is a link to nowhere.
+ *
+ * `position` is 1-based and must be contiguous, which is why it is derived from the
+ * array rather than passed in.
+ */
+export function breadcrumbs(permalink: string, crumbs: Crumb[]): GraphNode {
+  return {
+    '@id': `${permalink}#breadcrumb`,
+    '@type': 'BreadcrumbList',
+    itemListElement: crumbs.map((crumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: crumb.name,
+      ...(crumb.url ? {item: crumb.url} : {}),
+    })),
+  }
+}
+
+export interface PageNodeInput {
+  site: URL
+  /** The page's canonical URL. */
+  url: string
+  /**
+   * Only types that say more than `WebPage` does.
+   *
+   * Andy's call, 2026-09-12: a generic WebPage node on a page with nothing specific to
+   * add is ceremony — a crawler already knows `/apologia` is a web page, and a node
+   * asserting only that costs bytes and carries no meaning. So `/apologia`,
+   * `/consulting` and `/projects` get no page node at all, and neither does the
+   * throwaway token specimen.
+   */
+  type: 'ProfilePage' | 'AboutPage' | 'ContactPage' | 'CollectionPage'
+  name?: string | null
+  description?: string | null
+  /** For a ProfilePage: the entity the page is about. */
+  mainEntityId?: string | null
+}
+
+/**
+ * A page-level node, for the pages whose type is genuinely more specific than WebPage.
+ *
+ * `isPartOf` points at the WebSite the site graph already declares, which is the whole
+ * reason these are worth emitting at all: the node's value is the RELATIONSHIP, not the
+ * assertion that a page exists.
+ *
+ * No `ItemList` on the collection pages. The Insights index lists 42 documents and
+ * enumerating them would roughly double the page's JSON-LD to restate what 42 anchors
+ * already say — and an ItemList of Articles is not a supported rich result on its own,
+ * so it would buy nothing for the weight.
+ */
+export function pageNode(input: PageNodeInput): GraphNode {
+  const node: GraphNode = {
+    '@id': `${input.url}#webpage`,
+    '@type': input.type,
+    url: input.url,
+    isPartOf: {'@id': nodeId(input.site, 'website')},
+  }
+  if (input.name) node.name = input.name
+  if (input.description) node.description = input.description
+  if (input.mainEntityId) node.mainEntity = {'@id': input.mainEntityId}
+  return node
+}
+
 /**
  * Serialize a graph for a `<script type="application/ld+json">`.
  *

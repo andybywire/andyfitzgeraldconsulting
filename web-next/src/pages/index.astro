@@ -41,6 +41,7 @@ import Button from '../components/Button.astro'
 import ArticleCard from '../components/cards/ArticleCard.astro'
 import NoteCard from '../components/cards/NoteCard.astro'
 import WorkWithMeBand from '../components/bands/WorkWithMeBand.astro'
+import {nodeId, pageNode} from '../lib/linked-data'
 
 /*
   ── HOW MANY THE INSIGHTS BAND SHOWS. TUNE HERE. ────────────────────────────
@@ -187,9 +188,28 @@ const noteCards = insights.notes.flatMap((item) =>
       ]
     : [],
 )
+
+/* A ProfilePage whose `mainEntity` is the Person — the structured-data counterpart of
+   the `rel=author` already in <head>, which points here for the representative h-card.
+   No `name`: the WebSite node carries the site's name and `mainEntity` says what this
+   page is about, so a third label would only be a fourth place to disagree. */
+if (!Astro.site) throw new Error('[index] `site` is unset in astro.config.mjs')
+const jsonLd = [
+  pageNode({
+    site: Astro.site,
+    url: new URL('/', Astro.site).href,
+    type: 'ProfilePage',
+    description: page?.lede,
+    mainEntityId: nodeId(Astro.site, 'person'),
+  }),
+]
 ---
 
-<BaseLayout title="Andy Fitzgerald — Information Architect" description={page?.lede ?? undefined}>
+<BaseLayout
+  title="Andy Fitzgerald — Information Architect"
+  description={page?.lede ?? undefined}
+  jsonLd={jsonLd}
+>
   <Masthead microformats photo={authorPhoto} />
 
   <main>

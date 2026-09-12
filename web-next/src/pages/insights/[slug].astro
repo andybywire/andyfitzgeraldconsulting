@@ -74,7 +74,7 @@ import RelatedBand from '../../components/bands/RelatedBand.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
 import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
 import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
-import {documentNode} from '../../lib/linked-data'
+import {breadcrumbs, documentNode} from '../../lib/linked-data'
 import {headingLinks} from '../../components/prose/headingId'
 
 export async function getStaticPaths() {
@@ -259,6 +259,12 @@ const permalink = new URL(`/insights/${slug}/`, Astro.site).href
  * own projection, which is fetched only for a case study and is null otherwise.
  */
 const jsonLd = [
+  /* Insights > this document. Home is not a crumb and the last crumb carries no link —
+     both are Google's guidance; see lib/linked-data.ts. */
+  breadcrumbs(permalink, [
+    {name: 'Insights', url: new URL('/insights/', Astro.site).href},
+    {name: insight.title ?? 'Untitled'},
+  ]),
   documentNode({
     site: Astro.site,
     permalink,

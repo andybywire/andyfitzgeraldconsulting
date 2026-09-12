@@ -56,6 +56,7 @@ import FacetFilters from '../../components/FacetFilters.astro'
 import ResultsFooter from '../../components/ResultsFooter.astro'
 import RssBand from '../../components/bands/RssBand.astro'
 import GetInTouchBand from '../../components/bands/GetInTouchBand.astro'
+import {pageNode} from '../../lib/linked-data'
 
 /* Three independent fetches, so they go together rather than in series. The header and
    the bands are separate queries because a singleton's `heroCopy` plus two band
@@ -145,9 +146,26 @@ const cards = presentations.flatMap((item) => {
  * than hide. That is the right way round.
  */
 const facets = facetGroups(presentations)
+
+/* A CollectionPage — this page lists things rather than being one. No ItemList: see
+   pageNode for why enumerating the entries would restate the anchors for real weight. */
+if (!Astro.site) throw new Error('[presentations/index.astro] `site` is unset in astro.config.mjs')
+const jsonLd = [
+  pageNode({
+    site: Astro.site,
+    url: new URL('/presentations/', Astro.site).href,
+    type: 'CollectionPage',
+    name: page.title,
+    description: page.lede,
+  }),
+]
 ---
 
-<BaseLayout title={page.title ?? 'Presentations'} description={page.lede ?? undefined}>
+<BaseLayout
+  title={page.title ?? 'Presentations'}
+  description={page.lede ?? undefined}
+  jsonLd={jsonLd}
+>
   <Masthead />
 
   <main>

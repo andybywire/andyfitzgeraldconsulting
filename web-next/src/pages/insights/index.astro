@@ -44,6 +44,7 @@ import CardMasonry from '../../components/cards/CardMasonry.astro'
 import FacetFilters from '../../components/FacetFilters.astro'
 import ResultsFooter from '../../components/ResultsFooter.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
+import {pageNode} from '../../lib/linked-data'
 
 /* Both fetches are independent, so they go together rather than in series. */
 const [page, insights] = await Promise.all([
@@ -139,9 +140,22 @@ const cards = insights.flatMap((item) => {
  * shows exactly the concepts its own corpus uses.
  */
 const facets = facetGroups(insights)
+
+/* A CollectionPage — this page lists things rather than being one. No ItemList: see
+   pageNode for why enumerating the entries would restate the anchors for real weight. */
+if (!Astro.site) throw new Error('[insights/index.astro] `site` is unset in astro.config.mjs')
+const jsonLd = [
+  pageNode({
+    site: Astro.site,
+    url: new URL('/insights/', Astro.site).href,
+    type: 'CollectionPage',
+    name: page.title,
+    description: page.lede,
+  }),
+]
 ---
 
-<BaseLayout title={page.title ?? 'Insights'} description={page.lede ?? undefined}>
+<BaseLayout title={page.title ?? 'Insights'} description={page.lede ?? undefined} jsonLd={jsonLd}>
   <Masthead />
 
   <main>
