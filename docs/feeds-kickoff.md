@@ -39,11 +39,39 @@ Confirmed by Andy 2026-09-13.
 
 | feed | URL | contents | items today |
 |---|---|---|---|
-| All content | `/feed.xml` | insights + presentations | 51 |
-| All insights | `/insights/feed.xml` | `article` + `caseStudy` + `note` | 42 |
-| Articles | `/insights/feed-articles.xml` | `article` + `caseStudy` | 37 |
+| All content | `/feed.xml` | `article` + `note` + `presentation` | 44 |
+| All insights | `/insights/feed.xml` | `article` + `note` | 35 |
+| Articles | `/insights/feed-articles.xml` | `article` | 30 |
 | Notes | `/insights/feed-notes.xml` | `note` | 5 |
 | Presentations | `/presentations/feed.xml` | `presentation` | 9 |
+
+**Revised 2026-09-13 — `caseStudy` is excluded from every feed.** The table above
+originally carried case studies in three of the five. Andy, after reading a built
+`/insights/feed.xml` in a reader: they did not come through well, and he had been on the
+fence about including them at all.
+
+The reason is structural, which is why the answer was removal rather than repair. A case
+study is not prose with a beginning — it is five fields arranged by a template, and two
+of its headings exist only in that template (`CaseStudyEntry.astro` supplies "Work I Did"
+and the `Project Goal` / `Approach` / `Outcome` labels; the three project fields carry
+their own titles, the labels sit above them). Syndicating one means rebuilding the
+scaffolding in whatever lifts the fields out. That was built, it worked, and it still
+read as a flattened form rather than as something written.
+
+**The machinery is deleted, not disabled** — `FEED_CASE_STUDIES_QUERY` and the
+`labelled()` helper that synthesized those headings. Bringing case studies back is a
+design question about what a syndicated case study IS, not a serialization one.
+
+Two consequences worth noting rather than deciding now:
+
+- **`/insights/feed.xml` is now exactly `feed-articles.xml` + `feed-notes.xml`.** A feed
+  and its two halves — a cleaner story than the overlapping original, but it does make
+  the Articles feed thinner: it is the full insights feed minus five notes. Whether all
+  three still earn their place is worth a look when the remaining four are built.
+- **The `/insights/` path now over-promises slightly.** The feed sits at the section's
+  URL but no longer carries everything in that section. The URL must not churn, and the
+  fix if one is wanted is wording on the RSS Feeds page and in the feed's own `<title>`
+  rather than a new address.
 
 `/insights/articles/feed.xml` was rejected: it asserts a path that is not a page, and
 `urls-and-filtering.md` settled that genre subsets are **query params, not paths**.
@@ -59,8 +87,14 @@ called "RSS Feeds"; that is the vernacular.
 **Full content, not summaries.** Andy: "a subscriber should be able to read the full article
 comfortably in their RSS reader." Standard HTML tags, **no site styling imposed**.
 
-**`/feed.xml` widens and the GUIDs get fixed.** It currently carries articles + notes and
-EXCLUDES case studies; it becomes insights + presentations. The existing `<id>` values are
+**`/feed.xml` widens and the GUIDs get fixed.** It becomes `article` + `note` +
+`presentation`.
+
+> **Correction, 2026-09-13.** This line previously said the live feed "currently carries
+> articles + notes and EXCLUDES case studies". The notes half was wrong, and verified so:
+> `web/_data/articles.js:24` fetches only `article` and `caseStudy`, and `web/_src/feed.njk:28`
+> filters case studies back out. **The live feed is `article` only, 34 entries** — no note
+> has ever appeared in it. The case-study exclusion was correctly described. The existing `<id>` values are
 `https://…/{slug}/index.html` — missing the `/insights/` segment, so `<id>` and `<link>`
 disagree. Fixing that makes every existing item appear as new once, and Andy accepted that:
 a feed with wrong GUIDs keeps causing dedup problems and would undermine Bridgy backfeed in
@@ -126,6 +160,10 @@ of `sanity/queries/search.ts`.
 lacks rather than complaining. That silently emptied seven documents once already. A
 projection over a union is only as complete as its least-similar member.
 
+*Retired for the feeds specifically on 2026-09-13, when case studies were excluded — no feed
+query projects those five fields any more. The trap is alive everywhere else; `search.ts`
+still has to concatenate them.*
+
 ## `<link rel="alternate">`
 
 Feed auto-discovery, and distinct from the RSS Feeds page. A reader given the SITE url
@@ -150,6 +188,34 @@ comments carry dates for exactly this reason; re-measure before trusting one, an
 feed's item count to disagree with this file.
 
 **13 of 37 heroes still have no `altText`** — the enumerable half of phase 5, unchanged.
+
+## Carry into phase 6 — serve the feeds as `application/atom+xml`
+
+**Found 2026-09-13, while checking a built feed over a local static server.**
+
+`/insights/feed.xml` is a prerendered route, so the `content-type` its handler sets —
+`application/atom+xml; charset=utf-8` — **never reaches a visitor in production.**
+`prerender = true` writes the response body to `dist/insights/feed.xml` and discards the
+headers; whatever serves that file then decides the type from its own extension map, where
+`.xml` means `application/xml`. The header only takes effect in the SSR preview environment,
+where the handler actually runs per request.
+
+So the fix belongs with the nginx config, alongside the 301 map:
+
+```nginx
+types { application/atom+xml xml; }
+```
+
+which is too broad as written — it would retype `/sitemap.xml` too, and a sitemap is
+`application/xml`. Prefer a location block keyed to the feed filenames, or a `map` on the
+request path. **Decide that when the nginx config is authored, with all five feed URLs known.**
+
+**Not urgent, and not a correctness bug.** RFC 4287 specifies `application/atom+xml`, but feed
+readers overwhelmingly sniff the body, and a great many Atom feeds serve `application/xml` in
+practice. It is recorded here because it is invisible until someone's reader is fussy, and
+because it generalizes: **a prerendered endpoint's response headers are build-time fiction.**
+`/search.json` has the same property — it happens to be fine, since `.json` already maps to
+`application/json`.
 
 ## How to work together
 
