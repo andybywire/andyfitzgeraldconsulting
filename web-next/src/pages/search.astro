@@ -44,6 +44,7 @@
  */
 import Band from '../components/Band.astro'
 import Footer from '../components/Footer.astro'
+import ConceptList from '../components/ConceptList.astro'
 import Grid from '../components/Grid.astro'
 import Masthead from '../components/Masthead.astro'
 import PageHeader from '../components/PageHeader.astro'
@@ -176,32 +177,20 @@ const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map(
           the design is for a DOCUMENT's own short topic list, not for a browse affordance
           whose whole job is offering targets.
 
-          So this uses the Home band's pattern instead — one column, two from 26rem — and
-          its threshold is measured rather than chosen. index.astro carries that
-          measurement in full; it is not restated here, because two copies of a number
-          derived from label widths is how they come to disagree.
-
-          ── PROMOTION IS NOW OVERDUE, AND IT IS A BOUNDARY CALL ───────────────
-
-          This is the THIRD consumer of these rules — `.topic-grid` and `.genre-list` on
-          Home are the first two — which is past this project's stated trigger. Left local
-          and flagged rather than extracted, because extracting it would edit a shipped
-          page and "does this get promoted to a shared component" is Andy's to answer.
-
-          `role="list"` because `list-style: none` drops list semantics in Safari.
+          So this uses <ConceptList> instead — one column, two from 26rem, with its
+          threshold measured rather than chosen. That WAS three copies of these rules and a
+          standing flag here; Andy promoted it 2026-09-13, and the measurement now lives in
+          the component alongside the query it justifies.
         */
         }
         <nav class="search-topics" aria-labelledby="common-topics">
           <h2 id="common-topics">Common Topics</h2>
-          <ul class="topic-grid" role="list">
-            {
-              commonTopics.map((topic) => (
-                <li>
-                  <a href={`/insights/?topic=${topic.slug}`}>{topic.label}</a>
-                </li>
-              ))
-            }
-          </ul>
+          <ConceptList
+            items={commonTopics.map((topic) => ({
+              label: topic.label,
+              href: `/insights/?topic=${topic.slug}`,
+            }))}
+          />
         </nav>
       </Grid>
     </Band>
@@ -275,14 +264,7 @@ const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map(
     grid-column: var(--col-full); /* one column below md; the split follows */
   }
 
-  /*
-   * `container-type: inline-size` makes this column the reference for its own list's
-   * column count, which is the whole mechanism — see the query below. Safe on a grid
-   * item: the inline size still comes from the track, and block size is not contained, so
-   * the list grows the column normally. Home's `.topics-col` does exactly the same.
-   */
   .search-topics {
-    container-type: inline-size;
     grid-column: var(--col-full);
   }
 
@@ -296,42 +278,6 @@ const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map(
    * this page to the board knows which one moved.
    */
 
-  /*
-   * base.css keeps the UA's list indent for prose; a nav is not prose.
-   *
-   * One column is the base case, per tokens.css's mobile-first rule: an engine that never
-   * evaluates the query below must be left with the narrow layout.
-   *
-   * Row-major, and nothing here sets `grid-auto-flow` — the default IS row, so the a-z
-   * runs across each row rather than down the first column, and the DOM order is the
-   * reading order for a screen reader and a sighted reader alike.
-   * `--grid-gutter-content` already carries the board's two values, 32 stacked and 24 at
-   * md, so neither number is restated here.
-   */
-  .topic-grid {
-    margin-top: var(--rhythm-heading-close);
-    padding: 0;
-    list-style: none;
-
-    display: grid;
-    grid-template-columns: 1fr;
-    row-gap: var(--rhythm-heading-close);
-    column-gap: var(--grid-gutter-content);
-  }
-
-  /*
-   * 26rem IS index.astro's MEASUREMENT, not a value chosen here. That file carries the
-   * full table — 343 of container wraps the longest label and stays one column, 416 fits
-   * two — plus the part worth not rediscovering: why a LARGER threshold breaks something
-   * invisible. Kept identical deliberately; see the note at the call site about promoting
-   * these rules rather than keeping a second copy of this number.
-   */
-  @container (inline-size >= 26rem) {
-    .topic-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
   @container style(--breakpoint-md: true) {
     /*
      * ── 7 + skip-1 + 4, WHICH IS <FacetFilters>'s OWN SPLIT ───────────────────
@@ -344,7 +290,7 @@ const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map(
      *
      * The rail's width no longer SELECTS anything, which is the difference from the first
      * draft of this file: <TopicList> switched form at 16rem, so the column count silently
-     * changed the component. `.topic-grid` switches at 26rem and is under it at every
+     * changed the component. <ConceptList> switches at 26rem and is under it at every
      * width this rail ever has — 316 at lg, 229 at md — so one column is the rail's answer
      * everywhere and two columns only ever happen below md, where it is full width.
      */

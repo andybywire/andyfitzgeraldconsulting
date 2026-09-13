@@ -25,6 +25,7 @@
  */
 import {Link} from '@lucide/astro'
 import Chip from './Chip.astro'
+import ConceptList from './ConceptList.astro'
 import Eyebrow from './Eyebrow.astro'
 ---
 
@@ -72,20 +73,6 @@ import Eyebrow from './Eyebrow.astro'
       <ul class="search-list" data-search-list role="list"></ul>
     </div>
 
-    {
-      /*
-      ── THIS IS A THIRD COPY OF THE TOPIC GRID, AND IT IS A DECISION ──────────
-
-      `.topic-grid` and its 26rem threshold already exist in index.astro and search.astro.
-      Andy's call (2026-09-12) is to duplicate rather than extract, so the shipped Home
-      page is not touched by search work.
-
-      THE THRESHOLD IS THE THING THAT WILL DRIFT. It is measured from the longest topic
-      label at the link step — index.astro carries the table — so if the type scale or the
-      vocabulary moves, three files have to change together and nothing enforces it.
-      Recorded here rather than left for someone to discover.
-    */
-    }
     {
       /*
       ── THE FACETS SHARE THE RAIL WITH COMMON TOPICS ─────────────────────────
@@ -161,7 +148,12 @@ import Eyebrow from './Eyebrow.astro'
 
     <nav class="search-topics" data-search-topics hidden aria-labelledby="search-common-topics">
       <h2 id="search-common-topics">Common Topics</h2>
-      <ul class="topic-grid" data-search-topic-list role="list"></ul>
+      {
+        /* No `items`: the controller fills it. <ConceptList> renders the shell and its
+          own container, so the CLONED node carries the component's scope attribute and the
+          grid rules still match — see the note at the top of this file. */
+      }
+      <ConceptList data-search-topic-list />
     </nav>
   </div>
 </template>
@@ -547,27 +539,5 @@ import Eyebrow from './Eyebrow.astro'
     background-color: var(--color-disabled-surface);
     color: var(--color-disabled-text);
     pointer-events: none;
-  }
-
-  /* ── Common Topics — see the note in the template ─────────────────────────── */
-  .search-topics {
-    container-type: inline-size;
-  }
-
-  .topic-grid {
-    margin-top: var(--rhythm-heading-close);
-    padding: 0;
-    list-style: none;
-
-    display: grid;
-    grid-template-columns: 1fr;
-    row-gap: var(--rhythm-heading-close);
-    column-gap: var(--grid-gutter-content);
-  }
-
-  @container (inline-size >= 26rem) {
-    .topic-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
   }
 </style>
