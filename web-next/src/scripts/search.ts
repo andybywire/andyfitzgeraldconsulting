@@ -53,7 +53,7 @@ const COMMON_TOPIC_LIMIT = 12
  * The index ships prefLabels, because the engine should match human words and because one
  * source of truth beats a label and a slug that can disagree. The slug is what the
  * filtering compares, so it is computed ONCE when the index loads rather than on every
- * chip against every result — which at 79 entries and a dozen chips is thousands of
+ * chip against every result — which at 78 entries and a dozen chips is thousands of
  * string transforms per keystroke, all of them producing the same answers.
  */
 interface Indexed extends SearchEntry {

@@ -27,7 +27,7 @@ import {defineQuery} from 'groq'
  * green over it.
  */
 
-/** The Document branch — 43 rows on 2026-09-13, all under `/insights/`. */
+/** The Document branch — 42 rows on 2026-09-13, all under `/insights/`. */
 export const SITEMAP_INSIGHTS_QUERY = defineQuery(`
 	*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {
 		"slug": slug.current,
