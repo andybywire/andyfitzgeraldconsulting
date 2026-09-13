@@ -7,6 +7,7 @@ import type {
 } from '../../sanity.types'
 import {atomFeed, escapeXml, toRfc3339, type AtomEntry} from './atom'
 import {feedImageAttrs} from '../sanity/image'
+import {highlightsHeading} from './presentation'
 import {recordingHeading, recordingVerb, sourceLabelFor, youtubeId} from './recording'
 import {toFeedHtml} from './feed-html'
 import type {FeedMeta} from './feeds'
@@ -140,29 +141,37 @@ export function noteEntries(rows: FEED_NOTES_QUERY_RESULT, site: URL): AtomEntry
 }
 
 /**
- * ── THE ONE SYNTHESIZED HEADING IN THE WHOLE BUILD, AND IT IS DELIBERATE ──────
+ * ── A SYNTHESIZED HEADING, AND IT IS DELIBERATE ───────────────────────────────
  *
- * "Presentation Highlights" is a string in `presentations/[slug].astro`, not a block in
- * `highlights` — which is a bare bulleted list. Lift the list out unlabelled and an
- * entry reads as a paragraph followed by an unexplained set of noun phrases.
+ * The highlights heading is a string in `presentations/[slug].astro`, not a block in
+ * `highlights` — which is a bare bulleted list. Lift the list out unlabelled and an entry
+ * reads as a paragraph followed by an unexplained set of noun phrases.
  *
- * This is the same move that went wrong for case studies, at a fraction of the dose,
- * and the difference is the dose. A case study needed FIVE pieces of scaffolding
- * rebuilt — a heading over `whatDid` plus three section labels above three
- * content-supplied titles — and the result read as a flattened form. One heading over
- * one list is the shape `whatDid` had, which was never the part that read badly.
+ * This is the same move that went wrong for case studies, at a fraction of the dose, and
+ * the difference is the dose. A case study needed FIVE pieces of scaffolding rebuilt — a
+ * heading over `whatDid` plus three section labels above three content-supplied titles —
+ * and read as a flattened form. One heading over one list is the shape `whatDid` had,
+ * which was never the part that read badly.
+ *
+ * ── THE WORDING COMES FROM `highlightsHeading`, NOT FROM A LITERAL HERE ──────
+ *
+ * It follows genre — "Talk Highlights", "Keynote Highlights" — and the page derives its
+ * copy from the same function, so the two cannot say different things about one document.
+ * That is the whole reason it is a shared module rather than a string in each place.
  *
  * `h2` because that is what the template draws it as. Everything else on that page —
- * Venue(s), View Slides, the recordings, the transcript — is left on the page; see the
- * note on `FEED_PRESENTATIONS_QUERY` for why each.
+ * Venue(s), View Slides, the transcript — is left on the page; see the note on
+ * `FEED_PRESENTATIONS_QUERY` for why each.
  */
-const HIGHLIGHTS_HEADING: TypedObject = {
-  _type: 'block',
-  _key: 'feed-highlights-heading',
-  style: 'h2',
-  markDefs: [],
-  children: [{_type: 'span', _key: 'label', text: 'Presentation Highlights', marks: []}],
-} as TypedObject
+function highlightsHeadingBlock(genre: string | null): TypedObject {
+  return {
+    _type: 'block',
+    _key: 'feed-highlights-heading',
+    style: 'h2',
+    markDefs: [],
+    children: [{_type: 'span', _key: 'label', text: highlightsHeading(genre), marks: []}],
+  } as TypedObject
+}
 
 /**
  * The recording block — a linked poster and a source line, appended after the prose.
@@ -319,7 +328,7 @@ export function presentationEntries(rows: FEED_PRESENTATIONS_QUERY_RESULT, site:
         toFeedHtml(
           [
             ...(row.bodyText ?? []),
-            ...(highlights.length > 0 ? [HIGHLIGHTS_HEADING, ...highlights] : []),
+            ...(highlights.length > 0 ? [highlightsHeadingBlock(row.genre), ...highlights] : []),
           ],
           {permalink: url},
         ) + recordingHtml(row.recording, row.genre),

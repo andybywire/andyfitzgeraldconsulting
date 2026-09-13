@@ -10,7 +10,7 @@
  * the document carries:
  *
  *   (no heading)              bodyText          every presentation
- *   Presentation Highlights   highlights        absent on an Interview
+ *   <Genre> Highlights        highlights        6 of 10, every genre
  *   Venue(s)                  eventDetail[]     every presentation
  *   View Slides               presentationDeck  Talks and Keynotes
  *   Listen to / Watch the …   one per recording Interviews, recorded Talks
@@ -92,6 +92,7 @@ import {formatLocation, isoCountry} from '../../lib/location'
 import {slugify} from '../../lib/slug'
 import {breadcrumbs, presentationGraph} from '../../lib/linked-data'
 import {formatDate} from '../../lib/date'
+import {highlightsHeading} from '../../lib/presentation'
 
 export async function getStaticPaths() {
   const rows = await loadQuery(PRESENTATION_SLUGS_QUERY)
@@ -335,7 +336,8 @@ const recordingSections = recordings.map((recording, index) => {
 const venueLabel = events.length > 1 ? 'Venues' : 'Venue'
 
 const sections: HeadingLink[] = []
-if (hasHighlights) sections.push({id: 'presentation-highlights', label: 'Presentation Highlights'})
+if (hasHighlights)
+  sections.push({id: 'presentation-highlights', label: highlightsHeading(presentation.genre)})
 if (events.length > 0) sections.push({id: 'venue', label: venueLabel})
 if (deck || slides.length > 0) sections.push({id: 'view-slides', label: 'View Slides'})
 for (const {id, label} of recordingSections) sections.push({id, label})
@@ -462,7 +464,7 @@ const jsonLd = [
             {
               hasHighlights && (
                 <Fragment>
-                  <h2 id="presentation-highlights">Presentation Highlights</h2>
+                  <h2 id="presentation-highlights">{highlightsHeading(presentation.genre)}</h2>
                   <Prose value={presentation.highlights} />
                 </Fragment>
               )
