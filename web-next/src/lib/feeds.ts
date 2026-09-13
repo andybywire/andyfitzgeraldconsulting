@@ -65,13 +65,15 @@ export const FEEDS = {
     alternatePath: '/insights/',
     title: 'Andy Fitzgerald Consulting — Notes',
     label: 'Notes',
-    subtitle: 'Short notes, clippings and book notes related to information architecture and structured content design for the modern web.',
+    subtitle:
+      'Short notes, clippings and book notes related to information architecture and structured content design for the modern web.',
   },
   presentations: {
     path: '/presentations/feed.xml',
     alternatePath: '/presentations/',
     title: 'Andy Fitzgerald Consulting — Presentations',
     label: 'Presentations',
-    subtitle: 'Keynotes, talks, workshops, panels and interviews about information architecture and structured content design for the modern web..',
+    subtitle:
+      'Keynotes, talks, workshops, panels and interviews about information architecture and structured content design for the modern web..',
   },
 } as const satisfies Record<string, FeedMeta>
