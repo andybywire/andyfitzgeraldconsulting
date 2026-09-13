@@ -39,11 +39,39 @@ Confirmed by Andy 2026-09-13.
 
 | feed | URL | contents | items today |
 |---|---|---|---|
-| All content | `/feed.xml` | insights + presentations | 51 |
-| All insights | `/insights/feed.xml` | `article` + `caseStudy` + `note` | 42 |
-| Articles | `/insights/feed-articles.xml` | `article` + `caseStudy` | 37 |
+| All content | `/feed.xml` | `article` + `note` + `presentation` | 44 |
+| All insights | `/insights/feed.xml` | `article` + `note` | 35 |
+| Articles | `/insights/feed-articles.xml` | `article` | 30 |
 | Notes | `/insights/feed-notes.xml` | `note` | 5 |
 | Presentations | `/presentations/feed.xml` | `presentation` | 9 |
+
+**Revised 2026-09-13 — `caseStudy` is excluded from every feed.** The table above
+originally carried case studies in three of the five. Andy, after reading a built
+`/insights/feed.xml` in a reader: they did not come through well, and he had been on the
+fence about including them at all.
+
+The reason is structural, which is why the answer was removal rather than repair. A case
+study is not prose with a beginning — it is five fields arranged by a template, and two
+of its headings exist only in that template (`CaseStudyEntry.astro` supplies "Work I Did"
+and the `Project Goal` / `Approach` / `Outcome` labels; the three project fields carry
+their own titles, the labels sit above them). Syndicating one means rebuilding the
+scaffolding in whatever lifts the fields out. That was built, it worked, and it still
+read as a flattened form rather than as something written.
+
+**The machinery is deleted, not disabled** — `FEED_CASE_STUDIES_QUERY` and the
+`labelled()` helper that synthesized those headings. Bringing case studies back is a
+design question about what a syndicated case study IS, not a serialization one.
+
+Two consequences worth noting rather than deciding now:
+
+- **`/insights/feed.xml` is now exactly `feed-articles.xml` + `feed-notes.xml`.** A feed
+  and its two halves — a cleaner story than the overlapping original, but it does make
+  the Articles feed thinner: it is the full insights feed minus five notes. Whether all
+  three still earn their place is worth a look when the remaining four are built.
+- **The `/insights/` path now over-promises slightly.** The feed sits at the section's
+  URL but no longer carries everything in that section. The URL must not churn, and the
+  fix if one is wanted is wording on the RSS Feeds page and in the feed's own `<title>`
+  rather than a new address.
 
 `/insights/articles/feed.xml` was rejected: it asserts a path that is not a page, and
 `urls-and-filtering.md` settled that genre subsets are **query params, not paths**.
@@ -59,8 +87,14 @@ called "RSS Feeds"; that is the vernacular.
 **Full content, not summaries.** Andy: "a subscriber should be able to read the full article
 comfortably in their RSS reader." Standard HTML tags, **no site styling imposed**.
 
-**`/feed.xml` widens and the GUIDs get fixed.** It currently carries articles + notes and
-EXCLUDES case studies; it becomes insights + presentations. The existing `<id>` values are
+**`/feed.xml` widens and the GUIDs get fixed.** It becomes `article` + `note` +
+`presentation`.
+
+> **Correction, 2026-09-13.** This line previously said the live feed "currently carries
+> articles + notes and EXCLUDES case studies". The notes half was wrong, and verified so:
+> `web/_data/articles.js:24` fetches only `article` and `caseStudy`, and `web/_src/feed.njk:28`
+> filters case studies back out. **The live feed is `article` only, 34 entries** — no note
+> has ever appeared in it. The case-study exclusion was correctly described. The existing `<id>` values are
 `https://…/{slug}/index.html` — missing the `/insights/` segment, so `<id>` and `<link>`
 disagree. Fixing that makes every existing item appear as new once, and Andy accepted that:
 a feed with wrong GUIDs keeps causing dedup problems and would undermine Bridgy backfeed in
@@ -126,6 +160,10 @@ of `sanity/queries/search.ts`.
 lacks rather than complaining. That silently emptied seven documents once already. A
 projection over a union is only as complete as its least-similar member.
 
+*Retired for the feeds specifically on 2026-09-13, when case studies were excluded — no feed
+query projects those five fields any more. The trap is alive everywhere else; `search.ts`
+still has to concatenate them.*
+
 ## `<link rel="alternate">`
 
 Feed auto-discovery, and distinct from the RSS Feeds page. A reader given the SITE url
@@ -135,6 +173,30 @@ without it, a person must already know the exact feed URL. Multiple are valid, e
 
 Andy's instinct, to confirm: the site-wide feed on every page, plus the section feed on
 `/insights/` and `/presentations/`. That is a small `BaseLayout` prop.
+
+**Built 2026-09-13, to that instinct exactly.** `/feed.xml` is emitted unconditionally by
+`BaseLayout` — a prop every page had to remember would be a prop most pages forgot, and the
+failure is silent — and a `feeds` prop prepends something more specific. All 63 pages carry
+discovery; the two section indexes carry two links.
+
+**Order is load-bearing.** Several readers take the first `rel="alternate"` they find rather
+than presenting a picker, so the more specific feed goes first: on `/insights/` the reader that
+asks no question ends up subscribed to Insights rather than to everything.
+
+Three decisions worth not re-deriving:
+
+- **`title` is a SHORT label, not the feed's own `<title>`.** Every feed is called "Andy
+  Fitzgerald Consulting — X"; a picker showing four entries with the same prefix is harder to
+  read, not easier. So the attribute carries "Insights", "All Content" and so on, while the
+  feed's `<title>` keeps its full name. Both come from one `FEEDS` table in
+  `web-next/src/lib/feeds.ts` so they cannot drift.
+- **`/insights/` advertises ONE section feed, not three.** Auto-discovery answers "subscribe
+  to this page", and the page is `/insights/`. `feed-articles.xml` and `feed-notes.xml` are
+  refinements someone opts into deliberately, so they belong on the RSS Feeds page rather than
+  in a four-entry picker. Changing that is one array literal.
+- **Detail pages advertise the site-wide feed only**, per the instinct as written. Extending a
+  section feed to the articles inside that section is defensible — someone reading an article
+  is exactly who would subscribe — and is one prop on each detail template if wanted.
 
 ## The migration is live, and it will move under you
 
@@ -150,6 +212,78 @@ comments carry dates for exactly this reason; re-measure before trusting one, an
 feed's item count to disagree with this file.
 
 **13 of 37 heroes still have no `altText`** — the enumerable half of phase 5, unchanged.
+
+## Video embeds — a real `<iframe>`, and how that was settled
+
+**Recorded because it corrects a claim I made confidently and wrongly.**
+
+The recording block shipped first as a linked poster image, on my assertion that feed readers
+strip `<iframe>` so an embed would render as nothing. Andy produced counter-evidence: Substack
+posts that play video in his reader.
+
+**He was right, and the check was to fetch a feed and read it.** `juansequeda.substack.com/feed`,
+2026-09-13, ships this inside `content:encoded`, with **no thumbnail fallback of any kind**:
+
+```html
+<div class="youtube-wrap"><div class="youtube-inner">
+  <iframe src="https://www.youtube-nocookie.com/embed/{id}?rel=0&autoplay=0&showinfo=0&enablejsapi=0"
+          frameborder="0" loading="lazy" allow="autoplay; fullscreen"
+          allowfullscreen width="728" height="409"></iframe>
+</div></div>
+```
+
+**Nothing privileged is involved** — no Media RSS namespace, no `<enclosure>` for the video, no
+platform arrangement. The feed's only `<enclosure>` is the post's social image. It is plain markup
+anyone can emit, and enough readers render iframes (or allowlist YouTube specifically) that the
+largest newsletter platform on the web ships it bare. Sanitizer behavior varies by reader; "they
+strip iframes" was too strong.
+
+**What this build does differently, in one respect.** Substack ships the iframe with nothing else,
+so a stripping reader shows a heading and empty space. The feed adds the source/duration line as a
+link under it — already present, so it costs nothing — which reads as an ordinary caption under a
+player and becomes the whole section when the iframe is gone.
+
+Putting the poster inside the `<iframe>` as fallback content was considered and rejected: browsers
+ignore iframe children, and whether a sanitizer unwraps them or drops them with the element is
+unspecified. A guess dressed as a safety net.
+
+**One genuine cost, worth stating rather than discovering.** `recording.ts` records a deliberate
+decision not to fetch YouTube thumbnails on the page, because it pings Google before anyone asks
+for the video; the page uses click-to-load for exactly that reason. **A feed cannot do
+click-to-load** — no script runs — so the iframe loads YouTube's player as soon as the entry is
+viewed. `youtube-nocookie.com` is the available mitigation, not a cure. If that trade stops being
+acceptable, reverting to the linked poster is a branch in `recordingHtml`, not a rewrite.
+
+Audio is unaffected: no embeddable equivalent exists for a podcast episode page, so audio keeps the
+poster-or-link treatment.
+
+## Carry into phase 6 — serve the feeds as `application/atom+xml`
+
+**Found 2026-09-13, while checking a built feed over a local static server.**
+
+`/insights/feed.xml` is a prerendered route, so the `content-type` its handler sets —
+`application/atom+xml; charset=utf-8` — **never reaches a visitor in production.**
+`prerender = true` writes the response body to `dist/insights/feed.xml` and discards the
+headers; whatever serves that file then decides the type from its own extension map, where
+`.xml` means `application/xml`. The header only takes effect in the SSR preview environment,
+where the handler actually runs per request.
+
+So the fix belongs with the nginx config, alongside the 301 map:
+
+```nginx
+types { application/atom+xml xml; }
+```
+
+which is too broad as written — it would retype `/sitemap.xml` too, and a sitemap is
+`application/xml`. Prefer a location block keyed to the feed filenames, or a `map` on the
+request path. **Decide that when the nginx config is authored, with all five feed URLs known.**
+
+**Not urgent, and not a correctness bug.** RFC 4287 specifies `application/atom+xml`, but feed
+readers overwhelmingly sniff the body, and a great many Atom feeds serve `application/xml` in
+practice. It is recorded here because it is invisible until someone's reader is fussy, and
+because it generalizes: **a prerendered endpoint's response headers are build-time fiction.**
+`/search.json` has the same property — it happens to be fine, since `.json` already maps to
+`application/json`.
 
 ## How to work together
 

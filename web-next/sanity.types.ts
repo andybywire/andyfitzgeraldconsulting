@@ -1440,6 +1440,177 @@ export type CASE_STUDY_BAND_QUERY_RESULT = {
   } | null
 } | null
 
+// Source: ../web-next/src/sanity/queries/feeds.ts
+// Variable: FEED_ARTICLES_QUERY
+// Query: *[_type == "article" && defined(slug.current) && defined(pubDate)]		| order(pubDate desc)[0...20] {				_id,	_type,	"slug": slug.current,				"genre": genre->prefLabel,	"topics": topic[]->prefLabel,			pubDate,			title,			shortDescription,			lede,			bodyText		}
+export type FEED_ARTICLES_QUERY_RESULT = Array<{
+  _id: string
+  _type: 'article'
+  slug: string | null
+  genre: string | null
+  topics: Array<string | null> | null
+  pubDate: string | null
+  title: string | null
+  shortDescription: string | null
+  lede: Array<{
+    children?: Array<{
+      marks?: Array<string>
+      text?: string
+      _type: 'span'
+      _key: string
+    }>
+    style?: 'normal'
+    listItem?: 'bullet' | 'number'
+    markDefs?: Array<{
+      href?: string
+      _type: 'link'
+      _key: string
+    }>
+    level?: number
+    _type: 'block'
+    _key: string
+  }> | null
+  bodyText: Array<
+    | ({
+        _key: string
+      } & Code)
+    | ({
+        _key: string
+      } & Figure)
+    | ({
+        _key: string
+      } & Table)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+  > | null
+}>
+
+// Source: ../web-next/src/sanity/queries/feeds.ts
+// Variable: FEED_NOTES_QUERY
+// Query: *[_type == "note" && defined(slug.current) && defined(pubDate)]		| order(pubDate desc)[0...20] {				_id,	_type,	"slug": slug.current,				"genre": genre->prefLabel,	"topics": topic[]->prefLabel,			pubDate,			title,			shortDescription,			bodyText		}
+export type FEED_NOTES_QUERY_RESULT = Array<{
+  _id: string
+  _type: 'note'
+  slug: string | null
+  genre: string | null
+  topics: Array<string | null> | null
+  pubDate: string | null
+  title: string | null
+  shortDescription: string | null
+  bodyText: Array<
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+  > | null
+}>
+
+// Source: ../web-next/src/sanity/queries/feeds.ts
+// Variable: FEED_PRESENTATIONS_QUERY
+// Query: *[_type == "presentation" && defined(slug.current) && defined(pubDate)]		| order(pubDate desc)[0...20] {				_id,	_type,	"slug": slug.current,				"genre": genre->prefLabel,	"topics": topic[]->prefLabel,			pubDate,			title,			description,			bodyText,			highlights,				"recording": (eventDetail[]->eventRecordings[])[0]{		kind,		url,		sourceName,		duration,		poster { 	asset,	crop,	hotspot,	altText,	caption }	}		}
+export type FEED_PRESENTATIONS_QUERY_RESULT = Array<{
+  _id: string
+  _type: 'presentation'
+  slug: string | null
+  genre: string | null
+  topics: Array<string | null> | null
+  pubDate: string | null
+  title: string | null
+  description: string | null
+  bodyText: Array<
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+  > | null
+  highlights: Array<
+    | ({
+        _key: string
+      } & Figure)
+    | {
+        children?: Array<{
+          marks?: Array<string>
+          text?: string
+          _type: 'span'
+          _key: string
+        }>
+        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        listItem?: 'bullet' | 'number'
+        markDefs?: Array<{
+          href?: string
+          _type: 'link'
+          _key: string
+        }>
+        level?: number
+        _type: 'block'
+        _key: string
+      }
+  > | null
+  recording: {
+    kind: 'audio' | 'video' | null
+    url: string | null
+    sourceName: string | null
+    duration: string | null
+    poster: {
+      asset: SanityImageAssetReference | null
+      crop: SanityImageCrop | null
+      hotspot: SanityImageHotspot | null
+      altText: string | null
+      caption: null
+    } | null
+  } | null
+}>
+
 // Source: ../web-next/src/sanity/queries/genre-nav.ts
 // Variable: GENRE_NAV_QUERY
 // Query: {		"older": *[			_type in $types			&& defined(slug.current)			&& defined(pubDate)			&& genre->prefLabel == $genre			&& (pubDate < $pubDate || (pubDate == $pubDate && _id < $id))		] | order(pubDate desc, _id desc)[0] {			_type,			"slug": slug.current,			title		},		"newer": *[			_type in $types			&& defined(slug.current)			&& defined(pubDate)			&& genre->prefLabel == $genre			&& (pubDate > $pubDate || (pubDate == $pubDate && _id > $id))		] | order(pubDate asc, _id asc)[0] {			_type,			"slug": slug.current,			title		}	}
@@ -2795,6 +2966,9 @@ declare module '@sanity/client' {
   interface SanityQueries {
     '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tclient->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t},\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tatGlance,\n\t\twhatDid,\n\t\tprojectGoal,\n\t\tbeforeImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tprojectApproach,\n\t\tprojectOutcome,\n\t\tafterImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n, outline },\n\t\treview->{\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\t"slug": slug.current,\n\t\t\t"employer": employer->name,\n\t\t\tcondensedBody\n\t\t}\n\t}\n': CASE_STUDY_DETAIL_QUERY_RESULT
     '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t"workBand": coalesce(\n\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': CASE_STUDY_BAND_QUERY_RESULT
+    '\n\t*[_type == "article" && defined(slug.current) && defined(pubDate)]\n\t\t| order(pubDate desc)[0...20] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\tpubDate,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\tlede,\n\t\t\tbodyText\n\t\t}\n': FEED_ARTICLES_QUERY_RESULT
+    '\n\t*[_type == "note" && defined(slug.current) && defined(pubDate)]\n\t\t| order(pubDate desc)[0...20] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\tpubDate,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\tbodyText\n\t\t}\n': FEED_NOTES_QUERY_RESULT
+    '\n\t*[_type == "presentation" && defined(slug.current) && defined(pubDate)]\n\t\t| order(pubDate desc)[0...20] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\tpubDate,\n\t\t\ttitle,\n\t\t\tdescription,\n\t\t\tbodyText,\n\t\t\thighlights,\n\t\t\t\n\t"recording": (eventDetail[]->eventRecordings[])[0]{\n\t\tkind,\n\t\turl,\n\t\tsourceName,\n\t\tduration,\n\t\tposter { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n\n\t\t}\n': FEED_PRESENTATIONS_QUERY_RESULT
     '\n\t{\n\t\t"older": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate < $pubDate || (pubDate == $pubDate && _id < $id))\n\t\t] | order(pubDate desc, _id desc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t},\n\t\t"newer": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate > $pubDate || (pubDate == $pubDate && _id > $id))\n\t\t] | order(pubDate asc, _id asc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t}\n\t}\n': GENRE_NAV_QUERY_RESULT
     '\n\t{\n\t\t"topConcepts": *[_type == "skosConceptScheme" && title == "Genre"][0].topConcepts[]->{\n\t\t\t_id,\n\t\t\tprefLabel\n\t\t},\n\t\t"concepts": *[_type == "skosConcept"]{\n\t\t\t_id,\n\t\t\tprefLabel,\n\t\t\t"broader": broader[]._ref\n\t\t}\n\t}\n': GENRE_TREE_QUERY_RESULT
     '\n\t*[_type == "settings"][0]{\n\t\tauthorName,\n\t\t"authorImage": authorImage{asset, crop, hotspot, altText}\n\t}\n': HOME_AUTHOR_QUERY_RESULT

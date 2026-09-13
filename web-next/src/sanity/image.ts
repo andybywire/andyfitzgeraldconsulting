@@ -342,3 +342,52 @@ export function imageAttrs(
     height: ratio ? heightFor(top) : Math.round(top / outputAspect),
   }
 }
+
+/**
+ * One image, one URL, and dimensions that describe THAT url — for the Atom feeds.
+ *
+ * ── WHY `imageAttrs` CANNOT BE USED HERE, WHICH IS THE WHOLE REASON THIS EXISTS ─
+ *
+ * `imageAttrs` returns a nine-rung `srcset` plus a `width`/`height` pair describing
+ * the TOP rung, while its `src` is a MIDDLE rung. On the site those two never have
+ * to agree: `srcset` wins wherever it is parsed, so `src` is near-vestigial and the
+ * intrinsic pair is doing a different job — reserving the box by ratio.
+ *
+ * A feed drops the srcset, because feed readers vary wildly in what they support and
+ * a nine-URL attribute is weight spent on a maybe. The moment `src` is the only URL,
+ * pairing it with the top rung's numbers states dimensions the file does not have.
+ * Same ratio, wrong size — so it would not shift the layout, which is exactly what
+ * makes it the kind of wrong nobody notices.
+ *
+ * ── AND WHY IT LIVES IN THIS MODULE RATHER THAN IN THE FEED ─────────────────────
+ *
+ * `builder` is module-private and there is no exported `urlFor`. Building this in the
+ * feed would mean a second `createImageUrlBuilder` with its own projectId/dataset
+ * wiring, plus a reimplementation of the crop arithmetic in `maxRenderableWidth` —
+ * the duplication this module exists to prevent. One export is the smaller change.
+ *
+ * No `aspect` parameter, deliberately: `<Figure>` passes none either, so a body
+ * figure keeps its source shape in the feed exactly as it does on the page. That
+ * also leaves the hotspot inert, which is correct — nothing is being discarded for
+ * it to protect.
+ *
+ * `width` is a CEILING, not a demand. An image narrower than the target is served at
+ * its own width rather than upscaled, per `maxRenderableWidth`.
+ *
+ * Returns null on a malformed or missing `asset._ref`, mirroring what
+ * <SanityImage> does with the same case: emit nothing rather than a broken <img>.
+ */
+export function feedImageAttrs(
+  image: SanityImageSource,
+  width = 1200,
+): {src: string; width: number; height: number} | null {
+  const bounds = maxRenderableWidth(image?.asset?._ref, image?.crop, null)
+  if (!bounds) return null
+
+  const w = Math.min(width, bounds.width)
+  return {
+    src: builder.image(image).width(w).auto('format').url(),
+    width: w,
+    height: Math.round(w / bounds.sourceAspect),
+  }
+}
