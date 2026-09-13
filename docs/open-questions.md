@@ -172,6 +172,32 @@ apparatus needs inventing.**
 resolve to `neutral-200`. Recovering the softening needs a neutral step between `200` and `300`, which
 the ramp does not have. See [decisions/color.md](decisions/color.md).
 
+**`lead` is written out in three places and should probably be promoted** — deferred 2026-09-13, on
+Andy's call, as a later to-do rather than a blocker.
+
+`<PageHeader>`'s `.page-lede`, `search.astro`'s `.search-lede` and `404.astro`'s `.not-found-lede` all
+state the same three declarations: `--font-prose`, `--font-size-3`, leading 1.6, `--color-text-lead`.
+That is well past this project's "a second consumer triggers promotion" rule, and the third copy was
+added knowingly.
+
+**It is NOT the same shape of promotion `ConceptList` was**, which is why it was flagged rather than
+done in passing. base.css states its own scope and excludes exactly this: it owns `h1`–`h4`, body
+prose, links and nav, and says "every other typographic role in DESIGN.md (display, lead, small,
+label, …) is component-scoped and belongs to the component that owns it." So there are two routes and
+both cost something:
+
+- **A `<Lead>` component.** Consistent with the no-global-components-layer rule, and it would take a
+  `class` passthrough the way `<Chip>` does. Heavy for one paragraph of three declarations, and the
+  two search consumers pass no content that a component would help with.
+- **Amend base.css's scope sentence** and let `lead` join the element-level roles. Cheapest in code,
+  but it needs a *class* rather than an element — there is no `<lead>` — which is the thing that
+  sentence exists to keep out.
+
+Worth noting the two are not equivalent in reach: a component is opt-in, where a global class would
+invite use on anything that looks like a standfirst. **The question to settle first is whether `lead`
+is a ROLE pages may apply, or a PROPERTY of a page header** — `<PageHeader lede>` already treats it as
+the latter, and takes Portable Text, which is why neither search page could reuse it.
+
 ---
 
 ## Taste calls, none blocking

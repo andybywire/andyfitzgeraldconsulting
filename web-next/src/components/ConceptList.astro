@@ -150,4 +150,63 @@ const {items = [], class: className, ...rest}: Props = Astro.props
       grid-template-columns: repeat(2, 1fr);
     }
   }
+
+  /*
+   * ── THE RAIL'S LINK TREATMENT, NOT THE MASTHEAD'S ─────────────────────────
+   *
+   * Andy, 2026-09-13: these read as global navigation and should not. Every consumer
+   * wraps this list in a <nav> — earned, because these ARE navigation — and `nav` is an
+   * element-level role in base.css, so the wipe-in underline came with it.
+   *
+   * RailNav states the same three rules for the same reason, and its note is the
+   * argument: the wipe "is a chrome gesture for the masthead and the footer; a dense list
+   * of links animating one by one under a moving pointer is noise rather than
+   * affordance." Twelve topics in two columns is that list exactly.
+   *
+   * ── IT CHANGES HOME TOO, AND THAT WAS THE POINT ───────────────────────────
+   *
+   * Only search and the 404 were reported, but Home's Selected Topics and Genres are this
+   * component as well, so both lost the wipe with them. Raised as a consequence to accept
+   * or veto, and Andy kept it (2026-09-13): "much more consistent with in-page link
+   * styles." So the rule is the treatment's SCOPE — a link inside the page body behaves
+   * this way wherever it appears, and the wipe belongs to the masthead and the footer.
+   * Recorded because Home was not part of the request, and the next reader comparing it to
+   * the masthead might otherwise read the difference as drift.
+   *
+   * NOT shared with RailNav, and that is deliberate rather than lazy — RailNav's own
+   * header already settled the question when TopicList raised it: a component with its
+   * own container query is "not a fourth copy waiting to be merged", because merging the
+   * two would couple a rail's in-page contents list to a browse affordance that has
+   * nothing else in common with it.
+   *
+   * THE THICKNESS HAS TO BE RESTATED, which is the easy one to miss. base.css gives every
+   * anchor `text-decoration-thickness: 0.06em`, then `nav :is(a, button)` resets it with
+   * the `text-decoration` SHORTHAND — which includes `-thickness`. Without the
+   * declaration below, the hover underline returns at the UA's `auto` weight and two
+   * underlines in one viewport read as two systems.
+   *
+   * THE LINE IS DECLARED AT REST AND ONLY ITS COLOR MOVES, because
+   * `text-decoration-line` is a discrete keyword that cannot animate from `none` — it
+   * would appear instantly while everything else eased.
+   *
+   * Measured against `/projects/`'s rail before and after: Lato 18px/1.5 either way, so
+   * the TYPE was already identical; `text-decoration-line` was the only difference,
+   * `none` here against `underline` there, plus the 2px `::after` bar.
+   */
+  .concept-list a::after {
+    content: none;
+  }
+
+  .concept-list a {
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+    text-decoration-color: transparent;
+    transition:
+      color 0.15s,
+      text-decoration-color 0.15s;
+  }
+
+  .concept-list a:hover {
+    text-decoration-color: currentColor;
+  }
 </style>

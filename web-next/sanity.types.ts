@@ -2758,6 +2758,37 @@ export type SINGLETON_RSS_TOUCH_QUERY_RESULT = {
   } | null
 } | null
 
+// Source: ../web-next/src/sanity/queries/sitemap.ts
+// Variable: SITEMAP_INSIGHTS_QUERY
+// Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {		"slug": slug.current,		_updatedAt	}
+export type SITEMAP_INSIGHTS_QUERY_RESULT = Array<{
+  slug: string | null
+  _updatedAt: string
+}>
+
+// Source: ../web-next/src/sanity/queries/sitemap.ts
+// Variable: SITEMAP_PRESENTATIONS_QUERY
+// Query: *[_type == "presentation" && defined(slug.current)] {		"slug": slug.current,		_updatedAt	}
+export type SITEMAP_PRESENTATIONS_QUERY_RESULT = Array<{
+  slug: string | null
+  _updatedAt: string
+}>
+
+// Source: ../web-next/src/sanity/queries/sitemap.ts
+// Variable: SITEMAP_PAGES_QUERY
+// Query: *[_type == "page" && defined(slug.current)] {		"slug": slug.current,		_updatedAt	}
+export type SITEMAP_PAGES_QUERY_RESULT = Array<{
+  slug: string | null
+  _updatedAt: string
+}>
+
+// Source: ../web-next/src/sanity/queries/sitemap.ts
+// Variable: SITEMAP_REVIEWS_QUERY
+// Query: *[_type == "review" && defined(slug.current)] {		_updatedAt	}
+export type SITEMAP_REVIEWS_QUERY_RESULT = Array<{
+  _updatedAt: string
+}>
+
 // Query TypeMap
 import '@sanity/client'
 declare module '@sanity/client' {
@@ -2796,5 +2827,9 @@ declare module '@sanity/client' {
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\tbodyText\n\t}\n': SINGLETON_INTRO_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\t\n\t"rssBand": coalesce(\n\t\tcustomBands[_type == "bandRss"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandRss"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandRss"][0]\n\t){title, message, buttonTarget}\n,\n\t\t\n\t"touchBand": coalesce(\n\t\tcustomBands[_type == "bandGetInTouch"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandGetInTouch"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]\n\t){message, bandCopy}\n\n\t}\n': SINGLETON_RSS_TOUCH_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {\n\t\t"slug": slug.current,\n\t\t_updatedAt\n\t}\n': SITEMAP_INSIGHTS_QUERY_RESULT
+    '\n\t*[_type == "presentation" && defined(slug.current)] {\n\t\t"slug": slug.current,\n\t\t_updatedAt\n\t}\n': SITEMAP_PRESENTATIONS_QUERY_RESULT
+    '\n\t*[_type == "page" && defined(slug.current)] {\n\t\t"slug": slug.current,\n\t\t_updatedAt\n\t}\n': SITEMAP_PAGES_QUERY_RESULT
+    '\n\t*[_type == "review" && defined(slug.current)] {\n\t\t_updatedAt\n\t}\n': SITEMAP_REVIEWS_QUERY_RESULT
   }
 }

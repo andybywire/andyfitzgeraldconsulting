@@ -1,0 +1,300 @@
+---
+/**
+ * Not found.
+ *
+ * ── A PORT OF THE LIVE 404, NOT A REDESIGN ─────────────────────────────────
+ *
+ * `web/_src/404.njk` carries the heading, the apology and the "Most Popular Pages" list,
+ * and Andy's call (2026-09-13) is to keep all three and restyle them. The one addition is
+ * the Common Topics rail, which the old page had no equivalent of.
+ *
+ * ── IT IS THE SEARCH EMPTY STATE IN A DIFFERENT HAT ────────────────────────
+ *
+ * Same composition as `search.astro`, deliberately: heading, a lead, a list of offers in
+ * the content column, and Common Topics in the rail from `md`. The two pages answer the
+ * same question — "I could not give you what you asked for, so here is how to browse" —
+ * and a visitor who hits both in one session should not have to re-learn the page.
+ *
+ * That also means the rail sits at `9 / span 4`, which is <FacetFilters>'s split and the
+ * one this build uses wherever a rail accompanies content.
+ *
+ * ── noindex, WHICH IS BELT AND BRACES RATHER THAN THE MAIN MECHANISM ───────
+ *
+ * Served through `error_page`, this returns a real 404 and no crawler indexes it. But the
+ * file also sits at `/404.html` and answers 200 if fetched directly, which is the classic
+ * soft-404: a page of apology text, indexable, competing with nothing. The prop costs one
+ * line and closes it.
+ *
+ * ── PHASE 6 HAS TO WIRE IT UP, AND NOTHING HERE CAN ────────────────────────
+ *
+ * Astro emits `dist/404.html` and stops there. `error_page 404 /404.html;` in both server
+ * blocks is what actually makes it the 404 — without that line nginx serves its own, and
+ * this file is a page nobody reaches. It belongs with the nginx config and the 301 map,
+ * which CLAUDE.md already records as repo-authored and deploy-shipped.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro'
+import Band from '../components/Band.astro'
+import ConceptList from '../components/ConceptList.astro'
+import Footer from '../components/Footer.astro'
+import Grid from '../components/Grid.astro'
+import Masthead from '../components/Masthead.astro'
+import PageHeader from '../components/PageHeader.astro'
+import {buildSearchIndex, topicCounts} from '../lib/search-index'
+import {slugify} from '../lib/slug'
+import {selectTopics} from '../lib/topics'
+import {loadQuery} from '../sanity/load-query'
+import {
+  SEARCH_INSIGHTS_QUERY,
+  SEARCH_PAGES_QUERY,
+  SEARCH_PRESENTATIONS_QUERY,
+  SEARCH_REVIEWS_QUERY,
+} from '../sanity/queries/search'
+
+/**
+ * ── HARD-CODED, AND THE FALLBACK FOR WHEN IT IS NOT ────────────────────────
+ *
+ * The four the live 404 names, carried across unchanged — all four still resolve, checked
+ * against the built output rather than assumed.
+ *
+ * Andy's intent is to generate this from Plausible once analytics is running. When that
+ * lands it will be a BUILD-TIME fetch of the Stats API, and this list is what it falls
+ * back to: an analytics outage must not fail a build, and a 404 page that 404s because a
+ * third party was down is a bad joke. So this stays even after the pipeline exists.
+ *
+ * Titles are written here rather than fetched. They are display copy on a page that must
+ * render when everything else has gone wrong, and four strings are cheaper to keep true
+ * than a fifth query is to run.
+ */
+const POPULAR_PAGES = [
+  {
+    label: "Keyword Extraction with NLP: A Beginner's Guide",
+    href: '/insights/keyword-extraction-nlp/',
+  },
+  {
+    label: 'Structured Content Design Workflow 2022',
+    href: '/insights/structured-content-design-22/',
+  },
+  {
+    label: 'Self-Hosting Sanity Studio with GitHub Actions',
+    href: '/insights/self-hosting-sanity-studio/',
+  },
+  {label: 'How to Choose Topics for Card Sorting', href: '/insights/choosing-card-sorting-topics/'},
+]
+
+/**
+ * The same four queries `/search.json` and `/search/` run, for the same reason: one
+ * definition of the corpus, agreeing by construction rather than by luck. `search.astro`
+ * carries the full argument and the note on why it is deliberately not memoized in
+ * `lib/`; it is not repeated here.
+ *
+ * This is now the THIRD route paying the ~800ms. Worth watching rather than fixing — the
+ * fix is a build-time cache, and every module in `lib/` is pure today.
+ */
+const [insights, presentations, pages, reviews] = await Promise.all([
+  loadQuery(SEARCH_INSIGHTS_QUERY),
+  loadQuery(SEARCH_PRESENTATIONS_QUERY),
+  loadQuery(SEARCH_PAGES_QUERY),
+  loadQuery(SEARCH_REVIEWS_QUERY),
+])
+
+/** 12, matching `search.astro` and board 1026:5247. See the note there. */
+const COMMON_TOPIC_LIMIT = 12
+
+const entries = buildSearchIndex({insights, presentations, pages, reviews})
+const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map((topic) => ({
+  label: topic.label,
+  href: `/insights/?topic=${slugify(topic.label)}`,
+}))
+---
+
+<BaseLayout
+  title="Well This is Obnoxious"
+  description="The page you were looking for isn't here — but these might be what you wanted."
+  noindex
+>
+  <Masthead />
+
+  <main>
+    <Band as="section" class="not-found-band" spaceEnd="section">
+      <Grid class="not-found-grid">
+        <PageHeader title="Well This is Obnoxious" />
+
+        {
+          /*
+          DESIGN.md's `lead` role, written out locally — the same three declarations
+          <PageHeader>'s `.page-lede` and `search.astro`'s `.search-lede` carry.
+
+          THIS IS THE ROLE'S THIRD CONSUMER and the flag search.astro raised is now
+          overdue, exactly as `.topic-grid`'s was. It is NOT the same shape of promotion,
+          which is why it is still flagged rather than done: base.css states its own scope
+          and excludes this — it owns h1-h4, body prose, links and nav, and "every other
+          typographic role in DESIGN.md (display, lead, small, label, …) is
+          component-scoped and belongs to the component that owns it." So promoting `lead`
+          means either contradicting that sentence or inventing a <Lead> component for one
+          paragraph. Andy's call either way.
+
+          <PageHeader lede> is not the answer here: it takes Portable Text from a
+          singleton's `heroCopy`, and this string is hard-coded rather than authored.
+        */
+        }
+        {
+          /*
+          ── ONE GRID ITEM FOR THE CONTENT COLUMN ─────────────────────────────
+
+          SearchResults.astro's `.search-column`, for the reason it gives: as separate grid
+          items, auto-placement put each on its own row and pushed the rail down into a
+          third. Auto-placement is "sparse" — it never goes backwards — so the rail could
+          not rise to sit beside the lead whatever column it was given.
+
+          Wrapping the lead and the offers into ONE item makes the rail its row sibling,
+          which is what puts the two at the same top line. `/projects/` and `/search/` both
+          get this structurally: their rail's only sibling in that row IS the lead.
+        */
+        }
+        <div class="not-found-column">
+          <p class="not-found-lede">I wasn't able to find the page you're looking for.</p>
+
+          <h2 id="popular-pages">Most Popular Pages</h2>
+          <p>Perhaps you were looking for one of these:</p>
+
+          {
+            /*
+            ── A PLAIN BULLETED LIST, AND NO <nav> AROUND IT ────────────────────
+
+            Andy, 2026-09-13. This was a <nav> wrapping an unbulleted list, which made four
+            article titles read as site navigation: `nav` is an ELEMENT-LEVEL role in
+            base.css, so the wrapper alone handed them the masthead's link treatment and
+            its wipe-in underline.
+
+            They are not navigation, they are prose offers — "perhaps you were looking for
+            one of these" — so they take the UA's bullets and base.css's ordinary link
+            style, and the page keeps one landmark rather than two.
+
+            NOT <ConceptList> either, which is the point of that component's name: these
+            are article TITLES of 30-48 characters where a concept label is one or two
+            words, so two columns would wrap every line.
+          */
+          }
+          <ul class="popular-list">
+            {
+              POPULAR_PAGES.map((page) => (
+                <li>
+                  <a href={page.href}>{page.label}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <nav class="not-found-topics" aria-labelledby="common-topics">
+          <h2 id="common-topics">Common Topics</h2>
+          <ConceptList items={commonTopics} />
+        </nav>
+      </Grid>
+    </Band>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* See the note at the call site: DESIGN.md's `lead`, third consumer, flagged. */
+  .not-found-lede {
+    font-family: var(--font-prose);
+    font-size: var(--font-size-3);
+    line-height: 1.6;
+    color: var(--color-text-lead);
+  }
+
+  /*
+   * ── THE THREE GAPS, ALL MEASURED OFF /projects/ AND /search/ ──────────────
+   *
+   * Andy, 2026-09-13, naming both pages as the reference. Taken from the built pages
+   * rather than from the tokens, then written back as tokens:
+   *
+   *     h1 bottom -> lede top     16   `heading-close`   (both pages)
+   *     rail top  == lede top     16   the rail's own margin, so the two start level
+   *     lede bottom -> body       24   `paragraph`       (/projects/)
+   *
+   * The first two come free here: the column and the rail are row siblings with the same
+   * margin, so giving both `heading-close` makes the lead and "Common Topics" start on one
+   * line — which is the arrangement `/projects/` gets from its rail sitting beside a
+   * <PageHeader> that contains the lead.
+   */
+  /*
+   * `<Grid>` ships a 64px row-gap, which was stacking ON TOP of the margin below and put
+   * 80 between the h1 and the lead where both reference pages have 16. Zeroed so every
+   * vertical gap on this page is stated once, as a rhythm token, by the element that wants
+   * it. search.astro does the same and its note records why the boards' 48 is not
+   * followed: what this page wants is the same heading-to-lead relationship every other
+   * template has.
+   */
+  .not-found-grid {
+    row-gap: 0;
+  }
+
+  .not-found-column,
+  .not-found-topics {
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  /*
+   * `heading-minor` (48), NOT `heading-major` (64), which is what this had and what Andy
+   * called too loose. 48 is the system's own step for a heading opening a subsection, so
+   * "Most Popular Pages" still reads as a new section rather than as another paragraph.
+   *
+   * /projects/ puts 24 between its lead and the body below, but that is a lead followed by
+   * a PARAGRAPH; a heading takes the heading step. If 48 still reads loose on screen, 24
+   * is the next stop and it is one token.
+   */
+  .not-found-column h2 {
+    margin-top: var(--rhythm-heading-minor);
+  }
+
+  .not-found-column h2 + p {
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  /*
+   * A BULLETED LIST, deliberately left to the UA for both the marker and the indent.
+   * base.css keeps that indent for prose and this is prose — the one thing stated here is
+   * the gap from the sentence that introduces it.
+   */
+  .popular-list {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  .popular-list li + li {
+    margin-top: var(--rhythm-item);
+  }
+
+  /*
+   * `--col-main`, not `--col-full`: this page has a rail, and 656 is what a heading beside
+   * one gets. Same call as search.astro, for the same reason.
+   */
+  .page-header {
+    grid-column: var(--col-main);
+  }
+
+  /* One column below md; the split follows. */
+  .not-found-column,
+  .not-found-topics {
+    grid-column: var(--col-full);
+  }
+
+  @container style(--breakpoint-md: true) {
+    .not-found-column {
+      grid-column: 1 / span 7;
+    }
+
+    /*
+     * 9 / span 4 — <FacetFilters>'s split, which search.astro's rail also takes. The rail
+     * is 316 at lg and 229 at md, both under <ConceptList>'s 26rem threshold, so Common
+     * Topics is one column here at every width from md up, and two only below it where it
+     * is full width. Derived by the component; nothing here states it.
+     */
+    .not-found-topics {
+      grid-column: 9 / span 4;
+    }
+  }
+</style>

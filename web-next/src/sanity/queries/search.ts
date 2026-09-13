@@ -135,7 +135,8 @@ const INSIGHT_BLOCKS = /* groq */ `
 `
 
 /**
- * The Document branch — 42 rows.
+ * The Document branch — 42 rows on 2026-09-13. The corpus is being migrated, so this
+ * number drifts; it moved four times in one day. Re-measure before quoting it.
  *
  * `shortDescription` rather than `description`: insights.ts:57 records that the two are
  * different fields doing different jobs, and card copy is the right one for a result
@@ -151,8 +152,8 @@ const INSIGHT_BLOCKS = /* groq */ `
  *
  * `defined(slug.current)` rather than trusting the schema, matching INSIGHT_SLUGS_QUERY:
  * the field carries no `required` validation, and a slugless document would otherwise
- * generate an entry pointing at `/insights/null/`. Measured clean today — 0 of 78 rows
- * across all four queries lack one — which is what makes this a guard rather than a fix.
+ * generate an entry pointing at `/insights/null/`. Measured clean — 0 of 78 rows across
+ * all four queries lack one on 2026-09-13 — which makes this a guard rather than a fix.
  */
 export const SEARCH_INSIGHTS_QUERY = defineQuery(`
 	*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {

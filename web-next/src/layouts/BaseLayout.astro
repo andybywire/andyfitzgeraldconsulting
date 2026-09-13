@@ -12,6 +12,7 @@
  * organization with no delivery cost.
  */
 import {Font} from 'astro:assets'
+import {PUBLIC_SITE_MODE} from 'astro:env/client'
 import SearchResults from '../components/SearchResults.astro'
 import {serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
 
@@ -57,6 +58,64 @@ const {title, description, jsonLd, noindex = false} = Astro.props
    `undefined#person` would validate as a set of unrelated nodes rather than fail. */
 if (!Astro.site) throw new Error('[BaseLayout] `site` is unset in astro.config.mjs')
 const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
+
+/**
+ * ── ANALYTICS SHIPS IN A PRODUCTION BUILD AND NOWHERE ELSE ─────────────────
+ *
+ * BOTH halves of this condition are load-bearing, and the second is the one that is easy
+ * to leave out.
+ *
+ * `PUBLIC_SITE_MODE !== 'preview'` keeps the script off preview, where draft content and
+ * Andy's own editing would otherwise be counted as traffic.
+ *
+ * `import.meta.env.PROD` keeps it out of `pnpm dev`, and without it the local dev server
+ * WOULD report: `web-next/.env` sets `PUBLIC_SITE_MODE=production`, and astro.config reads
+ * anything that is not the string 'preview' as production. So mode alone says "this is a
+ * production site" on a laptop. PROD is false under `astro dev` and true under
+ * `astro build`, which is the distinction that actually matters here — the question is
+ * whether this output will be served to the public, not what it calls itself.
+ *
+ * The failure mode is quiet and only visible weeks later, as a slow drip of self-traffic
+ * in numbers meant to inform decisions.
+ */
+const analytics = import.meta.env.PROD && PUBLIC_SITE_MODE !== 'preview'
+
+/**
+ * ── THE SITE ID IS IN THE FILENAME, NOT IN AN ATTRIBUTE ────────────────────
+ *
+ * `pa-AnHKBDixooI1l5rz0moo0.js` IS the identifier for Andy's Plausible site. The older
+ * arrangement — `js/script.js` plus a `data-domain` attribute — still serves and still
+ * works, but the dashboard now issues a per-site script URL instead, and that is the form
+ * to keep: it is what Plausible generates, documents and will go on supporting.
+ *
+ * NOT A SECRET, and worth saying so because an opaque token in a URL looks like one. It
+ * ships in the HTML of every page by design; anyone can read it and the worst they can do
+ * is send Andy's dashboard junk pageviews. The credential that IS real is the Stats API
+ * token for the 404's popular-pages list — build-time only, and never a `PUBLIC_` variable,
+ * since those are inlined into the client bundle.
+ *
+ * Taken verbatim from the dashboard on 2026-09-13. If the two ever disagree, the dashboard
+ * is right — this is generated configuration rather than something to reason out.
+ */
+const PLAUSIBLE_SRC = 'https://plausible.io/js/pa-AnHKBDixooI1l5rz0moo0.js'
+
+/**
+ * The queue stub, verbatim from the same snippet.
+ *
+ * It defines `window.plausible` as a function that pushes its arguments onto `plausible.q`,
+ * so a custom event fired before the async script arrives is captured rather than thrown
+ * away, and then calls `plausible.init()` to start it. Both `||` guards matter: if the
+ * async script happens to win the race it has already defined the real implementations, and
+ * the stub then leaves them alone and calls the real `init`.
+ *
+ * `plausible.init()` takes no options here, which is where the defaults are chosen —
+ * outbound links, file downloads and form submissions all stay OFF. Those record what a
+ * visitor clicked TOWARD, a step from measuring pages toward measuring people, and that is
+ * the step choosing Plausible was avoiding.
+ */
+const PLAUSIBLE_INIT =
+  'window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},' +
+  'plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()'
 ---
 
 <html lang="en">
@@ -204,6 +263,54 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
       today — two fields Andy is adding.
     */
     }
+    {
+      /*
+      ── PLAUSIBLE ────────────────────────────────────────────────────────────
+
+      Cookieless and aggregate-only, which is why it needs no consent banner and why it
+      was chosen over Google Analytics: Andy wants site-use data "without stalking my
+      users", and this measures pages rather than people.
+
+      TWO TAGS, BOTH FROM THE DASHBOARD SNIPPET and reproduced in its order. The external
+      script carries the site id in its filename; the inline stub queues events and calls
+      `init`. See the constants above for what each is doing and why neither is a secret.
+
+      `async`, as the snippet specifies, rather than the `defer` the legacy snippet used.
+      The stub is what makes that safe: with the queue in place the load order stops
+      mattering, which is the whole reason Plausible ships the two together.
+
+      `is:inline` on both so Astro emits them verbatim. Its script handling is for
+      first-party modules and would otherwise bundle the stub and rewrite the tag whose
+      attributes are its entire configuration. `set:html` for the stub body is the same
+      device the JSON-LD above uses, and for the same reason: the content is already
+      JavaScript and normal interpolation would HTML-escape it into something no parser
+      can read.
+
+      ── IT WILL BE BLOCKED FOR SOME OF THIS AUDIENCE ─────────────────────────
+
+      `plausible.io` is on the common blocklists, so a technical readership will under-
+      report — usually quoted at 10-30%. The fix is a first-party proxy: nginx serving the
+      script and the event endpoint from the site's own origin, which is a phase 6 addition
+      to a config being written anyway. Worth knowing now, because it changes `src` and the
+      `endpoint` option and nothing else.
+
+      ── AND IT IS WHAT THE 404's POPULAR-PAGES LIST WAITS ON ─────────────────
+
+      Andy's plan is to generate that list from Plausible's Stats API at build. That needs
+      data to accumulate first, which is the real reason this lands now rather than at
+      launch. See `404.astro` for the fallback that has to survive it: an analytics outage
+      must not fail a build.
+    */
+    }
+    {
+      analytics && (
+        <>
+          <script is:inline async src={PLAUSIBLE_SRC} />
+          <script is:inline set:html={PLAUSIBLE_INIT} />
+        </>
+      )
+    }
+
     <link rel="author" href="/" />
   </head>
   <body>

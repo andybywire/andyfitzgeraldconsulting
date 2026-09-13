@@ -104,19 +104,19 @@ function loadIndex(): Promise<Index> {
        * at every threshold including 0.0, because it sits inside "expe(rien)ce" — and
        * the note here concluded the board had picked an unlucky word.
        *
-       * It had not. The same property was breaking ordinary queries, measured against
-       * the real 78-entry index:
+       * It had not. The same property was breaking ordinary queries. Re-measured against
+       * the live index on 2026-09-13, at 79 entries:
        *
-       *   design system      0   ← Fuse matches the whole query as ONE contiguous
-       *                            pattern per field, so a title holding "design" and a
-       *                            topic holding "Systems" can never meet
-       *   user research      1
-       *   tent              34   ← identical to "content"
-       *   onomy             13   ← identical to "taxonomy"
-       *   ia                16   ← including "Apologia"
+       *                  Fuse   MiniSearch
+       *   design system     0        8   ← Fuse matched the whole query as ONE contiguous
+       *                                    pattern per field, so a title holding "design"
+       *                                    and a topic holding "Systems" could never meet
+       *   user research     1        2
+       *   tent             34        0   ← was identical to "content"
+       *   onomy            13        0   ← was identical to "taxonomy"
+       *   ia               14        7   ← Fuse's included "Apologia"
        *
-       * No threshold reaches any of that; it is what substring matching IS. MiniSearch
-       * tokenises on word boundaries, so the same five now read 7, 3, 0, 0 and 7.
+       * No threshold reaches any of that; it is what substring matching IS.
        *
        * The lesson worth keeping: "rien" was not an unlucky example, it was the visible
        * end of a defect. A recorded limitation that only ever shows up on a silly input
@@ -147,9 +147,9 @@ function loadIndex(): Promise<Index> {
          *
          * `combineWith: 'AND'`. The default is OR, which ranks multi-term matches first
          * and would be the forgiving choice — but on this corpus it is not forgiving,
-         * it is indiscriminate: "design system" returns 44 of 78 entries under OR and 7
-         * under AND, "user research" 21 against 3, "governance model" 21 against 2. At
-         * 78 entries a result list that long is the same as no result list.
+         * it is indiscriminate: "design system" returns 44 of 79 entries under OR and 8
+         * under AND, "user research" 23 against 2, "governance model" 26 against 2
+         * (2026-09-13). At 79 entries a result list that long is the same as none.
          *
          * `prefix: true` is what makes results appear from the second keystroke rather
          * than only on a completed word — "tax" and "taxo" both return the 13 that
