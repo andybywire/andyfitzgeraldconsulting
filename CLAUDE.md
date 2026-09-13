@@ -266,11 +266,11 @@ historical record — do that only when Andy asks.
 boards are the primary way to find out what a phase 4 component is actually made of, and that stays
 true for the whole build. Demoting Figma removed its vote, not its content.
 
-**Never use Figma's design-to-code tooling** — `get_design_context`, `add_code_connect_map`,
-`get_code_connect_suggestions`, `send_code_connect_mappings`. Decided 2026-07-28. It is the Figma
-MCP's headline feature and it works directly against the purpose of this project: generated markup
-and CSS would bypass the hands-on work Andy is doing this for. Reading a node for reference and
-discussing it is fine; generating code from it is not. Do not propose it as a shortcut.
+**Use Figma's design-to-code tooling with restraint** — `get_design_context`, `add_code_connect_map`,
+`get_code_connect_suggestions`, `send_code_connect_mappings`. It is the Figma
+MCP's headline feature and it works at odds the purpose of this project: generated markup
+and CSS would bypass the hands-on involvement Andy values. Reading a node for reference and
+discussing it is fine; generating code from it is not. Do not propose direct code generation as a shortcut.
 
 **Do** use it for:
 - `get_variable_defs` — read variables and diff them against DESIGN.md. This caught six divergences
@@ -367,6 +367,14 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    **Search behavior is already specified** — see DESIGN.md → Components → Search. Phase 3 ships the
    masthead icon inert; the spec covers expand-in-place replacing the nav, results replacing the page
    content, Fuse.js, `cmd + k`, and the mobile treatment. Don't redesign it from scratch here.
+
+   **Built 2026-09-13, and the engine is NOT Fuse.js.** The spec named it, and it turned out to match
+   substrings rather than words — which broke multi-word queries outright: `design system` returned
+   **0** results because Fuse matches a query as one contiguous pattern per field. Replaced with
+   **MiniSearch**, which tokenises. The index reaches document headings and TF-IDF-extracted keywords,
+   deliberately not the bodies themselves. **[docs/search-ranking.md](docs/search-ranking.md) is the
+   explainer** — what is indexed, how TF-IDF chooses it, the measured costs, and the two GROQ traps
+   this fell into. Read it before changing what search matches on.
 
    The content model is iterated alongside, driven by what each page needs.
    `sanity-plugin-taxonomy-manager` is already installed.
@@ -491,6 +499,18 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    from `public/` at unhashed URLs. They now go through Astro's Fonts API from
    `web-next/src/assets/fonts/` and are emitted hashed into `_astro/fonts/`, so
    `max-age=31536000, immutable` is safe for that directory alongside the rest of `_astro/`.
+
+   **`/search.json` CANNOT, and that is the other half of the same rule** (decided 2026-09-13). It
+   is a route, not an asset, so Astro never hashes it and its filename is stable forever. Give it
+   `ETag`/`Last-Modified` revalidation instead — one 304 per session, no re-download — and **not**
+   a long `max-age`, which would strand a visitor on a stale index until it expired. At 18.5 KB
+   gzipped that is entirely adequate.
+
+   Andy chose the stable URL over a hashed one deliberately: it is guessable and inspectable, which
+   is worth something on a site that publishes a colophon, and the hashed alternative would mean
+   injecting the path at build time because `scripts/search.ts` cannot know a hash. **Revisit only
+   if the index grows** — a content-hashed name is what would make a full-text index (134 KB
+   gzipped, measured) affordable, and nothing else about that decision has changed.
 7. **Cleanup.** Deliberately after the site is live, so none of it can destabilize a launch, and
    before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
    still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:

@@ -116,3 +116,29 @@ export function formatEngagements(
 
   return start === end ? start : `${start}${RANGE_SEPARATOR}${end}`
 }
+
+/**
+ * `"2019-03-15"` -> `"March 2019"`. Null in, null out.
+ *
+ * ── ITS ONE CONSUMER IS THE SEARCH INDEX'S REVIEW ROW ───────────────────────
+ *
+ * A review has no date of its own. Andy's rule (2026-09-12) is the month and year of the
+ * latest engagement end date among the reviewer's employer — so the value reaching this
+ * function has already been reduced to one ISO string by the query's
+ * `| order(@ desc)[0]`, and all this owns is the formatting.
+ *
+ * ── A FOURTH EXPORT RATHER THAN A BRANCH INSIDE `formatDate` ────────────────
+ *
+ * This module's shape is one rule per export, and `formatYear`'s note is explicit about
+ * why: a second date-parsing rule inside an existing one puts two rules in the module
+ * that exists to hold one. The precision differs — day, month, year — and which precision
+ * a surface wants is the caller's fact, not a parameter worth threading.
+ *
+ * It reuses `MONTH_YEAR` rather than building a fifth `Intl.DateTimeFormat`. That is the
+ * same formatter `formatEngagements` uses, which is the point: "March 2019" on a search
+ * result and "March 2019" inside a range on the Reviews page are the same string by
+ * construction rather than by two configs being kept in step.
+ */
+export function formatMonthYear(iso: string | null | undefined): string | null {
+  return iso ? MONTH_YEAR.format(new Date(iso)) : null
+}

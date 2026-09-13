@@ -34,6 +34,7 @@ import {slugify} from '../lib/slug'
 import BaseLayout from '../layouts/BaseLayout.astro'
 import Band from '../components/Band.astro'
 import Grid from '../components/Grid.astro'
+import ConceptList from '../components/ConceptList.astro'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
 import Prose from '../components/prose/Prose.astro'
@@ -379,28 +380,22 @@ const jsonLd = [
       <Grid>
         <nav class="topics-col" aria-labelledby="home-topics">
           <h2 id="home-topics">Selected Topics</h2>
-          <ul class="topic-grid" role="list">
-            {
-              topics.map((topic) => (
-                <li>
-                  <a href={`/insights/?topic=${topic.slug}`}>{topic.label}</a>
-                </li>
-              ))
-            }
-          </ul>
+          <ConceptList
+            items={topics.map((topic) => ({
+              label: topic.label,
+              href: `/insights/?topic=${topic.slug}`,
+            }))}
+          />
         </nav>
 
         <nav class="genres-col" aria-labelledby="home-genres">
           <h2 id="home-genres">Genres</h2>
-          <ul class="genre-list" role="list">
-            {
-              genres.map((genre) => (
-                <li>
-                  <a href={`/insights/?genre=${genre.slug}`}>{genre.label}</a>
-                </li>
-              ))
-            }
-          </ul>
+          <ConceptList
+            items={genres.map((genre) => ({
+              label: genre.label,
+              href: `/insights/?genre=${genre.slug}`,
+            }))}
+          />
         </nav>
       </Grid>
     </Band>
@@ -701,98 +696,14 @@ const jsonLd = [
    * facet groups at md while its cards cannot.
    */
   /*
-   * `container-type: inline-size` makes each column the reference for its own list's
-   * column count — see the note on the query below. It is safe on a grid item: the
-   * inline size still comes from the track, and block size is not contained, so the list
-   * grows the column normally.
+   * The column count INSIDE each list is <ConceptList>'s business now: it establishes its
+   * own inline-size container and carries the 26rem threshold together with the label
+   * measurement that produced it. Promoted 2026-09-13, from here plus two copies in the
+   * search files. This band now only says how wide the COLUMNS are.
    */
   .topics-col,
   .genres-col {
-    container-type: inline-size;
     grid-column: var(--col-full);
-  }
-
-  /* base.css keeps the UA's list indent for prose; a nav is not prose. */
-  .topic-grid,
-  .genre-list {
-    margin-top: var(--rhythm-heading-close);
-    padding: 0;
-    list-style: none;
-  }
-
-  /*
-   * ── ROW-MAJOR, WHICH IS WHAT MAKES THE ALPHABET READ CORRECTLY ────────────
-   *
-   * Both lists are TWO COLUMNS filled LEFT TO RIGHT THEN DOWN, so the a-z runs across
-   * each row rather than down the first column. Andy's call (2026-09-03), citing the
-   * footer's site index — which does behave that way, though its own comment claims the
-   * opposite. `grid-auto-flow: column` appears nowhere in Footer.astro; the default `row`
-   * is doing the work, and the comment is stale rather than the code being wrong.
-   *
-   * NOTHING HERE SETS `grid-auto-flow`, and that is the point: row-major IS the default,
-   * so the DOM order is the reading order and the alphabet is already correct in the
-   * markup. A screen reader and a sighted reader get the same sequence, which is the
-   * property the Insights masonry was rebuilt to recover.
-   *
-   * `--grid-gutter-content` is the column gap, and it already carries the board's two
-   * values: DESIGN.md reserves it for gaps between real content columns and defines it
-   * "larger on mobile, not smaller" — 32 stacked, 24 at md. The boards draw exactly that,
-   * 156 + 32 + 156 at 375 and 274 + 24 + 274 at 1440. Nothing here restates either
-   * number.
-   */
-  /* One column is the base case, per tokens.css's mobile-first rule: an engine that never
-     evaluates the query below must be left with the narrow layout. */
-  .topic-grid,
-  .genre-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    row-gap: var(--rhythm-heading-close);
-    column-gap: var(--grid-gutter-content);
-  }
-
-  /*
-   * ── A SIZE CONTAINER QUERY, WHICH IS THE MINOR-BREAKPOINT MODEL ───────────
-   *
-   * tokens.css: a MINOR breakpoint is "a single component adjusting to the space IT has",
-   * and it says to prefer a real size container query. This is the first one in the build,
-   * and it is the right tool because the question is genuinely local — does THIS list's
-   * column have room for two of its longest label?
-   *
-   * ── 26rem IS MEASURED, AND IT IS ALSO VERY NEARLY THE ONLY VALUE ──────────
-   *
-   * The longest labels are "Information Architecture" (198px at the desktop step) and
-   * "Conference Themes" (158px). Two columns plus the gutter therefore need about 416 and
-   * 348 of container. The link step is fluid, so the labels are ~5% narrower where this
-   * threshold bites, which the measurement accounts for:
-   *
-   *     vw    container   gap   topic col   longest topic
-   *     375     343        32     155.5         187      wraps  -> one column
-   *     448     416        32     192           188      fits   -> two columns
-   *     768     419        24     197.5         192      fits
-   *    1440     571        24     273.5         198      fits
-   *
-   * The window is narrow and worth naming, because the obvious larger number breaks
-   * something invisible: the 7-column TRACK at 768 is 419px, which is NARROWER than the
-   * stacked column at 475px viewport (443). Any threshold above 419 would quietly collapse
-   * the Topics list to one column at 768 as well. So 26rem is close to the ceiling, not a
-   * round number picked for looks — and Andy's 475px viewport figure is not reachable this
-   * way without that side effect. It switches at about 448px instead, which is where the
-   * measurement says the wrapping actually stops.
-   *
-   * ── IT ALSO RETIRES THE GENRES SPECIAL CASE ───────────────────────────────
-   *
-   * The genre list used to carry an explicit md rule dropping it to one column, with a
-   * comment explaining why it "inverts" — two columns stacked, one from md. That was a
-   * hand-written statement of something the container now derives: its md track is 229px
-   * and its lg track 316px, both under 26rem, so one column falls out on its own. The
-   * inversion was never a rule, only a consequence of the column being narrow, and it
-   * reads much better as one.
-   */
-  @container (inline-size >= 26rem) {
-    .topic-grid,
-    .genre-list {
-      grid-template-columns: repeat(2, 1fr);
-    }
   }
 
   @container style(--breakpoint-md: true) {

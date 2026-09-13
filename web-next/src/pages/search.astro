@@ -1,0 +1,354 @@
+---
+/**
+ * `/search/` — the site's search page, in the state a browser with no JavaScript gets.
+ *
+ * ── WHAT THIS FILE IS, AND WHAT IT DELIBERATELY IS NOT ──────────────────────
+ *
+ * Everything here is the RESTING state: the h1, the invitation, and the Common Topics
+ * rail. There is no field, no result list and no facet group, because all three depend on
+ * a script — the index is fetched, Fuse ranks in the browser, and the chips are built
+ * from a result set that does not exist until a query runs.
+ *
+ * So a visitor with no JavaScript gets a page that offers BROWSE where it cannot offer
+ * search, which is an honest degradation rather than a form that silently does nothing.
+ * That is the same contract <SlideDeck> and <FacetFilters> state for their own controls:
+ * a control that cannot work should not be on the page.
+ *
+ * ── IT HAS AN ADDRESS, WHICH DESIGN.md'S "NOT A SEPARATE PAGE" DOES NOT FORBID ──
+ *
+ * DESIGN.md → Components → Search says search "is not a separate page you navigate to"
+ * and that results replace the current page's content. Both still hold: from anywhere on
+ * the site the field expands in place and the results are swapped in without a
+ * navigation. This route is what that state is ADDRESSED as, plus the page a shared link
+ * or a crawler actually lands on.
+ *
+ * NOT "pushed with the History API", which this said until 2026-09-13 and which was never
+ * built. There is no History API anywhere in this feature: typing previews in place and
+ * leaves the URL alone, and the only thing that writes a URL is the masthead form's own
+ * GET, which the browser performs. `scripts/search.ts` states the same contract from the
+ * other side. A comment describing a mechanism that does not exist is worse than none —
+ * it invites someone to go looking for the bug in why it "stopped working".
+ *
+ * Andy's call, 2026-09-12. It buys three things nothing else does: a shareable result
+ * URL, a Back that closes search rather than leaving the site, and a target for
+ * `WebSite.potentialAction` — which landed 2026-09-13 in `lib/linked-data.ts`, the last
+ * piece of phase 4's JSON-LD and the one that had to wait for search to have a URL.
+ *
+ * ── `/search/` IS SAFE AGAINST THE MASTHEAD'S PREFIX TEST ───────────────────
+ *
+ * Masthead.astro:86 names this feature as the hazard by name: its active-section
+ * underline is a `startsWith` over section hrefs, and "without the trailing slash, a
+ * future `/insight-search/` would light up Insights". `/search/` is a prefix of none of
+ * the five, so no nav item underlines here — which is correct, since search belongs to no
+ * section. Checked rather than assumed.
+ */
+import Band from '../components/Band.astro'
+import Footer from '../components/Footer.astro'
+import ConceptList from '../components/ConceptList.astro'
+import Grid from '../components/Grid.astro'
+import Masthead from '../components/Masthead.astro'
+import PageHeader from '../components/PageHeader.astro'
+import BaseLayout from '../layouts/BaseLayout.astro'
+import {buildSearchIndex, topicCounts} from '../lib/search-index'
+import {slugify} from '../lib/slug'
+import {selectTopics} from '../lib/topics'
+import {loadQuery} from '../sanity/load-query'
+import {
+  SEARCH_INSIGHTS_QUERY,
+  SEARCH_PAGES_QUERY,
+  SEARCH_PRESENTATIONS_QUERY,
+  SEARCH_REVIEWS_QUERY,
+} from '../sanity/queries/search'
+
+/**
+ * ── THE SAME FOUR QUERIES `/search.json` RUNS, AND THAT IS ON PURPOSE ───────
+ *
+ * This page needs only the topic TALLY, which pages and reviews contribute nothing to —
+ * so two queries would do. It runs all four and builds the whole index anyway, because
+ * the alternative is two different definitions of "the corpus" that happen to agree
+ * today: `topicCounts` over a partial index and `topicCounts` over the real one are the
+ * same number only while pages and reviews stay untagged, which is a property of the
+ * content model rather than a guarantee.
+ *
+ * Building it the same way in both places makes them agree by construction. The cost is
+ * four extra round trips on a build that already makes dozens — about 800ms — and the
+ * benefit is that the Common Topics a no-JS visitor sees here and the ones the script
+ * renders after a failed query are the same list by derivation rather than by luck.
+ *
+ * NOT memoized across the two routes, deliberately: a module-level cache would have to
+ * live in `lib/`, and every module there is pure — `genres.ts` and `reviews.ts` import
+ * types from Sanity and nothing else. A fetch in `lib/` to save 800ms is the wrong trade.
+ */
+const [insights, presentations, pages, reviews] = await Promise.all([
+  loadQuery(SEARCH_INSIGHTS_QUERY),
+  loadQuery(SEARCH_PRESENTATIONS_QUERY),
+  loadQuery(SEARCH_PAGES_QUERY),
+  loadQuery(SEARCH_REVIEWS_QUERY),
+])
+
+/**
+ * ── TWELVE, WHICH IS WHAT THE BOARD DRAWS AND NOT WHAT HOME COMPUTES ───────
+ *
+ * The annotation on board 1026:5247 says to use "the same 'most common topics' list that
+ * is used on the home page's 'Selected Topics' list", and `selectTopics` IS that rule:
+ * chosen by count, shown alphabetically, with a tie-break that runs backwards so the
+ * least-used of the tied topics sink rather than lead.
+ *
+ * What does NOT transfer is the home page's COUNT. That is `genres.length * 2` — a ratio,
+ * so its two columns stay in proportion as the vocabulary grows. There is no genre column
+ * here, so the ratio has nothing to be in proportion WITH, and inheriting it would be
+ * carrying over the arithmetic without the reason for it.
+ *
+ * So this is a rail-length judgement instead, and 12 is what both empty boards draw.
+ * A number to settle on screen rather than to defend here.
+ */
+const COMMON_TOPIC_LIMIT = 12
+
+const entries = buildSearchIndex({insights, presentations, pages, reviews})
+const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map((topic) => ({
+  label: topic.label,
+  slug: slugify(topic.label),
+}))
+---
+
+<BaseLayout
+  title="Search"
+  description="Search articles, notes, case studies, presentations and reviews from Andy Fitzgerald Consulting."
+  noindex
+>
+  {
+    /*
+    `search` renders the field already open. It only sets an attribute — the swap itself
+    is CSS gated on `html.js`, so this paints correct rather than correcting itself, and
+    a visitor with no script keeps the nav and the Common Topics list below.
+  */
+  }
+  <Masthead search />
+
+  <main>
+    <Band as="section" class="search-band" spaceEnd="section">
+      <Grid class="search-grid">
+        {
+          /*
+          No `lede` prop. The invitation below is NOT part of the header — both empty
+          boards put it in the content region, level with the Common Topics rail, where
+          the results list goes once there is one. Putting it in <PageHeader> would sit it
+          above that row and leave the rail hanging.
+        */
+        }
+        <PageHeader title="Search" />
+
+        {
+          /*
+          DESIGN.md's `lead` role, written out rather than borrowed.
+
+          It is the same three declarations <PageHeader>'s `.page-lede` carries — Noto
+          Serif at `font-size-3`, leading 1.6, `text-lead` — confirmed against board
+          2768:4742, whose text style is literally named "Lead". They are not shared
+          because base.css states its own scope and excludes this: it owns h1-h4, body
+          prose, links and nav, and "every other typographic role in DESIGN.md (display,
+          lead, small, label, …) is component-scoped and belongs to the component that
+          owns it."
+
+          WORTH FLAGGING RATHER THAN QUIETLY REPEATING: this is the role's SECOND
+          consumer, which is this project's stated trigger for promotion. Whether `lead`
+          becomes something shared is a boundary call, so it is Andy's — left local here
+          and named in the handoff.
+        */
+        }
+        <p class="search-lede">
+          Enter a query above to search, or try out a category from a few of the most common topics.
+        </p>
+
+        {
+          /*
+          ── THE HOME PAGE'S TOPICS BAND, NOT <TopicList> ───────────────────────
+
+          Andy's call, 2026-09-12: this folds into two columns under an h2 the same way
+          "Selected Topics" does on the Home page, rather than becoming an inline run.
+
+          <TopicList> was the first attempt and was wrong for a reason worth recording,
+          because it looked right on the board it was checked against. That component
+          chooses its layout from its OWN inline size against a 16rem threshold — stacked
+          in a rail, an inline "Topics: a, b, c" run in a wide column. In the 231 desktop
+          rail that produced exactly what the board draws. But below `md` the rail folds
+          under the content at full width, clears 16rem, and twelve topics came out as six
+          dense lines of comma-separated prose. The component was behaving as designed;
+          the design is for a DOCUMENT's own short topic list, not for a browse affordance
+          whose whole job is offering targets.
+
+          So this uses <ConceptList> instead — one column, two from 26rem, with its
+          threshold measured rather than chosen. That WAS three copies of these rules and a
+          standing flag here; Andy promoted it 2026-09-13, and the measurement now lives in
+          the component alongside the query it justifies.
+        */
+        }
+        <nav class="search-topics" aria-labelledby="common-topics">
+          <h2 id="common-topics">Common Topics</h2>
+          <ConceptList
+            items={commonTopics.map((topic) => ({
+              label: topic.label,
+              href: `/insights/?topic=${topic.slug}`,
+            }))}
+          />
+        </nav>
+      </Grid>
+    </Band>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /*
+   * ── ROW SPACING IS PER-BOUNDARY, SO IT CANNOT BE ONE `row-gap` ──────────────
+   *
+   * Below `md` this grid has three rows and its two boundaries want different values:
+   *
+   *   h1   -> lead     `rhythm-heading-close` (16)  a heading and the lead that belongs
+   *                                                 to it
+   *   lead -> h2       `rhythm-heading-major` (64)  base.css's ramp for `* + h2`, which
+   *                                                 opens a new section
+   *
+   * From `md` there is only the first boundary, because the lead and the rail become
+   * columns of one row.
+   *
+   * A single `row-gap` can express at most one of those, so it is zeroed and each
+   * distance is stated as a margin on the item that takes it. Every number is a token
+   * named for the relationship it describes, not a measurement.
+   *
+   * ── WHY THIS PAGE HAS TO SAY ANY OF IT ─────────────────────────────────────
+   *
+   * Everywhere else the lead is a CHILD of <PageHeader>, and `.page-intro`'s own
+   * `margin-top: var(--rhythm-heading-close)` sets the first distance. Measured on the
+   * built site: Consulting and Presentations both put exactly 16 between h1 and lead.
+   * Here the lead is a separate grid item — both empty boards place it in the content
+   * region, level with the rail — so that margin never applies.
+   *
+   * THE BOARDS' 48 IS DELIBERATELY NOT FOLLOWED (Andy, 2026-09-12). They draw a band-ish
+   * gap under the h1; what this page wants is the same heading-to-lead relationship every
+   * other template has. Recorded rather than silently matched, because the drawing and
+   * the built site disagree here.
+   */
+  .search-grid {
+    row-gap: 0;
+  }
+
+  .search-lede {
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  /*
+   * Below `md` this follows the lead in flow and opens a section, so it takes the ramp's
+   * `* + h2`. From `md` it is a SIBLING COLUMN and takes the same 16 the lead does, which
+   * is what keeps the two level — and what <PageHeader> asks for anyway: on a page with a
+   * rail, the rail starts at the lead rather than at the h1.
+   */
+  .search-topics {
+    margin-top: var(--rhythm-heading-major);
+  }
+
+  /*
+   * `--col-main`, not `--col-full`.
+   *
+   * The Insights index takes full width because it has no rail and its long lede ran
+   * three lines at 656. Neither applies: this page HAS a rail, and its h1 is one word at
+   * rest. It stops being one word once the script rewrites it — "8 results for “user
+   * research”" — and 656 is what both boards draw that at.
+   */
+  .page-header {
+    grid-column: var(--col-main);
+  }
+
+  .search-lede {
+    grid-column: var(--col-full); /* one column below md; the split follows */
+  }
+
+  .search-topics {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * NO SIZE OVERRIDE ON THE h2 — it renders at base.css's `font-size-4`, like any other.
+   *
+   * Both empty boards draw "Common Topics" at the h3 step, and this file briefly matched
+   * them. That is a BOARD ERROR Andy is correcting (2026-09-12), not a rail convention:
+   * Home's "Selected Topics" is a bare h2 and this is the same kind of heading over the
+   * same kind of list. Left as a note rather than deleted, so the next person comparing
+   * this page to the board knows which one moved.
+   */
+
+  @container style(--breakpoint-md: true) {
+    /*
+     * ── 7 + skip-1 + 4, WHICH IS <FacetFilters>'s OWN SPLIT ───────────────────
+     *
+     * It has to be: the facets REPLACE this rail once a query runs, so the two states
+     * have to occupy the same columns or the page would shift sideways the moment results
+     * arrive. Both boards draw the rail frame at 316 — four columns from line 9 — and the
+     * Common Topics text left-aligned in 231 of it, which renders identically for a
+     * single column of short links.
+     *
+     * The rail's width no longer SELECTS anything, which is the difference from the first
+     * draft of this file: <TopicList> switched form at 16rem, so the column count silently
+     * changed the component. <ConceptList> switches at 26rem and is under it at every
+     * width this rail ever has — 316 at lg, 229 at md — so one column is the rail's answer
+     * everywhere and two columns only ever happen below md, where it is full width.
+     */
+    .search-lede {
+      grid-column: 1 / span 7;
+    }
+
+    .search-topics {
+      grid-column: 9 / span 4;
+      margin-top: var(--rhythm-heading-close);
+    }
+  }
+
+  /*
+   * ── HIDDEN BEFORE FIRST PAINT WHEN A QUERY IS ARRIVING ──────────────────────
+   *
+   * `data-search-query` is set by BaseLayout's synchronous head script; see the note
+   * there. Without it this page paints its resting state — the invitation and the topic
+   * list — and the controller then replaces both, which reads as a flash of the wrong
+   * page on every shared link and every Return from the field (Andy, 2026-09-12).
+   *
+   * The h1 is deliberately NOT hidden. It says "Search" at rest and "Search results for
+   * …" once the controller runs, so leaving it painted is what makes the swap quiet
+   * rather than adding a second thing that appears late.
+   *
+   * A visitor with no JavaScript never gets the attribute either, so they keep the
+   * resting page — which is the only thing that works for them.
+   */
+  html[data-search-query] .search-lede,
+  html[data-search-query] .search-topics {
+    display: none;
+  }
+
+  /*
+   * ── AND THE PAGE HOLDS ITS HEIGHT WHILE THEY ARE GONE ──────────────────────
+   *
+   * Hiding the body leaves an h1 and nothing else, so the footer rides up the viewport
+   * and its accent band flashes across the middle of the page before the results land
+   * (Andy, 2026-09-12). Suppressing the content flash had simply moved it.
+   *
+   * 35rem is a floor rather than a measurement: the Common Topics rail runs about 550 at
+   * the desktop step, and this sits just above it so the reserved space is never SHORTER
+   * than the thing it stands in for. It is deliberately not a token — no spacing step
+   * comes close, and inventing one for a single transitional state would put a number in
+   * tokens.css with one consumer, which is exactly what phase 3 took `--logo-size` out
+   * for.
+   *
+   * It lifts with the attribute, so it constrains nothing once the page has settled: the
+   * results view brings its own height, and the restored body brings back its own.
+   */
+  html[data-search-query] .search-grid {
+    min-block-size: 35rem;
+  }
+
+  /* DESIGN.md's `lead`. See the note at the call site for why it is not shared. */
+  .search-lede {
+    color: var(--color-text-lead);
+    font-size: var(--font-size-3);
+    line-height: 1.6;
+  }
+</style>

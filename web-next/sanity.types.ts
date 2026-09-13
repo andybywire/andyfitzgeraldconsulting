@@ -2477,6 +2477,96 @@ export type REVIEWS_BY_CLIENT_QUERY_RESULT = Array<{
   }>
 }>
 
+// Source: ../web-next/src/sanity/queries/search.ts
+// Variable: SEARCH_INSIGHTS_QUERY
+// Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {			_id,	_type,	"slug": slug.current,		pubDate,		title,		shortDescription,		"headings": pt::text((	coalesce(bodyText, []) + coalesce(atGlance, []) + coalesce(whatDid, []) +	coalesce(projectGoal, []) + coalesce(projectApproach, []) + coalesce(projectOutcome, []))[style in ["h2", "h3", "h4"]]),		"keywordSource": pt::text(	coalesce(bodyText, []) + coalesce(atGlance, []) + coalesce(whatDid, []) +	coalesce(projectGoal, []) + coalesce(projectApproach, []) + coalesce(projectOutcome, [])),		"sourceDomain": clipRef.publisher,		"genre": genre->prefLabel,		"topics": topic[]->prefLabel,			"synonyms": array::unique(		(coalesce(genre->altLabel, []) + coalesce(topic[]->altLabel[], []))[@ != null]	)	}
+export type SEARCH_INSIGHTS_QUERY_RESULT = Array<
+  | {
+      _id: string
+      _type: 'article'
+      slug: string | null
+      pubDate: string | null
+      title: string | null
+      shortDescription: string | null
+      headings: string
+      keywordSource: string
+      sourceDomain: null
+      genre: string | null
+      topics: Array<string | null> | null
+      synonyms: Array<never> | Array<string>
+    }
+  | {
+      _id: string
+      _type: 'caseStudy'
+      slug: string | null
+      pubDate: string | null
+      title: string | null
+      shortDescription: string | null
+      headings: string
+      keywordSource: string
+      sourceDomain: null
+      genre: string | null
+      topics: Array<string | null> | null
+      synonyms: Array<never> | Array<string>
+    }
+  | {
+      _id: string
+      _type: 'note'
+      slug: string | null
+      pubDate: string | null
+      title: string | null
+      shortDescription: string | null
+      headings: string
+      keywordSource: string
+      sourceDomain: string | null
+      genre: string | null
+      topics: Array<string | null> | null
+      synonyms: Array<never> | Array<string>
+    }
+>
+
+// Source: ../web-next/src/sanity/queries/search.ts
+// Variable: SEARCH_PRESENTATIONS_QUERY
+// Query: *[_type == "presentation" && defined(slug.current)] {			_id,	_type,	"slug": slug.current,		pubDate,		title,		description,		"headings": pt::text((coalesce(bodyText, []) + coalesce(transcript, []))[style in ["h2", "h3", "h4"]]),		"keywordSource": pt::text(coalesce(bodyText, []) + coalesce(transcript, [])),		"genre": genre->prefLabel,		"topics": topic[]->prefLabel,			"synonyms": array::unique(		(coalesce(genre->altLabel, []) + coalesce(topic[]->altLabel[], []))[@ != null]	)	}
+export type SEARCH_PRESENTATIONS_QUERY_RESULT = Array<{
+  _id: string
+  _type: 'presentation'
+  slug: string | null
+  pubDate: string | null
+  title: string | null
+  description: string | null
+  headings: string
+  keywordSource: string
+  genre: string | null
+  topics: Array<string | null> | null
+  synonyms: Array<never> | Array<string>
+}>
+
+// Source: ../web-next/src/sanity/queries/search.ts
+// Variable: SEARCH_PAGES_QUERY
+// Query: *[_type == "page" && defined(slug.current)] {			_id,	_type,	"slug": slug.current,		_updatedAt,		title,		"description": pt::text(lede)	}
+export type SEARCH_PAGES_QUERY_RESULT = Array<{
+  _id: string
+  _type: 'page'
+  slug: string | null
+  _updatedAt: string
+  title: string | null
+  description: string
+}>
+
+// Source: ../web-next/src/sanity/queries/search.ts
+// Variable: SEARCH_REVIEWS_QUERY
+// Query: *[_type == "review" && defined(slug.current)] {		_id,		_type,		"slug": slug.current,		author,		excerpt,		"employer": employer->name,		"latestEnd": employer->engagementDates[].endDate | order(@ desc)[0]	}
+export type SEARCH_REVIEWS_QUERY_RESULT = Array<{
+  _id: string
+  _type: 'review'
+  slug: string | null
+  author: string | null
+  excerpt: string | null
+  employer: string | null
+  latestEnd: string | null
+}>
+
 // Source: ../web-next/src/sanity/queries/singletons.ts
 // Variable: SINGLETON_HEADER_QUERY
 // Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy)	}
@@ -2698,6 +2788,10 @@ declare module '@sanity/client' {
     '\n\t*[_type == "presentation" && slug.current == $slug][0] {\n\t\t"older": *[\n\t\t\t_type == "presentation"\n\t\t\t&& defined(slug.current)\n\t\t\t&& (pubDate < ^.pubDate || (pubDate == ^.pubDate && _id < ^._id))\n\t\t] | order(pubDate desc, _id desc)[0] {\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t},\n\t\t"newer": *[\n\t\t\t_type == "presentation"\n\t\t\t&& defined(slug.current)\n\t\t\t&& (pubDate > ^.pubDate || (pubDate == ^.pubDate && _id > ^._id))\n\t\t] | order(pubDate asc, _id asc)[0] {\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t}\n\t}\n': PRESENTATION_NAV_QUERY_RESULT
     '\n\t{\n\t\t"genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {\n\t\t\t"tops": topConcepts[]->{_id, prefLabel},\n\t\t\t"concepts": concepts[]->{\n\t\t\t\t_id,\n\t\t\t\tprefLabel,\n\t\t\t\t"parent": broader[0]._ref\n\t\t\t}\n\t\t},\n\n\t\t"pool": *[\n\t\t\t_type in ["article", "caseStudy", "note", "presentation"]\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t] | order(pubDate desc) {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\t"genreId": genre._ref,\n\t\t\t"genre": genre->prefLabel,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"sourceDomain": clipRef.publisher,\n\t\t\t"topics": topic[]->{\n\t\t\t\t_id,\n\t\t\t\t"parent": broader[0]._ref,\n\t\t\t\t"parentIsTop": !defined(broader[0]->broader[0]._ref)\n\t\t\t},\n\t\t\t"poster": coalesce(\n\t\t\t\tposter,\n\t\t\t\t(eventDetail[]->eventRecordings[])[defined(poster)][0].poster\n\t\t\t) { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\t"venue": eventDetail[0]->{\n\t\t\t\t"name": event,\n\t\t\t\t"online": location.online,\n\t\t\t\t"city": location.city,\n\t\t\t\t"state": location.state,\n\t\t\t\t"country": location.country\n\t\t\t},\n\t\t\t"eventCount": count(eventDetail),\n\t\t\t"hasTranscript": defined(transcript),\n\t\t\t"hasDeck": defined(presentationDeck.asset),\n\t\t\t"recordingKinds": (eventDetail[]->eventRecordings[])[defined(kind)].kind\n\t\t}\n\t}\n': RELATED_POOL_QUERY_RESULT
     '\n\t*[_type == "client" && count(*[_type == "review" && references(^._id)]) > 0] {\n\t\t_id,\n\t\tname,\n\t\trelationship,\n\t\trole,\n\t\t"logo": logo{asset, crop, hotspot, altText},\n\t\t"engagements": engagementDates[]{startDate, endDate},\n\t\t"latestEnd": engagementDates[].endDate | order(@ desc)[0],\n\t\t"reviews": *[_type == "review" && references(^._id)] {\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\tlinkedIn,\n\t\t\t"slug": slug.current,\n\t\t\tbody\n\t\t}\n\t} | order(latestEnd desc)\n': REVIEWS_BY_CLIENT_QUERY_RESULT
+    '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\tpubDate,\n\t\ttitle,\n\t\tshortDescription,\n\t\t"headings": pt::text((\n\tcoalesce(bodyText, []) + coalesce(atGlance, []) + coalesce(whatDid, []) +\n\tcoalesce(projectGoal, []) + coalesce(projectApproach, []) + coalesce(projectOutcome, [])\n)[style in ["h2", "h3", "h4"]]),\n\t\t"keywordSource": pt::text(\n\tcoalesce(bodyText, []) + coalesce(atGlance, []) + coalesce(whatDid, []) +\n\tcoalesce(projectGoal, []) + coalesce(projectApproach, []) + coalesce(projectOutcome, [])\n),\n\t\t"sourceDomain": clipRef.publisher,\n\t\t"genre": genre->prefLabel,\n\t\t"topics": topic[]->prefLabel,\n\t\t\n\t"synonyms": array::unique(\n\t\t(coalesce(genre->altLabel, []) + coalesce(topic[]->altLabel[], []))[@ != null]\n\t)\n\n\t}\n': SEARCH_INSIGHTS_QUERY_RESULT
+    '\n\t*[_type == "presentation" && defined(slug.current)] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\tpubDate,\n\t\ttitle,\n\t\tdescription,\n\t\t"headings": pt::text((coalesce(bodyText, []) + coalesce(transcript, []))[style in ["h2", "h3", "h4"]]),\n\t\t"keywordSource": pt::text(coalesce(bodyText, []) + coalesce(transcript, [])),\n\t\t"genre": genre->prefLabel,\n\t\t"topics": topic[]->prefLabel,\n\t\t\n\t"synonyms": array::unique(\n\t\t(coalesce(genre->altLabel, []) + coalesce(topic[]->altLabel[], []))[@ != null]\n\t)\n\n\t}\n': SEARCH_PRESENTATIONS_QUERY_RESULT
+    '\n\t*[_type == "page" && defined(slug.current)] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t_updatedAt,\n\t\ttitle,\n\t\t"description": pt::text(lede)\n\t}\n': SEARCH_PAGES_QUERY_RESULT
+    '\n\t*[_type == "review" && defined(slug.current)] {\n\t\t_id,\n\t\t_type,\n\t\t"slug": slug.current,\n\t\tauthor,\n\t\texcerpt,\n\t\t"employer": employer->name,\n\t\t"latestEnd": employer->engagementDates[].endDate | order(@ desc)[0]\n\t}\n': SEARCH_REVIEWS_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\tbodyText\n\t}\n': SINGLETON_INTRO_QUERY_RESULT

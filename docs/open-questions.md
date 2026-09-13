@@ -54,6 +54,54 @@ diffability the two systems are built for, so it deserves a decision rather than
 
 ---
 
+## Search — deferred to a second pass
+
+Built in phase 4 and deliberately not finished. Both of these are **design** questions before
+they are build ones, which is why they are here rather than in a backlog: neither can be
+implemented without a decision that only a board can make.
+
+**A designed tooltip for the `⌘ K` hint.** The annotation on `li:search` (1727:11250) says
+`Tool tip: '⌘ K'` and no board draws one, so what shipped is a native `title` — computed per
+platform, since the shortcut is genuinely Ctrl+K away from a Mac. That is a floor rather than an
+implementation of the annotation, and it has one real limitation: **a native tooltip never appears
+on keyboard focus**, so the shortcut is discoverable by pointer and not by keyboard — which is
+backwards for a keyboard shortcut. A designed one needs a ground, a border, a radius, a placement,
+and an answer for touch, where there is no hover to trigger it and no keyboard to reward it.
+
+**The facet rail is unbounded between `md` and `lg` — accepted, not open.** Annotation 2763:4679
+puts the "See all topics" control on Mobile only, so from `md` up the rail shows every chip. The rail
+is at its NARROWEST just above that breakpoint, so the band between 768 and 1023 shows the most chip
+rows of any width:
+
+| viewport | rail | topic rows | rail content |
+|---|---|---|---|
+| 375 | 343 | 3 (budgeted) | — |
+| 768 | 229 | 24 | ~1525px |
+| 1440 | 316 | 14 | accepted by the boards |
+
+Budgeting on `--breakpoint-lg` instead would bound it — 768 drops to 3 rows, about 310px — and that
+was built and then **reverted** (Andy, 2026-09-13): the annotation is about which widths get the
+control and it says Mobile, and a tall rail beside a results column that is taller still is a cost
+worth paying to keep that true. Recorded so the trade is visible rather than rediscovered; it sits in
+the same intermediate-width band *Known holes* already flags.
+
+**A measurement mistake worth not repeating.** This note first said **8031px** and claimed the rail
+drove the page height. Wrong: 8031 is `nav.getBoundingClientRect().height`, and the nav is a grid
+ITEM that stretches to its row, which is sized by the results column. 8031px was the results. Measure
+the last visible chip's bottom against the nav's top, never the nav's box.
+
+**Recent searches.** Board *Search — Empty with Recents* (2768:4822), marked **DEFERRED**
+2026-09-12. Its annotations are recorded on the board: terms in `localStorage`, clicking one enters
+it and runs the search, and "Clear recent searches" empties the store and renders the ordinary
+empty state. Andy's call was that it is a stretch for a first iteration and not a priority.
+
+Worth keeping with it: the eventual **"commonly searched terms across the whole site"** idea, which
+is a different thing wearing the same clothes. Recents are per-visitor and need no server; a popular-
+terms list needs somewhere to count queries, and a static build deployed as a tar has nowhere to put
+that. It is a deploy-shape question, not a component one.
+
+---
+
 ## Settled in phase 4
 
 All of these were closed against the **real article detail page**, which is what several of them had

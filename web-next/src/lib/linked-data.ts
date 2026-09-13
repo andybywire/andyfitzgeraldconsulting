@@ -204,9 +204,35 @@ export function siteGraph(site: URL): GraphNode[] {
       /* `@id`, not `id`. See the header — the old build's missing `@` meant this
          reference never resolved. */
       publisher: {'@id': organization},
-      /* NO `potentialAction`/SearchAction yet. It names the URL a site search accepts a
-         query at, and search is not built (the masthead toggle is still inert from
-         phase 3). Purely additive when it lands; the old build has none either. */
+      /*
+       * ── THE SITELINKS SEARCHBOX, AND WHY ITS TARGET IS `noindex` ───────────
+       *
+       * This declares that the site accepts a query at a URL. It says NOTHING about
+       * that URL being indexable, and `/search/` is deliberately `noindex` —
+       * BaseLayout.astro:47 carries the same note. A results page has no business in
+       * an index; the searchbox is about the box, not the page. Do not "fix" one to
+       * match the other.
+       *
+       * `q` is not a choice made here. Masthead.astro's form is
+       * `action="/search/" method="get"` with `name="q"`, so this template describes
+       * the GET that form already performs — which is the whole contract: a crawler
+       * substitutes a term and gets the page a visitor pressing Return would get.
+       *
+       * `new URL('/search/', site)` rather than `nodeId`, which builds FRAGMENTS.
+       * Going through `site` is what keeps a preview build honest: it names
+       * preview's own search URL rather than asserting production's.
+       *
+       * The braces are literal. `{search_term_string}` is a placeholder the consumer
+       * substitutes into, so percent-encoding it would break it.
+       */
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${new URL('/search/', site).href}?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
     },
   ]
 }
