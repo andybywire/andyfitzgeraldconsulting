@@ -74,6 +74,6 @@ export const FEEDS = {
     title: 'Andy Fitzgerald Consulting — Presentations',
     label: 'Presentations',
     subtitle:
-      'Keynotes, talks, workshops, panels and interviews about information architecture and structured content design for the modern web..',
+      'Keynotes, talks, workshops, panels and interviews about information architecture and structured content design for the modern web.',
   },
 } as const satisfies Record<string, FeedMeta>
