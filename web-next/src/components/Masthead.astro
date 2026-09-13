@@ -140,9 +140,25 @@ interface Props {
    * knows nothing about Sanity or image builders; it is handed a string.
    */
   photo?: string | null
+  /**
+   * Render with the field already open, for `/search/` itself.
+   *
+   * ── IT SETS AN ATTRIBUTE; CSS GATED ON `html.js` DOES THE REST ─────────────
+   *
+   * Without it the script would have to open the field after the document parsed, and
+   * `/search/` would paint the nav and then visibly replace it. `html.js` is set by
+   * BaseLayout's SYNCHRONOUS head script, so a rule keyed on it is true at the FIRST
+   * paint rather than applied as a correction — the same mechanism CardMasonry uses to
+   * truncate before anything is drawn.
+   *
+   * A visitor with no JavaScript never gets the class, so the swap never happens and they
+   * keep the nav. That is the honest state: the field cannot rank anything without a
+   * script, and `/search/` already answers them with the Common Topics list instead.
+   */
+  search?: boolean
 }
 
-const {microformats = false, photo = null}: Props = Astro.props
+const {microformats = false, photo = null, search = false}: Props = Astro.props
 ---
 
 {
@@ -159,7 +175,10 @@ const {microformats = false, photo = null}: Props = Astro.props
   against the board's shorter pair. Worth a decision before phase 4.
 */
 }
-<header class:list={['masthead', microformats && 'h-card']}>
+<header
+  class:list={['masthead', microformats && 'h-card']}
+  data-search={search ? 'open' : undefined}
+>
   <a class:list={['identity', microformats && 'u-url']} href="/" rel="home">
     <Logo class="mark" />
     <span class="wordmark">
@@ -232,12 +251,26 @@ const {microformats = false, photo = null}: Props = Astro.props
           </a>
         </li>
         <li><a {...navLink('/contact/')}>Contact</a></li>
-        <li>
+        <li class="search-item">
           {
             /*
-            INERT: no handler, wired in phase 4. A <button> rather than a link
-            because search does not navigate — it replaces this slot's contents in
-            place — so the element that gets behavior later is the element here now.
+            A <button> rather than a link because search does not navigate — it
+            replaces this slot's contents in place.
+
+            ── THE WHOLE <li> GOES WITHOUT JAVASCRIPT, NOT JUST THE BUTTON ──────
+
+            It was inert and VISIBLE until now, which made it the one control in the
+            build a visitor could click to no effect. The contract <SlideDeck> and
+            <FacetFilters> state is that a control needing JavaScript ships hidden,
+            and this closes that.
+
+            Hiding the <li> rather than the button is what keeps the stacked state
+            tidy: the nav is a 3-column grid there, so an empty cell would leave a
+            hole where the sixth item was. Five items fall into 3 + 2 instead.
+
+            It is gated in CSS on `html.js` rather than carrying `hidden`, because
+            `[hidden]` is applied by a script and would therefore arrive AFTER the
+            first paint — a visible reflow on every page in the site. See the rule.
 
             The label is real text at BOTH widths, visually hidden rather than
             removed in the inline state. That is what lets an icon-only control
@@ -246,13 +279,84 @@ const {microformats = false, photo = null}: Props = Astro.props
             have no name at all.
           */
           }
-          <button class="search-toggle" type="button">
+          <button
+            class="search-toggle"
+            type="button"
+            aria-expanded={search ? 'true' : 'false'}
+            aria-controls="masthead-search"
+          >
             <Search class="search-icon" />
             <span class="search-label">Search</span>
           </button>
         </li>
       </ul>
     </nav>
+
+    {
+      /*
+      ── A REAL FORM, WHICH IS WHY IT WORKS BEFORE THE CONTROLLER EXISTS ───────
+
+      `action="/search/"` with `method="get"` and `name="q"`, so pressing Return
+      navigates to `/search/?q=…` with no JavaScript involved in the submit. Phase 4's
+      controller intercepts it to swap results in place; until then the navigation IS the
+      behaviour, and it degrades to exactly the same URL a shared link uses.
+
+      `role="search"` names the landmark. `<label>` rather than `aria-label` on the input
+      because the field has a real visible placeholder and a name that should survive
+      autofill and translation — ThemeToggle's note draws the line: `aria-label` is for a
+      name that is NEVER visible, which is not this.
+
+      ── `Esc` IS A BUTTON, NOT AN INDICATOR ──────────────────────────────────
+
+      The boards draw it as a key cap, and on a desktop keyboard it IS just a hint — but
+      it is drawn on the 375 board too, where there is no Esc key to press. So it has to
+      be tappable, which makes a <button> the honest element and <kbd> the honest thing
+      inside it.
+
+      `aria-label` overrides the visible "esc" deliberately, and this is the case
+      ThemeToggle's rule allows: the visible text is a KEY NAME, not a description of what
+      the control does. A screen-reader user gets "Close search"; nobody needs to be told
+      the glyph says E-S-C.
+    */
+    }
+    <form class="search-field" id="masthead-search" role="search" action="/search/" method="get">
+      <label class="search-field-label" for="masthead-search-input">Search this site</label>
+      <Search class="search-field-icon" aria-hidden="true" />
+      <input
+        class="search-field-input"
+        id="masthead-search-input"
+        type="search"
+        name="q"
+        placeholder="Enter a search term"
+        autocomplete="off"
+        enterkeyhint="search"
+      />
+      {
+        /*
+        ── A REAL SUBMIT BUTTON, EVEN THOUGH NO BOARD DRAWS ONE ────────────────
+
+        Without it this form relies on IMPLICIT SUBMISSION, which HTML only guarantees
+        when the form holds exactly one field that blocks it. That is true today — one
+        `type="search"` input — so Enter would work; it stops being true the moment a
+        second text field is added, and it would fail silently, as "Enter does nothing".
+
+        It also gives the soft keyboard's Go key and any assistive technology navigating
+        by control a real thing to activate, rather than a behaviour that only exists as a
+        side effect of the form's current shape.
+
+        Visually hidden rather than drawn, because the boards show a field with a
+        magnifier and an Esc cap and nothing else. The alternative considered was making
+        the magnifier itself the submit control — visible, conventional, no invisible
+        focus stop — and rejected for now because it would add a hover and focus treatment
+        to an element the design draws as decoration. Worth revisiting on screen.
+      */
+      }
+      <button class="search-submit" type="submit">Search</button>
+
+      <button class="search-dismiss" type="button" aria-label="Close search">
+        <kbd aria-hidden="true">esc</kbd>
+      </button>
+    </form>
   </div>
 </header>
 
@@ -799,4 +903,227 @@ const {microformats = false, photo = null}: Props = Astro.props
       white-space: nowrap;
     }
   }
+
+  /* ── Search: the swap, and the field ──────────────────────────────────────── */
+  /*
+   * ── WITHOUT JAVASCRIPT THE CONTROL DOES NOT EXIST ───────────────────────────
+   *
+   * Not `hidden` plus a script that removes it: that would arrive after the first paint
+   * and reflow the nav on every page in the site. `html.js` is set by BaseLayout's
+   * SYNCHRONOUS head script while <head> is still parsing, so this rule is already
+   * resolved when the nav is first drawn — the mechanism CardMasonry uses to truncate
+   * before anything is painted.
+   *
+   * WRITTEN IN THE NEGATIVE, which is the one place this file departs from the
+   * `html.js .thing` shape used elsewhere. The positive form would have to restate the
+   * button's `display` and every state that depends on it; the negative form leaves all
+   * of that untouched and simply removes the item when the class never arrives.
+   */
+  html:not(.js) .search-item {
+    display: none;
+  }
+
+  /*
+   * ── THE NAV AND THE FIELD ARE ONE SLOT, WHICH IS WHAT `.slot` IS FOR ────────
+   *
+   * DESIGN.md: search "expands in place, replacing the nav items". So this is a swap
+   * inside the existing box rather than a second box appearing — the header does not
+   * change height, and nothing below it moves.
+   *
+   * Both halves are gated on `html.js` for the reason above, and it is load-bearing on
+   * the nav specifically: hiding the navigation for a visitor who could never open the
+   * field would leave them a header with nothing in it.
+   */
+  .search-field {
+    display: none;
+  }
+
+  html.js .masthead[data-search='open'] nav {
+    display: none;
+  }
+
+  html.js .masthead[data-search='open'] .search-field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  /*
+   * The band goes with the nav. Below `lg` the slot IS a full-bleed accent strip, and the
+   * 375 board draws the open field on the page ground instead, inset by `chrome-inset` —
+   * so the fill and the knocked-out text colour are both undone here. `padding-inline` is
+   * already `chrome-inset` at rest and needs no restating; from `lg` the slot has no band
+   * to remove and this rule is inert.
+   */
+  html.js .masthead[data-search='open'] .slot {
+    background-color: transparent;
+    color: var(--color-text);
+  }
+
+  /*
+   * The box, measured off board 2768:4729: a hairline in `--color-border` — the CARD
+   * hairline, not `border-control`, which is the chip's — with `space-1` all round.
+   *
+   * ── NO HEIGHT IS SET, AND THE ESC CAP IS WHAT SETS IT ──────────────────────
+   *
+   * The board draws 52, as `9 + 34 + 9` — its Esc frame is 34 tall, which makes the CAP
+   * the tallest child rather than the input. So the field's height is `space-1` twice,
+   * plus two hairlines, plus whatever the cap measures: 8 + 8 + 2 + 34.4 = 52.4.
+   *
+   * That only holds once the UA's own padding is cleared off both controls, which is why
+   * the rules below zero them. Left in, a <button>'s default `padding: 1px 8px` and an
+   * <input>'s `1px 2px` pushed this to 54.4 — a 2px error that looks like a rounding
+   * artefact and is actually two user-agent stylesheets showing through.
+   *
+   * Letting the type produce the height rather than declaring one means the field grows
+   * with the scale instead of drifting away from it. `--field-height` exists and is NOT
+   * used here for that reason: it would pin the box while the type inside it moved.
+   */
+  .search-field {
+    padding: var(--space-1);
+    border: var(--border-width-hairline) solid var(--color-border);
+    /* `radius-1`, matching the Esc cap inside it (Andy, 2026-09-12). The boards draw both
+       square; DESIGN.md's smaller radius is the house value for a control-sized box. */
+    border-radius: var(--radius-1);
+
+    /* Containing block for the two clipped elements below — the label and the submit
+       button. Both are `position: absolute`, so without this they resolve against
+       whatever is positioned further up and can land somewhere that lengthens the page.
+       `.search-toggle` carries the same declaration for the same reason. */
+    position: relative;
+  }
+
+  /* The label is never visible at any width, so this is the case ThemeToggle's rule sends
+     to a clip rather than to `aria-label`: the input needs a real associated <label> that
+     survives autofill and translation. */
+  .search-field-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .search-field-icon {
+    flex: 0 0 auto;
+  }
+
+  /* Same clip as the label above. It is left IN the tab order deliberately: a control
+     that submits the form is a real control, and removing it with `tabindex="-1"` would
+     hide it from keyboard users while keeping it for the pointer — the wrong way round.
+     The order it produces is input, Search, Esc, which reads correctly. */
+  .search-submit {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * ── AN INPUT INHERITS NO TYPE, SO ALL OF IT HAS TO BE SAID ─────────────────
+   *
+   * `font: inherit` would be shorter and is avoided on purpose: it would also inherit the
+   * slot's line-height and weight, which differ between the accent band and the inline
+   * state. Each property is named instead.
+   *
+   * `var(--font-prose)` and never a family name — Astro's Fonts API scopes the real
+   * family it registers, so `'Noto Serif'` here would match nothing and fall through to a
+   * system serif that looks plausible.
+   */
+  .search-field-input {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+
+    /* The UA gives an input `1px 2px`. Cleared so the field's height comes from the type
+       and its padding, not from a default nobody chose. See the box rule above. */
+    padding: 0;
+    border: 0;
+
+    /*
+     * ── A RADIUS ON SOMETHING WITH NO VISIBLE BOX, AND IT IS NOT DECORATIVE ──
+     *
+     * This input has no border and no fill, so the radius draws nothing at rest. It is
+     * the FOCUS RING it exists for: base.css builds that ring from two `box-shadow`
+     * spreads precisely so "the rings stay concentric with whatever radius the control
+     * has". At 0 the ring came out square-cornered inside a field rounded to `radius-1` —
+     * two different corner treatments, 1px apart, on the only control in the header.
+     */
+    border-radius: var(--radius-1);
+    background-color: transparent;
+    color: var(--color-text);
+    font-family: var(--font-prose);
+    font-size: var(--font-size-2);
+    line-height: 1.8;
+  }
+
+  .search-field-input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1; /* Firefox dims placeholders by default, which would fail the contrast. */
+  }
+
+  /* `type="search"` earns the right semantics and brings a WebKit clear button with it.
+     Removed: the board draws one dismiss affordance, and two controls that both empty the
+     field is a choice nobody asked for. */
+  .search-field-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  /*
+   * The key cap, from board 2768:4812: `border-control` — this one IS a control boundary,
+   * unlike the field's own card hairline — at `radius-1` with `space-1` inline.
+   *
+   * `<kbd>` defaults to monospace in every UA stylesheet and base.css's Code section
+   * covers `pre` and `code` but not this, so the family has to be set here or the glyph
+   * lands in a font the design does not contain.
+   */
+  .search-dismiss {
+    flex: 0 0 auto;
+
+    /* Block padding zeroed EXPLICITLY, not just left unset: a <button>'s UA default is
+       `1px 8px`, so `padding-inline` alone would leave the 1px top and bottom in place
+       and make the cap — the tallest child — 2px taller than the board's 34. */
+    padding: 0 var(--space-1);
+    border: var(--border-width-hairline) solid var(--color-border-control);
+    border-radius: var(--radius-1);
+    background-color: transparent;
+    color: var(--color-text-muted);
+  }
+
+  .search-dismiss kbd {
+    font-family: var(--font-prose);
+    font-size: var(--font-size-2);
+    line-height: 1.8;
+  }
+
+  /*
+   * 500 is the board's, and it only applies once the header is a row — below `lg` the
+   * slot is full width and the field fills it, which is what the 375 board draws at 343.
+   * `max-inline-size` keeps it from outgrowing the slot at the breakpoint itself, where
+   * tokens.css records the identity-plus-nav budget as having about 73px of slack.
+   */
+  @container style(--breakpoint-lg: true) {
+    html.js .masthead[data-search='open'] .search-field {
+      inline-size: 500px;
+      max-inline-size: 100%;
+    }
+  }
 </style>
+
+<script>
+  /* The component that owns the control boots the behaviour, so the module is only
+     fetched by pages that have a masthead — which is all of them, but the dependency runs
+     the right way round. <FacetFilters> boots `card-index` the same way.
+
+     Opening and closing used to live here inline. It moved when the querying arrived: the
+     two share the input, the toggle and the open/closed state, and splitting them across
+     two scripts would have meant two owners of one state. */
+  import {initSearch} from '../scripts/search'
+  initSearch()
+</script>

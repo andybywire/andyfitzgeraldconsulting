@@ -12,6 +12,7 @@
  * organization with no delivery cost.
  */
 import {Font} from 'astro:assets'
+import SearchResults from '../components/SearchResults.astro'
 import {serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
 
 import '../styles/tokens.css'
@@ -29,9 +30,27 @@ interface Props {
    * one graph they all land in.
    */
   jsonLd?: GraphNode[]
+  /**
+   * Keep this page out of search engines.
+   *
+   * ── INTERNAL SEARCH RESULTS ARE THE CASE THIS EXISTS FOR ───────────────────
+   *
+   * `/search/` is one static file, and query strings do not create new ones — so every
+   * `?q=` a crawler follows is a distinct URL serving identical markup. That is the
+   * duplicate-content shape Google's own guidance names when it says to keep internal
+   * search results out of the index, and it is not hypothetical here: the empty state
+   * links into `/insights/`, so there are real paths for a crawler to arrive by.
+   *
+   * `rel="canonical"` was the alternative and is weaker: it is advisory where this is a
+   * directive, and it would argue for indexing a page whose whole content is a form.
+   *
+   * The SearchAction target is allowed to be noindex — the sitelinks searchbox names a
+   * URL that accepts a query, and says nothing about indexing it.
+   */
+  noindex?: boolean
 }
 
-const {title, description, jsonLd} = Astro.props
+const {title, description, jsonLd, noindex = false} = Astro.props
 
 /* `Astro.site` is set in astro.config for both modes, so this cannot be null in
    practice — but typing says otherwise, and a graph whose `@id`s silently became
@@ -91,6 +110,23 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
         const t = localStorage.getItem('theme')
         if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
       } catch {}
+
+      /* ── ARRIVING WITH A QUERY, FLAGGED BEFORE ANYTHING PAINTS ──────────────
+
+         `/search/` is ONE static file for every `?q=`, so the server cannot know a
+         query is coming and always renders the resting page — the invitation and the
+         Common Topics list. The controller then hides both and puts results in their
+         place, which is a visible flash of content nobody asked for: it happens on a
+         shared link, and on every Return from the masthead field.
+
+         This runs while <head> is still parsing, so a rule keyed on the attribute is
+         true at the FIRST paint rather than applied as a correction. Same mechanism as
+         `js` above, spent on a third job. The rule itself lives in search.astro, which
+         owns the two elements.
+
+         Deliberately not `URLSearchParams`: this is the one script on the critical path
+         before first paint, and a substring test is enough to ask "is there a q". */
+      if (/[?&]q=/.test(location.search)) document.documentElement.dataset.searchQuery = ''
     </script>
 
     {
@@ -114,6 +150,7 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
 
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+    {noindex && <meta name="robots" content="noindex, follow" />}
 
     {
       /*
@@ -171,5 +208,23 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
   </head>
   <body>
     <slot />
+
+    {
+      /*
+      ── SEARCH'S APPARATUS, WHICH IS DOCUMENT-LEVEL RATHER THAN PAGE-LEVEL ────
+
+      Two inert <template>s and their scoped CSS. Nothing renders; see the component.
+
+      It belongs HERE rather than in <Masthead> because what it holds is the page's main
+      CONTENT in its searched state, and the masthead is chrome. And it cannot belong to
+      the pages, because results have to be able to replace any of them — putting it in
+      eight page files would be eight copies of a thing the document needs once.
+
+      That does make this file slightly less boring than its header asks for. It already
+      owns the JSON-LD graph and the pre-paint theme script on the same grounds: concerns
+      that belong to the document rather than to any page.
+    */
+    }
+    <SearchResults />
   </body>
 </html>
