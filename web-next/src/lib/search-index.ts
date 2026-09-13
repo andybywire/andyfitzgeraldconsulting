@@ -89,10 +89,22 @@ const strings = (values: Array<string | null> | null | undefined): string[] =>
 /**
  * The label a row falls back to when its `genre` reference is missing.
  *
- * Unreachable today — all 42 insights and all 9 presentations carry a genre, measured
- * 2026-09-12 — but the generated type admits null and a result row with no kind at all
- * would render a bare separator. "Article" rather than "Insight" matches the label the
- * related band settled on.
+ * ── UNREACHABLE AGAIN, AND IT HAS NOW BEEN EXERCISED ONCE ──────────────────
+ *
+ * All 43 insights and all 9 presentations carry a genre (2026-09-13), so nothing reaches
+ * this today — which is what the note said before, and it is worth recording WHY the
+ * claim is no longer merely untested.
+ *
+ * On 2026-09-13 a genre-less `article` appeared in the corpus,
+ * `boutique-knowledge-graph-ux-methods`, and this branch quietly did its job: the row
+ * rendered `kind: "Article"` instead of a bare separator. Andy identified it as an
+ * artifact of an incomplete migration and unpublished it.
+ *
+ * So the guard is not theoretical and should not be tidied away as dead code. A document
+ * can arrive without a genre — the Studio does not require one — and when it does, this
+ * is the difference between an odd label and a broken row.
+ *
+ * "Article" rather than "Insight" matches the label the related band settled on.
  */
 const TYPE_LABEL: Record<string, string> = {
   article: 'Article',
