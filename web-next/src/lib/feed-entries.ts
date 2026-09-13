@@ -5,7 +5,9 @@ import type {
   FEED_NOTES_QUERY_RESULT,
   FEED_PRESENTATIONS_QUERY_RESULT,
 } from '../../sanity.types'
-import {atomFeed, toRfc3339, type AtomEntry} from './atom'
+import {atomFeed, escapeXml, toRfc3339, type AtomEntry} from './atom'
+import {feedImageAttrs} from '../sanity/image'
+import {recordingHeading, recordingVerb, sourceLabelFor, youtubeId} from './recording'
 import {toFeedHtml} from './feed-html'
 import type {FeedMeta} from './feeds'
 
@@ -162,6 +164,139 @@ const HIGHLIGHTS_HEADING: TypedObject = {
   children: [{_type: 'span', _key: 'label', text: 'Presentation Highlights', marks: []}],
 } as TypedObject
 
+/**
+ * The recording block — a linked poster and a source line, appended after the prose.
+ *
+ * ── A REAL `<iframe>`, BECAUSE SUBSTACK PROVED THE ASSUMPTION WRONG ──────────
+ *
+ * This shipped first as a linked poster, on my claim that feed readers strip `<iframe>`
+ * so an embed would render as nothing. Andy produced counter-evidence — Substack posts
+ * that play video in his reader — and he was right.
+ *
+ * VERIFIED against `juansequeda.substack.com/feed` on 2026-09-13, by fetching it and
+ * reading the markup rather than reasoning about it. Substack ships exactly this, with
+ * NO thumbnail fallback of any kind:
+ *
+ *     <div class="youtube-wrap"><div class="youtube-inner">
+ *       <iframe src="https://www.youtube-nocookie.com/embed/{id}?rel=0&autoplay=0…"
+ *               frameborder="0" loading="lazy" allow="autoplay; fullscreen"
+ *               allowfullscreen width="728" height="409"></iframe>
+ *     </div></div>
+ *
+ * Nothing privileged about it: no Media RSS, no `<enclosure>` for the video, no platform
+ * deal. The feed's only `<enclosure>` is the post's social image. It is plain markup we
+ * can emit, and readers that render iframes — or that allowlist YouTube specifically —
+ * show a player. The earlier claim was overstated; sanitizer behavior varies by reader
+ * and enough of them allow this that the largest newsletter platform on the web ships it
+ * with no fallback at all.
+ *
+ * `youtube-nocookie.com` follows Substack, and it matters more here than it does there:
+ * `recording.ts` records a deliberate decision NOT to fetch YouTube thumbnails on the
+ * page, because that pings Google before anyone asks for the video. An iframe does the
+ * same thing, and a FEED CANNOT DO CLICK-TO-LOAD — no script runs — so this is a real,
+ * if small, departure from the page's privacy posture. The nocookie domain is the
+ * available mitigation, not a cure. Worth knowing rather than discovering later.
+ *
+ * ── AND A LINK LINE UNDER IT, WHICH IS THE FALLBACK ──────────────────────────
+ *
+ * Substack ships the iframe bare; this does not. A reader that strips the iframe would
+ * then show a heading and nothing else. The source line was already there, so making it
+ * a link costs nothing and degrades predictably across all three sanitizer behaviors:
+ * render the iframe and it is an ordinary caption under a player, strip it and it is the
+ * whole section.
+ *
+ * Putting the poster INSIDE the iframe as fallback content was considered and rejected:
+ * browsers ignore iframe children, and whether a sanitizer unwraps them or drops them
+ * with the element is unspecified and varies. A guess dressed as a safety net.
+ *
+ * ── THREE THINGS IT GETS FOR FREE, WHICH IS WHY THIS IS SMALL ────────────────
+ *
+ * NO URL PARSING. An embed needs the video id extracted, and one of the four YouTube
+ * URLs carries a `&list=` playlist parameter — exactly what a naive regex mangles. The
+ * link uses `url` verbatim.
+ *
+ * NO NEW IMAGE WORK. Posters are Sanity images at 1280x720 with real alt text on all six
+ * recordings that have one, so `feedImageAttrs` already handles them. It also sidesteps
+ * the objection `recording.ts` records against deriving thumbnails from `i3.ytimg.com`:
+ * no request to Google before anyone has asked for the video.
+ *
+ * NO NEW WORDING. `recordingHeading` and `sourceLabelFor` are the page's own, promoted
+ * rather than reimplemented, so the feed cannot drift from what the page calls things.
+ *
+ * ── AUDIO GETS THE SAME TREATMENT, AND THAT IS THE MODEL'S CALL ──────────────
+ *
+ * Andy asked about video; `recording.ts` is explicit that "audio and video are the same
+ * fact" and that `kind` selects wording rather than a different model. Shipping video
+ * only would have made the feed assert a split the content model deliberately refuses.
+ * Andy, 2026-09-13: all recordings, `kind` picks the verb.
+ *
+ * ── AND A POSTERLESS RECORDING STILL GETS A LINK ─────────────────────────────
+ *
+ * One of the six has no poster (The Informed Life). It falls back to a text link, which
+ * is the same shape of decision `Recording.astro` makes for enclosure-less audio: a
+ * heading and a source line with no face. Emitting nothing would hide a recording that
+ * exists.
+ */
+function recordingHtml(
+  recording: FEED_PRESENTATIONS_QUERY_RESULT[number]['recording'],
+  genre: string | null,
+): string {
+  if (!recording?.url) return ''
+
+  const heading = escapeXml(recordingHeading(recording.kind, genre))
+  const href = escapeXml(recording.url)
+  const source = sourceLabelFor(recording)
+  const duration = recording.duration ? escapeXml(recording.duration) : null
+  const img = recording.poster ? feedImageAttrs(recording.poster) : null
+
+  /* The link line, shared by every branch below. Under a player it reads as a caption;
+     without one it IS the section. `Watch on YouTube · 29:19`. */
+  const linkText = source ? `${recordingVerb(recording.kind)} on ${escapeXml(source)}` : heading
+  const line = [`<a href="${href}">${linkText}</a>`, duration].filter(Boolean).join(' · ')
+
+  /*
+   * VIDEO WITH A PARSEABLE YOUTUBE ID GETS THE EMBED. Everything else — audio, and any
+   * video whose URL `youtubeId` does not recognise — falls through to the poster
+   * treatment below, which is what shipped first and still works.
+   *
+   * `title` because an iframe needs an accessible name; without one a screen reader
+   * announces an unlabelled frame. 560x315 is YouTube's own 16:9 default rather than
+   * Substack's 728x409, which is sized to their column and not to anyone else's.
+   */
+  const videoId = recording.kind === 'video' ? youtubeId(recording.url) : null
+  if (videoId) {
+    const embed =
+      `<p><iframe src="https://www.youtube-nocookie.com/embed/${escapeXml(videoId)}" ` +
+      `width="560" height="315" frameborder="0" loading="lazy" ` +
+      `allow="autoplay; fullscreen; picture-in-picture" allowfullscreen ` +
+      `title="${heading}"></iframe></p>`
+    return `<h2>${heading}</h2>${embed}<p>${line}</p>`
+  }
+
+  if (img) {
+    /* The poster IS the link, so the line below it is plain text: source and duration,
+       joined only when both exist — "YouTube · 29:19", or either alone. */
+    const caption = [source && escapeXml(source), duration].filter(Boolean).join(' · ')
+    const alt = escapeXml(recording.poster?.altText ?? '')
+    const face =
+      `<p><a href="${href}">` +
+      `<img src="${escapeXml(img.src)}" width="${img.width}" height="${img.height}" alt="${alt}" />` +
+      `</a></p>`
+    return `<h2>${heading}</h2>${face}${caption ? `<p>${caption}</p>` : ''}`
+  }
+
+  /*
+   * NO POSTER AND NO EMBED: the link line is the whole section.
+   *
+   * Its text is deliberately NOT the heading. The first version linked the heading, so a
+   * posterless recording rendered "Listen to the Interview" as an h2 and then again as
+   * the link immediately under it — valid markup that simply read badly, caught by
+   * diffing the built feed rather than by any check. "Listen on The Informed Life" is
+   * the page's own idiom, which is what `sourceLabelFor` exists to fill in.
+   */
+  return `<h2>${heading}</h2><p>${line}</p>`
+}
+
 export function presentationEntries(rows: FEED_PRESENTATIONS_QUERY_RESULT, site: URL): AtomEntry[] {
   return rows.filter(usable).map((row) => {
     const url = new URL(`/presentations/${row.slug}/`, site).href
@@ -176,13 +311,18 @@ export function presentationEntries(rows: FEED_PRESENTATIONS_QUERY_RESULT, site:
       summary: row.description,
       categories: categories(row.genre, row.topics),
       ...dates(row.pubDate),
-      content: toFeedHtml(
-        [
-          ...(row.bodyText ?? []),
-          ...(highlights.length > 0 ? [HIGHLIGHTS_HEADING, ...highlights] : []),
-        ],
-        {permalink: url},
-      ),
+      /* The recording block is raw HTML appended AFTER the serialized Portable Text,
+         not synthesized as blocks. A linked image is not expressible as a standard
+         Portable Text block, and inventing a custom type for one feed would put a
+         rendering concern into the content vocabulary. */
+      content:
+        toFeedHtml(
+          [
+            ...(row.bodyText ?? []),
+            ...(highlights.length > 0 ? [HIGHLIGHTS_HEADING, ...highlights] : []),
+          ],
+          {permalink: url},
+        ) + recordingHtml(row.recording, row.genre),
     }
   })
 }

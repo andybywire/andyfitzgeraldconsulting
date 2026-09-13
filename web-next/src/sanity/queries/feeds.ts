@@ -1,5 +1,5 @@
 import {defineQuery} from 'groq'
-import {IDENTITY, TAXONOMY} from '../fragments'
+import {IDENTITY, IMAGE, TAXONOMY} from '../fragments'
 
 /**
  * The queries behind the Atom feeds. Two document types, one query each.
@@ -94,6 +94,42 @@ export const FEED_NOTES_QUERY = defineQuery(`
 `)
 
 /**
+ * The first recording of the first delivery that has one.
+ *
+ * ── THE PARENTHESES ARE LOAD-BEARING AND THE BUG IS SILENT ───────────────────
+ *
+ * `recording.ts` documents this at length and it reproduces exactly. Without them,
+ * `eventDetail[]->eventRecordings[][0]` distributes the index across EACH event rather
+ * than across the flattened list, so it returns one result PER EVENT — an array where a
+ * single value is expected, which reads downstream as "no recording" rather than as an
+ * error. Re-verified 2026-09-13 against `production-26`: the unparenthesised form
+ * returned `[null, null, null]` for `language-arts-for-the-lizard-brain`, which has
+ * three events, while the parenthesised form correctly returned a single value or null
+ * across all nine.
+ *
+ * ── FIRST IN STORED ORDER, NEVER SORTED ──────────────────────────────────────
+ *
+ * Both arrays are user-sortable in the Studio and the sort is the point: the same talk
+ * given at a prestigious conference and then at a local meetup has two recordings, and
+ * which one represents the work is an editorial judgment rather than a fact about dates.
+ * Reordering here — helpfully, by date — would quietly take that decision away. This is
+ * the same rule the card poster ladder follows.
+ *
+ * Note it takes the first recording outright, NOT the first WITH a poster, which is
+ * where it differs from that ladder. A posterless recording still earns a link; the card
+ * ladder is looking for an image specifically and has to keep walking.
+ */
+const RECORDING = /* groq */ `
+	"recording": (eventDetail[]->eventRecordings[])[0]{
+		kind,
+		url,
+		sourceName,
+		duration,
+		poster { ${IMAGE} }
+	}
+`
+
+/**
  * ── PRESENTATIONS CARRY `bodyText` + `highlights`, AND NOT MUCH ELSE ───────────
  *
  * Andy, 2026-09-13, decided with the measurements in hand. Worth recording them,
@@ -131,6 +167,7 @@ export const FEED_PRESENTATIONS_QUERY = defineQuery(`
 			title,
 			description,
 			bodyText,
-			highlights
+			highlights,
+			${RECORDING}
 		}
 `)

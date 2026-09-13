@@ -189,6 +189,50 @@ feed's item count to disagree with this file.
 
 **13 of 37 heroes still have no `altText`** — the enumerable half of phase 5, unchanged.
 
+## Video embeds — a real `<iframe>`, and how that was settled
+
+**Recorded because it corrects a claim I made confidently and wrongly.**
+
+The recording block shipped first as a linked poster image, on my assertion that feed readers
+strip `<iframe>` so an embed would render as nothing. Andy produced counter-evidence: Substack
+posts that play video in his reader.
+
+**He was right, and the check was to fetch a feed and read it.** `juansequeda.substack.com/feed`,
+2026-09-13, ships this inside `content:encoded`, with **no thumbnail fallback of any kind**:
+
+```html
+<div class="youtube-wrap"><div class="youtube-inner">
+  <iframe src="https://www.youtube-nocookie.com/embed/{id}?rel=0&autoplay=0&showinfo=0&enablejsapi=0"
+          frameborder="0" loading="lazy" allow="autoplay; fullscreen"
+          allowfullscreen width="728" height="409"></iframe>
+</div></div>
+```
+
+**Nothing privileged is involved** — no Media RSS namespace, no `<enclosure>` for the video, no
+platform arrangement. The feed's only `<enclosure>` is the post's social image. It is plain markup
+anyone can emit, and enough readers render iframes (or allowlist YouTube specifically) that the
+largest newsletter platform on the web ships it bare. Sanitizer behavior varies by reader; "they
+strip iframes" was too strong.
+
+**What this build does differently, in one respect.** Substack ships the iframe with nothing else,
+so a stripping reader shows a heading and empty space. The feed adds the source/duration line as a
+link under it — already present, so it costs nothing — which reads as an ordinary caption under a
+player and becomes the whole section when the iframe is gone.
+
+Putting the poster inside the `<iframe>` as fallback content was considered and rejected: browsers
+ignore iframe children, and whether a sanitizer unwraps them or drops them with the element is
+unspecified. A guess dressed as a safety net.
+
+**One genuine cost, worth stating rather than discovering.** `recording.ts` records a deliberate
+decision not to fetch YouTube thumbnails on the page, because it pings Google before anyone asks
+for the video; the page uses click-to-load for exactly that reason. **A feed cannot do
+click-to-load** — no script runs — so the iframe loads YouTube's player as soon as the entry is
+viewed. `youtube-nocookie.com` is the available mitigation, not a cure. If that trade stops being
+acceptable, reverting to the linked poster is a branch in `recordingHtml`, not a rewrite.
+
+Audio is unaffected: no embeddable equivalent exists for a podcast episode page, so audio keeps the
+poster-or-link treatment.
+
 ## Carry into phase 6 — serve the feeds as `application/atom+xml`
 
 **Found 2026-09-13, while checking a built feed over a local static server.**
