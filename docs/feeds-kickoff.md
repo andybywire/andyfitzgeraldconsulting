@@ -28,7 +28,8 @@ clean. Page and URL counts move with the corpus, so rebuild rather than trusting
 here.
 
 Corpus at handoff: **42 insights** (30 `article`, 7 `caseStudy`, 5 `note`), **9
-presentations**, 5 pages, 22 reviews — 78 search-index entries. Both content invariants are
+presentations**, 5 pages, 22 reviews — 78 search-index entries. *By 2026-09-14 that was 10
+presentations and 47 events; it moved twice during the feeds build alone.* Both content invariants are
 clean: no `article` carries a Presentation-branch genre, and nothing is missing a genre.
 
 ## Settled — do not re-derive
@@ -131,6 +132,20 @@ shape, and getting those right on one feed makes the other four mechanical.
 4. **`<link rel="alternate">` discovery** in `BaseLayout` — see below.
 5. **The RSS Feeds page is ANDY'S**, hand-authored, not a template. Do not build it.
 
+## Open: heroes are not in the feeds
+
+**Never surfaced as a decision, which is the point of recording it.** The entry builders project
+`lede` + `bodyText` for an article and `bodyText` for a note; `heroImage` is not projected and not
+rendered. Measured on the built feed: **0 of 20 entries open with an image**, while 72 body figures
+do ship.
+
+Plenty of feeds lead with the hero and plenty do not, so this is a real choice — it was simply made
+by omission rather than on purpose. Adding it is a projection plus a `<figure>` prepended in
+`articleEntries`; `feedImageAttrs` already exists and every hero now carries `altText`.
+
+The one thing worth weighing: it would add 20 more images to a feed whose largest member is already
+404 KB raw.
+
 ## Traps, most of which have bitten this build already
 
 **ABSOLUTE URLs EVERYWHERE.** This is the one that makes a full-content feed look broken.
@@ -211,7 +226,10 @@ it is that the corpus is being repaired while the build runs against it.** Count
 comments carry dates for exactly this reason; re-measure before trusting one, and expect a
 feed's item count to disagree with this file.
 
-**13 of 37 heroes still have no `altText`** — the enumerable half of phase 5, unchanged.
+**Hero `altText` is now complete** — 37 of 37, re-measured 2026-09-14. This line said "13 of
+37 … unchanged" when the feeds were built, and the gap closed days later. It mattered here
+because php-mf2 carries hero alt into every syndicated copy; note the feeds themselves do not
+carry heroes at all, which is open — see below.
 
 ## Video embeds — a real `<iframe>`, and how that was settled
 

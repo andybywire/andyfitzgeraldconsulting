@@ -351,9 +351,11 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
       where its type says more than `WebPage` does, which is why `/apologia`, `/consulting`
       and `/projects` carry none.
 
-      **`WebSite.potentialAction` / `SearchAction` is the one piece still missing**, and it
-      waits on search rather than on this work — it names the URL a site search accepts a
-      query at, and the masthead toggle has been inert since phase 3. Purely additive.
+      **`WebSite.potentialAction` / `SearchAction` is BUILT** (2026-09-13, with search).
+      It waited on search rather than on the JSON-LD work — it names the URL a site search
+      accepts a query at — and shipped alongside it; `lib/linked-data.ts` emits it and the
+      home page carries it. *This entry read "the one piece still missing" until
+      2026-09-14, which was true when written and stale for a day.*
 
    **Presentations composes `BAND_GET_IN_TOUCH`, and that fragment has never been exercised.**
    The Presentations *singleton* will carry the Get in Touch band (Andy, 2026-09-07), and it is
@@ -406,8 +408,14 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    **RESOLVED (verified 2026-09-09).** Four documents violated this while `presentation` did not
    exist — three Interviews and one Talk, all stored as `article` — and the Insights index
    over-collected by that many. No article carries a Presentation-branch genre now: the only genres
-   in use there are Perspective, Method and Conference Themes. The corpus stands at 42 insights
+   in use there are Perspective, Method and Conference Themes. The corpus stood at 42 insights
    (30 articles, 5 notes, 7 case studies), 4 presentations and 41 events.
+
+   **Re-measured 2026-09-14: 42 insights (unchanged), 10 presentations, 47 events.** The
+   Presentation branch is where the migration is moving — and **35 of those 47 events are not
+   referenced by any presentation**, which is the bulk of the modelling work still outstanding.
+   Events render no page of their own, so an unattached one is invisible rather than broken.
+   Expect these numbers to move again; re-measure rather than quoting them.
 
    The invariant is still worth a build-time check, because nothing enforces it — the Studio will
    happily accept a Presentation genre on an `article` again. It just has no violations to find
@@ -423,9 +431,16 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    | `presentation` | the Presentation branch — a delivered work | detail template |
    | `event` | one **delivery occasion** of a presentation | no page of its own |
 
-   **Singletons:** Home, Insights, Reviews, Presentations (index), Contact.
+   **Singletons:** Home, Insights, Reviews, Presentations (index).
 
-   **Pages:** About, Colophon, Apologia, Projects, Consulting. `page` is a repeatable main content
+   **Pages:** About, Apologia, Projects, Consulting, Contact.
+
+   > **Corrected 2026-09-14, against the dataset.** This read "Singletons: … Contact" and
+   > "Pages: About, **Colophon**, …". Neither matched: **Contact is a `page`**, not a
+   > singleton, and **no colophon document exists**. Four singletons, five pages. Contact
+   > moving to `page` is consistent with the disqualifier — it carries no Topic or Genre
+   > and never appears in a listing — so the type is right and only this list was wrong.
+   > A colophon would be a `page` when it is written. `page` is a repeatable main content
    field, a responsive right rail, and a few below-content bands (provisionally just "Get in Touch").
 
    > **`page` means generic to the medium "website", not generic in the Genre sense.** A contact page,
@@ -470,19 +485,20 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    fields that silently stopped rendering.
 
    **One content gap to fix here, enumerable rather than vague:**
-   - **13 of 37 heroes have no `altText`** (re-measured 2026-09-09) — `boutique-knowledge-graphs`,
-     `conversations-with-robots`, `domain-modeling`, `how-to-hire-an-ia`, `keyword-extraction-nlp`,
-     `purpose-driven-taxonomy-design`, `self-hosting-sanity-studio`, `site-maps-connected-content`,
-     `structured-content-design`, `structured-content-design-22`, `what-is-information-architecture`,
-     `when-to-use-an-ia`, `working-with-an-ia`. These are the `[SanityHero] no altText` warnings the
-     build already prints. **It costs twice now, not once:** php-mf2 returns `u-photo` as
-     `{value, alt}`, so the alt text travels into every syndicated copy — verified against a real
-     parse. Body figures are clean, 0 of 139.
+   - **Hero `altText`: NONE MISSING. Question closed** (2026-09-14). This carried an
+     enumerated list of 13 slugs, measured 2026-09-09, and before that "16 of 42" from
+     2026-08-26. Re-measured against `production-26`: **37 of 37 heroes carry `altText`**,
+     none empty-string, and **0 body figures** lack one. Andy wrote them.
 
-     *Was "16 of 42" measured 2026-08-26. Three of that list —
-     `earley-ia-knowledge-graphs-and-ia`, `cs-meetup` and
-     `content-strategy-insights-data-stories-meaning` — were the mis-typed presentations and have
-     left the article corpus, so the gap shrank without anyone writing alt text.*
+     *Kept as a record because the reason it mattered is still live and is easy to forget:
+     php-mf2 returns `u-photo` as `{value, alt}`, so hero alt text travels into every
+     syndicated copy — verified against a real parse. It cost twice, not once. Note also
+     that part of the earlier shrinkage was not alt-text work at all: three slugs left the
+     list by leaving the article corpus, when the mis-typed presentations were re-typed.*
+
+     *One thing this does NOT cover: hero images do not appear in the Atom feeds at all —
+     entries carry `lede` + `bodyText` and the hero is not projected. That was never
+     surfaced as a decision when the feeds were built (2026-09-13) and is open.*
 
    - **`h5` residue: NONE. Question closed** (2026-09-09). Phase 1 dropped the style from `article`,
      `caseStudy` and `singleton`, and dropping it from a schema does not remove it from published
@@ -523,18 +539,31 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
      `services.njk` iterates singletons, and no query fetches either type. So they are adopted into
      the schema or deleted — the choice is editorial, not structural.
    - **Shrink `hiddenDocTypes`** in `sanity.config.ts` to whatever survives the above.
-   - **Delete the serializer specimen** — `specimen-serializers` on `production-26`, at
-     `/insights/serializer-specimen/`. A phase 4 test fixture holding one instance of every
-     block style, inline mark, list shape and custom block the Portable Text serializers
-     handle, so a regression in any of them has somewhere to be seen. It is a **published**
-     article, deliberately — the static build reads the `published` perspective, so a draft
-     would not render — which means it is indexable and would otherwise go live. Delete it
-     once the serializers are covered by something that is not content, or keep it and
-     exclude it from the index, the sitemap and the feed. **Do not leave that choice to
-     launch day.**
+   - **The serializer specimen is GONE, and this item is closed** (verified 2026-09-14).
+     `specimen-serializers` on `production-26`, at `/insights/serializer-specimen/`, was a
+     phase 4 test fixture holding one instance of every block style, inline mark, list shape
+     and custom block the serializers handle. It was **published** deliberately — the static
+     build reads the `published` perspective, so a draft would not have rendered — which made
+     it indexable and meant it would otherwise have gone live. No document matching it now
+     exists, published or draft.
+
+     *Kept as a record because the trade it named is still open: there is now no fixture where
+     a serializer regression can be SEEN. If one is wanted again, the note said to make it
+     something that is not content, or to exclude it from the index, the sitemap and the feed —
+     and the feeds are a fourth place it would have leaked into.*
+
 8. **Quality gates + POSSE.** Performance budgets, accessibility checks, link checking, HTML
    validation; per-taxonomy RSS feeds; **POSSE** (https://indieweb.org/POSSE) syndication to
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
+   **"per-taxonomy RSS feeds" means feeds per CONCEPT, and is still outstanding.** Five feeds
+   shipped 2026-09-13 — `/feed.xml`, `/insights/feed.xml`, `/insights/feed-articles.xml`,
+   `/insights/feed-notes.xml`, `/presentations/feed.xml` — but those are section and type
+   feeds, not taxonomy ones. `RssBand`'s `buttonTarget` is content precisely so a page can
+   point at a per-taxonomy feed without a code change when they arrive. See
+   [docs/feeds-kickoff.md](docs/feeds-kickoff.md), which also carries two live
+   carry-forwards: nginx must serve the feeds as `application/atom+xml`, and the YouTube
+   embed loads a player on view where the page uses click-to-load.
+
    Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
    watch-mode generation is off and `pnpm typegen` is run by hand.
 
