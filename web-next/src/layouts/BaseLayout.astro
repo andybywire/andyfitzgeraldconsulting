@@ -12,6 +12,7 @@
  * organization with no delivery cost.
  */
 import {Font} from 'astro:assets'
+import {FEEDS, type FeedMeta} from '../lib/feeds'
 import {PUBLIC_SITE_MODE} from 'astro:env/client'
 import SearchResults from '../components/SearchResults.astro'
 import {serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
@@ -49,9 +50,27 @@ interface Props {
    * URL that accepts a query, and says nothing about indexing it.
    */
   noindex?: boolean
+  /**
+   * Feeds this page should advertise, BEFORE the site-wide one.
+   *
+   * ── THE SITE-WIDE FEED IS NOT PASSED, IT IS ALWAYS EMITTED ──────────────────
+   *
+   * A prop that every page had to remember would be a prop most pages forgot, and the
+   * failure is silent: a visitor who hands their reader a URL with no
+   * `<link rel="alternate">` is simply told there is no feed. So `/feed.xml` is
+   * unconditional here and this prop only adds something MORE SPECIFIC in front of it.
+   *
+   * ── ORDER IS LOAD-BEARING ───────────────────────────────────────────────────
+   *
+   * Several readers take the first `rel="alternate"` they find rather than presenting a
+   * picker, so the most specific feed goes first: on /insights/ the reader that asks no
+   * question should end up subscribed to Insights, not to everything Andy publishes.
+   * Readers that do present a picker show both, which is why `title` is set on each.
+   */
+  feeds?: FeedMeta[]
 }
 
-const {title, description, jsonLd, noindex = false} = Astro.props
+const {title, description, jsonLd, noindex = false, feeds = []} = Astro.props
 
 /* `Astro.site` is set in astro.config for both modes, so this cannot be null in
    practice — but typing says otherwise, and a graph whose `@id`s silently became
@@ -309,6 +328,29 @@ const PLAUSIBLE_INIT =
           <script is:inline set:html={PLAUSIBLE_INIT} />
         </>
       )
+    }
+
+    {
+      /*
+        FEED AUTO-DISCOVERY. Without this a person must already know the exact feed URL:
+        a reader handed the SITE address fetches the HTML and looks for these, and finds
+        nothing otherwise. Distinct from the RSS Feeds page, which is for people reading
+        rather than for software.
+
+        `type` must be `application/atom+xml` and it is the one thing here that cannot be
+        fudged — a reader filters on it. Note that is a claim about the LINK, not about
+        what the server sends: these are prerendered `.xml` files, so nginx types them
+        `application/xml` until the phase 6 change recorded in docs/feeds-kickoff.md.
+        Readers sniff, so discovery works either way, but the two should agree eventually.
+
+        Root-relative hrefs so the preview deploy advertises its own feeds rather than
+        production's.
+      */
+    }
+    {
+      [...feeds, FEEDS.all].map((feed) => (
+        <link rel="alternate" type="application/atom+xml" href={feed.path} title={feed.label} />
+      ))
     }
 
     <link rel="author" href="/" />

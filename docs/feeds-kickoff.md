@@ -174,6 +174,30 @@ without it, a person must already know the exact feed URL. Multiple are valid, e
 Andy's instinct, to confirm: the site-wide feed on every page, plus the section feed on
 `/insights/` and `/presentations/`. That is a small `BaseLayout` prop.
 
+**Built 2026-09-13, to that instinct exactly.** `/feed.xml` is emitted unconditionally by
+`BaseLayout` — a prop every page had to remember would be a prop most pages forgot, and the
+failure is silent — and a `feeds` prop prepends something more specific. All 63 pages carry
+discovery; the two section indexes carry two links.
+
+**Order is load-bearing.** Several readers take the first `rel="alternate"` they find rather
+than presenting a picker, so the more specific feed goes first: on `/insights/` the reader that
+asks no question ends up subscribed to Insights rather than to everything.
+
+Three decisions worth not re-deriving:
+
+- **`title` is a SHORT label, not the feed's own `<title>`.** Every feed is called "Andy
+  Fitzgerald Consulting — X"; a picker showing four entries with the same prefix is harder to
+  read, not easier. So the attribute carries "Insights", "All Content" and so on, while the
+  feed's `<title>` keeps its full name. Both come from one `FEEDS` table in
+  `web-next/src/lib/feeds.ts` so they cannot drift.
+- **`/insights/` advertises ONE section feed, not three.** Auto-discovery answers "subscribe
+  to this page", and the page is `/insights/`. `feed-articles.xml` and `feed-notes.xml` are
+  refinements someone opts into deliberately, so they belong on the RSS Feeds page rather than
+  in a four-entry picker. Changing that is one array literal.
+- **Detail pages advertise the site-wide feed only**, per the instinct as written. Extending a
+  section feed to the articles inside that section is defensible — someone reading an article
+  is exactly who would subscribe — and is one prop on each detail template if wanted.
+
 ## The migration is live, and it will move under you
 
 Two artifacts surfaced during the previous session and Andy unpublished both the same day:

@@ -33,6 +33,7 @@ import {SINGLETON_WORK_BAND_QUERY} from '../../sanity/queries/singletons'
 import {slugify} from '../../lib/slug'
 import {facetGroups} from '../../lib/facets'
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import {FEEDS} from '../../lib/feeds'
 import Band from '../../components/Band.astro'
 import Grid from '../../components/Grid.astro'
 import Masthead from '../../components/Masthead.astro'
@@ -155,7 +156,12 @@ const jsonLd = [
 ]
 ---
 
-<BaseLayout title={page.title ?? 'Insights'} description={page.lede ?? undefined} jsonLd={jsonLd}>
+<BaseLayout
+  title={page.title ?? 'Insights'}
+  description={page.lede ?? undefined}
+  jsonLd={jsonLd}
+  feeds={[FEEDS.insights]}
+>
   <Masthead />
 
   <main>
