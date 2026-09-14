@@ -1,15 +1,16 @@
 import type {
+  SEARCH_CONCEPTS_QUERY_RESULT,
   SEARCH_INSIGHTS_QUERY_RESULT,
   SEARCH_PAGES_QUERY_RESULT,
   SEARCH_PRESENTATIONS_QUERY_RESULT,
   SEARCH_REVIEWS_QUERY_RESULT,
 } from '../../sanity.types'
 import {formatDate, formatMonthYear} from './date'
-import {extractKeywords} from './keywords'
+import {buildTermVocabulary, extractKeywords, findTerms} from './keywords'
 import type {TopicCount} from './topics'
 
 /**
- * Four query results in, one flat array of search entries out.
+ * Five query results in, one flat array of search entries out.
  *
  * ── WHY THIS IS A MODULE AND NOT THE ENDPOINT'S FRONTMATTER ─────────────────
  *
@@ -55,6 +56,20 @@ export interface SearchEntry {
    * for the body, which is deliberately not shipped — see `lib/keywords.ts`.
    */
   keywords: string[]
+  /**
+   * Controlled-vocabulary terms this document's prose contains — "card sorting",
+   * "information architecture" — found by exact match against the concept schemes.
+   *
+   * This is the multiword half of the index, and it is a DIFFERENT KIND OF CLAIM from
+   * `keywords` next door, which is why it is a separate field with its own weight rather
+   * than more entries in that array. A keyword was chosen by TF-IDF; one of these was
+   * chosen by a person, when they put it in the vocabulary. Ranked between the two:
+   * below `topics`, which says a person tagged THIS DOCUMENT with it, and above
+   * `keywords`, which nobody chose at all.
+   *
+   * Empty on pages and reviews, which have no prose to search.
+   */
+  bodyTerms: string[]
 }
 
 /**
@@ -147,6 +162,7 @@ function insightEntries(rows: SEARCH_INSIGHTS_QUERY_RESULT): Sourced[] {
                heading-less document puts `null` where the engine expects text. */
             headings: row.headings ?? '',
             keywords: [],
+            bodyTerms: [],
             keywordSource: row.keywordSource ?? '',
           },
         ]
@@ -171,6 +187,7 @@ function presentationEntries(rows: SEARCH_PRESENTATIONS_QUERY_RESULT): Sourced[]
             synonyms: strings(row.synonyms),
             headings: row.headings ?? '',
             keywords: [],
+            bodyTerms: [],
             keywordSource: row.keywordSource ?? '',
           },
         ]
@@ -205,6 +222,7 @@ function pageEntries(rows: SEARCH_PAGES_QUERY_RESULT): Sourced[] {
                corpus. A page's body is scaffolding and a review IS its excerpt. */
             headings: '',
             keywords: [],
+            bodyTerms: [],
             keywordSource: '',
           },
         ]
@@ -220,8 +238,11 @@ function pageEntries(rows: SEARCH_PAGES_QUERY_RESULT): Sourced[] {
  * used at all.
  *
  * The visible reason is that a name alone is thin in a result list. The better reason is
- * invisible: the employer now sits in `title`, which Fuse weights at 1.0, so "World
- * Health Organization" or "Elemeno" finds the review. The old build could not do that.
+ * invisible: the employer now sits in `title`, the highest-boosted field in the index, so
+ * "World Health Organization" or "Elemeno" finds the review. The old build could not do
+ * that. (This read "which Fuse weights at 1.0" until 2026-09-14 — wrong twice over, since
+ * the engine became MiniSearch on 2026-09-13 and `title` has always been boosted above
+ * every other field. The point it was making survives both corrections intact.)
  *
  * THE SEPARATOR IS U+002D HYPHEN-MINUS, SPACED — read off the board rather than chosen,
  * and deliberately not the em dash `date.ts` uses for engagement ranges or the en dash
@@ -250,6 +271,7 @@ function reviewEntries(rows: SEARCH_REVIEWS_QUERY_RESULT): Sourced[] {
             synonyms: [],
             headings: '',
             keywords: [],
+            bodyTerms: [],
             keywordSource: '',
           },
         ]
@@ -262,7 +284,7 @@ function reviewEntries(rows: SEARCH_REVIEWS_QUERY_RESULT): Sourced[] {
  *
  * ── THE ORDER IS FOR THE FILE, NOT FOR THE READER ───────────────────────────
  *
- * Fuse re-ranks by score, so nothing a visitor sees depends on this. It exists so the
+ * MiniSearch re-ranks by score, so nothing a visitor sees depends on this. It exists so the
  * built `search.json` is STABLE between builds: document order out of Sanity carries no
  * such guarantee, so without a sort two builds of identical content would emit two
  * different files — which busts caches for no reason and makes a real content change
@@ -276,6 +298,7 @@ export function buildSearchIndex(sources: {
   presentations: SEARCH_PRESENTATIONS_QUERY_RESULT
   pages: SEARCH_PAGES_QUERY_RESULT
   reviews: SEARCH_REVIEWS_QUERY_RESULT
+  concepts: SEARCH_CONCEPTS_QUERY_RESULT
 }): SearchEntry[] {
   const sourced = [
     ...insightEntries(sources.insights),
@@ -283,6 +306,32 @@ export function buildSearchIndex(sources: {
     ...pageEntries(sources.pages),
     ...reviewEntries(sources.reviews),
   ]
+
+  /*
+   * ── THE VOCABULARY IS BUILT ONCE, AND REJECTIONS ARE REPORTED ──────────────
+   *
+   * Once because it is a lookup table over the whole concept scheme, not a per-document
+   * fact — the opposite of `extractKeywords` below, which needs the corpus for a
+   * different reason.
+   *
+   * The warning is the point of `rejected` existing. A label this cannot tokenise is
+   * absent from every document's `bodyTerms`, and absence is exactly the failure that
+   * leaves no trace: an editor adds a concept, nothing errors, the build stays green, and
+   * the term is quietly unsearchable forever. `astro check` cannot see it, because it is
+   * a fact about the CONTENT rather than the code. So the build says it out loud.
+   *
+   * Zero rejections against `production-26` on 2026-09-14, and `ALLOW` in keywords.ts is
+   * why — "AI Integration" was the one casualty before it existed.
+   */
+  const vocabulary = buildTermVocabulary(sources.concepts.flatMap((scheme) => scheme.labels))
+
+  if (vocabulary.rejected.length > 0) {
+    console.warn(
+      `[search] ${vocabulary.rejected.length} concept label(s) cannot be tokenised and are ` +
+        `absent from bodyTerms: ${vocabulary.rejected.join(', ')}. ` +
+        `Add a hiddenLabel spelling the term without the dropped token.`,
+    )
+  }
 
   /*
    * ── ONE EXTRACTION OVER ONE CORPUS, AND BOTH HALVES OF THAT MATTER ─────────
@@ -307,11 +356,17 @@ export function buildSearchIndex(sources: {
 
   /* `keywordSource` is destructured out and dropped: it was ~400 KB of body text, which
      is the whole reason keywords exist rather than the bodies themselves. If it ever
-     shows up in `/search.json`, this line is what stopped working. */
+     shows up in `/search.json`, this line is what stopped working.
+
+     It is READ here before being dropped, which is new — `findTerms` needs the prose, and
+     needs it per entry rather than over the corpus. That is the difference between the
+     two halves: `extractKeywords` had to see everything at once to know what is rare,
+     while a vocabulary term is a term whether or not anything else uses it. */
   return sourced
-    .map(({keywordSource: _dropped, ...entry}) => ({
+    .map(({keywordSource, ...entry}) => ({
       ...entry,
       keywords: keywords.get(entry.url) ?? [],
+      bodyTerms: findTerms(keywordSource, vocabulary),
     }))
     .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '') || a.title.localeCompare(b.title))
 }

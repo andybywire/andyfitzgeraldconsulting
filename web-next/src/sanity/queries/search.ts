@@ -2,19 +2,21 @@ import {defineQuery} from 'groq'
 import {IDENTITY} from '../fragments'
 
 /**
- * The four queries behind `/search.json` — the site-wide search index.
+ * The five queries behind `/search.json` — the site-wide search index.
  *
- * ── FOUR QUERIES, NOT ONE, AND THE CEILING IS THE REASON ────────────────────
+ * ── FIVE QUERIES, NOT ONE, AND THE CEILING IS THE REASON ────────────────────
  *
- * Search reaches four document families, which makes one query spanning
+ * Search reaches four document families plus the concept schemes, which makes one query
+ * spanning
  * `article | caseStudy | note | presentation | page | review` the obvious shape. It is
  * also precisely the shape insights.ts:133 records as tipping `ClientReturn` past its
  * complexity ceiling — past which the lookup yields `any` rather than failing, and
  * `astro check` stays green over a wholly untyped result.
  *
  * So the split is not caution, it is the house pattern: presentations.ts:92 splits one
- * document across five queries for the same reason. Four round trips at build time, on a
- * build that already makes dozens, buys four genuinely typed results.
+ * document across five queries for the same reason. Five round trips at build time, on a
+ * build that already makes dozens, buys five genuinely typed results — and they run
+ * concurrently in one `Promise.all`, so the fifth costs no wall clock over the fourth.
  *
  * NOTHING HERE PROJECTS A PORTABLE TEXT ARRAY. `pt::text()` returns a string, so the
  * page's `lede` costs nothing — it is the unions that accumulate, and a flat projection
@@ -22,7 +24,7 @@ import {IDENTITY} from '../fragments'
  *
  * ── PROBE BEFORE ADDING A FIELD TO ANY OF THESE ─────────────────────────────
  *
- * Bogus property access on the result, with a known-good query as the control. All four
+ * Bogus property access on the result, with a known-good query as the control. All five
  * were probed on creation. A green `astro check` proves nothing here.
  *
  * Query names must be globally unique: TypeGen keys generated types by variable name and
@@ -286,5 +288,65 @@ export const SEARCH_REVIEWS_QUERY = defineQuery(`
 		excerpt,
 		"employer": employer->name,
 		"latestEnd": employer->engagementDates[].endDate | order(@ desc)[0]
+	}
+`)
+
+/**
+ * Every label in the live concept schemes — the controlled vocabulary `bodyTerms` is
+ * matched against. 88 labels across Genre and Topic on 2026-09-14.
+ *
+ * ── IT WALKS FROM THE SCHEME, NOT FROM THE CONCEPTS ─────────────────────────
+ *
+ * `*[_type == "skosConcept"]` is the obvious filter and the wrong one. A concept carries
+ * no `scheme` field — membership lives on the scheme side, in `topConcepts` and
+ * `concepts` — so filtering by type would collect every concept in the dataset including
+ * the two deprecated schemes'.
+ *
+ * It also collects orphans, which is the part worth knowing: `Content Strategy_`,
+ * `Design_` and `_Information Architecture` exist as documents, are referenced by neither
+ * scheme, and would otherwise seed a vocabulary with three labels nobody chose. Walking
+ * from the scheme excludes them for free. They are phase 7's to delete; this does not
+ * wait on that.
+ *
+ * ── THE PARENTHESES ARE LOAD-BEARING. SEE `SYNONYMS` ABOVE ──────────────────
+ *
+ * Same trap, same shape: a filter written directly after a `[]` flatten is silently
+ * ignored, and `null + []` is not a concatenation — so each side is coalesced separately
+ * and the filter applies to the parenthesised whole. `altLabel` and `hiddenLabel` are
+ * `null` rather than `[]` on a concept that has none, which is exactly the shape that
+ * poisons the unguarded version.
+ *
+ * ── `hiddenLabel` IS INCLUDED, AND IT IS EMPTY TODAY ────────────────────────
+ *
+ * SKOS puts searchable-but-never-displayed variants — misspellings, abandoned wording, a
+ * spelled-out acronym — on `hiddenLabel`, which is precisely this field's job. No concept
+ * carries one yet, so this is a hook rather than a payload: the place to put a variant
+ * that should FIND a document without ever appearing as a chip.
+ *
+ * ── `match "deprecated"` RATHER THAN AN ID LIST ─────────────────────────────
+ *
+ * GROQ's `match` tokenises, so `"Topic [DEPRECATED]"` matches on the bracketed token and
+ * the live `Topic` does not. Verified: the filter returns exactly Genre and Topic. An id
+ * list would be more explicit and would silently empty the vocabulary if a scheme were
+ * ever replaced; this auto-includes a scheme added later and becomes a harmless no-op
+ * when phase 7 retires the deprecated pair.
+ *
+ * ── SHAPE: ONE ROW PER SCHEME, FLATTENED IN TS ──────────────────────────────
+ *
+ * `array::unique(…{…}.t[])` also works and was what the prototype used. This shape is
+ * preferred because it is ordinary projection GROQ that TypeGen narrows without argument,
+ * and the deduplication it gives up is free downstream — `buildTermVocabulary` collects
+ * into a Set regardless. Probed on creation per the box at the head of this file.
+ */
+export const SEARCH_CONCEPTS_QUERY = defineQuery(`
+	*[_type == "skosConceptScheme" && !(title match "deprecated")] {
+		"labels": (
+			coalesce(topConcepts[]->prefLabel, []) +
+			coalesce(concepts[]->prefLabel, []) +
+			coalesce(topConcepts[]->altLabel[], []) +
+			coalesce(concepts[]->altLabel[], []) +
+			coalesce(topConcepts[]->hiddenLabel[], []) +
+			coalesce(concepts[]->hiddenLabel[], [])
+		)[@ != null]
 	}
 `)

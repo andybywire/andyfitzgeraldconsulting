@@ -2738,6 +2738,13 @@ export type SEARCH_REVIEWS_QUERY_RESULT = Array<{
   latestEnd: string | null
 }>
 
+// Source: ../web-next/src/sanity/queries/search.ts
+// Variable: SEARCH_CONCEPTS_QUERY
+// Query: *[_type == "skosConceptScheme" && !(title match "deprecated")] {		"labels": (			coalesce(topConcepts[]->prefLabel, []) +			coalesce(concepts[]->prefLabel, []) +			coalesce(topConcepts[]->altLabel[], []) +			coalesce(concepts[]->altLabel[], []) +			coalesce(topConcepts[]->hiddenLabel[], []) +			coalesce(concepts[]->hiddenLabel[], [])		)[@ != null]	}
+export type SEARCH_CONCEPTS_QUERY_RESULT = Array<{
+  labels: Array<never> | Array<string>
+}>
+
 // Source: ../web-next/src/sanity/queries/singletons.ts
 // Variable: SINGLETON_HEADER_QUERY
 // Query: *[_type == "singleton" && slug.current == $slug][0] {		_id,		title,		heroCopy,		"lede": pt::text(heroCopy)	}
@@ -2997,6 +3004,7 @@ declare module '@sanity/client' {
     '\n\t*[_type == "presentation" && defined(slug.current)] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\tpubDate,\n\t\ttitle,\n\t\tdescription,\n\t\t"headings": pt::text((coalesce(bodyText, []) + coalesce(transcript, []))[style in ["h2", "h3", "h4"]]),\n\t\t"keywordSource": pt::text(coalesce(bodyText, []) + coalesce(transcript, [])),\n\t\t"genre": genre->prefLabel,\n\t\t"topics": topic[]->prefLabel,\n\t\t\n\t"synonyms": array::unique(\n\t\t(coalesce(genre->altLabel, []) + coalesce(topic[]->altLabel[], []))[@ != null]\n\t)\n\n\t}\n': SEARCH_PRESENTATIONS_QUERY_RESULT
     '\n\t*[_type == "page" && defined(slug.current)] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t_updatedAt,\n\t\ttitle,\n\t\t"description": pt::text(lede)\n\t}\n': SEARCH_PAGES_QUERY_RESULT
     '\n\t*[_type == "review" && defined(slug.current)] {\n\t\t_id,\n\t\t_type,\n\t\t"slug": slug.current,\n\t\tauthor,\n\t\texcerpt,\n\t\t"employer": employer->name,\n\t\t"latestEnd": employer->engagementDates[].endDate | order(@ desc)[0]\n\t}\n': SEARCH_REVIEWS_QUERY_RESULT
+    '\n\t*[_type == "skosConceptScheme" && !(title match "deprecated")] {\n\t\t"labels": (\n\t\t\tcoalesce(topConcepts[]->prefLabel, []) +\n\t\t\tcoalesce(concepts[]->prefLabel, []) +\n\t\t\tcoalesce(topConcepts[]->altLabel[], []) +\n\t\t\tcoalesce(concepts[]->altLabel[], []) +\n\t\t\tcoalesce(topConcepts[]->hiddenLabel[], []) +\n\t\t\tcoalesce(concepts[]->hiddenLabel[], [])\n\t\t)[@ != null]\n\t}\n': SEARCH_CONCEPTS_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy)\n\t}\n': SINGLETON_HEADER_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\t\n\t"workBand": coalesce(\n\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': SINGLETON_WORK_BAND_QUERY_RESULT
     '\n\t*[_type == "singleton" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\theroCopy,\n\t\t"lede": pt::text(heroCopy),\n\t\tbodyText\n\t}\n': SINGLETON_INTRO_QUERY_RESULT

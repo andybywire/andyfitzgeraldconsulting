@@ -126,7 +126,16 @@ function loadIndex(): Promise<Index> {
 
       const mini = new MiniSearch<Indexed>({
         idField: 'url',
-        fields: ['title', 'kind', 'topics', 'headings', 'description', 'keywords', 'synonyms'],
+        fields: [
+          'title',
+          'kind',
+          'topics',
+          'headings',
+          'description',
+          'bodyTerms',
+          'keywords',
+          'synonyms',
+        ],
         /*
          * `topics` and `synonyms` are arrays and `description` is nullable, where
          * MiniSearch tokenises a string. Joining on a space is enough rather than lossy:
@@ -194,6 +203,41 @@ function loadIndex(): Promise<Index> {
          * so a keyword hit is evidence the subject appears in the body, which is weaker
          * than evidence somebody named it. It should pull a document into the results
          * and almost never to the top of them.
+         *
+         * `bodyTerms` sits just above `keywords` and well below `topics`, and the gap on
+         * each side is the whole claim. All three can match the same words, so the ladder
+         * has to say what KIND of evidence each one is:
+         *
+         *   topics 2.0     a person tagged THIS DOCUMENT with the concept
+         *   bodyTerms 0.85 a person put the term in the vocabulary; the prose uses it
+         *   keywords 0.7   nobody chose it; TF-IDF found it distinctive
+         *
+         * So an article tagged "Card Sorting" outranks one that merely discusses card
+         * sorting, and the second is still found — which was the requirement. Only just
+         * above `keywords`, because both are statements about the body rather than about
+         * the document, and the vocabulary's authority is over what COUNTS AS A TERM, not
+         * over what this document is about.
+         *
+         * Measured against the built index on 2026-09-14, and the gap is wide: on
+         * "knowledge graphs" the tagged documents score 50.0 down to 34.6 while the
+         * body-only match scores 12.1. On "information architecture" every tagged
+         * document outranks the first body-only one.
+         *
+         * A TITLE match does outrank a tag, and that is correct rather than a leak —
+         * "Knowledge Graphs and IA" takes the top slot on that query without carrying the
+         * tag, because a document named for the thing is the best answer to it. The
+         * ladder holds wherever title evidence is equal, which is the claim; it is a
+         * tendency and not a guarantee, because BM25 also normalises by field length and
+         * `bodyTerms` is short — a median of 7 terms.
+         *
+         * Retrieval is the bigger win and it is what this was built for: "tree testing"
+         * went from 0 results to 5, "card sorting" 1 to 3, "linked data" 2 to 5, and
+         * "information architecture" 10 to 23.
+         *
+         * Note also that MiniSearch tokenises this field like every other, so "card
+         * sorting" is indexed as two terms and `combineWith: 'AND'` is what makes the
+         * phrase behave like one. Adjacency is NOT preserved — a document using both
+         * words far apart matches too. See `docs/search-ranking.md`.
          */
         search: (query: string) =>
           mini
@@ -207,6 +251,7 @@ function loadIndex(): Promise<Index> {
                 kind: 1.5,
                 headings: 1.2,
                 description: 1,
+                bodyTerms: 0.85,
                 keywords: 0.7,
                 synonyms: 0.6,
               },

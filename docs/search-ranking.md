@@ -32,16 +32,20 @@ down to the terms that distinguish it, and the browser ranks against that instea
 ## The pipeline
 
 ```
-4 GROQ queries ──► buildSearchIndex() ──► /search.json ──► fetch on first query ──► MiniSearch
-   insights          + extractKeywords      78 entries      (once, lazily)            BM25 + facets
-   presentations                            59 KB / 18.5 KB gz
+5 GROQ queries ──► buildSearchIndex() ──► /search.json ──► fetch on first query ──► MiniSearch
+   insights          + extractKeywords      81 entries      (once, lazily)            BM25 + facets
+   presentations     + findTerms            65 KB / 18.7 KB gz
    pages
    reviews
+   concepts  ────────┘ the vocabulary, not a document type
 ```
 
 Each entry carries `url, title, kind, date, dateLabel, description, sourceDomain, genre,
-topics[], synonyms[], headings, keywords[]`. Seven of those are searchable; the rest are
-for display or filtering.
+topics[], synonyms[], headings, bodyTerms[], keywords[]`. Eight of those are searchable;
+the rest are for display or filtering.
+
+The fifth query is the odd one out: it fetches no documents, only the labels of every
+concept in the live schemes. It is what `bodyTerms` is matched against.
 
 The index is fetched **lazily and exactly once** — on the first query that passes two
 characters, never on page load. Nothing else about search costs a visitor anything until
@@ -51,7 +55,7 @@ they use it.
 
 ## What reaches into the body, and what it costs
 
-Two fields, neither of which is prose you could read back.
+Three fields, none of which is prose you could read back.
 
 **`headings`** is the document's own h2/h3/h4 text, run together. It is the
 highest-signal writing on the page, because a heading is authored to be scanned. The
@@ -62,7 +66,14 @@ about 6 KB.**
 documents that have prose**, 1,089 distinct terms. The curve either side is flat — 7.7 KB
 at 15 terms, 19.3 KB at 40 — so the count is a precision choice rather than a budget one.
 
-Together they cost about **8.5 KB gzipped** and recover most of what full text would find.
+**`bodyTerms`** is the multiword half, added 2026-09-14, and it is chosen a different way:
+not by statistics at all, but by looking the prose up in the **controlled vocabulary**. If
+a document's body contains "card sorting" and Card Sorting is a concept, the term is on
+the entry. **6.3 KB raw across the corpus**, a median of 7 terms per document, and 4 of 53
+documents match nothing. There is no budget and no cut — it draws on 88 labels, so unlike
+`keywords` it cannot explode.
+
+Together they cost about **10 KB gzipped** and recover most of what full text would find.
 
 ---
 
@@ -135,27 +146,72 @@ automatically over an uncontrolled one.
 **Where it breaks: IDF has no notion of hierarchy, and no notion of relation.** `boutique`
 and `monolithic` both score high in the document above, and nothing in the maths knows
 they are antonyms on the same axis. There is no broader/narrower, no related, no scheme.
-It is a flat bag of weighted strings — which is exactly why the vocabulary still does the
-faceting and TF-IDF only does the reaching.
+It is a flat bag of weighted strings — which is why the vocabulary does the faceting and
+TF-IDF only does the reaching.
+
+---
+
+## Where the vocabulary does the choosing instead
+
+`bodyTerms` is the one part of the index statistics do not select. It was tried the other
+way first, and the record of that matters more than the result.
+
+**The problem.** TF-IDF cannot surface a multiword term of art. `tree testing` occurs 6
+times across 5 documents; scored as a unit it earns `(1 + ln 1) × ln(52/5) = 2.34`, which
+lands *below rank 264* in a document that discusses it. Giving bigrams a pool of their own
+inverts the problem rather than fixing it: a phrase used in one document scores
+`ln(52/1) = 3.95` and wins outright, so the tail fills with one-off phrasings. **The
+property that makes something a term of art — shared vocabulary, hence high `df` — is
+exactly what IDF penalises.**
+
+**The obvious fix, which does not work.** Collocation scoring — Dunning log-likelihood —
+asks whether two words co-occur more than chance, which is the right question. It finds
+`card sorting` at G² 183 and `tree testing` at 72. It also finds `relationships between`
+at 197, `across contexts` at 180, `make sure` at 150 and `think about` at 149. Ordinary
+English collocations *are* strong collocations, and no threshold separates them.
+
+Nor do corpus statistics rescue it. Requiring one member to be non-ubiquitous — the move
+that makes `content` drop out of `extractKeywords` on its own — fails outright: `little
+bit` has a minimum member `df` of 7, identical to `mental models`, and `first pass` at 5
+sits *below* `card sorting` at 4. The distributions overlap completely.
+
+**So termhood is an editorial judgement here, not an inference.** Every term in
+`bodyTerms` is one somebody put in a concept scheme. Discovery still runs — as
+`web-next/scripts/phrase-candidates.mjs`, by hand, writing
+[phrase-candidates.md](phrase-candidates.md) — but it proposes to a person and never to
+the index.
+
+This is the SKOS parallel above running in the other direction. There, TF-IDF behaves
+*like* a vocabulary by accident. Here the vocabulary does a job the statistics measurably
+cannot, and the loop closes by hand: the corpus proposes a term, a person accepts it into
+the scheme, and search can find it the next build.
 
 ---
 
 ## What it cannot do
 
-**No phrases.** `tree` and `testing` are stored as independent terms. A document is found
-by either and ranked by both, but the adjacency is gone.
+**No adjacency at query time.** `bodyTerms` finds multiword terms, but MiniSearch tokenises
+that field like every other — `card sorting` is indexed as two terms, and
+`combineWith: 'AND'` is what makes the phrase behave like one. A document using both words
+far apart still matches. Real phrase ranking would need sentinel-joined terms, a matching
+search-time tokeniser, and a combined OR query so the phrase is not a mandatory clause.
+
+**No multiword term that is not in the vocabulary.** That is the trade for shipping no
+noise, and it is a deliberate one — the candidates file is how the gap gets closed.
 
 **No snippets**, because there is no prose left to snip. A result row shows its card copy,
 which will not contain the matched term when the match came from the body.
 
-**A term used once in a long document usually does not survive.** This is the honest cost,
-and it has a live example: `tree testing` appears in **5 documents, once each**, is never a
-heading, and so never clears any document's top 25. Searching for it returns nothing. Full
-text would find it. That is the trade.
+**A single-word term used once in a long document usually does not survive** the top-25
+cut. Full text would find it. That is the honest cost of the 8× saving, and it is now the
+*only* class of miss left: multiword terms have a second route in.
 
 Measured against a twelve-query probe of things discussed only in bodies, the index went
-from 2 hits to 10. `tree testing` is one of the two misses; the other, `webmention`,
-appears in zero documents and is not a miss at all.
+from 2 hits to 10 when `headings` and `keywords` landed. `tree testing` was one of the two
+remaining misses — **and is no longer one**: adding it to the Topic scheme took it from 0
+results to 5. (The other, `webmention`, appears in zero documents and was never a miss.)
+Measured the same day: `card sorting` 1 → 3, `linked data` 2 → 5, `usability testing`
+5 → 9, `information architecture` 10 → 23.
 
 ---
 
@@ -167,7 +223,8 @@ In `web-next/src/scripts/search.ts`. Each option was measured, not defaulted.
 combineWith: 'AND'
 prefix: true
 fuzzy: (term) => (term.length > 4 ? 0.2 : false)
-boost: {title: 3, topics: 2, kind: 1.5, headings: 1.2, description: 1, keywords: 0.7, synonyms: 0.6}
+boost: {title: 3, topics: 2, kind: 1.5, headings: 1.2, description: 1,
+        bodyTerms: 0.85, keywords: 0.7, synonyms: 0.6}
 ```
 
 **`AND` over the default `OR`.** On 78 entries, `OR` is not forgiving, it is
@@ -190,12 +247,26 @@ being the most permissive.
 - `kind` — the genre prefLabel, so `case study` finds the seven case studies.
 - `headings` **above** `description`, narrowly: a heading is written to be scanned where
   card copy is written to sell, so it is the better description of what a document covers.
+- `bodyTerms` between the two, and the gap on each side is the whole claim. All three can
+  match the same words, so the ladder has to say what *kind* of evidence each one is:
+  `topics` at 2.0 means a person tagged **this document**; `bodyTerms` at 0.85 means a
+  person put the term in the vocabulary and this prose uses it; `keywords` at 0.7 means
+  nobody chose it at all. So a document tagged Card Sorting outranks one that merely
+  discusses card sorting, and the second is still found. Measured on "knowledge graphs":
+  tagged documents score 50.0 down to 34.6, the body-only match 12.1.
 - `keywords` near the bottom because they are **derived** — nobody chose them, TF-IDF did.
   A keyword hit is evidence the subject appears in the body, which is weaker than evidence
   somebody named it. It should pull a document into the results and rarely to the top.
 - `synonyms` last, for the reason already on record: an altLabel should *find* a document,
   never outrank a title match. Verified — `a11y` returns the one entry tagged Accessibility,
   scoring 2.9 where a title match scores 20+.
+
+**The ladder is a tendency, not a guarantee.** A *title* match outranks a tag, which is
+correct rather than a leak: "Knowledge Graphs and IA" takes the top slot on that query
+without carrying the tag, because a document named for a thing is the best answer to it.
+The ordering holds wherever title evidence is equal. BM25 also normalises by field length,
+and `bodyTerms` is short — a median of 7 terms — so a hit in it carries somewhat more than
+0.85 suggests.
 
 ---
 

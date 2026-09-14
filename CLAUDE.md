@@ -378,6 +378,22 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    explainer** — what is indexed, how TF-IDF chooses it, the measured costs, and the two GROQ traps
    this fell into. Read it before changing what search matches on.
 
+   **Multiword terms came from the VOCABULARY, not from statistics** (2026-09-14). TF-IDF cannot
+   surface a term of art: `tree testing` occurs 6 times across 5 documents and scores *below rank
+   264* in a document about it, because the shared usage that makes a phrase a term is exactly what
+   IDF penalises. Collocation scoring was built and measured and does not fix it either — ordinary
+   English collocations score as strongly as real terminology, and no threshold or corpus statistic
+   separates `little bit` from `mental models`. So the `bodyTerms` field matches prose against the
+   **Topic and Genre schemes**, which makes termhood an editorial judgement. `tree testing` went
+   0 → 5 results, `card sorting` 1 → 3, `information architecture` 10 → 23.
+
+   **The consequence for you: adding a concept is now a search change.** A multiword term is
+   invisible to search until it exists in a scheme — nothing is inferred. `web-next/scripts/
+   phrase-candidates.mjs` is the hand-run generator that proposes candidates from the corpus into
+   [docs/phrase-candidates.md](docs/phrase-candidates.md); it never feeds the build. Note also that
+   `keywords.ts` now carries an `ALLOW` list so `ai`, `ia`, `ui` and `ux` survive the two-character
+   floor — without it a "UX Research" concept could not be represented at all.
+
    The content model is iterated alongside, driven by what each page needs.
    `sanity-plugin-taxonomy-manager` is already installed.
 

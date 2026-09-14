@@ -54,6 +54,7 @@ import {slugify} from '../lib/slug'
 import {selectTopics} from '../lib/topics'
 import {loadQuery} from '../sanity/load-query'
 import {
+  SEARCH_CONCEPTS_QUERY,
   SEARCH_INSIGHTS_QUERY,
   SEARCH_PAGES_QUERY,
   SEARCH_PRESENTATIONS_QUERY,
@@ -79,11 +80,12 @@ import {
  * live in `lib/`, and every module there is pure — `genres.ts` and `reviews.ts` import
  * types from Sanity and nothing else. A fetch in `lib/` to save 800ms is the wrong trade.
  */
-const [insights, presentations, pages, reviews] = await Promise.all([
+const [insights, presentations, pages, reviews, concepts] = await Promise.all([
   loadQuery(SEARCH_INSIGHTS_QUERY),
   loadQuery(SEARCH_PRESENTATIONS_QUERY),
   loadQuery(SEARCH_PAGES_QUERY),
   loadQuery(SEARCH_REVIEWS_QUERY),
+  loadQuery(SEARCH_CONCEPTS_QUERY),
 ])
 
 /**
@@ -104,7 +106,7 @@ const [insights, presentations, pages, reviews] = await Promise.all([
  */
 const COMMON_TOPIC_LIMIT = 12
 
-const entries = buildSearchIndex({insights, presentations, pages, reviews})
+const entries = buildSearchIndex({insights, presentations, pages, reviews, concepts})
 const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map((topic) => ({
   label: topic.label,
   slug: slugify(topic.label),

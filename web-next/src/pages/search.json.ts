@@ -2,6 +2,7 @@ import type {APIRoute} from 'astro'
 import {buildSearchIndex} from '../lib/search-index'
 import {loadQuery} from '../sanity/load-query'
 import {
+  SEARCH_CONCEPTS_QUERY,
   SEARCH_INSIGHTS_QUERY,
   SEARCH_PAGES_QUERY,
   SEARCH_PRESENTATIONS_QUERY,
@@ -41,14 +42,15 @@ export const GET: APIRoute = async () => {
   /* Four independent queries, so four concurrent round trips rather than four serial
      ones. Independent because they are split by the ClientReturn ceiling rather than by
      any data dependency — see the header of queries/search.ts. */
-  const [insights, presentations, pages, reviews] = await Promise.all([
+  const [insights, presentations, pages, reviews, concepts] = await Promise.all([
     loadQuery(SEARCH_INSIGHTS_QUERY),
     loadQuery(SEARCH_PRESENTATIONS_QUERY),
     loadQuery(SEARCH_PAGES_QUERY),
     loadQuery(SEARCH_REVIEWS_QUERY),
+    loadQuery(SEARCH_CONCEPTS_QUERY),
   ])
 
-  const entries = buildSearchIndex({insights, presentations, pages, reviews})
+  const entries = buildSearchIndex({insights, presentations, pages, reviews, concepts})
 
   /* Minified. The entries are sorted for determinism rather than for reading — see
      buildSearchIndex — and anything inspecting this by hand has `jq`. */
