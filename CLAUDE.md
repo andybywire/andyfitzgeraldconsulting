@@ -521,6 +521,11 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
      blocks — so this was carried as unverified. The query has now been run against `production-26`:
      zero documents of those three types carry an `h5` block. Nothing renders unstyled, and nothing
      needs doing at the parity check.
+
+   - A couple to-dos that are emerging as I complete content work that we should take care of before cut-over:
+    - Add an a11y "skip" link for keyboard nav. 
+    - Add a "copy to clipboard" icon to RSS feed links — consider making this a block type in the PTE
+
 6. **Cutover.** Rewrite CI for pnpm, Node 24 and the new build directory. **`mailhandler.php` must
    survive** — it stays PHP on the droplet, but becomes a backend endpoint called from JS rather
    than a form target with its own display pages, since mail forms now appear on several pages.
