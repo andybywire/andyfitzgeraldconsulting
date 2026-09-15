@@ -15,7 +15,7 @@ import {Font} from 'astro:assets'
 import {FEEDS, type FeedMeta} from '../lib/feeds'
 import {PUBLIC_SITE_MODE} from 'astro:env/client'
 import SearchResults from '../components/SearchResults.astro'
-import {serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
+import {SITE_FACTS, serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
 
 import '../styles/tokens.css'
 import '../styles/base.css'
@@ -23,6 +23,16 @@ import '../styles/base.css'
 interface Props {
   title: string
   description?: string
+  /**
+   * Where this page's content was FIRST published, when that is somewhere else.
+   *
+   * Omitted by almost every page, and the default below is the important half: this layout
+   * emits a SELF-canonical for everything, which the site did not do at all before. That is
+   * not decoration. `/insights/?genre=note` and `/insights/` serve the same document, a
+   * shared link can carry any query string, and without a canonical each variant is a
+   * separate URL competing with the original.
+   */
+  canonical?: string
   /**
    * The page's own JSON-LD nodes, appended to the site graph below.
    *
@@ -70,7 +80,18 @@ interface Props {
   feeds?: FeedMeta[]
 }
 
-const {title, description, jsonLd, noindex = false, feeds = []} = Astro.props
+const {title, description, canonical, jsonLd, noindex = false, feeds = []} = Astro.props
+
+/**
+ * `Astro.url.pathname`, never `Astro.url` itself.
+ *
+ * Under SSR preview `Astro.url` is the REQUEST url and carries whatever query string a
+ * visitor arrived with, so building from it would emit a canonical per `?q=` — the exact
+ * duplication the tag exists to collapse. `insights/[slug].astro` already makes this
+ * distinction when it builds its permalink; same reasoning, stated here because this is the
+ * one that runs on every page.
+ */
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).href
 
 /* `Astro.site` is set in astro.config for both modes, so this cannot be null in
    practice — but typing says otherwise, and a graph whose `@id`s silently became
@@ -226,8 +247,80 @@ const PLAUSIBLE_INIT =
     <Font cssVariable="--font-prose" preload={[{style: 'normal'}]} />
     <Font cssVariable="--font-heading" preload />
 
-    <title>{title}</title>
+    {
+      /*
+      ── THE FAVICON SET, AND WHY IT SHIPS FROM `public/` ──────────────────────
+
+      Carried over from the live site's `/icons/`, at the same paths. These ship
+      from `public/` rather than through Astro's asset pipeline, so the filenames
+      stay stable and unhashed — the opposite of the rule this build applies to
+      fonts, which moved OUT of `public/` in phase 2 precisely so they could be
+      hashed and served `immutable`.
+
+      The difference is who asks for the file. A font is fetched from a URL our own
+      CSS names, so hashing it costs nothing. An icon is fetched from a path a
+      browser, a feed reader or a link preview already assumes, and swapping the
+      asset in place is the entire maintenance story. Stable path wins, and it also
+      keeps these off the phase 6 301 map.
+
+      ── WHAT IS DELIBERATELY NOT CARRIED ACROSS ──────────────────────────────
+
+      The live site also emits `<link rel="manifest">` and two MASKABLE icons as
+      `rel="icon"`. Neither belongs here:
+
+        - a manifest is part of the service-worker decision, which CLAUDE.md defers
+          to phase 8. Shipping one now advertises install behaviour nothing
+          implements, and a worker is one of the few ways to semi-permanently break
+          a static site.
+        - a maskable icon is a manifest concept. It carries a safe-zone margin so a
+          platform can crop it to any shape, which as a plain `rel="icon"` just
+          renders the mark small inside a lot of padding.
+
+      `theme-color` is absent for a third reason: the live site hardcodes one value,
+      and this build has two themes. It wants one per colour scheme or none.
+    */
+    }
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/icons/icon_x192.png" />
+
+    {
+      /*
+      ── `{page} | Andy Fitzgerald`, COMPOSED HERE RATHER THAN AT 11 CALL SITES ──
+
+      Ported from the live site, which builds the same pattern in `head.njk` — and
+      does it with an `{% if %}` chain over `page.url` listing every section by
+      hand. That chain is the thing not to carry across: it needs editing whenever
+      a section is added, and a section it has never heard of silently falls through
+      to the bare site name.
+
+      So the suffix is applied to whatever a page passes, and pages keep passing a
+      bare page title. Nothing to remember, nothing to keep in step.
+
+      ── HOME IS THE EXCEPTION, AND IT IS DERIVED, NOT DECLARED ──────────────────
+
+      `/` reads "Andy Fitzgerald" alone (Andy, 2026-09-15) — "Andy Fitzgerald |
+      Andy Fitzgerald" is the obvious failure and a suffix rule with no exception
+      produces it.
+
+      Derived from the pathname rather than taken as a prop, for the reason
+      Masthead.astro derives its section the same way: every page renders this
+      layout, so a rule computed here cannot be forgotten by a page, while a
+      `homepage` prop can be. index.astro still passes its own title, so the prop
+      is never ignored or overridden — this only decides whether a suffix is added.
+
+      ── THE SUFFIX IS `personName`, NOT `siteName`, WHICH IS DELIBERATE ─────────
+
+      `SITE_FACTS.siteName` is "Andy Fitzgerald Consulting" and still names the
+      WebSite node in the JSON-LD graph. The tab and the masthead say the person,
+      because the identity the site leads with is a person — the same call that put
+      `personName` in the wordmark. Those two being different strings is a real
+      question for the graph rather than an oversight here; see linked-data.ts.
+    */
+    }
+    <title>{Astro.url.pathname === '/' ? title : `${title} | ${SITE_FACTS.personName}`}</title>
     {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonicalUrl} />
     {noindex && <meta name="robots" content="noindex, follow" />}
 
     {

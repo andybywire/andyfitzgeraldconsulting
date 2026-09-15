@@ -42,7 +42,10 @@ import Button from '../components/Button.astro'
 import ArticleCard from '../components/cards/ArticleCard.astro'
 import NoteCard from '../components/cards/NoteCard.astro'
 import WorkWithMeBand from '../components/bands/WorkWithMeBand.astro'
-import {nodeId, pageNode} from '../lib/linked-data'
+/* `SITE_FACTS.personName` rather than a literal: `/` takes no ` | …` suffix (BaseLayout
+   derives that from the pathname), so this string IS the browser tab, and it should not be
+   able to drift from the wordmark and the Person node that assert the same name. */
+import {SITE_FACTS, nodeId, pageNode} from '../lib/linked-data'
 
 /*
   ── HOW MANY THE INSIGHTS BAND SHOWS. TUNE HERE. ────────────────────────────
@@ -206,11 +209,7 @@ const jsonLd = [
 ]
 ---
 
-<BaseLayout
-  title="Andy Fitzgerald — Information Architect"
-  description={page?.lede ?? undefined}
-  jsonLd={jsonLd}
->
+<BaseLayout title={SITE_FACTS.personName} description={page?.lede ?? undefined} jsonLd={jsonLd}>
   <Masthead microformats photo={authorPhoto} />
 
   <main>
