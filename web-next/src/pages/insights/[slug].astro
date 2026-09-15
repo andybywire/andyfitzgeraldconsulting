@@ -268,6 +268,7 @@ const jsonLd = [
   documentNode({
     site: Astro.site,
     permalink,
+    canonicalUrl: insight.canonical,
     title: insight.title,
     shortDescription: insight.shortDescription,
     pubDate: insight.pubDate,
@@ -296,9 +297,17 @@ const jsonLd = [
 ]
 ---
 
+{
+  /* `canonical` is set on two of thirty articles and null on every caseStudy and note —
+     the field only exists on `article`, so GROQ returns null for the other two rather than
+     complaining. That is honest absence here rather than the union trap, because no other
+     type keeps the same fact under a different name. `?? undefined` because the prop is
+     optional and BaseLayout's `??` default has to see undefined, not null. */
+}
 <BaseLayout
   title={insight.title ?? 'Untitled'}
   description={insight.description ?? insight.shortDescription ?? undefined}
+  canonical={insight.canonical ?? undefined}
   jsonLd={jsonLd}
 >
   <Masthead />
