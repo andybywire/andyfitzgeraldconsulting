@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "typegen": "pnpm --filter studio-next typegen",
+    "parity": "pnpm --filter web-next parity",
     "format": "prettier --write ."
   },
   "author": "Andy Fitzgerald",
