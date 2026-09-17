@@ -453,6 +453,49 @@ const PLAUSIBLE_INIT =
     <link rel="author" href="/" />
   </head>
   <body>
+    {
+      /*
+      ── THE SKIP LINK ────────────────────────────────────────────────────────
+
+      The masthead puts roughly a dozen links before the content on every page, and a
+      keyboard or switch user tabs through all of them on every navigation. This is the
+      standard escape hatch, and it is FIRST IN THE DOCUMENT because that is the whole
+      mechanism — a skip link reachable only after the nav has already been traversed
+      has solved nothing.
+
+      It lives here rather than in <Masthead> for the reason the title suffix does: every
+      page renders this layout, so a page cannot forget it. <Masthead> would also be the
+      wrong owner semantically — this skips PAST the masthead, so belonging to it would
+      be circular.
+
+      ── `tabindex="-1"` ON THE TARGET IS NOT OPTIONAL ────────────────────────
+
+      Following a fragment moves the SCROLL POSITION but not keyboard focus unless the
+      target can hold focus, and <main> cannot by default. Without it the next Tab press
+      returns to the masthead link after the skip link — so the link appears to work,
+      the page visibly jumps, and the user is put straight back where they started. The
+      failure is invisible to anyone testing with a mouse.
+
+      `-1` rather than `0`: the target should be focusable PROGRAMMATICALLY without
+      joining the tab order itself, or every page would gain a stop on a non-interactive
+      element.
+
+      ── VISIBLE ON FOCUS, VIA `:not(:focus)` RATHER THAN AN UNDO ─────────────
+
+      The hiding is written as the negative so that focus restores the element by having
+      no rule apply, rather than by a second rule overriding the first. Same principle
+      the masthead states for its breakpoints: nothing here undoes anything, so there is
+      no specificity race to lose and no property that has to be reset to a value it was
+      never explicitly given.
+
+      The declarations are <VisuallyHidden>'s, which this deliberately does not reuse as
+      a component — that one is for content announced but never drawn, and this is drawn
+      the moment it matters. Borrowing the mechanism is right; borrowing the semantics
+      would not be.
+    */
+    }
+    <a class="skip-link" href="#main">Skip to main content</a>
+
     <slot />
 
     {
@@ -474,3 +517,66 @@ const PLAUSIBLE_INIT =
     <SearchResults />
   </body>
 </html>
+
+<style>
+  /*
+   * The hidden state is the NEGATIVE rule, so focus reveals the link by having nothing
+   * apply rather than by overriding. See the note beside the markup.
+   *
+   * It also wins by specificity rather than by order — `:not(:focus)` is (0,2,0) against
+   * `.skip-link`'s (0,1,0) — so the two blocks can sit in either order and the resting
+   * state is never a coin toss about which stylesheet Astro emitted first. That is the
+   * same trap Logo.astro records for its `fill`.
+   *
+   * Declarations are <VisuallyHidden>'s, which documents why each is load-bearing and why
+   * `display: none`, `visibility: hidden` and `width: 0` are all wrong here.
+   */
+  .skip-link:not(:focus) {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * ── IT TAKES SPACE RATHER THAN FLOATING OVER THE PAGE ─────────────────────
+   *
+   * The visible state carries NO `position`, so a focused link is in normal flow as the
+   * first thing in <body> and pushes the masthead down by its own height. The page gains
+   * a strip at the top for as long as it is focused, and gives it back on blur.
+   *
+   * The first version of this was `position: absolute` at `--chrome-inset`, and it sat
+   * directly on top of the masthead logo and wordmark — Andy caught it in the browser.
+   * Overlaying is the more common pattern and it is the wrong one here: this element
+   * exists for someone who cannot see where it landed, so covering the identity of the
+   * page they just arrived on is the one thing it must not do. Matching NN/g, which does
+   * the same.
+   *
+   * That also retires the `z-index` the absolute version needed, and the argument about
+   * landing on the home page's accent hero — in flow it only ever sits on the page ground.
+   * The accent pair stays because it reads as a control rather than as stray text, and it
+   * is the system's own role pair: 5.67:1 light, 6.17:1 dark, both measured.
+   */
+  .skip-link {
+    display: inline-block;
+    margin: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--radius-1);
+    background: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+    font-family: var(--font-heading);
+    /* A step below the nav's `--font-size-2`. Chrome that appears for one keypress and
+       then leaves should not be the largest thing on the page while it is there. */
+    font-size: var(--font-size-1);
+    /* The chrome leading, not the prose leading. Unset, this inherits body's 1.8 — the
+       reading measure's ramp — which is why the box came out 45px tall for one line of
+       16px text. `nav`, <Button> and <Chip> all set 1.5; this is the same control tier,
+       so it takes the same value rather than a number chosen to look right. */
+    line-height: 1.5;
+    text-decoration: none;
+  }
+</style>

@@ -112,7 +112,13 @@ const INLINE = {
   <Masthead />
 
   {
-    /* ── CARD SPECIMEN ─────────────────────────────────────────────────────────
+    /* Wrapped in <main> so the skip link in BaseLayout has a target here too. This
+       page had no main landmark at all, which was an accessibility gap independent
+       of the skip link — every document wants one. */
+  }
+  <main id="main" tabindex="-1">
+    {
+      /* ── CARD SPECIMEN ─────────────────────────────────────────────────────────
       Throwaway, and it goes when the real index pages land. Its job is to put the
       whole variant matrix on one screen: the article card at BOTH of its real
       widths, so the container query can be seen switching without resizing the
@@ -123,152 +129,152 @@ const INLINE = {
       this is the one place that wants to defeat the layout and pin a card to a
       known size.
   */
-  }
-  <Band space="band">
-    <Grid>
-      <div class="card-spec">
-        <h2>Cards</h2>
+    }
+    <Band space="band">
+      <Grid>
+        <div class="card-spec">
+          <h2>Cards</h2>
 
-        <h3>Article card — 571 (horizontal, inferred)</h3>
-        <div style="inline-size: 571px; max-inline-size: 100%">
-          <ArticleCard
-            href="#"
-            title="Structured Content and the Headless CMS"
-            genre="Method"
-            date="2026-01-01"
-            description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
-            image={INLINE}
-          />
+          <h3>Article card — 571 (horizontal, inferred)</h3>
+          <div style="inline-size: 571px; max-inline-size: 100%">
+            <ArticleCard
+              href="#"
+              title="Structured Content and the Headless CMS"
+              genre="Method"
+              date="2026-01-01"
+              description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
+              image={INLINE}
+            />
+          </div>
+
+          <h3>Article card — 316 (vertical, inferred)</h3>
+          <div style="inline-size: 316px; max-inline-size: 100%">
+            <ArticleCard
+              href="#"
+              title="Structured Content and the Headless CMS"
+              genre="Method"
+              date="2026-01-01"
+              description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
+              image={INLINE}
+            />
+          </div>
+
+          <h3>Article card — 316, no image (single column at any width)</h3>
+          <div style="inline-size: 571px; max-inline-size: 100%">
+            <ArticleCard
+              href="#"
+              title="A card whose document has no hero"
+              genre="Perspective"
+              date="2026-01-01"
+              description="The two-column form is guarded by :has(.card-media), so this stays single column instead of reserving an empty 145px track."
+            />
+          </div>
+
+          <h3>Note cards — 316. Unboxed at rest from md; hover for the box + highlight</h3>
+          <div class="note-spec">
+            <NoteCard
+              href="#"
+              title="Stability in Unstable Times"
+              genre="Note"
+              date="2026-02-28"
+              description="A short description to illustrate a short note."
+            />
+            <NoteCard
+              href="#"
+              title="Proust and the Squid"
+              genre="Book Note"
+              date="2026-02-28"
+              description="Learning to read creates physical changes in the brain that directly affect how we think."
+            />
+            <NoteCard
+              href="#"
+              title="Gall\u2019s Law When Complexity Comes Cheap"
+              genre="Clipping"
+              date="2026-02-28"
+              sourceDomain="jarango.com"
+            />
+          </div>
         </div>
+      </Grid>
+    </Band>
 
-        <h3>Article card — 316 (vertical, inferred)</h3>
-        <div style="inline-size: 316px; max-inline-size: 100%">
-          <ArticleCard
-            href="#"
-            title="Structured Content and the Headless CMS"
-            genre="Method"
-            date="2026-01-01"
-            description="Structured content treats information as a set of ideas, concepts, and facts to communicate."
-            image={INLINE}
-          />
-        </div>
-
-        <h3>Article card — 316, no image (single column at any width)</h3>
-        <div style="inline-size: 571px; max-inline-size: 100%">
-          <ArticleCard
-            href="#"
-            title="A card whose document has no hero"
-            genre="Perspective"
-            date="2026-01-01"
-            description="The two-column form is guarded by :has(.card-media), so this stays single column instead of reserving an empty 145px track."
-          />
-        </div>
-
-        <h3>Note cards — 316. Unboxed at rest from md; hover for the box + highlight</h3>
-        <div class="note-spec">
-          <NoteCard
-            href="#"
-            title="Stability in Unstable Times"
-            genre="Note"
-            date="2026-02-28"
-            description="A short description to illustrate a short note."
-          />
-          <NoteCard
-            href="#"
-            title="Proust and the Squid"
-            genre="Book Note"
-            date="2026-02-28"
-            description="Learning to read creates physical changes in the brain that directly affect how we think."
-          />
-          <NoteCard
-            href="#"
-            title="Gall\u2019s Law When Complexity Comes Cheap"
-            genre="Clipping"
-            date="2026-02-28"
-            sourceDomain="jarango.com"
-          />
-        </div>
-      </div>
-    </Grid>
-  </Band>
-
-  {
-    /*
+    {
+      /*
     THROWAWAY REVIEW INDEX. First thing on the page so it is reachable without
     scrolling past the specimen. Goes with the rest of this file.
   */
-  }
-  <Band space="band">
-    <Grid>
-      <section class="review">
-        <h2>Insights — review index</h2>
-        <p class="review__lede">
-          All {rows.length} insight documents, rendered by the phase 4 stub route.{' '}
-          <strong>{flagged.length}</strong> exercise something on the open list.
-        </p>
+    }
+    <Band space="band">
+      <Grid>
+        <section class="review">
+          <h2>Insights — review index</h2>
+          <p class="review__lede">
+            All {rows.length} insight documents, rendered by the phase 4 stub route.{' '}
+            <strong>{flagged.length}</strong> exercise something on the open list.
+          </p>
 
-        {
-          flagged.length > 0 && (
-            <>
-              <h3>Flagged</h3>
-              <ul class="review__list" role="list">
-                {flagged.map((d) => (
-                  <li>
-                    <a href={`/insights/${d.slug}/`}>{d.title}</a>
-                    <span class="review__meta">
-                      {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
-                    </span>
-                    <span class="review__flags">
-                      {d.flags.map((f) => (
-                        <span class="review__flag" title={f.why}>
-                          {f.label}
-                        </span>
-                      ))}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )
-        }
-
-        <h3>Everything, newest first</h3>
-        <ul class="review__list" role="list">
           {
-            rows.map((d) => (
-              <li>
-                <a href={`/insights/${d.slug}/`}>{d.title}</a>
-                <span class="review__meta">
-                  {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
-                  {!d.hasHero && ' · no hero'}
-                </span>
-              </li>
-            ))
+            flagged.length > 0 && (
+              <>
+                <h3>Flagged</h3>
+                <ul class="review__list" role="list">
+                  {flagged.map((d) => (
+                    <li>
+                      <a href={`/insights/${d.slug}/`}>{d.title}</a>
+                      <span class="review__meta">
+                        {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
+                      </span>
+                      <span class="review__flags">
+                        {d.flags.map((f) => (
+                          <span class="review__flag" title={f.why}>
+                            {f.label}
+                          </span>
+                        ))}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )
           }
-        </ul>
-      </section>
-    </Grid>
-  </Band>
 
-  {
-    /*
+          <h3>Everything, newest first</h3>
+          <ul class="review__list" role="list">
+            {
+              rows.map((d) => (
+                <li>
+                  <a href={`/insights/${d.slug}/`}>{d.title}</a>
+                  <span class="review__meta">
+                    {d._type} · {d.genre ?? 'no genre'} · {when(d.pubDate)} · {d.blocks} blocks
+                    {!d.hasHero && ' · no hero'}
+                  </span>
+                </li>
+              ))
+            }
+          </ul>
+        </section>
+      </Grid>
+    </Band>
+
+    {
+      /*
     Full bleed, so it sits in the PAGE STACK and not inside a <Grid>. Resize
     across 569px to watch 16:9 give way to the height cap.
   */
-  }
-  <SanityHero image={HERO} />
+    }
+    <SanityHero image={HERO} />
 
-  <Band space="none">
-    <Grid>
-      <form class="controls">
-        <label for="probe">Native control</label>
-        <input id="probe" type="text" placeholder="checks color-scheme" />
-        <button type="button" aria-label="Search"><Search /></button>
-        <span class="muted-probe"><Rss class="icon-sm" /> 18px, inherits muted text</span>
-      </form>
+    <Band space="none">
+      <Grid>
+        <form class="controls">
+          <label for="probe">Native control</label>
+          <input id="probe" type="text" placeholder="checks color-scheme" />
+          <button type="button" aria-label="Search"><Search /></button>
+          <span class="muted-probe"><Rss class="icon-sm" /> 18px, inherits muted text</span>
+        </form>
 
-      {
-        /*
+        {
+          /*
         The mark, three ways, to check that the knockout is the GROUND rather than
         a color. Left: on the page ground in `accent`, which is how the masthead
         will set it. Middle: the same mark on a `surface` card, where the letters
@@ -276,154 +282,157 @@ const INLINE = {
         color named at all, so it inherits body text — the proof that the mark
         carries no color of its own.
       */
-      }
-      <div class="mark-probe">
-        <Logo class="mark-probe__accent" />
-        <span class="mark-probe__card"><Logo class="mark-probe__accent" /></span>
-        <Logo />
-      </div>
-    </Grid>
-  </Band>
+        }
+        <div class="mark-probe">
+          <Logo class="mark-probe__accent" />
+          <span class="mark-probe__card"><Logo class="mark-probe__accent" /></span>
+          <Logo />
+        </div>
+      </Grid>
+    </Band>
 
-  <Band space="section">
-    <Grid>
-      <header class="page-header">
-        <p class="eyebrow">Specimen | 21 August 2026</p>
-        <h1>The quiet option wins</h1>
-      </header>
-    </Grid>
+    <Band space="section">
+      <Grid>
+        <header class="page-header">
+          <p class="eyebrow">Specimen | 21 August 2026</p>
+          <h1>The quiet option wins</h1>
+        </header>
+      </Grid>
 
-    <Grid>
-      <article class="detail">
-        <p>
-          This page exists to be looked at. Every rule in <code>base.css</code> is exercised below, so
-          the type scale, the vertical rhythm and both themes can be checked against DESIGN.md by eye.
-          Paragraph text should cap at roughly sixty-seven characters — count a line if you like — while
-          headings deliberately run wider, because <code>ch</code> resolves against each element's own
-          font and a shared cap would mean something different for Lato than for Noto Serif.
-        </p>
-
-        <p>
-          A second paragraph, to check the gap between siblings. It should be{' '}
-          <strong>24px</strong>, noticeably tighter than the space above the heading that follows
-          it. Inline links take the surrounding text color with a persistent underline and shift to
-          the accent on hover — <a href="#nowhere">this one, for instance</a> — because the underline
-          rather than the color carries the affordance. Tab to it to check the focus ring: two concentric
-          rings, the inner contrasting the control and the outer the page.
-        </p>
-
-        <h2>A major heading</h2>
-
-        <p>
-          The space above that h2 should be visibly larger than the space below it — 64px against
-          16px in raw token terms, though half-leading means the <em>apparent</em> ratio is closer to
-          2.5:1 than the 4:1 the numbers suggest. Check the apparent space, not the values.
-        </p>
-
-        <h3>A minor heading</h3>
-
-        <p>
-          Above this h3, 48px. Below it, the same 16px as the h2, because{' '}
-          <code>rhythm-heading-close</code> is last in source order and binds a heading to whatever follows
-          it regardless of level.
-        </p>
-
-        <h4>A heading with no size step left</h4>
-
-        <p>
-          The h4 above sits at exactly the same size as this paragraph. It differentiates by family,
-          weight and tracking alone — Lato 700 with 2% letter-spacing against Noto Serif 400. If it
-          reads as merely bold body text, the levers are uppercase, small caps, color or a rule,
-          never a smaller size.
-        </p>
-
-        <ul>
-          <li>An unordered list, to check the 48px block gap above it.</li>
-          <li>
-            A second item, checking the 16px between items. This one runs long enough to wrap, so
-            the leading inside an item can be compared against the gap between them.
-          </li>
-          <li>A third, shorter.</li>
-        </ul>
-
-        <p>And a paragraph after the list, which should also take the 48px block gap.</p>
-
-        <ol>
-          <li>Ordered lists take the same treatment.</li>
-          <li>Both keep the browser's own indent — DESIGN.md specifies none.</li>
-        </ol>
-
-        <blockquote>
+      <Grid>
+        <article class="detail">
           <p>
-            The bar sits inside the indent, so the text starts 42px from the page edge rather than
-            48 — the 6px rule plus 42px of padding. On mobile that becomes a 4px rule and 20px, and
-            both come from one <code>calc()</code> so the relationship survives a change to either token.
+            This page exists to be looked at. Every rule in <code>base.css</code> is exercised below,
+            so the type scale, the vertical rhythm and both themes can be checked against DESIGN.md by
+            eye. Paragraph text should cap at roughly sixty-seven characters — count a line if you like
+            — while headings deliberately run wider, because <code>ch</code> resolves against each element's
+            own font and a shared cap would mean something different for Lato than for Noto Serif.
           </p>
-        </blockquote>
 
-        <p>
-          Blockquote is an element rule rather than a component, and the indent is{' '}
-          <code>padding-inline-start</code> rather than margin — a margin would put the gap outside the
-          box and the bar would drift off the text block.
-        </p>
+          <p>
+            A second paragraph, to check the gap between siblings. It should be{' '}
+            <strong>24px</strong>, noticeably tighter than the space above the heading that follows
+            it. Inline links take the surrounding text color with a persistent underline and shift
+            to the accent on hover — <a href="#nowhere">this one, for instance</a> — because the underline
+            rather than the color carries the affordance. Tab to it to check the focus ring: two concentric
+            rings, the inner contrasting the control and the outer the page.
+          </p>
 
-        <figure>
-          <SanityImage image={INLINE} />
-          <figcaption>
-            A real Sanity image in the prose column, lazy with <code>sizes="auto, 100vw"</code>. The
-            browser measures this box rather than being told about it, so no breakpoint appears in
-            the markup. Its <code>width</code> and <code>height</code> carry the ratio, which is what
-            reserves the box before the bytes land.
-          </figcaption>
-        </figure>
+          <h2>A major heading</h2>
 
-        <figure>
-          <svg viewBox="0 0 640 300" role="img" aria-labelledby="fig-title">
-            <title id="fig-title">A placeholder rectangle standing in for a figure</title>
-            <rect width="640" height="300" fill="var(--color-surface-muted)"></rect>
-            <rect
-              x="0.5"
-              y="0.5"
-              width="639"
-              height="299"
-              fill="none"
-              stroke="var(--color-border)"
-              stroke-width="1"></rect>
-            <text
-              x="320"
-              y="158"
-              text-anchor="middle"
-              fill="var(--color-text-muted)"
-              style="font-family: var(--font-heading)"
-              font-size="16">640 × 300</text
-            >
-          </svg>
-          <figcaption>
-            Captions are Noto Serif italic at the 16px step in <code>text-muted</code> — apparatus around
-            the content rather than content. The figure is capped at the prose measure; the caption deliberately
-            is not, because its smaller font makes <code>ch</code> resolve narrower than its own image.
-          </figcaption>
-        </figure>
+          <p>
+            The space above that h2 should be visibly larger than the space below it — 64px against
+            16px in raw token terms, though half-leading means the <em>apparent</em> ratio is closer to
+            2.5:1 than the 4:1 the numbers suggest. Check the apparent space, not the values.
+          </p>
 
-        <p>
-          Last paragraph. Switch the theme with the mode selector in the footer and check all of the
-          above again — every token has three places it can be wrong, and the native form control
-          above should re-skin along with the page because <code>color-scheme</code> is set.
-        </p>
-      </article>
+          <h3>A minor heading</h3>
 
-      <aside class="sidebar">
-        <h3>A rail</h3>
-        <p>
-          Placed at <code>10 / span 3</code>, so column 9 is skipped — and that skipped column plus
-          its two gutters is <code>grid-skip-1</code>, 109px, without the number appearing anywhere.
-          Below the breakpoint <code>--col-rail</code> collapses to <code>1 / -1</code> on its own.
-        </p>
-      </aside>
-    </Grid>
-  </Band>
+          <p>
+            Above this h3, 48px. Below it, the same 16px as the h2, because{' '}
+            <code>rhythm-heading-close</code> is last in source order and binds a heading to whatever
+            follows it regardless of level.
+          </p>
 
-  <!-- <Band tone="accent" space="band">
+          <h4>A heading with no size step left</h4>
+
+          <p>
+            The h4 above sits at exactly the same size as this paragraph. It differentiates by
+            family, weight and tracking alone — Lato 700 with 2% letter-spacing against Noto Serif
+            400. If it reads as merely bold body text, the levers are uppercase, small caps, color
+            or a rule, never a smaller size.
+          </p>
+
+          <ul>
+            <li>An unordered list, to check the 48px block gap above it.</li>
+            <li>
+              A second item, checking the 16px between items. This one runs long enough to wrap, so
+              the leading inside an item can be compared against the gap between them.
+            </li>
+            <li>A third, shorter.</li>
+          </ul>
+
+          <p>And a paragraph after the list, which should also take the 48px block gap.</p>
+
+          <ol>
+            <li>Ordered lists take the same treatment.</li>
+            <li>Both keep the browser's own indent — DESIGN.md specifies none.</li>
+          </ol>
+
+          <blockquote>
+            <p>
+              The bar sits inside the indent, so the text starts 42px from the page edge rather than
+              48 — the 6px rule plus 42px of padding. On mobile that becomes a 4px rule and 20px,
+              and both come from one <code>calc()</code> so the relationship survives a change to either
+              token.
+            </p>
+          </blockquote>
+
+          <p>
+            Blockquote is an element rule rather than a component, and the indent is{' '}
+            <code>padding-inline-start</code> rather than margin — a margin would put the gap outside
+            the box and the bar would drift off the text block.
+          </p>
+
+          <figure>
+            <SanityImage image={INLINE} />
+            <figcaption>
+              A real Sanity image in the prose column, lazy with <code>sizes="auto, 100vw"</code>.
+              The browser measures this box rather than being told about it, so no breakpoint
+              appears in the markup. Its <code>width</code> and <code>height</code> carry the ratio, which
+              is what reserves the box before the bytes land.
+            </figcaption>
+          </figure>
+
+          <figure>
+            <svg viewBox="0 0 640 300" role="img" aria-labelledby="fig-title">
+              <title id="fig-title">A placeholder rectangle standing in for a figure</title>
+              <rect width="640" height="300" fill="var(--color-surface-muted)"></rect>
+              <rect
+                x="0.5"
+                y="0.5"
+                width="639"
+                height="299"
+                fill="none"
+                stroke="var(--color-border)"
+                stroke-width="1"></rect>
+              <text
+                x="320"
+                y="158"
+                text-anchor="middle"
+                fill="var(--color-text-muted)"
+                style="font-family: var(--font-heading)"
+                font-size="16">640 × 300</text
+              >
+            </svg>
+            <figcaption>
+              Captions are Noto Serif italic at the 16px step in <code>text-muted</code> — apparatus around
+              the content rather than content. The figure is capped at the prose measure; the caption
+              deliberately is not, because its smaller font makes <code>ch</code> resolve narrower than
+              its own image.
+            </figcaption>
+          </figure>
+
+          <p>
+            Last paragraph. Switch the theme with the mode selector in the footer and check all of
+            the above again — every token has three places it can be wrong, and the native form
+            control above should re-skin along with the page because <code>color-scheme</code> is set.
+          </p>
+        </article>
+
+        <aside class="sidebar">
+          <h3>A rail</h3>
+          <p>
+            Placed at <code>10 / span 3</code>, so column 9 is skipped — and that skipped column
+            plus its two gutters is <code>grid-skip-1</code>, 109px, without the number appearing
+            anywhere. Below the breakpoint <code>--col-rail</code> collapses to <code>1 / -1</code> on
+            its own.
+          </p>
+        </aside>
+      </Grid>
+    </Band>
+
+    <!-- <Band tone="accent" space="band">
     <Grid>
       <div class="band-demo">
         <h2>An accent band</h2>
@@ -436,6 +445,7 @@ const INLINE = {
       </div>
     </Grid>
   </Band> -->
+  </main>
 
   <Footer />
 </BaseLayout>
