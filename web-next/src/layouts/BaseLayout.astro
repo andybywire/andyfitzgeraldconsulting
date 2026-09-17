@@ -314,8 +314,12 @@ const PLAUSIBLE_INIT =
       `SITE_FACTS.siteName` is "Andy Fitzgerald Consulting" and still names the
       WebSite node in the JSON-LD graph. The tab and the masthead say the person,
       because the identity the site leads with is a person — the same call that put
-      `personName` in the wordmark. Those two being different strings is a real
-      question for the graph rather than an oversight here; see linked-data.ts.
+      `personName` in the wordmark.
+
+      The two being different strings was raised as a possible inconsistency and
+      RESOLVED as correct (Andy, 2026-09-15): the WebSite node names a site that is
+      still the LLC's main source of information, while the tab and the wordmark
+      name who a reader is here to read. Don't "fix" one to match the other.
     */
     }
     <title>{Astro.url.pathname === '/' ? title : `${title} | ${SITE_FACTS.personName}`}</title>
