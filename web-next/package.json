@@ -14,6 +14,7 @@
     "build:preview": "PUBLIC_SITE_MODE=preview astro build",
     "preview": "astro preview",
     "check": "astro check",
+    "parity": "node scripts/parity.mjs",
     "astro": "astro"
   },
   "author": "Andy Fitzgerald",

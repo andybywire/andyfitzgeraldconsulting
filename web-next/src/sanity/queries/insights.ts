@@ -109,6 +109,7 @@ export const INSIGHT_DETAIL_QUERY = defineQuery(`
 		description,
 		lede,
 		bodyText,
+		canonical,
 		heroImage { ${IMAGE} },
 		clipRef {
 			clipUrl,

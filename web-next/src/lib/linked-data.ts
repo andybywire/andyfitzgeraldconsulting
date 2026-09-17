@@ -110,6 +110,10 @@ function assetUrl(ref: string, width = 1200): string | null {
 /** The constants, exported so a future settings-fed version can override them in one place. */
 export const SITE_FACTS = {
   organizationName: 'Andy Fitzgerald Consulting, LLC',
+  /* NOT the same string as the masthead wordmark and the browser tab, which say "Andy
+     Fitzgerald" — checked and kept (Andy, 2026-09-15). The WebSite node names a site that
+     remains the LLC's main source of information; the wordmark names who a reader came to
+     read. Both are true, and aligning them would lose one of them. */
   siteName: 'Andy Fitzgerald Consulting',
   description: 'The professional consulting web site of information architect Andy Fitzgerald.',
   addressLocality: 'Seattle',
@@ -257,8 +261,18 @@ export interface BookSource {
 
 export interface DocumentNodeInput {
   site: URL
-  /** The canonical URL, already built by the page. */
+  /** This document's URL ON THIS SITE, already built by the page. */
   permalink: string
+  /**
+   * Where the work was FIRST published, when that is somewhere else. `article.canonical`
+   * in Sanity, set on two of thirty articles — the A List Apart and LinkedIn cross-posts.
+   *
+   * Note the direction. This is the INVERSE of the POSSE case phase 8 is building toward:
+   * there the site is the original and the copies point home, here the site holds the copy
+   * and points out. Both can be true of different documents, which is why this is a field
+   * rather than a site-wide rule.
+   */
+  canonicalUrl?: string | null
   title?: string | null
   /** Becomes `abstract`. See the note below on why it is not `description`. */
   shortDescription?: string | null
@@ -340,6 +354,30 @@ export function documentNode(input: DocumentNodeInput): GraphNode {
     author: {'@id': nodeId(site, 'person')},
     publisher: {'@id': nodeId(site, 'organization')},
   }
+
+  /**
+   * ── A CROSS-POST'S ORIGINAL RIDES AS `sameAs`, NOT AS `url` ────────────────
+   *
+   * schema.org has no canonical property, so this is a choice between imperfect ones and
+   * worth stating. `url` stays the on-site permalink because `@id` and `mainEntityOfPage`
+   * are both built from it: pointing `url` at another domain while `@id` names this one
+   * would make a single node describe two different resources, which is worse than
+   * under-specifying.
+   *
+   * `sameAs` is defined as a reference page that unambiguously indicates the item's
+   * identity, and for a work whose original lives elsewhere that is exactly what the
+   * original is. It says "the same work is there" without claiming this node IS that page.
+   *
+   * The load-bearing signal is `<link rel="canonical">` in the document head, which is what
+   * a search engine actually deduplicates on — see BaseLayout. This corroborates it rather
+   * than doing the work alone, and the two agree by construction because both read the
+   * same field.
+   *
+   * Validated and accepted 2026-09-15. `url` was the alternative and was not chosen; if it
+   * is ever revisited, the reason to change would have to be a consumer that reads `url`
+   * and ignores `rel=canonical`, not a preference between the two properties.
+   */
+  if (input.canonicalUrl) node.sameAs = input.canonicalUrl
 
   if (input.title) node.headline = input.title
   if (input.shortDescription) node.abstract = input.shortDescription

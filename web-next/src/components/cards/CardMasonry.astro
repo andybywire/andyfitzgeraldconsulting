@@ -53,6 +53,69 @@
  * second partition from one DOM, so it fell back to a row grid there. This does not have
  * that problem, which also retired the "tablet row gaps" question.
  *
+ * ── COLUMNS MOVED OUT OF `nth-child` ON 2026-09-17, AND THE ABOVE STILL HOLDS ─
+ *
+ * Everything above is about DOM order and spans, and none of it changed. What changed is
+ * WHICH COLUMN a card lands in, and only in the measured state: `nth-child` still owns
+ * the no-JS and pre-measure states, the script owns the state after it has measured.
+ *
+ * `nth-child` is a strict ROUND-ROBIN, and a round-robin has no mechanism to correct a
+ * coincidence. Presentations found the coincidence. Its cards are BIMODAL rather than
+ * varied — a poster makes a card ~362px and its absence ~128px, a step change, not a
+ * gradient — and five of the six posterless presentations happen to sit at `i % 3 == 0`:
+ *
+ *                  boxed   bare
+ *     column 1       3      5
+ *     column 2       7      1
+ *     column 3       8      0
+ *
+ * At ~234px apiece that is the whole 1092px ragged bottom, measured on screen. Note that
+ * `grid-auto-flow: dense` cannot touch it: every card has a DEFINITE `grid-column`, so
+ * dense only ever backfills within a column.
+ *
+ * ── THIS IS NOT A REVERSAL OF `4bed985`, WHICH IS THE EASY MISREADING ────────
+ *
+ * A greedy shortest-column partition existed and was deleted. It was deleted because it
+ * ran at BUILD TIME, where heights must be estimated and an under-estimate makes a card
+ * overflow its neighbour — the paragraph below. It was not deleted because greedy
+ * balancing was found wanting; `4bed985`'s numbers say spans beat wrappers, not that
+ * balancing was wrong. The script already measures every card exactly, so applying
+ * greedy to MEASURED heights is the one place that objection does not reach.
+ *
+ * A second, client-side partition was retired in `d091932`, again for an unrelated
+ * reason: it read its column count back from `gridTemplateColumns`, which reports
+ * implicit tracks and so latched onto a track that should not have existed. The trap is
+ * real and this avoids it — see the script, which derives the count from geometry.
+ *
+ * MEASURED BEFORE AND AFTER, on the real corpora at every rung (ragged bottom / grid
+ * height, px). Median gap stays 32–33 and overlap stays zero throughout:
+ *
+ *                              before        after
+ *   Presentations 24, 3 col   1092 / 3311   291 / 2966
+ *   Presentations 25, 3 col    701 / 3311   218 / 3066
+ *   Presentations 25, 2 col    813 / 4907   293 / 4647
+ *   Insights 24, 3 col         116 / 3275   174 / 3277
+ *   Insights 42, 3 col         139 / 5914   224 / 5943
+ *   Insights 42, 2 col         177 / 8840   177 / 8840
+ *   either, 1 col                0            0
+ *
+ * ── INSIGHTS GETS SLIGHTLY WORSE, AND THAT IS THE REAL TRADE ────────────────
+ *
+ * Not noise, and not hidden here: +58px and +85px at three columns. Greedy BOUNDS the
+ * worst case — the rag cannot exceed the tallest card — but it is myopic, and it cannot
+ * beat a round-robin that a homogeneous corpus already happened to balance. Insights
+ * cards vary smoothly in height, so round-robin was near-optimal there by luck.
+ *
+ * The trade is 800px off the corpus that is visibly broken against ~70px onto one where
+ * the rag is 2–4% of the grid and was never the complaint. Taken deliberately (Andy,
+ * 2026-09-17). If Insights ever becomes the problem, the thing to question is greedy
+ * itself, not this file's plumbing.
+ *
+ * What it also costs: a card can now move further from its `nth-child` position than
+ * dense's two slots — up to two columns on the current Presentations set. DOM order is
+ * untouched, so screen-reader traversal and a future `h-feed` stay chronological — the
+ * same trade dense already made, taken one step further.
+ *
  * ── THE NO-SCRIPT STATE IS A ROW GRID, AND THAT IS THE DESIGN ────────────────
  *
  * The spans need MEASURED heights, and measuring has to happen before the spans exist:
@@ -131,32 +194,51 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
    * nothing to generate, nothing in the markup, and it cannot drift out of step with
    * source order.
    *
-   * The EXPLICIT column is what keeps the columns independent once the spans arrive: a
-   * card whose definite column sits left of the placement cursor pushes the cursor down
-   * a row, so each column stacks on its own instead of sharing a row height.
+   * ── AND `:not(.is-measured)` IS WHERE THAT STOPS BEING TRUE ─────────────────
    *
-   * ── `of :not([hidden])` IS WHAT WILL MAKE A FILTER WORK ──────────────────────
+   * The ladder owns the no-JS state and the window before the script has measured. Once
+   * it has, the script assigns columns from measured heights and this must get out of the
+   * way. Two separate reasons, and both matter:
+   *
+   *   STRUCTURAL   Exactly one mechanism assigns columns at any moment, so the two can
+   *                never disagree mid-handover. This file already holds that precedent —
+   *                the truncation rule below carries `:not([data-hydrated])` for exactly
+   *                the same reason.
+   *   PRACTICAL    `:nth-child(An+B of S)` takes the pseudo-class's specificity PLUS the
+   *                most specific compound in S, so `of :not([hidden])` puts these rules
+   *                at (0,4,0) — above anything the measured state could write from a
+   *                class selector. Without this the script would have to fight it with an
+   *                inline `grid-column`, which is the silent-disagreement shape again.
+   *
+   * It goes on the `grid-column` rules ONLY. `grid-template-columns` is true in both
+   * states and must stay unscoped, or the measured grid would collapse to one column.
+   * (The reason a DEFINITE column matters at all is in the `is-measured` block, which is
+   * now the only state where spans and columns coexist.)
+   *
+   * ── `of :not([hidden])` IS WHAT MAKES A FILTER WORK BEFORE THE SCRIPT DOES ───
    *
    * Plain `nth-child` counts every sibling, hidden ones included, so a filtered view
    * would keep whatever columns its survivors held in the full set — at worst leaving
    * all of them in one column. Measured on Insights before it was added: a 1789px
    * ragged bottom against 478 once the count is taken over the visible set alone.
    *
-   * IT IS CARRIED HERE THOUGH NOTHING HIDES CARDS YET, deliberately. It is inert on an
-   * unfiltered page and identical in behaviour, and it is part of the measured design
-   * rather than something to remember to add back. Baseline widely available — Safari
-   * 9, Chrome 111, Firefox 113.
+   * STILL LOAD-BEARING, THOUGH THE SCRIPT NOW RE-ASSIGNS ON EVERY FILTER CHANGE. This is
+   * what the no-JS page gets, and it is what holds between a filter change and the
+   * relayout that follows it. Without it that window shows the all-in-one-column state,
+   * which is a visible collapse rather than a reflow.
+   *
+   * Baseline widely available — Safari 9, Chrome 111, Firefox 113.
    */
   @container style(--breakpoint-md: true) {
     .card-masonry {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    .card-masonry > :global(:nth-child(2n + 1 of :not([hidden]))) {
+    .card-masonry:not(.is-measured) > :global(:nth-child(2n + 1 of :not([hidden]))) {
       grid-column: 1;
     }
 
-    .card-masonry > :global(:nth-child(2n of :not([hidden]))) {
+    .card-masonry:not(.is-measured) > :global(:nth-child(2n of :not([hidden]))) {
       grid-column: 2;
     }
   }
@@ -166,15 +248,17 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
       grid-template-columns: repeat(3, 1fr);
     }
 
-    .card-masonry[data-columns='3'] > :global(:nth-child(3n + 1 of :not([hidden]))) {
+    .card-masonry[data-columns='3']:not(.is-measured)
+      > :global(:nth-child(3n + 1 of :not([hidden]))) {
       grid-column: 1;
     }
 
-    .card-masonry[data-columns='3'] > :global(:nth-child(3n + 2 of :not([hidden]))) {
+    .card-masonry[data-columns='3']:not(.is-measured)
+      > :global(:nth-child(3n + 2 of :not([hidden]))) {
       grid-column: 2;
     }
 
-    .card-masonry[data-columns='3'] > :global(:nth-child(3n of :not([hidden]))) {
+    .card-masonry[data-columns='3']:not(.is-measured) > :global(:nth-child(3n of :not([hidden]))) {
       grid-column: 3;
     }
   }
@@ -193,19 +277,39 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
    * 32.88 and zero. Dense can float a later card above an earlier one (21 of 45
    * positions differed on Insights, no card moving more than two slots); DOM order is
    * untouched, so screen-reader traversal and a future `h-feed` stay chronological.
-   * Revisitable in one word — nothing structural depends on it.
+   *
+   * ── `dense` WAS REMOVED ON 2026-09-17, AND ITS JOB WAS ABSORBED ─────────────
+   *
+   * Kept above rather than deleted, because the reasoning is what says why it can go:
+   * dense existed to stop a card being held down by a taller card in a PREVIOUS column.
+   * Greedy assignment makes that situation unreachable — a card goes to whichever column
+   * is shortest AT THAT MOMENT, so no column is ever waiting on another. Verified rather
+   * than reasoned: toggling `grid-auto-flow` on the live grid after the switch gave
+   * byte-identical rag and height on both corpora at three columns. It is inert.
+   *
+   * So this is "its purpose was absorbed", not "it was wrong". If greedy is ever reverted,
+   * dense comes back with it — the two are not independent.
+   *
+   * ── EVERY CARD'S COLUMN IS DEFINITE, AND THAT IS LOAD-BEARING ──────────────
+   *
+   * `--card-column` is written by the script; the ladder above is scoped away in this
+   * state. A DEFINITE column is what keeps the columns independent once the spans arrive:
+   * a card whose column sits left of the placement cursor pushes the cursor down a row, so
+   * each column stacks on its own rather than sharing a row height.
+   *
+   * The fallback is not decoration. If the script has added `is-measured` but not written
+   * `--card-column` — which cannot happen in one pass, but could if this rule and the
+   * script ever drift — `auto` places cards left-to-right in source order, which is a
+   * legible grid rather than every card stacked in column 1.
    */
   .card-masonry.is-measured {
     grid-auto-rows: 1px;
-
-    /* `row dense` rather than the equivalent bare `dense`, which is valid — the grammar
-       is `[row | column] || dense` — but leaves the axis implied. */
-    grid-auto-flow: row dense;
     row-gap: 0;
   }
 
   .card-masonry.is-measured > :global(*) {
     grid-row: span var(--card-span);
+    grid-column: var(--card-column, auto);
   }
 
   /*
@@ -247,9 +351,27 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
 
 <script>
   /**
-   * Measure every VISIBLE card and hand it a row span. That is the whole job — the
-   * columns are the style block's `nth-child` ladder at every state, so nothing here
-   * writes a `grid-column`.
+   * Measure every VISIBLE card, hand it a row span, and place it in the column that is
+   * shortest at that moment.
+   *
+   * ── GREEDY, AND PREFIX-BALANCED IS THE WHOLE REASON ──────────────────────────
+   *
+   * Walking the visible set in DOM order and always taking the shortest column leaves the
+   * columns LEVEL AFTER EVERY PLACEMENT, not merely level at the end. Two consequences,
+   * and both are things a threshold-based "fix the rag afterwards" pass would have to
+   * chase and would get wrong:
+   *
+   *   - Revealing more cards keeps the balance. Truncation is always a DOM suffix, so a
+   *     revealed set is a prefix plus more, and a prefix was already balanced.
+   *   - A filter is just a different visible set, and this runs over whatever is left.
+   *
+   * TIES BREAK LEFTMOST — `<` rather than `<=`, which keeps the earliest index. That is
+   * what guarantees the first n cards still read 1, 2, 3 across the top row, because every
+   * column starts at zero.
+   *
+   * What it costs is that a card can sit further from its source position than the old
+   * `nth-child` round-robin put it. DOM order is untouched; see the header on why that is
+   * the property that actually matters.
    *
    * ── WHY THIS CANNOT HAPPEN AT BUILD TIME ─────────────────────────────────────
    *
@@ -278,8 +400,8 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
 
       /* Only what a filter left standing. A hidden card is `display: none`, so it holds
          no grid cell and reports no height — measuring one would write a span of just
-         the gap. The COLUMNS are not this function's business: the ladder's
-         `:nth-child(… of :not([hidden]))` counts the same visible set in CSS. */
+         the gap. This is also the set the columns are assigned over, so a filtered view
+         is balanced across its survivors rather than across the full corpus. */
       const visible = cards.filter((card) => !card.hidden)
 
       /*
@@ -294,11 +416,47 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
        * `getBoundingClientRect().height` is fractional and `ceil` always errs long, so
        * gaps land in [32, 33) and overlap is impossible.
        *
-       * Two passes on purpose: read every height, THEN write every span. Interleaving
-       * would invalidate layout on each write and force a reflow per card.
+       * Two passes on purpose: read every rect, THEN write. Interleaving would invalidate
+       * layout on each write and force a reflow per card.
        */
-      const spans = visible.map((card) => Math.ceil(card.getBoundingClientRect().height) + gap)
-      visible.forEach((card, i) => card.style.setProperty('--card-span', String(spans[i])))
+      const rects = visible.map((card) => card.getBoundingClientRect())
+      const spans = rects.map((rect) => Math.ceil(rect.height) + gap)
+
+      /*
+       * ── THE COLUMN COUNT COMES FROM GEOMETRY, NOT FROM `gridTemplateColumns` ────
+       *
+       * Reading it back from the computed style is the trap `d091932` hit: that property
+       * reports IMPLICIT tracks too, so a stray placement makes it report a column that
+       * should not exist, and the partition then latches onto it. Counting distinct left
+       * edges asks the question the other way round — how many columns are cards ACTUALLY
+       * sitting in — and the answer is the ladder's own, read back from the row-grid state
+       * that is still in force here.
+       *
+       * `round` because subpixel track widths can jitter the left edge of cards in the
+       * same column. Columns are a full gutter apart, so nothing can round together.
+       *
+       * FEWER CARDS THAN COLUMNS UNDER-REPORTS, and that is correct rather than tolerated:
+       * two visible cards at the three-column rung give a count of 2, and greedy then puts
+       * one in each — which is where they would have gone anyway. An empty set gives 0 and
+       * the loop below does not run.
+       */
+      const columnCount = new Set(rects.map((rect) => Math.round(rect.left))).size
+
+      /* One write pass. `heights` is the running total per column INCLUDING each card's
+         trailing gap, since that is what a span is — so comparing them compares the real
+         bottom edges. */
+      const heights = new Array(columnCount).fill(0)
+      visible.forEach((card, i) => {
+        let shortest = 0
+        for (let col = 1; col < columnCount; col += 1) {
+          if (heights[col] < heights[shortest]) shortest = col
+        }
+        heights[shortest] += spans[i]
+
+        card.style.setProperty('--card-span', String(spans[i]))
+        /* 1-based: `grid-column` counts tracks from 1, and the ladder wrote 1/2/3. */
+        card.style.setProperty('--card-column', String(shortest + 1))
+      })
 
       grid.classList.add('is-measured')
     }

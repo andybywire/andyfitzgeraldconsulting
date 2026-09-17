@@ -52,6 +52,7 @@
  * toggle inert.
  */
 import Logo from './Logo.astro'
+import {SITE_FACTS} from '../lib/linked-data'
 import {Search} from '@lucide/astro'
 
 /**
@@ -168,11 +169,41 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
   so a document that loses its stylesheet entirely degrades to it rather than to
   a half-collapsed inline header.
 
-  The wordmark and role are hardcoded, unlike the nav, and for a weaker reason —
-  the nav is site structure by decision, but these two strings ARE content: the
-  live site reads them from the Sanity `settings` singleton, where they currently
-  say "Andy Fitzgerald Consulting" / "Content Operations Strategy & Design"
-  against the board's shorter pair. Worth a decision before phase 4.
+  ── THE WORDMARK COMES FROM CODE, NOT FROM SANITY. DECIDED 2026-09-15 ────────
+
+  This comment used to end "worth a decision before phase 4". This is that
+  decision, recorded because the obvious-looking alternative is the wrong one and
+  will look tempting again.
+
+  `settings.siteTitle` and `settings.siteSubtitle` exist, the live 11ty site reads
+  them, and the phase 5 parity check flagged them as populated fields reaching no
+  query — which is what put the question back on the table. They now hold exactly
+  these two strings. Wiring them up anyway was rejected:
+
+    - `SITE_FACTS` in lib/linked-data.ts ALREADY carries `personName` and
+      `jobTitle`, exported with a comment inviting precisely this use. So the
+      choice was never "code or CMS" but "one copy in code, or two copies plus a
+      fetch". The masthead and the JSON-LD Person node assert the same fact about
+      the same human, and they should not be able to disagree.
+    - A fetch would put a Sanity round trip on the critical path of all 69 pages
+      for a string that changes about once a decade, and would add a staleness
+      question under SSR preview that a constant simply does not have.
+    - `queries/home.ts` already refused to fetch settings in this component for
+      the weaker version of the same reason: 68 pages paying for a field one page
+      needs. This is that reasoning holding, not being overturned.
+
+  The test this is really applying is the one tokens.css uses — a value with one
+  consumer is not a token, and a second consumer triggers promotion. There were
+  three consumers and the promotion target was the existing constant.
+
+  So `settings.siteTitle` and `siteSubtitle` are DEAD DATA, and stay on phase 7's
+  deletion list with the other four unread `settings` fields. The parity check
+  will keep warning about them until they are deleted, which is correct.
+
+  The microformats stay a PERSON card, and that is the other half of the decision.
+  `p-name` is a human's name and `p-job-title` is a human's job title; both are
+  honest here and neither would have been if the org name and a service tagline
+  had landed in them. Detail pages' `rel=author` resolves here.
 */
 }
 <header
@@ -182,8 +213,8 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
   <a class:list={['identity', microformats && 'u-url']} href="/" rel="home">
     <Logo class="mark" />
     <span class="wordmark">
-      <span class:list={['name', microformats && 'p-name']}>Andy Fitzgerald</span>
-      <span class:list={['role', microformats && 'p-job-title']}>Information Architect</span>
+      <span class:list={['name', microformats && 'p-name']}>{SITE_FACTS.personName}</span>
+      <span class:list={['role', microformats && 'p-job-title']}>{SITE_FACTS.jobTitle}</span>
     </span>
   </a>
 

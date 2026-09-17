@@ -525,6 +525,7 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    - A couple to-dos that are emerging as I complete content work that we should take care of before cut-over:
     - Add an a11y "skip" link for keyboard nav. 
     - Add a "copy to clipboard" icon to RSS feed links — consider making this a block type in the PTE
+    - Investigate wiring the altText authored (and used) in Studio to the asset alt text, not the object alt text (caption stays on the object)  
 
 6. **Cutover.** Rewrite CI for pnpm, Node 24 and the new build directory. **`mailhandler.php` must
    survive** — it stays PHP on the droplet, but becomes a backend endpoint called from JS rather
