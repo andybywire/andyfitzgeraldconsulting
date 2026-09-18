@@ -523,9 +523,49 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
      needs doing at the parity check.
 
    - A couple to-dos that are emerging as I complete content work that we should take care of before cut-over:
-    - Add an a11y "skip" link for keyboard nav. 
-    - Add a "copy to clipboard" icon to RSS feed links — consider making this a block type in the PTE
-    - Investigate wiring the altText authored (and used) in Studio to the asset alt text, not the object alt text (caption stays on the object)  
+    - ~~Add an a11y "skip" link for keyboard nav.~~ **DONE 2026-09-17.** In `<BaseLayout>` so no
+      page can forget it, first in `<body>`, with `id="main"` + `tabindex="-1"` on all ten `<main>`
+      elements — without the tabindex a fragment moves the scroll position but not keyboard focus,
+      so the link looks like it works and puts you back in the nav. `specimen.astro` had no `main`
+      landmark at all and gained one.
+    - ~~Add a "copy to clipboard" icon to RSS feed links.~~ **DEFERRED 2026-09-17 to
+      [issue #4](https://github.com/andybywire/andyfitzgeraldconsulting/issues/4)** — the repo's
+      first, and the pattern for post-launch work that is specified but not launch critical.
+      Andy's call, on the grounds that it has a single consumer and nothing is broken. The issue
+      carries the whole spec: a `rssFeedLink` PTE block type on `page.bodyText`, why a block type
+      beat a serializer rule on the existing `link` mark, and three things that would ship broken
+      (absolutize from `Astro.site` not `location.origin`; `navigator.clipboard` is undefined on a
+      plain-http LAN address; gate the control on `html.js`). **No query change is needed** —
+      `queries/pages.ts` projects `bodyText` bare.
+    - ~~Investigate wiring the altText authored (and used) in Studio to the asset alt text~~
+      **INVESTIGATED AND CLOSED 2026-09-17 — no front-end change needed.** The
+      `assetAlt ?? altText ?? ''` ladder already exists in `PRESENTATION_SLIDES_QUERY` and
+      `SlideDeck.astro`, so asset-level alt is *already* preferred wherever it is set. Three
+      findings worth not re-deriving:
+
+      **The Media Library is not readable from the build.** An ML-backed image carries BOTH a
+      normal `asset` reference and a weak `media` global reference. `asset->originalFilename`
+      resolves; **`media->` resolves to `null`**. So alt text authored on a Media Library asset
+      cannot be read by any dataset query — measured, not assumed. `sanity.imageAsset.altText`
+      is the only asset-level field the build can see, and exactly 1 of 979 assets carries it,
+      left behind by the old `sanity-plugin-media` rather than authored in this Studio.
+
+      **Reuse is what would justify the move, and there is almost none.** 937 image-object
+      usages across 885 distinct assets; 52 assets used twice; **only 4 across more than one
+      document**. "Author once, applies everywhere" buys four documents today. 31 reused assets
+      disagree between usages, and two of those are genuine rewordings — the orthodox argument
+      for keeping alt contextual, in miniature.
+
+      **Slides are the real case, and Andy's call (2026-09-17) is that they should carry alt
+      eventually — as its own project.** The 647 usages with no object-level alt are exactly the
+      slide count; `SlideDeck` renders them decorative. Per-usage authoring at that volume is
+      impractical, which is the one place asset-level alt would earn its keep.
+
+      *Two alarms raised during this investigation were measurement error, not defects: a
+      dark-mode contrast "failure" that was an artifact of flipping `data-theme` in JS (it is
+      6.17:1 loaded properly), and "883 images with no alt attribute" — Astro serializes
+      `alt=""` as the bare `alt` attribute, which is valid HTML5 and identical semantically.
+      Real counts: 883 correctly decorative, 298 descriptive, **0 genuinely missing**.*
 
 6. **Cutover.** Rewrite CI for pnpm, Node 24 and the new build directory. **`mailhandler.php` must
    survive** — it stays PHP on the droplet, but becomes a backend endpoint called from JS rather

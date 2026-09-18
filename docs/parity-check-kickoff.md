@@ -134,10 +134,17 @@ The banners and the two client arrays stay on the deletion list.
 
 ## Known gaps, stated rather than buried
 
-- **77 Media Library references are unverified.** `media-library:<library>:<asset>` addresses a
-  store shared across projects, not a row in `production-26`, so a dataset-id check cannot speak
-  to them. **A deleted library asset would break an image and go unreported.** Checking them needs
-  the Media Library API.
+- **Media Library references are unverified — 77 when this was written, 647 on 2026-09-17** as the
+  presentation work landed. `media-library:<library>:<asset>` addresses a store shared across
+  projects, not a row in `production-26`, so a dataset-id check cannot speak to them. **A deleted
+  library asset would break an image and go unreported.**
+
+  **And GROQ cannot reach them at all, which is the hard part** (measured 2026-09-17, while
+  investigating alt text). An ML-backed image carries BOTH a normal `asset` reference and a weak
+  `media` global reference: `asset->originalFilename` resolves, **`media->` resolves to `null`**.
+  So nothing stored on a Media Library asset — alt text, title, description — is readable from a
+  dataset query, and closing this gap means the Media Library API rather than a cleverer
+  projection. Worth knowing before anyone plans work that depends on ML metadata.
 - A field can be projected and then never used by the template that receives it. Invisible here.
 - `false` counts as unpopulated, since a boolean at its default cannot be told from one never set.
 - The staleness guard compares a local filesystem clock against Sanity's, so a build racing an
