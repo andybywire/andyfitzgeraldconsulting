@@ -27,6 +27,21 @@ remembered.
 | `/feed.xml` | 1 | **must not move** |
 | `/insight-search.json` | 1 | superseded by the facet index; nothing links to it |
 
+> **Corrected 2026-09-18, measured against the 2024 archive and `web-next/dist`.** The table above
+> was read from `web/_src/` in phase 1 and is wrong in three places — enough that the phase 6 rewrite
+> would have been built on it.
+>
+> - **`/services/` is missing entirely.** It exists on the live site and has no row here. Its
+>   successor is `/consulting/`.
+> - **`/insights/{slug}/` is not 42 unchanged — it is 37 unchanged and 5 gone.** Five articles left
+>   the Document branch when the mis-typed interviews and talks were re-typed, and they landed under
+>   *different* slugs, so no pattern catches them. Verified absent from `production-26` in every
+>   Document-branch type. They are mapped individually in `nginx/redirects.conf`.
+> - **The tag count is 67 distinct slugs, not "~70".** Close, but it is right for the wrong reason:
+>   `web/_src/tags.njk:7` paginates the *whole vocabulary* rather than concepts in use, so the live
+>   site generates a page per concept — 70 concepts collapsing to 67 slugs, of which only ~29 ever
+>   listed anything. That distinction is what makes the redirect decision below tractable.
+
 ## Redirects live in nginx, not in Astro
 
 Astro's `redirects` config emits `<meta http-equiv="refresh">` HTML pages under `output: "static"`,
@@ -49,6 +64,57 @@ rewrite ^/insights/tag/(.+?)/?$ /insights?topic=$1 permanent;
 **One rule covers all ~70** because the old permalink was `prefLabel | slug` and the new param uses
 the same slugification. Anything renamed since is caught by altLabel resolution below, not by a
 second rule.
+
+### It is not one rule — written 2026-09-18, in `nginx/redirects.conf`
+
+**Superseding "one rule covers all ~70".** That held only while altLabel resolution was expected to
+catch renamed concepts, and [the section below](#altlabel-resolution-is-not-wired--decided-2026-08-31)
+withdrew it on 2026-08-31 — leaving this rule as the sole mechanism without anyone re-checking what it
+then covered. Measured: **31 of the 67 tag URLs resolve to a `?topic=` value the index does not
+accept**, which is 46% of the tag surface rather than the handful the parked note implied.
+
+**But only 11 of the 31 ever had content.** The other 20 are pages for concepts no document was ever
+tagged with — always-empty on the live site, and not worth a rule. That split is what turns an
+alarming number into a small job, and it is why the count of *concepts* and the count of *in-use
+concepts* both had to be measured rather than one standing in for the other.
+
+So the shape is **a group of explicit renames, then the original rule as a catch-all.** Seven renames
+ship: three mechanical (`knowledge-graph` → `knowledge-graphs`, `taxonomy-design` → `taxonomy`,
+`structured-content-design` → `structured-content`), three narrowings (`modeling`, `integration`,
+`testing`), and `interview`, which became a Genre on the Presentation branch and so goes to
+`/presentations/` rather than to any filter state.
+
+**Four in-use tags deliberately get no rule** — `design`, `discovery`, `strategy`, `systems`. They are
+*top concepts* in the new Topic scheme, and content is never tagged at a top concept, so no filter
+state reproduces the old page. The catch-all already sends them to the unfiltered index, which is the
+most accurate destination that exists.
+
+**Order is load-bearing and the failure is silent.** `rewrite … permanent` stops processing, so the
+renames must precede the catch-all. Reversed, every renamed tag would reach a dead `?topic=` value and
+render the *unfiltered* index — the right status code, the wrong page, and no error anywhere.
+
+### The target carries a trailing slash — corrected 2026-09-18
+
+The rule above says `/insights?topic=$1`. **It should be `/insights/?topic=$1`.** Astro builds
+`insights/index.html`, so `/insights` is not a served path: nginx answers it with a *second* 301 to
+add the slash. Measured against real nginx serving the real build — the spec form takes **two hops**,
+this one takes **one**.
+
+**The query string survives either way.** An earlier draft of this note claimed it might not; that was
+speculation, and the sweep disproved it. The change is still worth making — one hop beats two, and it
+removes any dependence on nginx's directory-slash behavior — but it buys a round trip, not
+correctness. Recorded because the overstated version is the more persuasive one, and it was wrong.
+
+### `/insights/page-N/` gets no rule — decided 2026-09-18
+
+The table says "gone"; this settles what "gone" means. **Andy's call: no redirect, they 404.** A 301 to
+`/insights/` was the alternative, on the grounds that the collection still exists even though the
+pagination does not. Rejected as not worth the entries — four URLs that were never ranking targets or
+link destinations.
+
+`/insight-search.json` and `/manifest.json` are also deliberately unmapped. The first is superseded by
+`/search.json`, which has an entirely different shape, so a 301 would hand a stale consumer a document
+it cannot parse; the second points at nothing, since the Astro build ships no PWA manifest.
 
 ## Readable slugs, with altLabel as the alias mechanism
 
@@ -87,6 +153,11 @@ synonym helps rather than duplicates.
 renamed since those URLs were minted. Without it, a renamed concept's old tag URL lands on a param
 that no longer resolves and — per *the empty and unknown states* below — silently shows the unfiltered
 index. Graceful, and now a **known consequence rather than a phase 6 surprise.**
+
+> **Measured and mostly closed 2026-09-18** — see *It is not one rule* above. The consequence was real
+> and larger than "a renamed concept": 31 of 67 tag URLs. It is parked no longer for the 11 that had
+> content, which now carry explicit rules; the remaining 20 were always-empty pages and keep the
+> behavior described here.
 
 ## The filter model
 
