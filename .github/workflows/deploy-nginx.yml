@@ -75,6 +75,14 @@ jobs:
           cp /repo/nginx/site-common.conf /etc/nginx/snippets/afc-common.conf
           cp /repo/nginx/redirects.conf   /etc/nginx/snippets/afc-redirects.conf
 
+          # afc-production.conf is validated here but NOT deployed by the job
+          # below — see its header. In this container there is no existing apex
+          # server block, so it loads cleanly alongside afc.conf and gets the same
+          # syntax checking as everything else. That is the point: the file cannot
+          # be exercised on the droplet until cutover, so this is the only place it
+          # is checked at all until then.
+          cp /repo/nginx/afc-production.conf /etc/nginx/conf.d/afc-production.conf
+
           for h in andyfitzgeraldconsulting.com preview.andyfitzgeraldconsulting.com; do
             mkdir -p "/etc/letsencrypt/live/$h"
             openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
@@ -96,9 +104,7 @@ jobs:
           ssl_prefer_server_ciphers off;
           EOF
 
-          # auth_basic_user_file is not opened during `-t`, but the roots are
-          # stat-ed, so they have to exist.
-          printf 'ci:x\n' > /etc/nginx/afc-staging.htpasswd
+          # The server roots are stat-ed during `-t`, so they have to exist.
           mkdir -p /var/www/afc/html/public /var/www/afc/html/server \
                    /var/www/afc-preview/html/public /var/www/afc-preview/html/server
 
@@ -146,6 +152,14 @@ jobs:
             # `limit_req_zone`, an http-context directive; the other two hold
             # server-context directives and MUST NOT be in conf.d/, which nginx
             # includes at http level.
+            #
+            # afc-production.conf is DELIBERATELY NOT INSTALLED. It is scp'd to
+            # /tmp along with the rest and left there. Installing it before the
+            # 11ty site is retired takes the live site down — its apex block
+            # collides with sites-enabled/andyfitzgeraldconsulting.com, conf.d
+            # loads first, and nginx reports the collision as a warning rather than
+            # an error so `nginx -t` passes. Adding it to this list is a cutover
+            # step, paired with removing that sites-enabled symlink.
             CONF=/etc/nginx/conf.d/afc.conf
             COMMON=/etc/nginx/snippets/afc-common.conf
             REDIR=/etc/nginx/snippets/afc-redirects.conf
@@ -211,32 +225,67 @@ jobs:
             # So: ask the reloaded server for a page. `--resolve` to 127.0.0.1 so
             # this tests nginx rather than DNS.
             #
-            # 401 IS A PASS, and is the expected answer on staging: it proves TLS
-            # terminated, the preview server block matched, and basic auth is being
-            # enforced. Asserting 200 would mean putting the staging password in CI
-            # to prove something weaker.
-            #
-            # THE LIMIT: basic auth means every unauthenticated request returns 401,
-            # so this cannot inspect a response BODY — and the semicolon case above
-            # would slip straight through it, since `/` still answers. This check
-            # proves nginx came back up, not that it serves the right bytes. The
-            # protections that do cover that are the restore path below and Andy's
-            # own pass over the site.
+            # THREE ASSERTIONS, AND THE SECOND TWO EXIST BECAUSE THERE IS NO AUTH.
+            # An earlier draft of this block could only check a status code, since
+            # basic auth returned 401 to everything and no body was readable. Andy
+            # removed the auth on 2026-09-20, which makes response bodies visible to
+            # CI — so the check now covers the exact failure demonstrated above.
             echo ">>> Smoke-checking the reloaded server"
-            CODE=$(curl -sk -o /dev/null -w '%{http_code}' --max-time 10 \
-              --resolve preview.andyfitzgeraldconsulting.com:443:127.0.0.1 \
-              https://preview.andyfitzgeraldconsulting.com/ || echo 000)
+            HOST=preview.andyfitzgeraldconsulting.com
 
+            # A function, not a `CURL="curl …"` variable. The variable form relies on
+            # word splitting, which works in `sh` and silently does not in `zsh` —
+            # so it cannot be exercised on a Mac before shipping. A function behaves
+            # the same everywhere and can be tested where it is written.
+            smoke() { curl -sk --max-time 10 --resolve "$HOST:443:127.0.0.1" "$@"; }
+
+            # 1. The server answers at all.
+            CODE=$(smoke -o /dev/null -w '%{http_code}' "https://$HOST/" || echo 000)
             case "$CODE" in
-              200|301|302|401)
-                echo ">>> Serving ($CODE)."
-                ;;
-              *)
-                echo "!!! Smoke check failed — got '$CODE'" >&2
-                restore
-                exit 1
-                ;;
+              200|301|302) echo ">>> Serving ($CODE)." ;;
+              *) echo "!!! Smoke check failed — / returned '$CODE'" >&2; restore; exit 1 ;;
             esac
+
+            # 2. A missing URL gets OUR 404 page, not nginx's.
+            #
+            # This is the semicolon case. Deleting the `;` after `index index.html`
+            # passes `nginx -t`, because `index` accepts multiple arguments and
+            # swallows the `error_page` line that follows — and the site silently
+            # serves nginx's grey default. Matching on the version string nginx puts
+            # in its own error pages is a negative assertion, which is deliberate:
+            # it stays true regardless of what the real 404 page says.
+            # THE EMPTY-BODY CASE IS CHECKED FIRST, and that is not defensive
+            # padding. A `grep -q` for nginx's marker also passes on an EMPTY
+            # string, so a fetch that failed outright would report success — a
+            # check that goes green precisely when it cannot see anything. Caught
+            # while testing this block, which is the only reason it is here.
+            BODY=$(smoke "https://$HOST/__smoke_check_missing__/" || true)
+            if [ -z "$BODY" ]; then
+              echo "!!! 404 probe returned an empty body — the server did not answer." >&2
+              restore
+              exit 1
+            fi
+            if printf '%s' "$BODY" | grep -q '<hr><center>nginx/'; then
+              echo "!!! 404s are serving nginx's default page, not the site's." >&2
+              echo "!!! Usually a swallowed error_page directive — check afc-common.conf." >&2
+              restore
+              exit 1
+            fi
+
+            # 3. X-Robots-Tag is present on a real page.
+            #
+            # With basic auth gone this header is the ONLY thing keeping staging out
+            # of search results, so it is worth failing a deploy over. It is also
+            # easy to lose silently: nginx drops an inherited `add_header` set the
+            # moment a location declares its own, so a refactor of afc-common.conf
+            # can remove it from every page while `curl -I /` still looks right.
+            if ! smoke -D- -o /dev/null "https://$HOST/" | grep -qi '^x-robots-tag: *noindex'; then
+              echo "!!! X-Robots-Tag: noindex is MISSING from the preview host." >&2
+              echo "!!! Staging is indexable. See the add_header note in afc-common.conf." >&2
+              restore
+              exit 1
+            fi
+            echo ">>> 404 page and X-Robots-Tag both correct."
 
             # Keep the last few backups and the staged copy for post-mortems; they
             # are plain text config files and cost nothing.
@@ -251,11 +300,13 @@ jobs:
 # hostname over TLS, neither of which can work before DNS resolves and a
 # certificate exists. Bootstrapping order on the droplet:
 #
-#   1. DNS A record for preview.andyfitzgeraldconsulting.com
+#   1. DNS A record for preview.andyfitzgeraldconsulting.com ✅
 #   2. a minimal port-80 server block, by hand, so certbot has a webroot
 #   3. certbot certonly --webroot -w /var/www/certbot -d preview...
-#   4. htpasswd -c /etc/nginx/afc-staging.htpasswd andy
-#   5. install these three files by hand, nginx -t, reload
+#   4. install afc.conf + the two snippets by hand, nginx -t, reload
+#
+# There is no htpasswd step: basic auth was removed on 2026-09-20 (Andy's call).
+# afc-production.conf is NOT part of this — see its own header.
 #
 # After that this workflow owns them.
 #
