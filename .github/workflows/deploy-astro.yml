@@ -170,6 +170,27 @@ jobs:
       - name: Install PHP dependencies into the release
         # Easy to lose in a JavaScript migration, and the contact form is dead
         # without it — contact.php's first statement is `require vendor/autoload.php`.
+        #
+        # ── THIS STEP USED TO BE 98% OF THE RELEASE ────────────────────────
+        #
+        # `google/apiclient` pulls `google/apiclient-services`, which ships class
+        # definitions for EVERY Google API — 670 of them. Measured 2026-09-20:
+        # 220 MB and 37,282 files, of which we use exactly one service, Gmail.
+        #
+        # That is what the droplet's 211 MB / 32,446-file 11ty releases actually
+        # are. It was assumed for a while to be packaged images; it never was —
+        # every image shortcode emits a cdn.sanity.io URL.
+        #
+        # composer.json now carries `Google\Task\Composer::cleanup` as a
+        # `pre-autoload-dump` script with `extra.google/apiclient-services` naming
+        # Gmail alone. Measured after: 4.4 MB and 571 files, with
+        # Google\Service\Gmail, Google\Client and Dotenv\Dotenv all still
+        # resolving. A release goes from ~228 MB to ~12 MB.
+        #
+        # IF THE CONTACT FORM EVER NEEDS A SECOND GOOGLE API, add it to that
+        # `extra` array or the class will be missing at runtime rather than at
+        # build time — the cleanup runs before autoload generation, so a trimmed
+        # service fails when PHP tries to instantiate it, not here.
         run: composer install --no-dev --prefer-dist --optimize-autoloader
         working-directory: release/server
 
