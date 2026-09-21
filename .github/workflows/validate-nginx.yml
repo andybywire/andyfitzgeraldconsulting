@@ -135,23 +135,42 @@ jobs:
           nginx -t
           SCRIPT
           docker run --rm -v "$PWD":/repo:ro -v /tmp/validate.sh:/validate.sh:ro \
-            nginx:alpine sh /validate.sh
+            nginx:1.24-alpine sh /validate.sh
 
 # ── FIRST INSTALL ON A NEW HOST ────────────────────────────────────────────
 #
 # `nginx/deploy.sh` reloads nginx and smoke-checks a hostname over TLS, neither of
-# which works before DNS resolves and a certificate exists. Bootstrapping order:
+# which works before DNS resolves and a certificate exists. This is the order that
+# was actually walked on 2026-09-21, not a reconstruction:
 #
-#   1. DNS A record for the host
-#   2. a minimal port-80 server block, by hand, so certbot has a webroot
-#   3. certbot certonly --webroot -w /var/www/certbot -d <host>
-#   4. htpasswd -c /etc/nginx/afc-staging.htpasswd <user>   (needs apache2-utils)
-#   5. AFC_SSH=root@<ip> nginx/deploy.sh
-#   6. remove the temporary block from step 2 — afc.conf carries its own
+#   1. DNS A record for the host, pointing DIRECTLY at the droplet. Check it is
+#      not proxied — a Cloudflare-proxied name breaks the HTTP-01 challenge.
+#   2. the deploy user into the web group:  usermod -aG www-data <user>
+#   3. mkdir -p /var/www/<base> && chown <user>:www-data /var/www/<base>
+#   4. a minimal port-80 server block, by hand, so certbot has a webroot
+#   5. certbot certonly --webroot -w /var/www/certbot -d <host>
+#      (--dry-run first; it proves the challenge from Let's Encrypt's side and
+#      costs nothing against the rate limit)
+#   6. htpasswd -c /etc/nginx/afc-staging.htpasswd <user>   (needs apache2-utils)
+#   7. let the content deploy run, so nginx has something to serve
+#   8. AFC_SSH=<host> AFC_STAGING_AUTH=<user:pass> nginx/deploy.sh
+#   9. remove the temporary block from step 4 — afc.conf carries its own
 #      /.well-known/acme-challenge/ location, so renewals do not depend on it
 #
-# Put the same user:password from step 4 into AFC_STAGING_AUTH when running the
-# script, or its last two assertions are skipped.
+# ── STEP 3 IS THE ONE THAT IS EASY TO MISS ─────────────────────────────────
+#
+# It was missed, and the first content deploy failed on it:
+#
+#     mkdir: cannot create directory '/var/www/afc-preview': Permission denied
+#
+# /var/www on this droplet is owned by `uxm`, not root and not the deploy user, so
+# the deploy cannot create its own base directory however many `mkdir -p` calls it
+# makes. THE WORKFLOW CANNOT SELF-HEAL THIS — it has no permission on the parent —
+# which is exactly why it belongs on a bootstrap list rather than in a script.
+#
+# Step 7 is about signal rather than correctness: nginx loads happily with a `root`
+# that does not exist and serves 404 to everything, so running deploy.sh first just
+# produces a red smoke check that means nothing.
 #
 # `certbot --nginx` is NOT the installer to use: it edits server blocks in place,
 # writing changes into files that are meant to be deployed rather than edited.
