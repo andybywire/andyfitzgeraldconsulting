@@ -652,6 +652,19 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    - **`h-feed`** wrapping the entries on index pages, so a reader can subscribe by mf2. Index-page
      work, but it belongs on this list.
 
+   **CLOUDFLARE IS A LIVE RISK TO ALL OF THIS, AND IT FAILS SILENTLY** (noted 2026-09-21). The apex
+   is proxied; `preview.` is not, so nothing before cutover exercises it. Everything on this list
+   depends on **non-browser clients reaching the site**: Bridgy fetches pages to build syndicated
+   copies and to match backfeed, webmention.io fetches them to parse mf2, and feed readers poll the
+   Atom feeds. Cloudflare's bot protection has a long history of challenging exactly that class of
+   client — and **a challenged fetch does not error, it just never arrives**, so POSSE would appear
+   to be configured correctly and quietly do nothing.
+
+   So when this phase lands, **verify those specific clients get through before debugging anything
+   else.** Bridgy publishes its source IPs and user agent; webmention.io likewise. If something
+   IndieWeb-shaped does not work, Cloudflare is the first place to look, not the last. Keeping the
+   proxy thin is recorded as a cutover checklist in `nginx/afc-production.conf`.
+
    **Not phase 8: the author `h-card`.** It lands with the **home page** (phase 4 item 3) as the
    site's *representative* h-card, because that is where a `rel=author` lookup resolves. The detail
    pages already emit `<link rel="author" href="/">` and it is **inert until that card exists** — the
