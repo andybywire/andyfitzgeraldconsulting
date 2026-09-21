@@ -836,7 +836,13 @@ touching `web/**`, so building in `web-next/` **cannot** trigger it — the depl
 until the phase 6 rename deliberately activates it.
 
 - **`main`** — current production. Hotfixes only.
-- **`next`** — integration branch where the new site accumulates. Never auto-deploys.
+- **`next`** — integration branch where the new site accumulates. **Never auto-deploys to
+  production.** Since phase 6 it *does* auto-deploy to **staging**: `deploy-astro.yml` fires on
+  pushes touching `web-next/**` and on Sanity webhooks, and `deploy-nginx.yml` on pushes touching
+  `nginx/**`. Andy approved that on 2026-09-17 — `web-next` exists only here, so waiting for a
+  merge would forfeit the rehearsal the staging host exists to provide. Production stays untouched:
+  it is still the 11ty build deployed from `main` by `build-prod.yml`, and the two workflows share
+  no branch, no path and no directory on the droplet.
 - **Phase branches** — branch from `next`, merge back once verified. One per phase, each reviewable
   on its own.
 - **One deliberate cutover merge** `next` → `main` at the end.

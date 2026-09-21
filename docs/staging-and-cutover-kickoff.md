@@ -127,17 +127,46 @@ goes straight into GitHub secrets and the droplet.
 
 ## Verification — the part that matters
 
-Curl sweep against staging, asserting status codes rather than eyeballing:
+Curl sweep against staging, asserting status codes rather than eyeballing.
 
-- each of the 42 `/insights/{slug}/` → **200**
-- a sample of the ~70 `/insights/tag/{term}/` → **301** to `/insights?topic={term}`
-- `/talks/` → **301** to `/presentations/`
-- `/feed.xml` → **200** and `Content-Type: application/atom+xml`
-- `/insights/page-2/` → whatever is decided (410, or 301 to `/insights/`)
-- `_astro/*` carries `immutable`; `/search.json` carries an ETag and **no** long `max-age`
+> **Numbers corrected and most of this already run, 2026-09-18.** The list below conflated two
+> different 42s — the live corpus and the new one, which overlap by only 37 — and it predated the
+> decisions on `page-N` and the tag renames. It has also largely been *executed*: the redirect map
+> and both snippets were served by real nginx in a container, against the real `web-next/dist` and
+> then against the assembled release tree. What is left for staging is the part a container cannot
+> stand in for.
 
-Then `pnpm --filter web-next build && pnpm parity` green, the contact form POSTing to `/api/contact`
-on staging, and Andy's visual pass.
+**Already verified in a container — re-run on staging as confirmation, not discovery:**
+
+- **37** of the live `/insights/{slug}/` → **200** (not 42: five were re-typed into the Presentation
+  branch under different slugs)
+- those **5** → **301**, hand-mapped; four to `/presentations/{slug}/`, one to `/projects/#ux-methods`
+- **67** `/insights/tag/{term}/` → **301** to `/insights/?topic={term}` — note the **trailing
+  slash** on `/insights/`, which saves a second hop; 7 of them carry explicit rename targets
+- `/services/` → **301** to `/consulting/`; `/talks/` → **301** to `/presentations/`
+- `/feed.xml` → **200** with `Content-Type: application/atom+xml` (all five feeds; `/sitemap.xml`
+  keeps `text/xml`)
+- `/insights/page-2/` … `page-5/` → **404**, no rule (Andy, 2026-09-18) — likewise
+  `/insight-search.json` and `/manifest.json`
+- `_astro/*` carries `immutable`; `/search.json` carries an ETag and `no-cache`, and an
+  `If-None-Match` round trip returns **304**
+- the preview host answers **401** without credentials, and `X-Robots-Tag: noindex, nofollow` is
+  present on every location including `/_astro/`
+- `release/server` is unreachable: `.env` → 403, `contact.php` / `composer.json` /
+  `vendor/autoload.php` → 404
+
+**Genuinely staging-only, because no container can stand in for it:**
+
+- real certificates and TLS, and the `www.` → apex redirect over a real name
+- the contact form actually POSTing through PHP-FPM and sending mail — the container reached
+  FastCGI and got a 502, which proves routing and nothing else
+- the rate limit under real conditions, and whether `burst=5` is enough for a correction loop
+- the deploy pipeline end to end: CI → scp → symlink swap, and the `.env` landing at 640 owned by
+  the web group
+- Andy's visual pass, and `?topic=` filtering actually applying — curl proves the page loads, not
+  that the client-side filter runs
+
+Then `pnpm --filter web-next build && pnpm parity` green.
 
 ## Gotchas
 

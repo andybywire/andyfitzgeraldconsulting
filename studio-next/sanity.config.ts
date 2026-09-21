@@ -1,6 +1,7 @@
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {taxonomyManager} from 'sanity-plugin-taxonomy-manager'
+import { mermaidContentModel } from 'sanity-plugin-mermaid-content-model'
 import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemas'
 import {codeInput} from '@sanity/code-input'
@@ -86,6 +87,7 @@ export default defineConfig({
     }),
     visionTool(),
     codeInput(),
+    mermaidContentModel(),
   ],
   schema: {
     types: schemaTypes,

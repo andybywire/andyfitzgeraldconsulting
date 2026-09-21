@@ -1,0 +1,375 @@
+name: Build & Deploy AFC Astro Site
+
+# ── WHAT THIS DEPLOYS, AND WHERE ────────────────────────────────────────────
+#
+# The Astro build in web-next/, to the STAGING host, from `next`. It does not
+# touch the live site: build-prod.yml still deploys the 11ty build from `main`
+# and the two do not share a path, a branch or a directory on the droplet.
+#
+# Deploying staging from `next` contradicts CLAUDE.md's "`next` … never
+# auto-deploys", and the contradiction is deliberate — Andy approved it on
+# 2026-09-17, on the grounds that web-next exists only there and waiting forfeits
+# the point of a rehearsal.
+#
+# ── THREE THINGS CHANGE AT CUTOVER, ALL OF THEM HERE ───────────────────────
+#
+#   1. `DEPLOY_BASE` below            → /var/www/afc
+#   2. the push branch                → main
+#   3. the checkout ref override      → removed
+#
+# DEPLOY_BASE is a literal rather than something derived from `github.ref`, and
+# that is a decision rather than laziness. A conditional that picks a deploy
+# target is the kind of cleverness that eventually deploys to the wrong one, and
+# the failure is a live site serving a staging build. One value, changed once,
+# reviewed in a diff.
+
+on:
+  workflow_dispatch:
+
+  # ── THE WEBHOOK LIST WAS STALE, AND NOBODY HAD NOTICED ──────────────────
+  #
+  # build-prod.yml dispatches on: article, caseStudy, service, client, event,
+  # review, singleton. Measured against what the Astro build actually queries,
+  # that list is wrong in both directions — SIX types missing and one obsolete.
+  # Publish a note on the live site today and nothing rebuilds.
+  #
+  # Added: note, presentation, page (the new content model) and settings,
+  # skosConcept, skosConceptScheme. The last two matter more than they look:
+  # concept labels render as filter chips, genre labels and search terms, so a
+  # rename changes pages site-wide and would otherwise wait for the next push.
+  #
+  # Removed: service. Four orphan documents with no schema file and no query that
+  # reads them — a phase 7 "adopt or delete" call. Re-add it here if they are
+  # adopted; nothing else will remind you.
+  #
+  # Dropping `event` was considered and rejected: events render no page of their
+  # own, but presentations dereference them through `eventDetail[]->`, so editing
+  # one changes a rendered page.
+  #
+  # THESE NAMES MUST MATCH THE WEBHOOKS CONFIGURED IN SANITY. Adding a type here
+  # does nothing on its own — the other half lives in the project settings.
+  repository_dispatch:
+    types:
+      - article
+      - caseStudy
+      - note
+      - presentation
+      - event
+      - page
+      - singleton
+      - settings
+      - review
+      - client
+      - skosConcept
+      - skosConceptScheme
+
+  push:
+    branches:
+      - next
+    paths:
+      - "web-next/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/deploy-astro.yml"
+
+# Neither value is a secret: both are compiled into the client bundle and are
+# readable by anyone who views source. Keeping them here rather than in repository
+# variables removes a setup step and makes the dataset visible in the diff when it
+# changes — which, at cutover, is exactly when someone should see it.
+env:
+  PUBLIC_SANITY_PROJECT_ID: 7v0qvet6
+  PUBLIC_SANITY_DATASET: production-26
+
+# ── CONCURRENCY IS PER JOB, AND THAT IS THE WHOLE POINT ────────────────────
+#
+# THE INCIDENT THIS EXISTS FOR: on 2026-08-14 a Sanity dataset duplication fired
+# one repository_dispatch per document — 266 workflow runs in 179 seconds. Nine
+# reached the deploy step concurrently and raced to extract releases into the same
+# directory. The droplet's disk filled, each run aborted mid-extraction, and
+# because `set -e` fired before the cleanup step the partial releases accumulated
+# instead of being pruned. The disk sat at 100% for five weeks. Nothing reported
+# it: nginx serves static files perfectly well with no free space, so only writes
+# failed.
+#
+# The trigger list above is WIDER than the one that caused it — twelve types
+# rather than seven, and `skosConcept` alone is 70 documents. Without a brake this
+# workflow fans out further than the version that broke.
+#
+# ── WHY NOT ONE GROUP AT WORKFLOW LEVEL ────────────────────────────────────
+#
+# A single workflow-level group forces one bad choice or the other:
+#
+#   cancel-in-progress: true   cancels runs mid-`tar` on the droplet, which is
+#                              how you get a half-extracted release directory
+#   cancel-in-progress: false  queues all 266 sequentially — hours of CI, and 266
+#                              releases created and pruned for one content edit
+#
+# Splitting it takes the useful half of each. Builds supersede freely, because
+# only the newest content matters and a cancelled build touches nothing outside
+# the runner. Deploys never cancel, because that is where the irreversible work
+# happens. A cancelled build never reaches its deploy, so a storm collapses to one
+# or two surviving builds whose deploys then queue safely.
+jobs:
+  build:
+    name: Build the Astro site and PHP dependencies
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: astro-build
+      cancel-in-progress: true
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+        with:
+          # `repository_dispatch` ALWAYS runs on the default branch — `main` —
+          # which has no web-next/ until the cutover rename. Without this override
+          # every Sanity publish would check out the 11ty repo and fail. Remove the
+          # whole `with:` block at cutover, once `main` is the new site.
+          ref: ${{ github.event_name == 'repository_dispatch' && 'next' || github.ref }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          # Matches `packageManager` in the root package.json. Two places, and they
+          # have to agree — pnpm refuses to run if they do not.
+          version: 11.22.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          # 24, not 20. Node 20 went EOL in April 2026 and build-prod.yml is still
+          # pinned to it — one of the reasons this workflow is a rewrite rather
+          # than an edit. Matches .node-version and the `engines` field.
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+
+      - name: Install dependencies
+        # --frozen-lockfile so a lockfile that drifted from package.json fails the
+        # build rather than being silently resolved into something untested.
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        # Cheap, and it catches the failure mode this codebase is most exposed to:
+        # a GROQ projection whose result type no longer matches what a component
+        # reads. Runs before the build so a type error is reported as one.
+        run: pnpm --filter web-next check
+
+      - name: Build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=2048"
+        # The package script sets PUBLIC_SITE_MODE=production, which selects static
+        # output, the apex site URL and no visual editing. No read token: a
+        # production build reads published content anonymously, and astro.config.mjs
+        # only demands a token under preview.
+        run: pnpm --filter web-next build
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # Must match the PHP-FPM socket named in nginx/site-common.conf. If the
+          # droplet's version moves, both change together.
+          php-version: "8.3"
+          tools: composer
+          coverage: none
+
+      # ── THE RELEASE IS TWO DIRECTORIES, NOT ONE ─────────────────────────
+      #
+      # build-prod.yml tars web/_site and the release directory IS the web root,
+      # with mailhandler.php sitting inside it. That cannot work here: contact.php
+      # keeps a `.env` beside it holding the Google client secret and refresh
+      # token, and its own header comment promises that directory is somewhere
+      # nginx does not serve.
+      #
+      #   release/
+      #     public/   the Astro build      ← nginx `root`
+      #     server/   contact.php, vendor/, .env   ← never served
+      #
+      # nginx/afc.conf is written against exactly this layout. Change one and the
+      # other stops working — the site would 404 wholesale, or worse, serve the
+      # PHP source.
+      - name: Assemble the release tree
+        run: |
+          set -e
+          mkdir -p release/public release/server
+          cp -R web-next/dist/. release/public/
+          # Named files rather than `cp -R`, so that .env.example and anything else
+          # that lands in this directory later does not ship by accident.
+          cp web-next/server/contact.php web-next/server/composer.json release/server/
+
+      - name: Install PHP dependencies into the release
+        # Easy to lose in a JavaScript migration, and the contact form is dead
+        # without it — contact.php's first statement is `require vendor/autoload.php`.
+        #
+        # ── THIS STEP USED TO BE 98% OF THE RELEASE ────────────────────────
+        #
+        # `google/apiclient` pulls `google/apiclient-services`, which ships class
+        # definitions for EVERY Google API — 670 of them. Measured 2026-09-20:
+        # 220 MB and 37,282 files, of which we use exactly one service, Gmail.
+        #
+        # That is what the droplet's 211 MB / 32,446-file 11ty releases actually
+        # are. It was assumed for a while to be packaged images; it never was —
+        # every image shortcode emits a cdn.sanity.io URL.
+        #
+        # composer.json now carries `Google\Task\Composer::cleanup` as a
+        # `pre-autoload-dump` script with `extra.google/apiclient-services` naming
+        # Gmail alone. Measured after: 4.4 MB and 571 files, with
+        # Google\Service\Gmail, Google\Client and Dotenv\Dotenv all still
+        # resolving. A release goes from ~228 MB to ~12 MB.
+        #
+        # IF THE CONTACT FORM EVER NEEDS A SECOND GOOGLE API, add it to that
+        # `extra` array or the class will be missing at runtime rather than at
+        # build time — the cleanup runs before autoload generation, so a trimmed
+        # service fails when PHP tries to instantiate it, not here.
+        run: composer install --no-dev --prefer-dist --optimize-autoloader
+        working-directory: release/server
+
+      - name: Package the release
+        run: tar czf afc-astro.tar.gz -C release .
+
+      - name: Upload the release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: afc-astro-release
+          path: afc-astro.tar.gz
+          retention-days: 7
+
+  deploy:
+    name: Deploy to the staging host
+    runs-on: ubuntu-latest
+    needs: build
+
+    # Never cancelled. This job extracts a tarball and swaps a symlink on a real
+    # machine; interrupting it is how a half-applied release happens. Queuing is
+    # the correct behavior even when the queue is long, because by this point the
+    # expensive part is already done and each run is seconds of work.
+    concurrency:
+      group: astro-deploy
+      cancel-in-progress: false
+
+    env:
+      # See the header: one literal, changed once, at cutover.
+      DEPLOY_BASE: /var/www/afc-preview
+
+      AFC_GMAIL_FROM: ${{ secrets.GMAIL_FROM }}
+      AFC_GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      AFC_GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      AFC_GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+      # RECAPTCHA_SECRET is deliberately absent. contact.php replaced reCAPTCHA
+      # with a honeypot plus nginx rate limiting, so there is no third-party
+      # verification step and no key to leak.
+
+    steps:
+      - name: Download the release artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: afc-astro-release
+
+      - name: Copy the release to the droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AFC_HOST }}
+          username: ${{ secrets.AFC_SSH_USER }}
+          key: ${{ secrets.AFC_SSH_KEY }}
+          port: 22
+          source: "afc-astro.tar.gz"
+          target: "/tmp"
+
+      - name: Install the release (atomic symlink swap)
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.AFC_HOST }}
+          username: ${{ secrets.AFC_SSH_USER }}
+          key: ${{ secrets.AFC_SSH_KEY }}
+          port: 22
+          envs: DEPLOY_BASE,AFC_GMAIL_FROM,AFC_GOOGLE_CLIENT_ID,AFC_GOOGLE_CLIENT_SECRET,AFC_GOOGLE_REFRESH_TOKEN
+          script: |
+            set -e
+
+            RELEASES="$DEPLOY_BASE/releases"
+            CURRENT="$DEPLOY_BASE/html"
+
+            mkdir -p "$RELEASES"
+
+            # ── REFUSE TO DEPLOY ONTO A FULL DISK ─────────────────────────
+            #
+            # The other half of the 14 August fix. Concurrency stops the storm;
+            # this stops any single deploy from being the thing that discovers
+            # the filesystem is already in trouble — and, more importantly, from
+            # failing silently halfway through an extraction.
+            #
+            # 500 MB is NOT sized to the release, which is ~12 MB. It is a floor
+            # below which something else is wrong and a deploy should decline to
+            # participate. Sizing it tightly would defeat the purpose: a guard
+            # that only trips when the release itself cannot fit has already let
+            # the disk get to the state that matters.
+            #
+            # `df -Pk` for POSIX output, because the default format wraps long
+            # device names onto two lines and `awk 'NR==2'` then reads the wrong
+            # field.
+            AVAIL_KB=$(df -Pk "$DEPLOY_BASE" | awk 'NR==2 {print $4}')
+            if [ "$AVAIL_KB" -lt 512000 ]; then
+              echo "!!! Only $((AVAIL_KB / 1024)) MB free on $DEPLOY_BASE." >&2
+              echo "!!! Floor is 500 MB; a release is ~12 MB. Refusing to deploy." >&2
+              df -h "$DEPLOY_BASE" >&2
+              exit 1
+            fi
+            echo ">>> $((AVAIL_KB / 1024)) MB free — proceeding."
+
+            NEW_RELEASE="$RELEASES/$(date +%Y%m%d%H%M%S)"
+
+            echo ">>> Extracting into $NEW_RELEASE"
+            mkdir "$NEW_RELEASE"
+            tar xzf /tmp/afc-astro.tar.gz -C "$NEW_RELEASE"
+
+            # ── THE .env, AND THE BUG THIS EXISTS TO NOT REPRODUCE ────────
+            #
+            # build-prod.yml writes this file `chmod 644` — world-readable on the
+            # droplet, containing the Google client secret and refresh token.
+            # CLAUDE.md records that as a live security issue on the running site,
+            # not merely a migration note.
+            #
+            # `install -m 640 /dev/null` CREATES the file already restricted, which
+            # `touch` then `chmod` does not: that order leaves a window, however
+            # brief, where the file exists at the umask default. Nothing is written
+            # into it until the group is also correct.
+            echo ">>> Writing .env"
+            install -m 640 /dev/null "$NEW_RELEASE/server/.env"
+
+            # PHP-FPM runs as www-data and reads this file through its GROUP bit.
+            # Failing hard is the point: a deploy that cannot restrict the file
+            # must not fall back to one that anyone can read. If this fails, add
+            # the deploy user to the www-data group on the droplet.
+            if ! chgrp www-data "$NEW_RELEASE/server/.env"; then
+              echo "!!! chgrp www-data failed — refusing to ship a readable .env" >&2
+              echo "!!! fix: usermod -aG www-data <deploy user>, then re-run" >&2
+              rm -rf "$NEW_RELEASE"
+              exit 1
+            fi
+
+            {
+              printf 'GMAIL_FROM=%s\n'           "$AFC_GMAIL_FROM"
+              printf 'GOOGLE_CLIENT_ID=%s\n'     "$AFC_GOOGLE_CLIENT_ID"
+              printf 'GOOGLE_CLIENT_SECRET=%s\n' "$AFC_GOOGLE_CLIENT_SECRET"
+              printf 'GOOGLE_REFRESH_TOKEN=%s\n' "$AFC_GOOGLE_REFRESH_TOKEN"
+            } >> "$NEW_RELEASE/server/.env"
+
+            echo ">>> Swapping the html symlink"
+            ln -sfn "$NEW_RELEASE" "$CURRENT"
+
+            # `tail -n +4` keeps THREE releases: the current one and two to roll
+            # back to. build-prod.yml does the same thing under a comment claiming
+            # five — commit 5e9fac8 changed the number and left the comment. This
+            # preserves the behavior and fixes the comment.
+            echo ">>> Pruning old releases (keeping the 3 most recent)"
+            cd "$RELEASES"
+            ls -1t | tail -n +4 | xargs -r rm -rf
+
+            echo ">>> Done."
+
+      # nginx is NOT reloaded here. The config in nginx/ is deployed separately, so
+      # that a content publish does not reload the web server, and so that a config
+      # change gets its own `nginx -t` gate rather than riding along with a build.
