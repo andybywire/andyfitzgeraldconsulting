@@ -296,6 +296,40 @@ when present. With that verb, the next deploy would have silently repaired all o
 ecosystem file rather than a bare name, which is worth having anyway: it puts the app's port, name,
 interpreter and environment under version control instead of in a daemon's memory and a stale dump.
 
+### Restored and moved to Node 24 — *done 2026-09-21*, with two traps worth knowing
+
+`preview.uxmethods.org` is back (200) and running on **Node 24.21.0**. Recovery was
+`pm2 resurrect` from the November 2025 dump, which still held the app's environment including its
+Sanity read token — so nothing had to be reconstructed by hand.
+
+**Measured while it was up: the app settles at 66–96 MB RSS.** That answers the sizing question this
+file raised. Two Astro SSR processes on this droplet is roughly 130–190 MB against 458 MB total, with
+swap barely touched. **No resize needed** for AFC's preview to join it.
+
+Two traps, both of which will recur at AFC's phase 5:
+
+**`pm2 resurrect` restores the stored PATH, so the app stays on the OLD Node.** Upgrading is not one
+step. After `nvm install 24`, `nvm alias default 24`, installing pm2 under the new version and
+resurrecting from a Node 24 daemon, the app was *still* executing
+`/home/uxm/.nvm/versions/node/v20.19.6/bin/node` — because `exec_interpreter` was the bare string
+`node` and the dump's saved `env.PATH` pointed at the old version. The daemon moved; the app did not,
+and nothing said so. Checking `readlink /proc/<pid>/exe` is the only way to see it. Fixed by patching
+`exec_interpreter` to an absolute path and rewriting the version string in `env.PATH`, which
+preserves the stored secrets in a way `--update-env` would not.
+
+**The systemd unit hardcodes the Node version in two places** — `Environment=PATH` and `ExecStart`
+both name `.../v20.19.6/...`. Upgrading Node without regenerating it leaves a startup unit pointing at
+a runtime that may not exist. Regenerate with `pm2 startup systemd -u <user> --hp /home/<user>`, and
+note it must be run with the new node on PATH: pm2's launcher is `#!/usr/bin/env node`, so as root it
+fails with `env: 'node': No such file or directory`.
+
+**The recovery path was then tested rather than assumed**, which matters because "the unit exists" is
+exactly what was true while the site was down for five weeks. `systemctl stop` + `start` while the
+daemon was already running is NOT a valid test — the unit is `Type=forking` with a `PIDFile`, so a
+resurrect against a live daemon forks nothing and systemd fails the PID check. The real test is to
+`pm2 kill` first. Done: the app came back under systemd, on Node 24, with its cgroup reading
+`/system.slice/pm2-uxm.service`.
+
 ### Node 20 is the only runtime installed — *measured*
 
 `nvm current` under the `uxm` user reports **v20.19.6**, and `~/.nvm/versions/node/` contains nothing
