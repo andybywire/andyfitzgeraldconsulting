@@ -1,0 +1,158 @@
+name: Validate nginx configuration
+
+# ── THIS WORKFLOW VALIDATES. IT DOES NOT DEPLOY. ───────────────────────────
+#
+# It was `deploy-nginx.yml` and did both until 2026-09-21. The deploy half now
+# lives in `nginx/deploy.sh`, run by hand from a laptop.
+#
+# ── WHY ────────────────────────────────────────────────────────────────────
+#
+# Deploying nginx config requires root on the droplet, and no amount of narrowing
+# changes that: **writing nginx config IS being root.** The master process runs as
+# root and opens log files, so `access_log /etc/cron.d/x;` plus a crafted
+# `log_format` has root write a crontab on the next reload. Granting sudo for five
+# specific commands, or write access to two directories, or routing it through a
+# wrapper script, all leave that intact — the account still controls the bytes in
+# the config.
+#
+# So CI could not deploy this safely, only conveniently. And the convenience is
+# worth little: the config changes a handful of times during cutover and then
+# approximately never, while a CI key able to write it is root-equivalent
+# permanently.
+#
+# ── THE PAYOFF, WHICH IS THE POINT ─────────────────────────────────────────
+#
+# `deploy-astro.yml` uses no sudo at all — it writes under /var/www/afc-preview
+# and gets its one privileged-looking operation, `chgrp www-data`, from group
+# membership. With nginx out of CI, **no key held by GitHub is root-equivalent on
+# the droplet.**
+#
+# ── WHAT IS LOST, AND WHAT COVERS IT ───────────────────────────────────────
+#
+# Running this on push no longer guarantees the droplet matches the repo, because
+# nothing pushes. `nginx/deploy.sh` is the only thing that installs, so "deployed"
+# means "somebody ran it." That is the accepted cost of the trade above.
+#
+# What this job still guarantees is that a config which cannot load never gets as
+# far as being installed — the common failure, caught for free, before anyone is
+# at a terminal.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - next
+    paths:
+      - "nginx/**"
+      - ".github/workflows/validate-nginx.yml"
+
+# Validation is read-only and idempotent, so superseding an in-flight run is fine
+# — unlike the deploy this replaced, where cancelling mid-run was the hazard.
+concurrency:
+  group: nginx-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: nginx -t against the real config
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      # Everything fabricated below is a stand-in for what the droplet supplies.
+      # The CONFIG is the real file: nginx loads certificates during `-t`, so the
+      # certs have to be real keys rather than empty placeholders.
+      #
+      # WHAT THIS CATCHES AND WHAT IT DOES NOT. Measured 2026-09-18 against three
+      # deliberate faults: a misspelled directive and a stray brace both fail here,
+      # and a MISSING SEMICOLON after `index index.html` passes — because `index`
+      # takes multiple arguments and quietly swallows the `error_page` line after
+      # it. nginx's grammar tolerates it; the site then serves nginx's default 404.
+      # That class of fault is caught by the smoke check in nginx/deploy.sh, not
+      # here, which is why both exist.
+      - name: nginx -t
+        run: |
+          set -e
+          cat > /tmp/validate.sh <<'SCRIPT'
+          set -e
+          apk add --no-cache openssl >/dev/null 2>&1
+          mkdir -p /etc/nginx/snippets /var/www/certbot
+          rm -f /etc/nginx/conf.d/default.conf
+          cp /repo/nginx/afc.conf         /etc/nginx/conf.d/afc.conf
+          cp /repo/nginx/site-common.conf /etc/nginx/snippets/afc-common.conf
+          cp /repo/nginx/redirects.conf   /etc/nginx/snippets/afc-redirects.conf
+
+          # afc-production.conf is validated here although nginx/deploy.sh does
+          # not install it — see its header. In this container there is no existing
+          # apex server block, so it loads cleanly alongside afc.conf. That is the
+          # point: the file cannot be exercised on the droplet until cutover, so
+          # this is the ONLY place it is checked at all until then.
+          cp /repo/nginx/afc-production.conf /etc/nginx/conf.d/afc-production.conf
+
+          for h in andyfitzgeraldconsulting.com preview.andyfitzgeraldconsulting.com; do
+            mkdir -p "/etc/letsencrypt/live/$h"
+            openssl req -x509 -newkey rsa:2048 -nodes -days 1 \
+              -keyout "/etc/letsencrypt/live/$h/privkey.pem" \
+              -out "/etc/letsencrypt/live/$h/fullchain.pem" \
+              -subj "/CN=$h" -addext "subjectAltName=DNS:$h,DNS:www.$h" >/dev/null 2>&1
+          done
+
+          # 2048 because modern OpenSSL rejects 1024 outright — a smaller value
+          # fails the test for a reason that has nothing to do with the config.
+          openssl dhparam -out /etc/letsencrypt/ssl-dhparams.pem 2048 >/dev/null 2>&1
+
+          # certbot's own file, reproduced so the `include` resolves.
+          cat > /etc/letsencrypt/options-ssl-nginx.conf <<'EOF'
+          ssl_session_cache shared:le_nginx_SSL:10m;
+          ssl_session_timeout 1440m;
+          ssl_session_tickets off;
+          ssl_protocols TLSv1.2 TLSv1.3;
+          ssl_prefer_server_ciphers off;
+          EOF
+
+          # ── WHAT `nginx -t` ACTUALLY CHECKS ─────────────────────────────
+          #
+          # Measured 2026-09-21 by removing each thing in turn, because an earlier
+          # version of this file stubbed an htpasswd and four web-root directories
+          # on the stated grounds that "the server roots are stat-ed during -t."
+          # THEY ARE NOT. Both stubs were unnecessary and the reason given was
+          # invented. They are gone.
+          #
+          #   FAILS the test:  a missing certificate
+          #                    a missing `include` target (either snippet, or
+          #                    certbot's options-ssl-nginx.conf)
+          #                    a syntax error
+          #
+          #   DOES NOT:        a `root` pointing at a directory that does not exist
+          #                    a missing `auth_basic_user_file`
+          #
+          # The practical consequence is worth knowing: a config can pass here,
+          # install cleanly, reload without complaint and serve 404 to every
+          # request, because nothing on this path ever looks at the web root. That
+          # is the gap the smoke check in nginx/deploy.sh exists to cover.
+          nginx -t
+          SCRIPT
+          docker run --rm -v "$PWD":/repo:ro -v /tmp/validate.sh:/validate.sh:ro \
+            nginx:alpine sh /validate.sh
+
+# ── FIRST INSTALL ON A NEW HOST ────────────────────────────────────────────
+#
+# `nginx/deploy.sh` reloads nginx and smoke-checks a hostname over TLS, neither of
+# which works before DNS resolves and a certificate exists. Bootstrapping order:
+#
+#   1. DNS A record for the host
+#   2. a minimal port-80 server block, by hand, so certbot has a webroot
+#   3. certbot certonly --webroot -w /var/www/certbot -d <host>
+#   4. htpasswd -c /etc/nginx/afc-staging.htpasswd <user>   (needs apache2-utils)
+#   5. AFC_SSH=root@<ip> nginx/deploy.sh
+#   6. remove the temporary block from step 2 — afc.conf carries its own
+#      /.well-known/acme-challenge/ location, so renewals do not depend on it
+#
+# Put the same user:password from step 4 into AFC_STAGING_AUTH when running the
+# script, or its last two assertions are skipped.
+#
+# `certbot --nginx` is NOT the installer to use: it edits server blocks in place,
+# writing changes into files that are meant to be deployed rather than edited.
+# `certonly` leaves them alone.
