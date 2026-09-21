@@ -80,10 +80,43 @@ env:
   PUBLIC_SANITY_PROJECT_ID: 7v0qvet6
   PUBLIC_SANITY_DATASET: production-26
 
+# ── CONCURRENCY IS PER JOB, AND THAT IS THE WHOLE POINT ────────────────────
+#
+# THE INCIDENT THIS EXISTS FOR: on 2026-08-14 a Sanity dataset duplication fired
+# one repository_dispatch per document — 266 workflow runs in 179 seconds. Nine
+# reached the deploy step concurrently and raced to extract releases into the same
+# directory. The droplet's disk filled, each run aborted mid-extraction, and
+# because `set -e` fired before the cleanup step the partial releases accumulated
+# instead of being pruned. The disk sat at 100% for five weeks. Nothing reported
+# it: nginx serves static files perfectly well with no free space, so only writes
+# failed.
+#
+# The trigger list above is WIDER than the one that caused it — twelve types
+# rather than seven, and `skosConcept` alone is 70 documents. Without a brake this
+# workflow fans out further than the version that broke.
+#
+# ── WHY NOT ONE GROUP AT WORKFLOW LEVEL ────────────────────────────────────
+#
+# A single workflow-level group forces one bad choice or the other:
+#
+#   cancel-in-progress: true   cancels runs mid-`tar` on the droplet, which is
+#                              how you get a half-extracted release directory
+#   cancel-in-progress: false  queues all 266 sequentially — hours of CI, and 266
+#                              releases created and pruned for one content edit
+#
+# Splitting it takes the useful half of each. Builds supersede freely, because
+# only the newest content matters and a cancelled build touches nothing outside
+# the runner. Deploys never cancel, because that is where the irreversible work
+# happens. A cancelled build never reaches its deploy, so a storm collapses to one
+# or two surviving builds whose deploys then queue safely.
 jobs:
   build:
     name: Build the Astro site and PHP dependencies
     runs-on: ubuntu-latest
+
+    concurrency:
+      group: astro-build
+      cancel-in-progress: true
 
     steps:
       - name: Check out the repository
@@ -209,6 +242,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
 
+    # Never cancelled. This job extracts a tarball and swaps a symlink on a real
+    # machine; interrupting it is how a half-applied release happens. Queuing is
+    # the correct behavior even when the queue is long, because by this point the
+    # expensive part is already done and each run is seconds of work.
+    concurrency:
+      group: astro-deploy
+      cancel-in-progress: false
+
     env:
       # See the header: one literal, changed once, at cutover.
       DEPLOY_BASE: /var/www/afc-preview
@@ -252,6 +293,32 @@ jobs:
             CURRENT="$DEPLOY_BASE/html"
 
             mkdir -p "$RELEASES"
+
+            # ── REFUSE TO DEPLOY ONTO A FULL DISK ─────────────────────────
+            #
+            # The other half of the 14 August fix. Concurrency stops the storm;
+            # this stops any single deploy from being the thing that discovers
+            # the filesystem is already in trouble — and, more importantly, from
+            # failing silently halfway through an extraction.
+            #
+            # 500 MB is NOT sized to the release, which is ~12 MB. It is a floor
+            # below which something else is wrong and a deploy should decline to
+            # participate. Sizing it tightly would defeat the purpose: a guard
+            # that only trips when the release itself cannot fit has already let
+            # the disk get to the state that matters.
+            #
+            # `df -Pk` for POSIX output, because the default format wraps long
+            # device names onto two lines and `awk 'NR==2'` then reads the wrong
+            # field.
+            AVAIL_KB=$(df -Pk "$DEPLOY_BASE" | awk 'NR==2 {print $4}')
+            if [ "$AVAIL_KB" -lt 512000 ]; then
+              echo "!!! Only $((AVAIL_KB / 1024)) MB free on $DEPLOY_BASE." >&2
+              echo "!!! Floor is 500 MB; a release is ~12 MB. Refusing to deploy." >&2
+              df -h "$DEPLOY_BASE" >&2
+              exit 1
+            fi
+            echo ">>> $((AVAIL_KB / 1024)) MB free — proceeding."
+
             NEW_RELEASE="$RELEASES/$(date +%Y%m%d%H%M%S)"
 
             echo ">>> Extracting into $NEW_RELEASE"
