@@ -34,7 +34,7 @@
  */
 import {PortableText} from 'astro-portabletext'
 import type {Props as NodeProps, TypedObject} from 'astro-portabletext/types'
-import type {Quotation} from './quotations'
+import {ATTRIBUTION_DASH, type Quotation} from './quotations'
 import {MARK_COMPONENTS} from './marks'
 import BareBlock from './BareBlock.astro'
 
@@ -44,10 +44,9 @@ const {node} = Astro.props
 
 const paragraphs = node.quote.map((block) => ({...block, style: 'normal'}))
 
-/* The dash is the renderer's, not the author's — the same en dash and space
-   reviews.astro writes before a byline. An expression rather than bare text in the
-   template, so the trailing space survives a formatter reflowing those lines. */
-const dash = '– '
+/* In the template: the figcaption's dash is the renderer's, not the author's — see
+   ATTRIBUTION_DASH, which the feeds write too. It goes in as an expression rather than
+   bare text, so its trailing space survives a formatter reflowing those lines. */
 ---
 
 <figure>
@@ -55,7 +54,7 @@ const dash = '– '
     <PortableText value={paragraphs} components={{mark: MARK_COMPONENTS}} />
   </blockquote>
   <figcaption>
-    {dash}<PortableText
+    {ATTRIBUTION_DASH}<PortableText
       value={[node.attribution]}
       components={{block: {attribution: BareBlock}, mark: MARK_COMPONENTS}}
     />

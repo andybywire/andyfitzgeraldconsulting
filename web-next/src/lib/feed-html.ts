@@ -8,6 +8,7 @@ import type {PortableTextComponents} from '@portabletext/to-html'
 import type {TypedObject} from 'astro-portabletext/types'
 import {feedImageAttrs, type SanityImageSource} from '../sanity/image'
 import {headingId} from '../components/prose/headingId'
+import {ATTRIBUTION_DASH, groupQuotations, type Quotation} from '../components/prose/quotations'
 
 /**
  * Portable Text → HTML for the Atom feeds. Deliberately NOT the site's serializers.
@@ -37,6 +38,11 @@ import {headingId} from '../components/prose/headingId'
  *   decorators  strong, em, code               — 0 underline, 0 strike-through
  *   marks       link, one field `href`
  *   table       allowed by the article schema, used by 0 documents
+ *
+ * Since then (2026-09-22): the `attribution` style, and with it the synthetic
+ * `quotation` type below. At the time of writing it is used only on /consulting, which
+ * is a `page` and in no feed — so it is handled here before any fed document needs it,
+ * because the first one that does would otherwise ship its credit as a stray `<p>`.
  *
  * `strike-through` is handled anyway because the schema still offers it, and Sanity
  * keeps marks it no longer offers — a stored `underline` from before 2026-08-26
@@ -108,7 +114,7 @@ export interface FeedHtmlOptions {
   permalink: string
 }
 
-function components({permalink}: FeedHtmlOptions): PortableTextComponents {
+function components(options: FeedHtmlOptions): PortableTextComponents {
   return {
     block: {
       /**
@@ -127,11 +133,22 @@ function components({permalink}: FeedHtmlOptions): PortableTextComponents {
       h4: ({value, children}) => `<h4 id="${escapeHTML(headingId(value))}">${children}</h4>`,
       /* normal → <p> and blockquote → <blockquote> are library defaults and are
          left alone. Restating them here would be a second place to get them wrong. */
+
+      /**
+       * No element at all — only ever reached from `quotation` below, which renders
+       * it inside the `<figcaption>` that IS its element. A `<p>` there would put the
+       * dash on a line of its own in any reader that gives paragraphs block display,
+       * which is all of them.
+       *
+       * An attribution that is NOT part of a quotation never gets here:
+       * groupQuotations restyles an orphan to `normal` before rendering.
+       */
+      attribution: ({children}) => children ?? '',
     },
 
     marks: {
       link: ({value, children}) => {
-        const href = absolutize(value?.href, permalink)
+        const href = absolutize(value?.href, options.permalink)
         return href ? `<a href="${escapeHTML(href)}">${children}</a>` : children
       },
       /**
@@ -201,6 +218,38 @@ function components({permalink}: FeedHtmlOptions): PortableTextComponents {
         const lang = node.language ? ` class="language-${escapeHTML(node.language)}"` : ''
         return `<pre><code${lang}>${escapeCode(node.code)}</code></pre>`
       },
+
+      /**
+       * A quote with its attribution — NOT a schema type. `groupQuotations` builds it
+       * from a run of Quote blocks and the `attribution` block after them, before
+       * anything renders; see components/prose/quotations.ts for why that has to be a
+       * pass over the array rather than a serializer.
+       *
+       * The same markup the site emits (prose/Quotation.astro), and it needs no
+       * translating for a reader: `<figure>`, `<blockquote>` and `<figcaption>` are
+       * standard tags carrying no class, so this stays inside the no-site-styling rule.
+       * What a reader will NOT get is the end alignment, which is CSS. The figure still
+       * says which quote the credit belongs to, and the dash still reads as a credit.
+       *
+       * The quote's blocks are restyled `normal`, as on the site, so each renders as a
+       * `<p>` inside the one `<blockquote>` rather than as a blockquote of its own.
+       * Both halves go back through `render`, so links in a credit are absolutized and
+       * an unknown mark is reported exactly as it would be anywhere else.
+       */
+      quotation: ({value}) => {
+        const node = value as Quotation
+        const quote = render(
+          node.quote.map((block) => ({...block, style: 'normal'})),
+          options,
+        )
+        const credit = render([node.attribution], options)
+        return (
+          `<figure>` +
+          `<blockquote>${quote}</blockquote>` +
+          `<figcaption>${ATTRIBUTION_DASH}${credit}</figcaption>` +
+          `</figure>`
+        )
+      },
     },
   }
 }
@@ -225,6 +274,14 @@ export function toFeedHtml(
 ): string {
   if (!blocks || blocks.length === 0) return ''
 
+  /* Grouping happens once, here, at the top — never inside `render`, which the
+     `quotation` serializer calls for the credit alone. Grouped there, a lone
+     attribution block would read as an orphan and be restyled into a paragraph. */
+  return render(groupQuotations(blocks), options)
+}
+
+/** The serializer run itself, shared by `toFeedHtml` and the `quotation` type. */
+function render(blocks: TypedObject[], options: FeedHtmlOptions): string {
   return toHTML(blocks, {
     components: components(options),
     onMissingComponent: (message, {type, nodeType}) => {

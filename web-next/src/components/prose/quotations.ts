@@ -59,6 +59,17 @@ export interface Quotation<T extends TypedObject = TypedObject> {
   attribution: T
 }
 
+/**
+ * What precedes every attribution, written by the renderer so the author types only the
+ * name (Andy, 2026-09-22). An en dash and a space — the same pair reviews.astro writes
+ * before a byline, and NOT the em dash an author tends to reach for, which is how the
+ * first real use came out as `– — Phil Coady`.
+ *
+ * Here rather than in either renderer because both must write the same thing: the
+ * site's Quotation.astro and the feeds' lib/feed-html.ts.
+ */
+export const ATTRIBUTION_DASH = '– '
+
 const styleOf = (node: TypedObject): unknown =>
   node._type === 'block' && 'style' in node ? node.style : undefined
 
