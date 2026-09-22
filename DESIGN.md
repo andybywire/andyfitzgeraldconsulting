@@ -1113,6 +1113,16 @@ animation rather than to be spared 150ms of colour, so each of these degrades to
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
 **not margin** — the bar sits at the box edge, so a margin would put the gap outside it.
 
+**A quote's attribution is its figure's `figcaption`** — `<figure><blockquote>…</blockquote>
+<figcaption>– Name</figcaption></figure>`, outside the quote, with no `<cite>`. It takes the
+`caption` role, **end-aligned**, with `rhythm-paragraph` above rather than a caption's
+`rhythm-tight` — and the quotation takes **`rhythm-block` after it**, so a credit is closer to its
+own quote than to whatever follows. That is the Reviews page's byline-to-next-quote spacing, and it is
+only after an *attributed* quote: a bare Quote, and the space above any quote, stay at
+`rhythm-paragraph`. One element rule (`figure:has(> blockquote) > figcaption`) serves the Portable Text
+`attribution` style, /reviews and the case study testimonial. Reasoning in
+[docs/decisions/components.md](docs/decisions/components.md).
+
 **The color-mode selector** is a radio group — three exclusive options with one active is what radios
 are, where `aria-pressed` would claim all three can be on at once. **"System" is the absence of a
 choice**: it removes both the stored value and the attribute, so `prefers-color-scheme` applies

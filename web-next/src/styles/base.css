@@ -577,6 +577,37 @@ figcaption {
   line-height: 1.5;
 }
 
+/*
+ * ── A QUOTATION'S CAPTION IS ITS ATTRIBUTION ───────────────────────────────
+ *
+ * A `<figure>` whose content is a `<blockquote>` is a quotation, and its
+ * `<figcaption>` says who said it. The caption role above already supplies the
+ * size, the italic and the muted color, so the attribution adds only two things:
+ * it ends at the quote's end edge, and it sits a paragraph's space below it
+ * rather than a caption's 8, because it follows a block of text rather than an
+ * image.
+ *
+ * THREE PLACES RENDER THIS STRUCTURE, which is why it is an element rule: /reviews
+ * and the case study testimonial build it by hand, and Prose builds it from the
+ * `attribution` style (see prose/quotations.ts). Promoted with the third (Andy,
+ * 2026-09-22). The two hand-built ones still restate `text-align` locally for now,
+ * and the case study keeps its own 48 above — both win on specificity, since this
+ * is (0,0,3).
+ *
+ * `:has()` rather than a class, because the structure IS the meaning — nothing
+ * has to remember to add a class for the rule to apply. Where `:has()` is not
+ * supported the attribution falls back to an ordinary caption: start-aligned, 8
+ * above. Legible, and only the alignment is lost.
+ *
+ * `end`, not `right` — a logical value, so the line follows the writing direction
+ * like the quote bar's `border-inline-start` does.
+ */
+
+figure:has(> blockquote) > figcaption {
+  margin-top: var(--rhythm-paragraph);
+  text-align: end;
+}
+
 img,
 picture,
 svg,
@@ -659,11 +690,11 @@ svg.lucide.icon-sm {
  * below it and silently flattening the whole ramp to one value. `:where()`
  * always contributes zero specificity regardless of what is inside it.
  *
- * THE RAMP IS THREE OVERRIDES NOW, NOT FIVE. The two `rhythm-block` rules for
- * lists, quotes, figures and code were removed 2026-09-02 — see the note where
- * they used to sit. Nothing about the ordering changed: the survivors were
- * already the last three, and they still read heading-opens, heading-opens,
- * heading-binds.
+ * THE RAMP IS FOUR OVERRIDES. The two `rhythm-block` rules for lists, quotes,
+ * figures and code were removed 2026-09-02 — see the note where they used to sit —
+ * leaving three: heading-opens, heading-opens, heading-binds. A fourth joined on
+ * 2026-09-22, the space after an attributed quote, and it sits FIRST, ahead of the
+ * three, so that a heading following a quotation still wins on source order.
  *
  * ── THE SELECTOR WAS `article.detail` UNTIL 2026-08-26 ──────────────────────
  *
@@ -708,10 +739,41 @@ svg.lucide.icon-sm {
  * same as any two adjacent blocks. That is the whole change: a special case
  * removed, not a new number introduced.
  *
- * TWO OVERRIDES REMAIN, both at (0,1,1), and the source-order note above still
+ * THREE OVERRIDES REMAINED, all at (0,1,1), and the source-order note above still
  * governs them: `* + h3` and `* + h2` open a section, and `:is(h2,h3,h4) + *`
  * binds a heading to whatever follows. `heading-close` stays last for that reason.
  */
+
+/*
+ * ── AFTER AN ATTRIBUTED QUOTE, `rhythm-block` — AND THIS IS NOT THE PAIR COMING BACK ──
+ *
+ * A quotation's attribution sits 24 below its quote (see `figure:has(> blockquote) >
+ * figcaption`). With the base rule's 24 after the figure as well, the credit sits
+ * EXACTLY halfway between its own quote and the next thing — and in a stack of
+ * testimonials it reads as belonging to either. Proximity has to say which (Andy,
+ * 2026-09-22, on screen): 24 to its quote, 48 to what follows. That is the Reviews
+ * page's arrangement, where `.review + .review` puts `rhythm-block` between one
+ * byline and the next quote.
+ *
+ * NARROWER THAN WHAT WAS REMOVED, on purpose. The deleted pair spaced every
+ * blockquote, list, figure and code block 48 above AND below, and was too much air
+ * in running text. This spaces one thing, on one side, for one reason: an
+ * attributed quote, below it, because that is where the caption is. A bare Quote
+ * with no attribution is untouched and still takes 24, and so is the space ABOVE a
+ * quotation — nothing there is ambiguous, since the bar marks where the quote starts.
+ *
+ * (0,1,1), like every override in the ramp — `figure` counts and `:where()` does
+ * not — and placed BEFORE the heading rules, so a heading after a quotation still
+ * takes its own larger opening space on source order. The `.sidebar`/`.banner`
+ * exclusion is the base rule's, for the base rule's reason.
+ *
+ * Matches whatever follows, including an EMPTY paragraph: its margins collapse
+ * through it, and the 48 collapses with the next block's 24 to 48.
+ */
+
+.detail > figure:where(:has(> blockquote)) + *:where(:not(.sidebar, .banner)) {
+  margin-top: var(--rhythm-block);
+}
 
 .detail > * + h3 {
   margin-top: var(--rhythm-heading-minor);

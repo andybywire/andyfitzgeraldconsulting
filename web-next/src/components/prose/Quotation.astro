@@ -1,0 +1,82 @@
+---
+/**
+ * A quote with its attribution — the synthetic `quotation` node that quotations.ts
+ * builds from a run of Quote blocks and the `attribution` block after it.
+ *
+ * ── THE MARKUP IS THE WHATWG PATTERN, AND THE REVIEWS PAGE'S ────────────────
+ *
+ *     <figure>
+ *       <blockquote><p>…</p></blockquote>
+ *       <figcaption>– …</figcaption>
+ *     </figure>
+ *
+ * The attribution sits OUTSIDE the `<blockquote>`, because a blockquote's contents are
+ * the quotation itself and the credit is not part of what was said. The `<figure>` is
+ * what ties the two together — a `<figcaption>` captions its figure — so the pairing
+ * is in the DOM, not only in the layout. No `<cite>`: that element is for the title of
+ * a work, not a person's name, which is what an attribution usually is. This is the
+ * same reading reviews.astro records beside its own byline.
+ *
+ * ── THE QUOTE'S BLOCKS ARE RESTYLED `normal` ─────────────────────────────────
+ *
+ * They are stored as Quote blocks, and rendering them as stored would put a
+ * `<blockquote>` inside the `<blockquote>`. Restyled, each renders as a `<p>`, which is
+ * what a paragraph of quoted text is. Copies, not the originals: astro-portabletext
+ * writes to the nodes it renders.
+ *
+ * ── THE STYLING IS NOT HERE ──────────────────────────────────────────────────
+ *
+ * The bar and indent are base.css's `blockquote`; the caption role and its end
+ * alignment are base.css's `figcaption` and `figure:has(> blockquote) > figcaption`.
+ * Those are element rules because /reviews and the case study testimonial render the
+ * same structure by hand, and all three should look the same. The one rule here is
+ * the space between a quote's paragraphs, which is local for now — see below.
+ */
+import {PortableText} from 'astro-portabletext'
+import type {Props as NodeProps, TypedObject} from 'astro-portabletext/types'
+import type {Quotation} from './quotations'
+import {MARK_COMPONENTS} from './marks'
+import BareBlock from './BareBlock.astro'
+
+type Props = NodeProps<Quotation<TypedObject>>
+
+const {node} = Astro.props
+
+const paragraphs = node.quote.map((block) => ({...block, style: 'normal'}))
+
+/* The dash is the renderer's, not the author's — the same en dash and space
+   reviews.astro writes before a byline. An expression rather than bare text in the
+   template, so the trailing space survives a formatter reflowing those lines. */
+const dash = '– '
+---
+
+<figure>
+  <blockquote>
+    <PortableText value={paragraphs} components={{mark: MARK_COMPONENTS}} />
+  </blockquote>
+  <figcaption>
+    {dash}<PortableText
+      value={[node.attribution]}
+      components={{block: {attribution: BareBlock}, mark: MARK_COMPONENTS}}
+    />
+  </figcaption>
+</figure>
+
+<style>
+  /*
+   * The space between the paragraphs of a multi-paragraph quote: `rhythm-paragraph`,
+   * as between any two paragraphs of body prose.
+   *
+   * `> * + *` rather than `p + p`, matching reviews.astro — it is the general sibling
+   * rule, and a quote containing a list would take it too. `:global()` because the `<p>`s
+   * are rendered by astro-portabletext's Block component, which does not carry this
+   * component's scope attribute.
+   *
+   * LOCAL FOR NOW, AND IT IS A PROMOTION CANDIDATE. reviews.astro writes this same rule
+   * and the case study writes `p + p`; this is the third copy. Whether it becomes a
+   * base.css element rule is a separate call from the figcaption's, so it is left here.
+   */
+  blockquote > :global(* + *) {
+    margin-top: var(--rhythm-paragraph);
+  }
+</style>
