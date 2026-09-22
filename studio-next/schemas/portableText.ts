@@ -54,6 +54,35 @@
  * because getting it wrong would have silently broken link editing everywhere.
  */
 
+import {AttributionStyle} from './AttributionStyle'
+
+/**
+ * The credit line for a quote: who said it. Offered wherever Quote is, except review
+ * bodies — see REVIEW_STYLES.
+ *
+ * ── THE TIE TO ITS QUOTE IS POSITIONAL ───────────────────────────────────────
+ *
+ * An attribution belongs to the Quote block (or run of Quote blocks) IMMEDIATELY above
+ * it. Nothing in the data records that relationship; the front end infers it by
+ * position and renders the pair as one `<figure>`, the quote in a `<blockquote>` and
+ * this line in its `<figcaption>` — the same WHATWG pattern the Reviews page builds by
+ * hand. See web-next/src/components/prose/quotations.ts.
+ *
+ * A style rather than a quote object with an attribution field (Andy, 2026-09-22),
+ * because a style keeps authoring fluid, carries inline links — the existing credits
+ * link to `/reviews/#slug` — and needs no migration of the quotes already written with
+ * the Quote style. The cost is that the tie can be broken: an attribution with anything
+ * between it and a quote, an empty paragraph included, is an ORPHAN. The build renders
+ * an orphan as an ordinary paragraph, so nothing disappears, and warns naming it.
+ *
+ * ── TYPE THE NAME, NOT THE DASH ──────────────────────────────────────────────
+ *
+ * The front end supplies the leading en dash, as the Reviews page does (Andy, 2026-09-22).
+ * An author who types one as well gets two — which is what the first real use did, and
+ * why the editor now shows the renderer's dash in front of the line (AttributionStyle).
+ */
+const ATTRIBUTION = {title: 'Attribution', value: 'attribution', component: AttributionStyle}
+
 /**
  * The heading range for long-form body fields: `h2` through `h4`, plus quote.
  *
@@ -78,6 +107,7 @@ export const BODY_STYLES = [
   {title: 'H3', value: 'h3'},
   {title: 'H4', value: 'h4'},
   {title: 'Quote', value: 'blockquote'},
+  ATTRIBUTION,
 ]
 
 export const TRANSCRIPT_STYLES = [
@@ -85,7 +115,23 @@ export const TRANSCRIPT_STYLES = [
   {title: 'H3', value: 'h3'},
   {title: 'H4', value: 'h4'},
   {title: 'Quote', value: 'blockquote'},
+  ATTRIBUTION,
 ]
+
+/**
+ * BODY_STYLES without Attribution — for the two review bodies, `body` and
+ * `condensedBody`.
+ *
+ * A review body IS a quote: both the Reviews page and the case study testimonial wrap
+ * it in a hand-built `<blockquote>` and build its attribution from structured fields
+ * (`author`, `title`, `employer`). An Attribution block inside it would put a second
+ * `<figure>` inside that outer quote, crediting someone within a credited quote.
+ *
+ * Derived by filter rather than listed, so it cannot drift from BODY_STYLES. Note it
+ * still offers Quote, which has the same nesting problem and which no review uses —
+ * whether a review body should offer Quote at all is open, and separate.
+ */
+export const REVIEW_STYLES = BODY_STYLES.filter(({value}) => value !== 'attribution')
 
 /**
  * Paragraphs only — for fields that are one unit of prose rather than a document:

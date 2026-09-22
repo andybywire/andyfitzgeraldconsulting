@@ -163,20 +163,6 @@ export type Figure = {
   thumbnail?: boolean
 }
 
-export type ReviewReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'review'
-}
-
-export type CaseStudyReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'caseStudy'
-}
-
 export type Settings = {
   _id: string
   _type: 'settings'
@@ -184,8 +170,6 @@ export type Settings = {
   _updatedAt: string
   _rev: string
   title?: string
-  siteTitle?: string
-  siteSubtitle?: string
   url?: string
   description?: string
   authorName?: string
@@ -224,39 +208,6 @@ export type Settings = {
     _type: 'bandOverride'
     _key: string
   }>
-  homeLogos?: Array<
-    {
-      _key: string
-    } & ClientReference
-  >
-  reviews?: Array<
-    {
-      _key: string
-    } & ReviewReference
-  >
-  insightsBanner?: {
-    asset?: SanityImageAssetReference
-    media?: unknown
-    hotspot?: SanityImageHotspot
-    crop?: SanityImageCrop
-    caption?: string
-    altText?: string
-    _type: 'image'
-  }
-  clientWorkBanner?: {
-    asset?: SanityImageAssetReference
-    media?: unknown
-    hotspot?: SanityImageHotspot
-    crop?: SanityImageCrop
-    caption?: string
-    altText?: string
-    _type: 'image'
-  }
-  featuredClients?: Array<
-    {
-      _key: string
-    } & CaseStudyReference
-  >
 }
 
 export type SanityImageCrop = {
@@ -317,7 +268,7 @@ export type Singleton = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -400,7 +351,7 @@ export type Page = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -480,7 +431,7 @@ export type Presentation = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -503,7 +454,7 @@ export type Presentation = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -526,7 +477,7 @@ export type Presentation = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -591,6 +542,13 @@ export type Event = {
   type?: 'talk' | 'keynote' | 'workshop' | 'panel' | 'podcast'
 }
 
+export type ReviewReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'review'
+}
+
 export type CaseStudy = {
   _id: string
   _type: 'caseStudy'
@@ -628,7 +586,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -646,7 +604,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -664,7 +622,7 @@ export type CaseStudy = {
       _type: 'span'
       _key: string
     }>
-    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+    style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -692,7 +650,7 @@ export type CaseStudy = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -715,7 +673,7 @@ export type CaseStudy = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -886,7 +844,7 @@ export type Article = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -939,7 +897,7 @@ export type Note = {
           _type: 'span'
           _key: string
         }>
-        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote'
+        style?: 'normal' | 'h2' | 'h3' | 'h4' | 'blockquote' | 'attribution'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -1199,8 +1157,6 @@ export type AllSanitySchemaTypes =
   | Recording
   | Table
   | Figure
-  | ReviewReference
-  | CaseStudyReference
   | Settings
   | SanityImageCrop
   | SanityImageHotspot
@@ -1212,6 +1168,7 @@ export type AllSanitySchemaTypes =
   | EventReference
   | Presentation
   | Event
+  | ReviewReference
   | CaseStudy
   | Review
   | Client
@@ -1270,7 +1227,7 @@ export type CASE_STUDY_DETAIL_QUERY_RESULT = {
       _type: 'span'
       _key: string
     }>
-    style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+    style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -1288,7 +1245,7 @@ export type CASE_STUDY_DETAIL_QUERY_RESULT = {
       _type: 'span'
       _key: string
     }>
-    style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+    style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -1306,7 +1263,7 @@ export type CASE_STUDY_DETAIL_QUERY_RESULT = {
       _type: 'span'
       _key: string
     }>
-    style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+    style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
     listItem?: 'bullet' | 'number'
     markDefs?: Array<{
       href?: string
@@ -1335,7 +1292,7 @@ export type CASE_STUDY_DETAIL_QUERY_RESULT = {
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -1358,7 +1315,7 @@ export type CASE_STUDY_DETAIL_QUERY_RESULT = {
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -1487,7 +1444,7 @@ export type FEED_ARTICLES_QUERY_RESULT = Array<{
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -1524,7 +1481,7 @@ export type FEED_NOTES_QUERY_RESULT = Array<{
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -1561,7 +1518,7 @@ export type FEED_PRESENTATIONS_QUERY_RESULT = Array<{
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -1584,7 +1541,7 @@ export type FEED_PRESENTATIONS_QUERY_RESULT = Array<{
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -1908,7 +1865,7 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
               _type: 'span'
               _key: string
             }>
-            style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+            style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
             listItem?: 'bullet' | 'number'
             markDefs?: Array<{
               href?: string
@@ -1978,7 +1935,7 @@ export type INSIGHT_DETAIL_QUERY_RESULT =
               _type: 'span'
               _key: string
             }>
-            style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+            style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
             listItem?: 'bullet' | 'number'
             markDefs?: Array<{
               href?: string
@@ -2059,7 +2016,7 @@ export type INSIGHTS_REVIEW_QUERY_RESULT = Array<
       genre: string | null
       blocks: number | 0
       blockTypes: Array<'block' | 'code' | 'figure' | 'table'> | null
-      styles: Array<'blockquote' | 'h2' | 'h3' | 'h4' | 'normal' | null> | null
+      styles: Array<'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal' | null> | null
       hasNestedList: boolean | false
       hasUnderline: boolean | false
       hasInlineCode: boolean | false
@@ -2142,7 +2099,7 @@ export type PAGE_QUERY_RESULT = {
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -2300,7 +2257,7 @@ export type PRESENTATION_DETAIL_QUERY_RESULT = {
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -2323,7 +2280,7 @@ export type PRESENTATION_DETAIL_QUERY_RESULT = {
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -2352,7 +2309,7 @@ export type PRESENTATION_TRANSCRIPT_QUERY_RESULT = {
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string
@@ -2865,7 +2822,7 @@ export type SINGLETON_INTRO_QUERY_RESULT = {
           _type: 'span'
           _key: string
         }>
-        style?: 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
+        style?: 'attribution' | 'blockquote' | 'h2' | 'h3' | 'h4' | 'normal'
         listItem?: 'bullet' | 'number'
         markDefs?: Array<{
           href?: string

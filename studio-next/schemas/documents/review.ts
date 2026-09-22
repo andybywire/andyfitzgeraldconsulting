@@ -1,6 +1,6 @@
 import {MdOutlineReviews} from 'react-icons/md'
 import {defineType, defineField} from 'sanity'
-import {BODY_STYLES, MARKS} from '../portableText'
+import {MARKS, REVIEW_STYLES} from '../portableText'
 import {slugField} from '../slug'
 
 export default defineType({
@@ -26,7 +26,7 @@ export default defineType({
     defineField({
       name: 'linkedIn',
       title: 'LinkedIn Address',
-      type: 'url'
+      type: 'url',
     }),
     defineField({
       name: 'employer',
@@ -49,7 +49,7 @@ export default defineType({
       of: [
         {
           type: 'block',
-          styles: BODY_STYLES,
+          styles: REVIEW_STYLES,
           marks: MARKS,
         },
       ],
@@ -62,7 +62,7 @@ export default defineType({
       of: [
         {
           type: 'block',
-          styles: BODY_STYLES,
+          styles: REVIEW_STYLES,
           marks: MARKS,
         },
       ],
