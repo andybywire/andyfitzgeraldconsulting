@@ -143,6 +143,15 @@ two different ways. Three decisions, all Andy's:
   remember a class. Review bodies do **not** offer the style (`REVIEW_STYLES`), since they are
   already rendered inside a hand-built quote with structured attribution.
 
+Two things followed in the same change. **A quotation takes `rhythm-block` after it.** At 24 above
+the credit and 24 after the figure, the credit sat exactly halfway between its own quote and the next
+one. /reviews had already solved this (`.review + .review` at 48, contradicting a stale comment that
+said 24), and the prose rule follows its lead. **The spacing between blocks inside a quote was
+promoted too** (`blockquote > * + *`): /reviews, the case study and the new `Quotation` component had
+each written it. Both hand-built consumers now carry only what `base.css` cannot know: the case
+study's 48 above its credit, and each page's two-line credit layout. /reviews and `Quotation` also
+write their dash from one constant, `ATTRIBUTION_DASH`. The case study writes none.
+
 ---
 
 ## The page header's optional lead is required by the rail

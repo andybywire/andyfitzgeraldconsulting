@@ -565,6 +565,41 @@ blockquote {
   color: var(--color-text);
 }
 
+/*
+ * ── THE BLOCKS INSIDE A QUOTE ARE SPACED LIKE BODY PROSE ───────────────────
+ *
+ * The reset zeroes every block margin and hands spacing to the `.detail` ramp, and
+ * the ramp reaches only `.detail`'s DIRECT children — never the paragraphs inside a
+ * quote. Without this a multi-paragraph quote renders as one unbroken slab, the
+ * breaks its author wrote silently discarded. `rhythm-paragraph`, because that is
+ * what two adjacent blocks take everywhere else.
+ *
+ * Promoted on its third consumer (Andy, 2026-09-22): /reviews, the case study
+ * testimonial and prose/Quotation.astro each wrote it locally.
+ *
+ * `> * + *`, NOT `p + p`. /reviews learned that one the hard way: `p + p` separated
+ * paragraphs and left every OTHER block transition at zero, so a review stored as
+ * `p, p, ul, p` kept its list jammed against the paragraphs either side while the
+ * paragraphs themselves looked right — the fix hid its own gap.
+ *
+ * THE CHILD COMBINATOR IS WHAT KEEPS LIST ITEMS OUT. Without `>`, `* + *` also
+ * matches `li + li` and puts 24 between every bullet — reinstating inside quotes the
+ * item margin base.css dropped on 2026-09-02, when lists went to being separated by
+ * their leading alone.
+ *
+ * A quote stored as a single Quote block is untouched. Its text goes straight into
+ * the `<blockquote>`, so its children are inline — `<em>`, `<a>`, `<s>`, `<br>` —
+ * and a vertical margin on an inline box does nothing.
+ *
+ * (0,0,1), so a component overrides it without escalating. The case study's
+ * two-column testimonial does exactly that, zeroing it on the paragraph that starts
+ * the second column.
+ */
+
+blockquote > * + * {
+  margin-top: var(--rhythm-paragraph);
+}
+
 /* ── Figures ───────────────────────────────────────────────────────────────── */
 /* The `caption` role: Noto Serif italic at the 16px step, in `text-muted` —
    apparatus around the content rather than content. */
@@ -590,9 +625,9 @@ figcaption {
  * THREE PLACES RENDER THIS STRUCTURE, which is why it is an element rule: /reviews
  * and the case study testimonial build it by hand, and Prose builds it from the
  * `attribution` style (see prose/quotations.ts). Promoted with the third (Andy,
- * 2026-09-22). The two hand-built ones still restate `text-align` locally for now,
- * and the case study keeps its own 48 above — both win on specificity, since this
- * is (0,0,3).
+ * 2026-09-22), and the two hand-built copies of `text-align` were removed with it.
+ * The case study keeps its own 48 above, which wins on specificity, since this is
+ * (0,0,3).
  *
  * `:has()` rather than a class, because the structure IS the meaning — nothing
  * has to remember to add a class for the rule to apply. Where `:has()` is not

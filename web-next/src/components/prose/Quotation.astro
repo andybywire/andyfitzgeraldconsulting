@@ -26,11 +26,14 @@
  *
  * ── THE STYLING IS NOT HERE ──────────────────────────────────────────────────
  *
- * The bar and indent are base.css's `blockquote`; the caption role and its end
- * alignment are base.css's `figcaption` and `figure:has(> blockquote) > figcaption`.
- * Those are element rules because /reviews and the case study testimonial render the
- * same structure by hand, and all three should look the same. The one rule here is
- * the space between a quote's paragraphs, which is local for now — see below.
+ * All of it is base.css element rules: the bar and indent (`blockquote`), the space
+ * between a quote's paragraphs (`blockquote > * + *`), the caption role
+ * (`figcaption`), and the attribution's end alignment and spacing
+ * (`figure:has(> blockquote) > figcaption`, and the ramp's rule after the figure).
+ * Element rules because /reviews and the case study testimonial render the same
+ * structure by hand, and all three should look the same. The paragraph spacing lived
+ * here as a scoped rule until it was promoted on 2026-09-22, which is why this
+ * component has no <style> block.
  */
 import {PortableText} from 'astro-portabletext'
 import type {Props as NodeProps, TypedObject} from 'astro-portabletext/types'
@@ -60,22 +63,3 @@ const paragraphs = node.quote.map((block) => ({...block, style: 'normal'}))
     />
   </figcaption>
 </figure>
-
-<style>
-  /*
-   * The space between the paragraphs of a multi-paragraph quote: `rhythm-paragraph`,
-   * as between any two paragraphs of body prose.
-   *
-   * `> * + *` rather than `p + p`, matching reviews.astro — it is the general sibling
-   * rule, and a quote containing a list would take it too. `:global()` because the `<p>`s
-   * are rendered by astro-portabletext's Block component, which does not carry this
-   * component's scope attribute.
-   *
-   * LOCAL FOR NOW, AND IT IS A PROMOTION CANDIDATE. reviews.astro writes this same rule
-   * and the case study writes `p + p`; this is the third copy. Whether it becomes a
-   * base.css element rule is a separate call from the figcaption's, so it is left here.
-   */
-  blockquote > :global(* + *) {
-    margin-top: var(--rhythm-paragraph);
-  }
-</style>
