@@ -713,11 +713,11 @@ const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
    * and 2 on Vanessa's — so this is guarding a shape an editor could reach, not one
    * in the corpus.
    *
-   * The paragraph margin is stated at the base because base.css's ramp is scoped to
-   * `.detail` and this is not prose flow; it is then cancelled on the second
-   * paragraph inside the split, where a top margin would push a column-start off the
-   * top edge. `:global` throughout, because <Prose> renders these and they carry its
-   * scope.
+   * The paragraph margin comes from base.css's `blockquote > * + *` — it was stated
+   * here as `p + p` until that rule was promoted (2026-09-22) — and is cancelled on
+   * the second paragraph inside the split, where a top margin would push a
+   * column-start off the top edge. `:global`, because <Prose> renders these and they
+   * carry its scope.
    *
    * ── ONE COLUMN BELOW md, AND THAT IS NOT OPTIONAL ─────────────────────────
    *
@@ -730,10 +730,6 @@ const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
    * fallback that tokens.css asks for: an engine that never evaluates the query is
    * left with the readable arrangement rather than the narrow one.
    */
-  .quote :global(p + p) {
-    margin-top: var(--rhythm-paragraph);
-  }
-
   @container style(--breakpoint-md: true) {
     .quote {
       columns: 2;
@@ -753,11 +749,13 @@ const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
    * w=155). 48 above it, which the board draws (the quote ends at 192, this starts
    * at 240) and which is `rhythm-block`.
    *
-   * base.css's `caption` role is most of the way there already — `--font-size-1` at
-   * 1.5 is exactly the board's 24px line box, and `text-muted` re-points to
-   * `text-on-accent` inside this band, so the colour is right without a word. Only
-   * one thing needs saying: the 8px `rhythm-tight` the role gives a figure caption
-   * becomes 48.
+   * base.css does nearly all of it. The `caption` role gives `--font-size-1` at 1.5,
+   * exactly the board's 24px line box, and `text-muted` re-points to `text-on-accent`
+   * inside this band, so the colour is right without a word. The end alignment is
+   * `figure:has(> blockquote) > figcaption`, which this figure matches — it was stated
+   * here too until that rule was promoted (2026-09-22). Only one thing needs saying:
+   * that rule's 24 above becomes the board's 48, since this quote is a band of its own
+   * rather than a quote in a list.
    *
    * ── IT USED TO CANCEL THE ITALIC, AND THAT WAS THE ODD ONE OUT ─────────────
    *
@@ -771,7 +769,6 @@ const attribution = [quote?.author, quote?.title].filter(Boolean).join(', ')
    */
   .attribution {
     margin-top: var(--rhythm-block);
-    text-align: end;
   }
 
   /* Two lines from two spans rather than a <br>: the line break is layout, not

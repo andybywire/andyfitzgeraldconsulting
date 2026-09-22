@@ -62,6 +62,7 @@ import Footer from '../components/Footer.astro'
 import PageHeader from '../components/PageHeader.astro'
 import SanityImage from '../components/SanityImage.astro'
 import Prose from '../components/prose/Prose.astro'
+import {ATTRIBUTION_DASH} from '../components/prose/quotations'
 import RailNav from '../components/RailNav.astro'
 import {pageNode} from '../lib/linked-data'
 
@@ -209,12 +210,12 @@ const jsonLd = [
                             */}
                             {review.linkedIn ? (
                               <a href={review.linkedIn}>
-                                <span class="byline-name">{`– ${attribution}`}</span>
+                                <span class="byline-name">{`${ATTRIBUTION_DASH}${attribution}`}</span>
                                 <span class="byline-org">{client.name}</span>
                               </a>
                             ) : (
                               <>
-                                <span class="byline-name">{`– ${attribution}`}</span>
+                                <span class="byline-name">{`${ATTRIBUTION_DASH}${attribution}`}</span>
                                 <span class="byline-org">{client.name}</span>
                               </>
                             )}
@@ -375,11 +376,19 @@ const jsonLd = [
    * 773 is 16; blockquote bottom 1861 -> byline 1885 is 24; byline bottom 1933 -> next
    * blockquote 1957 is 24.
    *
-   * A single `gap` cannot say that, and a first draft used one — giving every pair 16
-   * and putting the two-review clients 8px tight. Sibling margins can, because the two
-   * relationships are distinguishable by selector. `.review + .review` is (0,2,0)
-   * against the base rule's (0,1,0), so it wins on specificity and the source order of
-   * the two is not load-bearing.
+   * ── BYLINE -> NEXT QUOTE IS 48 IN THE BUILD, NOT THE BOARD'S 24, DELIBERATELY ──
+   *
+   * `.review + .review` below takes `rhythm-block`. This comment said 24 while the code
+   * said 48, and the code is the intended value (Andy, 2026-09-22): at the board's 24 a
+   * byline sits exactly halfway between its own quote and the next one, and reads as
+   * belonging to either. 24 to its quote and 48 to the next makes proximity say which.
+   * The same argument, applied to Portable Text quotations, is base.css's rule after
+   * `figure:has(> blockquote)` — and this page is where it was set first.
+   *
+   * A single `gap` cannot say any of that, and a first draft used one — giving every
+   * pair 16. Sibling margins can, because the relationships are distinguishable by
+   * selector. `.review + .review` is (0,2,0) against the base rule's (0,1,0), so it
+   * wins on specificity and the source order of the two is not load-bearing.
    *
    * Five clients have more than one review, so this is visible on a third of the page.
    */
@@ -492,68 +501,32 @@ const jsonLd = [
     scroll-margin-block-start: var(--rhythm-band);
   }
 
-  /* base.css already gives every blockquote the bar and the indent — 4px/24 at the base
-     and 6px/48 from md, which is exactly what both boards draw. Nothing to add there. */
-
   /*
-   * ── A REVIEW'S BLOCKS NEED SEPARATING, AND NOT ONLY ITS PARAGRAPHS ─────────
+   * ── THE QUOTE AND ITS BYLINE ARE ALL base.css NOW ──────────────────────────
    *
-   * base.css zeroes the margin on every block element and hands the rhythm to `.detail`.
-   * That is the right division for an article body, but this blockquote is not inside
-   * `.detail` — so a multi-block review rendered as one unbroken slab with the breaks
-   * its author wrote silently discarded. Eleven of the 22 have more than one block.
+   * Everything a review's figure needs is an element rule, because this page, the case
+   * study testimonial and Portable Text's `attribution` style all render the same
+   * `figure > blockquote + figcaption` structure (promoted 2026-09-22):
    *
-   * ── `> * + *`, NOT `p + p` ────────────────────────────────────────────────
+   *   - the bar and the indent: `blockquote` — 4px/24 at the base and 6px/48 from md,
+   *     exactly what both boards draw;
+   *   - the space between a review's blocks: `blockquote > * + *`. Eleven of the 22
+   *     reviews have more than one block. This page is where that rule, and the reason
+   *     it is `* + *` rather than `p + p`, were first worked out;
+   *   - the byline's size, italic and muted color: the `figcaption` caption role;
+   *   - its end alignment and the 24 above it: `figure:has(> blockquote) > figcaption`.
    *
-   * The first fix here was `p + p`, which is the same mistake in a smaller form: it
-   * separated paragraphs and left every OTHER block transition at zero. Miriam Bartha's
-   * review is `p, p, ul, p`, so its list stayed jammed against the paragraph above and
-   * the one below while the paragraphs around it looked correct — the fix hid its own
-   * gap. `* + *` covers every pair, which is exactly what `.detail`'s base rule says.
-   *
-   * ── THE CHILD COMBINATOR IS WHAT KEEPS LIST ITEMS OUT ─────────────────────
-   *
-   * `>` restricts this to the blockquote's OWN children — the top-level Portable Text
-   * blocks. Without it, `* + *` would also match `li + li`, putting 24px between every
-   * bullet. base.css deliberately dropped the global `li + li` margin on 2026-09-02 and
-   * lists are now separated by their leading alone; this must not quietly reinstate it
-   * inside quotes. Verified against the built DOM: `blockquote > p, p, ul, p`, with the
-   * six `li`s nested a level down and untouched.
-   *
-   * `--rhythm-paragraph` because that is what two adjacent blocks take everywhere else,
-   * `.detail` included since the `rhythm-block` pair was removed. Nothing new is
-   * introduced here; a rule the ramp cannot reach is restated for this one context.
-   *
-   * SCOPED TO `.review blockquote`, so no other Portable Text is affected — article
-   * bodies keep taking `.detail`'s ramp, and the case study's testimonial is untouched.
-   *
-   * `:global()` because these elements are <Prose>'s: a scope attribute reaches a
-   * component's root, never its descendants.
-   */
-  .review blockquote > :global(* + *) {
-    margin-top: var(--rhythm-paragraph);
-  }
-
-  .review blockquote + .byline {
-    margin-top: var(--rhythm-paragraph);
-  }
-
-  /*
    * ── THE BYLINE IS RIGHT-ALIGNED, WHICH THE STRUCTURE WALK DOES NOT SHOW ────
    *
    * Only the screenshot does — the text node is full-width with `textAlignHorizontal:
-   * RIGHT`, so a measurement of its box reads as left-aligned. Worth stating because it
-   * is the one property of this element that a board walk actively misreports.
+   * RIGHT`, so a measurement of its box reads as left-aligned. Worth keeping, because it
+   * is the one property of this element that a board walk actively misreports. The build
+   * writes it as `end`, the logical form, which is the same edge in this language.
    *
-   * Two <span>s in a block link, so the name and the employer are separate lines while
-   * remaining one target with one accessible name.
+   * What remains here is layout base.css cannot know: two <span>s in a block link, so the
+   * name and the employer are separate lines while remaining one target with one
+   * accessible name.
    */
-  .byline {
-    text-align: right;
-    font-size: var(--font-size-1);
-    line-height: 1.5;
-  }
-
   .byline a {
     display: block;
   }

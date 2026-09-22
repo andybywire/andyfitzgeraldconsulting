@@ -122,6 +122,36 @@ matching desktop, which is why that value rather than a taste call. The bar had 
 was 12.5% of a 48 indent and would have been 25% of a 24 one, doubling in visual weight precisely as
 the indent halved.
 
+### The attribution joined it (2026-09-22)
+
+Portable Text gained an **`attribution` block style** for crediting a quote on an as-needed basis.
+Before that, the only credits in the corpus were three testimonials on /consulting, written by hand in
+two different ways. Three decisions, all Andy's:
+
+- **A style, not a quote object.** A style keeps authoring fluid, carries inline links (the credits
+  link to `/reviews/#slug`), and needs no migration of existing quotes. The cost is that the tie to
+  the quote is **positional**. The front end pairs an attribution with the Quote block(s) directly
+  above it (`web-next/src/components/prose/quotations.ts`), and an orphan renders as a plain
+  paragraph with a build warning.
+- **`<figure>` + `<figcaption>`, not a sibling paragraph.** A `<p class="attribution">` after the
+  quote would look attached without being attached. The figure puts the pairing in the DOM, and it is
+  the structure /reviews already built by hand. The credit stays outside the `<blockquote>` because it
+  is not part of what was said.
+- **The treatment was promoted to an element rule** on its third consumer. /reviews' `.byline` and the
+  case study's `.attribution` had each written `text-align` locally. The one rule is
+  `figure:has(> blockquote) > figcaption`, and the structure is the selector, so nothing has to
+  remember a class. Review bodies do **not** offer the style (`REVIEW_STYLES`), since they are
+  already rendered inside a hand-built quote with structured attribution.
+
+Two things followed in the same change. **A quotation takes `rhythm-block` after it.** At 24 above
+the credit and 24 after the figure, the credit sat exactly halfway between its own quote and the next
+one. /reviews had already solved this (`.review + .review` at 48, contradicting a stale comment that
+said 24), and the prose rule follows its lead. **The spacing between blocks inside a quote was
+promoted too** (`blockquote > * + *`): /reviews, the case study and the new `Quotation` component had
+each written it. Both hand-built consumers now carry only what `base.css` cannot know: the case
+study's 48 above its credit, and each page's two-line credit layout. /reviews and `Quotation` also
+write their dash from one constant, `ATTRIBUTION_DASH`. The case study writes none.
+
 ---
 
 ## The page header's optional lead is required by the rail

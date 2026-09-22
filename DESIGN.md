@@ -717,24 +717,32 @@ Portable Text emits a flat sequence with no section wrappers, so `gap` cannot ex
 heading."
 
 ```css
-article.detail > * + *:where(:not(.sidebar, .banner))     { margin-top: var(--rhythm-paragraph); }
-article.detail > * + :is(ul, ol, blockquote, figure, pre) { margin-top: var(--rhythm-block); }
-article.detail > :is(ul, ol, blockquote, figure, pre) + * { margin-top: var(--rhythm-block); }
-article.detail > * + h3                                   { margin-top: var(--rhythm-heading-minor); }
-article.detail > * + h2                                   { margin-top: var(--rhythm-heading-major); }
-article.detail > :is(h2, h3, h4) + *                      { margin-top: var(--rhythm-heading-close); }
+.detail > * + *:where(:not(.sidebar, .banner))           { margin-top: var(--rhythm-paragraph); }
+.detail > figure:where(:has(> blockquote))
+          + *:where(:not(.sidebar, .banner))             { margin-top: var(--rhythm-block); }
+.detail > * + h3                                         { margin-top: var(--rhythm-heading-minor); }
+.detail > * + h2                                         { margin-top: var(--rhythm-heading-major); }
+.detail > :is(h2, h3, h4) + *                            { margin-top: var(--rhythm-heading-close); }
 ```
 
-**Source order decides among the last five.** They have identical specificity — (0,1,2) — and
-`heading-close` is last so a heading binds to whatever follows it. No `margin-bottom` anywhere, so
-nothing collapses. The base rule sits deliberately one notch lower at (0,1,1), which is what makes it
-the fallback the other five override.
+**Source order decides among the last four.** They have identical specificity — (0,1,1) — and
+`heading-close` is last so a heading binds to whatever follows it. The attributed-quote rule is
+*first*, so a heading after a quotation still takes its own opening space. No `margin-bottom`
+anywhere, so nothing collapses. The base rule sits deliberately one notch lower at (0,1,0), which is
+what makes it the fallback the other four override.
+
+**No `rhythm-block` around lists, quotes, figures or code.** A pair of rules gave those five 48 above
+*and* below until 2026-09-02, and it was too much air in running text; they now take
+`rhythm-paragraph` like any two adjacent blocks. The one `rhythm-block` left is **after an attributed
+quote, and only below it** (2026-09-22): the credit sits `rhythm-paragraph` under its quote, so at 24
+after the figure as well it would sit halfway between its own quote and the next thing. A bare Quote
+with no attribution is untouched.
 
 > **The exclusion must be `:where(:not(…))`, never a bare `:not()`.**
 
 `.sidebar` and `.banner` are explicitly grid-placed, so a flow margin would push them off their row —
-but `*:not(.sidebar):not(.banner)` adds **two class weights** and lifts the base rule to **(0,3,1)**.
-Three classes outrank one class plus two types, so it then beats all five overrides and **flattens the
+but `*:not(.sidebar):not(.banner)` adds **two class weights** and lifts the base rule to **(0,3,0)**.
+Three classes outrank one class plus a type, so it then beats all four overrides and **flattens the
 whole ramp to `rhythm-paragraph`** — every heading and block gap silently gone. Uniform 24px spacing
 reads as a design choice rather than a cascade bug, which is what makes this worth stating. `:where()`
 contributes zero specificity whatever it contains.
@@ -1111,7 +1119,19 @@ rather than as a response. The convention, now applied rather than merely stated
 animation rather than to be spared 150ms of colour, so each of these degrades to an instant change.
 
 **Blockquote is an element rule in CSS, not a component.** The indent is `padding-inline-start`,
-**not margin** — the bar sits at the box edge, so a margin would put the gap outside it.
+**not margin** — the bar sits at the box edge, so a margin would put the gap outside it. **The blocks
+inside a quote take `rhythm-paragraph`** (`blockquote > * + *`), as body prose does — `* + *` rather
+than `p + p` so a list inside a quote is spaced too, and the child combinator so its items are not.
+
+**A quote's attribution is its figure's `figcaption`** — `<figure><blockquote>…</blockquote>
+<figcaption>– Name</figcaption></figure>`, outside the quote, with no `<cite>`. It takes the
+`caption` role, **end-aligned**, with `rhythm-paragraph` above rather than a caption's
+`rhythm-tight` — and the quotation takes **`rhythm-block` after it**, so a credit is closer to its
+own quote than to whatever follows. That is the Reviews page's byline-to-next-quote spacing, and it is
+only after an *attributed* quote: a bare Quote, and the space above any quote, stay at
+`rhythm-paragraph`. One element rule (`figure:has(> blockquote) > figcaption`) serves the Portable Text
+`attribution` style, /reviews and the case study testimonial. Reasoning in
+[docs/decisions/components.md](docs/decisions/components.md).
 
 **The color-mode selector** is a radio group — three exclusive options with one active is what radios
 are, where `aria-pressed` would claim all three can be on at once. **"System" is the absence of a

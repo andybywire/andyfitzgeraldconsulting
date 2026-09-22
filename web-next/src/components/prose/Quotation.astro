@@ -1,0 +1,65 @@
+---
+/**
+ * A quote with its attribution — the synthetic `quotation` node that quotations.ts
+ * builds from a run of Quote blocks and the `attribution` block after it.
+ *
+ * ── THE MARKUP IS THE WHATWG PATTERN, AND THE REVIEWS PAGE'S ────────────────
+ *
+ *     <figure>
+ *       <blockquote><p>…</p></blockquote>
+ *       <figcaption>– …</figcaption>
+ *     </figure>
+ *
+ * The attribution sits OUTSIDE the `<blockquote>`, because a blockquote's contents are
+ * the quotation itself and the credit is not part of what was said. The `<figure>` is
+ * what ties the two together — a `<figcaption>` captions its figure — so the pairing
+ * is in the DOM, not only in the layout. No `<cite>`: that element is for the title of
+ * a work, not a person's name, which is what an attribution usually is. This is the
+ * same reading reviews.astro records beside its own byline.
+ *
+ * ── THE QUOTE'S BLOCKS ARE RESTYLED `normal` ─────────────────────────────────
+ *
+ * They are stored as Quote blocks, and rendering them as stored would put a
+ * `<blockquote>` inside the `<blockquote>`. Restyled, each renders as a `<p>`, which is
+ * what a paragraph of quoted text is. Copies, not the originals: astro-portabletext
+ * writes to the nodes it renders.
+ *
+ * ── THE STYLING IS NOT HERE ──────────────────────────────────────────────────
+ *
+ * All of it is base.css element rules: the bar and indent (`blockquote`), the space
+ * between a quote's paragraphs (`blockquote > * + *`), the caption role
+ * (`figcaption`), and the attribution's end alignment and spacing
+ * (`figure:has(> blockquote) > figcaption`, and the ramp's rule after the figure).
+ * Element rules because /reviews and the case study testimonial render the same
+ * structure by hand, and all three should look the same. The paragraph spacing lived
+ * here as a scoped rule until it was promoted on 2026-09-22, which is why this
+ * component has no <style> block.
+ */
+import {PortableText} from 'astro-portabletext'
+import type {Props as NodeProps, TypedObject} from 'astro-portabletext/types'
+import {ATTRIBUTION_DASH, type Quotation} from './quotations'
+import {MARK_COMPONENTS} from './marks'
+import BareBlock from './BareBlock.astro'
+
+type Props = NodeProps<Quotation<TypedObject>>
+
+const {node} = Astro.props
+
+const paragraphs = node.quote.map((block) => ({...block, style: 'normal'}))
+
+/* In the template: the figcaption's dash is the renderer's, not the author's — see
+   ATTRIBUTION_DASH, which the feeds write too. It goes in as an expression rather than
+   bare text, so its trailing space survives a formatter reflowing those lines. */
+---
+
+<figure>
+  <blockquote>
+    <PortableText value={paragraphs} components={{mark: MARK_COMPONENTS}} />
+  </blockquote>
+  <figcaption>
+    {ATTRIBUTION_DASH}<PortableText
+      value={[node.attribution]}
+      components={{block: {attribution: BareBlock}, mark: MARK_COMPONENTS}}
+    />
+  </figcaption>
+</figure>

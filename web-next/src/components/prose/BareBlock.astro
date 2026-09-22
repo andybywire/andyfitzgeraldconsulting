@@ -1,0 +1,24 @@
+---
+/**
+ * A text block's content with NO element around it — used by Quotation.astro for the
+ * attribution, whose element is the `<figcaption>` it is rendered into.
+ *
+ * ── WHY NOT LET IT BE A <p> ──────────────────────────────────────────────────
+ *
+ * `<p>` inside `<figcaption>` is valid HTML, and it is what the attribution would be if
+ * it were simply restyled `normal`. It breaks two things:
+ *
+ *   - The en dash. Quotation writes it before the block, so a `<p>` would put the dash
+ *     on a line of its own, above the name.
+ *   - The right edge. base.css caps every `.detail p` at 66ch, and `ch` resolves
+ *     against the element's own font — the caption's 16px, not the body's 20. So the
+ *     `<p>` would be narrower than the figure it sits in, and an end-aligned line would
+ *     end short of the quote's edge. DESIGN.md excludes `figcaption` from the cap for
+ *     exactly this reason; a `<p>` inside one would bring it back.
+ *
+ * `index` and `isInline` arrive in props and are not destructured — nothing reads them,
+ * and neither does `node`. The library has already built the marks tree into the slot.
+ */
+---
+
+<slot />
