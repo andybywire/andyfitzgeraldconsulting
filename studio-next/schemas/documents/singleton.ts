@@ -8,7 +8,7 @@ export default defineType({
   name: 'singleton',
   type: 'document',
   icon: GrDocumentText,
-  title: 'Singleton Pages',
+  title: 'Index Pages',
   fields: [
     defineField({
       name: 'title',

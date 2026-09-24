@@ -13,7 +13,7 @@ export default defineType({
   name: 'note',
   type: 'document',
   icon: GrNote,
-  title: 'Note',
+  title: 'Notes',
   fields: [
     defineField({
       name: 'title',
