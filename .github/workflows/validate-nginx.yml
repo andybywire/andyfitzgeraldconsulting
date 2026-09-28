@@ -39,11 +39,14 @@ name: Validate nginx configuration
 # far as being installed — the common failure, caught for free, before anyone is
 # at a terminal.
 
+# Every branch, not just `main`. This job is read-only and cheap, and nothing it
+# guards is deployed by CI any more — nginx/deploy.sh is run by hand, from
+# whatever is checked out. So the useful moment for it is on the BRANCH, before a
+# merge, not after. Pinning it to `main` would only confirm a config once it was
+# already on the branch everyone deploys from.
 on:
   workflow_dispatch:
   push:
-    branches:
-      - next
     paths:
       - "nginx/**"
       - ".github/workflows/validate-nginx.yml"
