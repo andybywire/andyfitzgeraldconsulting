@@ -64,7 +64,10 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # reports the collision as a warning rather than an error so `nginx -t` passes.
 # See the cutover sequence in that file's header; adding it here is one of those
 # steps, paired with removing the sites-enabled symlink.
-FILES=(afc.conf site-common.conf redirects.conf)
+#
+# certbot-deploy-hook.sh is not nginx config, but it ships from here because it
+# exists only to reload nginx, and this script already runs as root on the droplet.
+FILES=(afc.conf site-common.conf redirects.conf certbot-deploy-hook.sh)
 
 for f in "${FILES[@]}"; do
   [[ -f "$HERE/$f" ]] || { echo "missing: $HERE/$f" >&2; exit 1; }
@@ -147,6 +150,22 @@ if ! nginx -t; then restore; exit 1; fi
 
 echo ">>> Reloading"
 if ! systemctl reload nginx; then restore; exit 1; fi
+
+# ── THE CERTBOT DEPLOY HOOK ───────────────────────────────────────────────
+#
+# Installed AFTER the reload, and deliberately outside backup/restore. It is not
+# nginx config, so it cannot affect `nginx -t`, and there is no running state
+# for it to fall out of step with. If the nginx half above fails, this is never
+# reached and whatever hook was installed before stays as it was.
+#
+# certbot runs only EXECUTABLE files in this directory, silently skipping
+# anything else, so the mode is the part that matters. A 644 hook would install
+# cleanly and never fire. The directory already exists on a certbot-managed host;
+# `mkdir -p` covers a fresh one.
+HOOK=/etc/letsencrypt/renewal-hooks/deploy/afc-reload-nginx
+echo ">>> Installing the certbot deploy hook to $HOOK"
+mkdir -p "$(dirname "$HOOK")"
+install -m 755 -o root -g root "$STAGED/certbot-deploy-hook.sh" "$HOOK"
 
 # Keep the last few backups for post-mortems; they are plain text and cost
 # nothing. Pruning matters on a droplet that has hit 100% disk once already.
