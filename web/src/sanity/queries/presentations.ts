@@ -19,7 +19,7 @@ import {BAND_RSS, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
  * following `[filter][0]` DISTRIBUTES per parent unless the traversal is parenthesised
  * first. Without the parens this returns one poster PER EVENT — an array where a single
  * value is expected, which reads downstream as "no value" rather than as an error.
- * Verified 2026-09-08; the long note is in studio-next/schemas/objects/recording.ts.
+ * Verified 2026-09-08; the long note is in studio/schemas/objects/recording.ts.
  *
  * VERIFIED AGAINST THE REAL FOUR, and they happen to cover all four outcomes, which is
  * why this corpus is worth keeping as the test set:
@@ -215,7 +215,7 @@ export const PRESENTATION_TRANSCRIPT_QUERY = defineQuery(`
  * When those queries are written, the ladder's GROQ needs parentheses to work:
  * `(eventDetail[]->eventRecordings[])[defined(poster)][0]`. Without them the filter and
  * index distribute per event and return one poster each. Verified 2026-09-08; the full
- * note is in studio-next/schemas/objects/recording.ts.
+ * note is in studio/schemas/objects/recording.ts.
  */
 export const PRESENTATION_DELIVERY_QUERY = defineQuery(`
 	*[_type == "presentation" && slug.current == $slug][0] {

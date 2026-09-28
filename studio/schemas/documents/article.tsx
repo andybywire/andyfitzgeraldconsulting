@@ -171,7 +171,7 @@ export default defineType({
          * TypeGen reported `code` because the TYPE is code; the `name` override is
          * what made the stored `_type` disagree. TypeGen was right and the schema
          * was inconsistent, so this rename aligns data, schema and generated types
-         * at once — see the comment in web-next/src/components/prose/Code.astro.
+         * at once — see the comment in web/src/components/prose/Code.astro.
          *
          * The 25 existing blocks were migrated first, by setting `_type` on each
          * keyed path so the `code` payloads were never rewritten: 5715 characters

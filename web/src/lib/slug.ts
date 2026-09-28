@@ -34,7 +34,7 @@
  * quotes are left to the general rule, where they collapse to a hyphen and are then
  * trimmed as leading or trailing anyway.
  *
- * `studio-next/schemas/slug.ts` carries the same rule for document slugs and had the
+ * `studio/schemas/slug.ts` carries the same rule for document slugs and had the
  * same bug. The two are deliberately NOT one shared module — different jobs,
  * different packages, and a workspace package for ten lines would add build config
  * on both sides to remove a duplication that is only skin deep. They are kept in

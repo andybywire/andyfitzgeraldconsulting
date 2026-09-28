@@ -26,7 +26,7 @@
  *
  * ── ONE CONSUMER CANNOT IMPORT THIS, AND DUPLICATES TWO OF THEM ─────────────
  *
- * `web-next/server/contact.php` renders a no-JS failure page that links to LinkedIn and
+ * `web/server/contact.php` renders a no-JS failure page that links to LinkedIn and
  * Bluesky, and PHP cannot import a TypeScript module. Those two URLs are therefore copied
  * there with a note pointing back here. IF EITHER MOVES, IT MOVES IN BOTH PLACES.
  */

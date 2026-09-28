@@ -201,8 +201,9 @@ jobs:
 
       # ── THE RELEASE IS TWO DIRECTORIES, NOT ONE ─────────────────────────
       #
-      # build-prod.yml tars web/_site and the release directory IS the web root,
-      # with mailhandler.php sitting inside it. That cannot work here: contact.php
+      # build-prod.yml, which deployed the 11ty site until cutover, tarred
+      # web/_site, and its release directory WAS the web root, with
+      # mailhandler.php sitting inside it. That cannot work here: contact.php
       # keeps a `.env` beside it holding the Google client secret and refresh
       # token, and its own header comment promises that directory is somewhere
       # nginx does not serve.

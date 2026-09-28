@@ -49,7 +49,7 @@ const SANITY_API_VERSION = '2026-08-18'
 /**
  * ── THE DEV-ONLY STUB FOR /api/contact ──────────────────────────────────────
  *
- * In production and preview that path is served by `web-next/server/contact.php`, which
+ * In production and preview that path is served by `web/server/contact.php`, which
  * exists only on the droplet. Locally there is no PHP and no nginx, so without this the
  * contact form has nothing to talk to and none of its client behaviour can be developed.
  *
@@ -263,7 +263,7 @@ export default defineConfig({
         default: 'production',
       }),
       // Where the Studio lives, for stega's click-to-edit links. Optional because only
-      // the preview build encodes them, and it is not set until studio-next exists.
+      // the preview build encodes them; a production build never reads it.
       PUBLIC_SANITY_STUDIO_URL: envField.string({
         context: 'client',
         access: 'public',

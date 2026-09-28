@@ -73,7 +73,8 @@ const StateHeading = `h${headingLevel}` as 'h2' | 'h3'
 
   `/api/contact` rather than `/mailhandler.php` (Andy, 2026-09-04): the URL should
   not name the implementation, so a backend rewritten in something other than PHP
-  keeps the address. nginx maps this to web-next/server/ in phase 6.
+  keeps the address. nginx maps it to the release's server/contact.php — see the
+  `/api/contact` location in nginx/site-common.conf.
 */
 const ENDPOINT = '/api/contact'
 

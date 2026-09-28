@@ -109,7 +109,7 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
  * Andy's own editing would otherwise be counted as traffic.
  *
  * `import.meta.env.PROD` keeps it out of `pnpm dev`, and without it the local dev server
- * WOULD report: `web-next/.env` sets `PUBLIC_SITE_MODE=production`, and astro.config reads
+ * WOULD report: `web/.env` sets `PUBLIC_SITE_MODE=production`, and astro.config reads
  * anything that is not the string 'preview' as production. So mode alone says "this is a
  * production site" on a laptop. PROD is false under `astro dev` and true under
  * `astro build`, which is the distinction that actually matters here — the question is

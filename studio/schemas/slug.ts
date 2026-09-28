@@ -33,9 +33,9 @@ import {defineField} from 'sanity'
  * Slicing last could leave a trailing hyphen when the cut lands on one, so the
  * trim runs after the slice and cleans up whatever the cut exposed.
  *
- * ── NOT SHARED WITH web-next, DELIBERATELY ───────────────────────────────────
+ * ── NOT SHARED WITH web/, DELIBERATELY ───────────────────────────────────────
  *
- * `web-next/src/lib/slug.ts` does nearly the same thing for a different job —
+ * `web/src/lib/slug.ts` does nearly the same thing for a different job —
  * heading fragment ids and `?topic=` values, from arbitrary text rather than from a
  * title, with no length cut. A workspace package for ten lines would add build
  * config to both sides to remove a duplication that is only skin deep. The two are

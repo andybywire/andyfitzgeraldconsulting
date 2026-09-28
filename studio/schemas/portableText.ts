@@ -39,7 +39,7 @@
  * Kept deliberately (Andy's call, 2026-08-26) rather than removed alongside
  * underline. It is accounted for on the render side rather than left to the UA:
  * the serializer emits `<s>` and `base.css` gives it a rule. See
- * web-next/src/components/prose/Strike.astro.
+ * web/src/components/prose/Strike.astro.
  *
  * ── DECLARING `decorators` DOES NOT DROP THE LINK ANNOTATION ─────────────────
  *
@@ -66,7 +66,7 @@ import {AttributionStyle} from './AttributionStyle'
  * it. Nothing in the data records that relationship; the front end infers it by
  * position and renders the pair as one `<figure>`, the quote in a `<blockquote>` and
  * this line in its `<figcaption>` — the same WHATWG pattern the Reviews page builds by
- * hand. See web-next/src/components/prose/quotations.ts.
+ * hand. See web/src/components/prose/quotations.ts.
  *
  * A style rather than a quote object with an attribution field (Andy, 2026-09-22),
  * because a style keeps authoring fluid, carries inline links — the existing credits

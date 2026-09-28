@@ -16,7 +16,7 @@
  * Production and the SSR preview both serve this from their own origin, and the form
  * posts to a RELATIVE path, so every real request is same-origin. Local development uses
  * a dev-server stub at the same path rather than reaching across to the droplet — see the
- * Vite plugin in web-next/astro.config.mjs. Adding `Access-Control-Allow-Origin` here
+ * Vite plugin in web/astro.config.mjs. Adding `Access-Control-Allow-Origin` here
  * would widen nothing useful; note it would also not be a security control, since CORS
  * governs whether a BROWSER may read a response, and anyone can post here with curl
  * regardless. The spam controls are the honeypot and the rate limit.
@@ -130,7 +130,7 @@ function fail_fields(array $errors): void
  * the browser navigated away and there is no body to restore. The JS path never gets here,
  * and never loses anything, because it does not navigate at all. Hence the routes out.
  *
- * ── THE TWO PROFILE URLs ARE DUPLICATED FROM web-next/src/lib/social.ts ─────
+ * ── THE TWO PROFILE URLs ARE DUPLICATED FROM web/src/lib/social.ts ──────────
  *
  * Knowingly, and there is no way around it: PHP cannot import a TypeScript module, and
  * this page is rendered by the server rather than the build, so nothing can inject them.

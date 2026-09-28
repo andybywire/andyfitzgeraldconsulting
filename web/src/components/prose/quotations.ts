@@ -3,7 +3,7 @@
  *
  * ── WHY THIS IS A PASS OVER THE ARRAY AND NOT A SERIALIZER ───────────────────
  *
- * The `attribution` style (studio-next/schemas/portableText.ts) credits the Quote block
+ * The `attribution` style (studio/schemas/portableText.ts) credits the Quote block
  * directly above it, and the pair renders as one `<figure>`: the quote in a
  * `<blockquote>`, the credit in its `<figcaption>`. That is the WHATWG pattern for a
  * quotation with a source, and the one the Reviews page builds by hand.
