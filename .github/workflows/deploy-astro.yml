@@ -92,7 +92,7 @@ on:
     branches:
       - main
     paths:
-      - "web-next/**"
+      - "web/**"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".github/workflows/deploy-astro.yml"
@@ -179,7 +179,7 @@ jobs:
         # Cheap, and it catches the failure mode this codebase is most exposed to:
         # a GROQ projection whose result type no longer matches what a component
         # reads. Runs before the build so a type error is reported as one.
-        run: pnpm --filter web-next check
+        run: pnpm --filter web check
 
       - name: Build
         env:
@@ -188,7 +188,7 @@ jobs:
         # output, the apex site URL and no visual editing. No read token: a
         # production build reads published content anonymously, and astro.config.mjs
         # only demands a token under preview.
-        run: pnpm --filter web-next build
+        run: pnpm --filter web build
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -219,10 +219,10 @@ jobs:
         run: |
           set -e
           mkdir -p release/public release/server
-          cp -R web-next/dist/. release/public/
+          cp -R web/dist/. release/public/
           # Named files rather than `cp -R`, so that .env.example and anything else
           # that lands in this directory later does not ship by accident.
-          cp web-next/server/contact.php web-next/server/composer.json release/server/
+          cp web/server/contact.php web/server/composer.json release/server/
 
       - name: Install PHP dependencies into the release
         # Easy to lose in a JavaScript migration, and the contact form is dead

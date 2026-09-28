@@ -1,9 +1,10 @@
-# The Astro rebuild only. `web/` and `studio/` are deliberately excluded: they are
-# frozen, they build from `main` with npm, and adding them here would mean debugging
-# their install under a package manager they were never tested with.
+# The whole site, since the phase 6 cutover. Until then this listed web-next and
+# studio-next only, and excluded the frozen 11ty `web/` and `studio/`, which
+# built from `main` with npm. Those are gone; `web` and `studio` are the Astro
+# site and its Studio.
 packages:
-  - web-next
-  - studio-next
+  - web
+  - studio
 # pnpm blocks dependency build scripts by default. esbuild's postinstall fetches its
 # platform binary, so Astro cannot build without it. Each entry here is an explicit
 # decision, not a blanket opt-in.
