@@ -15,7 +15,7 @@ This is the thing to hold onto, because everything else follows from it.
 
 | | when | what it does | where |
 |---|---|---|---|
-| **Extraction** | build | *chooses* ~25 terms per document | `web-next/src/lib/keywords.ts` |
+| **Extraction** | build | *chooses* ~25 terms per document | `web/src/lib/keywords.ts` |
 | **Ranking** | query | *scores* whatever it finds | MiniSearch, via BM25 |
 
 They are separate machines that happen to share an ancestor. BM25 — what MiniSearch ranks
@@ -177,7 +177,7 @@ sits *below* `card sorting` at 4. The distributions overlap completely.
 
 **So termhood is an editorial judgement here, not an inference.** Every term in
 `bodyTerms` is one somebody put in a concept scheme. Discovery still runs — as
-`web-next/scripts/phrase-candidates.mjs`, by hand, writing
+`web/scripts/phrase-candidates.mjs`, by hand, writing
 [phrase-candidates.md](phrase-candidates.md) — but it proposes to a person and never to
 the index.
 
@@ -217,7 +217,7 @@ Measured the same day: `card sorting` 1 → 3, `linked data` 2 → 5, `usability
 
 ## Query-time configuration
 
-In `web-next/src/scripts/search.ts`. Each option was measured, not defaulted.
+In `web/src/scripts/search.ts`. Each option was measured, not defaulted.
 
 ```
 combineWith: 'AND'

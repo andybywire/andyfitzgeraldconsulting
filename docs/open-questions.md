@@ -134,7 +134,7 @@ grid and contained the hero figure and the rail as children. In the Astro build 
 the page stack and the rail is a **sibling** of `article.detail` inside `<Grid>`, so neither can ever
 land in the `article.detail > *` sequence the ramp matches.
 
-Verified rather than assumed, three ways: `.banner` has no consumer anywhere in `web-next`;
+Verified rather than assumed, three ways: `.banner` has no consumer anywhere in `web`;
 `index.astro` already writes its specimen rail as a sibling of `</article>`; and the built article page
 reports **zero** matches for `article.detail .sidebar`, `article.detail .banner`, `.sidebar` and
 `.banner`, with `article.detail`'s children a flat `p / h2 / h3 / ul / figure / pre` sequence.

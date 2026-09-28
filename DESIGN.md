@@ -4,7 +4,7 @@ name: Andy Fitzgerald Consulting
 description: >-
   Typography-driven design system for andyfitzgeraldconsulting.com. Authoritative for
   the RULES — the clamps, the leading ramp, measure, rhythm, the two-layer principle.
-  For VALUES the built CSS is truth as of phase 2: web-next/src/styles/tokens.css wins
+  For VALUES the built CSS is truth as of phase 2: web/src/styles/tokens.css wins
   if it and the front matter here ever disagree, and this file is the diffable record.
   Phase 3 moved several values OUT of tokens.css into the one component that consumes
   each — a value with one consumer is not a token — so for those the component is truth.
@@ -443,7 +443,7 @@ A semantic *text* role is a bundle of applied properties, so in CSS it becomes a
 not a variable. **Do not collapse that distinction.**
 
 **Where things live.** This file is authoritative for the **rules** below. For the **values**, the
-built CSS is truth as of phase 2 — `web-next/src/styles/tokens.css` — and the front matter here is the
+built CSS is truth as of phase 2 — `web/src/styles/tokens.css` — and the front matter here is the
 diffable record of it; if the two ever disagree, the CSS is right. The Figma library
 `pPZPGT6EpSaLkoUDK8HMMp` is a **reference rather than an authority** — it cannot outrank either, but it
 is still the most detailed description of anything not yet built, so keep reading it for component
@@ -779,7 +779,7 @@ falls out of the mechanism does not need a breakpoint, and giving it one only pi
 ### Two breakpoints, mobile-first — and why that is not a conflict
 
 **There are exactly two major breakpoints in the CSS and they live in one place:** `md` at 48rem and
-`lg` at 64rem, as two `@media` blocks in `web-next/src/styles/tokens.css`. No component carries a
+`lg` at 64rem, as two `@media` blocks in `web/src/styles/tokens.css`. No component carries a
 major breakpoint. They flip *tokens*, and components read tokens — including placement, because a
 custom property can hold any token sequence, so `--col-rail: 10 / span 3` collapses to `1 / -1` at the
 base and every consumer follows. There is no CSS way to put a breakpoint in a variable

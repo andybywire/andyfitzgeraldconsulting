@@ -87,56 +87,54 @@ a decision after you've raised a concern, that's his call — proceed with the f
 
 ## Stack and layout
 
-Workspace monorepo, `type: module` throughout. **Two generations coexist until the phase 6 cutover:**
-`web-next/` and `studio-next/` are the build; `web/` and `studio/` are the live site and are not
-modified. The root moves to **pnpm + Node 24** in phase 0; `main` stays on npm until cutover.
+Workspace monorepo, `type: module` throughout, **pnpm + Node 24**. One generation since the phase 6
+cutover: the Astro site and the Studio that feeds it.
 
 | Path | What |
 |---|---|
-| `web-next/` | **Astro site — the build.** Static in production, SSR for the preview environment |
-| `studio-next/` | **Sanity Studio on the `production-26` dataset** — where the content model iterates |
-| `web/` | Eleventy 3.x static site — **live production, frozen** |
-| `web/_src/` | Page templates (Nunjucks) — Eleventy input dir |
-| `web/_includes/` | Layouts and partials (`base.njk`, `partials/head.njk`, `linked-data/*.json`) |
-| `web/_data/` | Build-time Sanity fetches (`articles.js`, `singletons.js`, …) |
-| `web/style/` | The old hand-authored CSS — **reference only; not a pattern to follow** |
-| `web/utils/` | `sanityClient.js`, `imageUrl.js`, `serializers.js` (Portable Text → HTML) |
-| `web/_11ty/shortcodes/` | Image and hero shortcodes |
-| `web/_site/` | Build output — gitignored, never edit |
-| `web/mailhandler.php` | Contact form handler; PHP runs on the droplet alongside the static build |
-| `studio/` | Sanity Studio (v6, React 19, TypeScript) — live, on the `production` dataset |
+| `web/` | **The Astro site.** Static in production, SSR for the preview environment |
+| `web/src/` | Pages, layouts, components, `lib/`, `styles/`, and `sanity/` — the `loadQuery` wrapper, queries, fragments |
+| `web/server/` | `contact.php` + `composer.json` — the mail endpoint, shipped beside the static build and never served |
+| `web/scripts/` | Hand-run tools, never the build: `parity.mjs`, `phrase-candidates.mjs`, `subset-fonts.sh` and its `font-sources/` |
+| `web/sanity.types.ts` | TypeGen output — written by `pnpm typegen`, committed, never edited |
+| `studio/` | **Sanity Studio on the `production-26` dataset** — where the content model lives |
 | `studio/schemas/` | Content model — `documents/`, `objects/` |
-| `web/__web_2022/`, `web/__source_docs/` | Archived prior iterations — reference only, not live |
+| `nginx/` | Server config, authored here and installed by `nginx/deploy.sh` — never edited on the droplet |
 
-**`web/` is reference, not a source of patterns.** Read it to learn what the site *does* — the
-content model it consumes, the JSON-LD it emits, the Sanity queries it runs. Do not carry its CSS,
-its component boundaries or its template structure into `web-next/`; see Current direction.
+**The 11ty site and Studio v6 left the tree at the cutover rename** (2026-09-28, Andy's call: git
+history keeps them). The last commit that has them is **`06cd8e5`** — the one before
+`refactor: rename web-next to web and studio-next to studio`. Read it with
+`git show 06cd8e5:web/<path>`, or check it out beside this one:
 
-The codebase has passed through Jekyll and a Sass build before landing on Eleventy, so anything in
-`web/` may be older than it looks.
+```bash
+git worktree add ../afc-11ty 06cd8e5
+```
+
+It remains the best record of what the old site *did* — the JSON-LD it emitted, the Sanity queries it
+ran — and it is still **not a source of patterns**: do not carry its CSS, its component boundaries or
+its template structure forward; see Current direction. It had passed through Jekyll and a Sass build
+before Eleventy, so anything in it may be older than it looks.
+
+**Not everything came through git.** `__source_docs/` (450 MB) and `__web_2022/` were gitignored in
+the old `web/`, and so were a January 2024 `production` dataset export and the old trees' local
+`.env` files. All of it — untracked leftovers included — was moved intact to
+`~/Archives/afc/repo-local-2026-09-28/` on Andy's machine, not deleted.
 
 ## Commands
 
-**The build** (pnpm, from phase 0):
-
 ```bash
-pnpm --filter web-next dev        # Astro dev server
-pnpm --filter studio-next dev     # Sanity Studio on the production-26 dataset
+pnpm --filter web dev        # Astro dev server
+pnpm --filter studio dev     # Sanity Studio on the production-26 dataset, :3030
+pnpm typegen                 # regenerate web/sanity.types.ts — after any schema or query change
+pnpm parity                  # render-every-document check — after `pnpm --filter web build`
 ```
 
-**The live site** (npm, unchanged until cutover — don't run these to test new work):
-
-```bash
-npm run dev          # runs studio + web in parallel (root)
-npm run dev:web      # Eleventy watch + serve
-npm run dev:studio   # Sanity Studio on :3000
-```
-
-Deploy is `.github/workflows/build-prod.yml` — builds Eleventy, installs PHP deps via Composer,
-tars the output, scps to the droplet, and swaps an atomic release symlink at `/var/www/afc/html`.
-Triggered by pushes touching `web/**` and by Sanity `repository_dispatch` webhooks per document
-type. **It stays as-is and keeps deploying the live site**; the replacement pair is described under
-Current direction → Deploy shape, and is written in phase 6.
+Deploy is `.github/workflows/deploy-astro.yml` — builds the static site and the PHP dependencies,
+tars a two-directory release (`public/` + `server/`), scps it to the droplet and swaps an atomic
+symlink at `/var/www/afc-production/html`. Triggered by pushes to `main` touching `web/**` and by
+Sanity `repository_dispatch` webhooks per document type. **nginx config is deployed separately and
+by hand**, with `nginx/deploy.sh` — its header says why that is not in CI. `build-prod.yml`, which
+deployed the 11ty site from `/var/www/afc`, was retired at the cutover.
 
 ## Conventions and constraints
 
@@ -162,7 +160,8 @@ Current direction → Deploy shape, and is written in phase 6.
 - Andy maintains a **parallel design system in Figma** (variables + text styles). CSS mirrors that
   two-layer idea: **primitive tokens** and **semantic role styles** that reference them.
 - Linked Data matters here. Semantics and structured markup are first-class concerns, not
-  nice-to-haves — **JSON-LD carries over from `web/_includes/linked-data/`, joined by microformats2**.
+  nice-to-haves — **JSON-LD carried over from the 11ty build's `linked-data/` partials, joined by
+  microformats2**.
   **Both, and the reason is webmentions** (questioned and reaffirmed 2026-08-26): the two serve
   different audiences and neither substitutes for the other. JSON-LD is what search engines read; mf2
   is what the IndieWeb reads, and **Andy wants to support webmentions**, which makes mf2 load-bearing
@@ -171,9 +170,9 @@ Current direction → Deploy shape, and is written in phase 6.
   on it, and note the structural constraint it puts on detail pages: **`h-entry` needs one element
   containing both the title and the body.**
 - **Two-space indentation everywhere, CSS included.** One Prettier style repo-wide — no semicolons,
-  single quotes, 100 char width — configured at the root and mirrored in `web-next/` only to add the
-  Astro plugin. The old rule here said tabs in CSS; that described `web/style/`, which is reference
-  only. Don't reintroduce a per-language override.
+  single quotes, 100 char width — configured at the root and mirrored in `web/` only to add the
+  Astro plugin. The old rule here said tabs in CSS; that described the 11ty build's `web/style/`,
+  now in git history. Don't reintroduce a per-language override.
 
 ## Design system
 
@@ -197,7 +196,7 @@ work approaches one of those areas; it is not general background either.
 **The authority chain changed when the CSS landed in phase 2.** It splits by *kind of thing* rather
 than by topic:
 
-- **Code is truth for values.** `web-next/src/styles/tokens.css` is where color, spacing, radius, type
+- **Code is truth for values.** `web/src/styles/tokens.css` is where color, spacing, radius, type
   sizes and grid actually live. **If it and DESIGN.md disagree — the front matter or the dark-mode
   table — the CSS is right.** This is why tokens.css carries the invariant that it contains nothing
   but custom-property declarations: it keeps the front matter useful as a *diffable record* instead of
@@ -227,13 +226,17 @@ odd.
 
 What belongs here is only the working protocol — where the tools are and how to conduct the work:
 
-- **Design specimens live in `web/__design-specimens/`** (the `__` prefix marks it reference-only,
-  matching `__web_2022`). They **must be served over HTTP** — fonts will not load from `file://` in
-  Chrome. Serve the `web/` directory and open `/__design-specimens/<file>`:
+- **Design specimens live in git history since the cutover**, at `web/__design-specimens/` in
+  commit `06cd8e5` — they left the tree with the old `web/`, which also held the fonts they load.
+  They **must be served over HTTP** — fonts will not load from `file://` in Chrome. Check the old
+  tree out beside this one, serve its `web/` directory and open `/__design-specimens/<file>`
+  (verified 2026-09-28: the specimen and its fonts both return 200):
 
   ```bash
-  cd web && python3 -m http.server 8124
+  git worktree add ../afc-11ty 06cd8e5 && cd ../afc-11ty/web && python3 -m http.server 8124
   ```
+
+  `git worktree remove ../afc-11ty` when done.
 
   - `type-scale-specimen.html` — the full type system on real prose: base 20/18 toggle, fixed/fluid,
     heading-face toggle, h4 treatments, measure guides, the sidebar-vs-full-width layout comparison,
@@ -242,7 +245,7 @@ What belongs here is only the working protocol — where the tools are and how t
   - `color-specimen.html` — the palette applied to real page elements with live contrast computation
     and pass/fail badges per pairing.
 
-  They reference the real fonts at `../assets/fonts/`, so nothing is duplicated.
+  They reference the fonts at `../assets/fonts/` in that same old tree, so nothing is duplicated.
 
 ### Figma connection — what to use it for, and what not to
 
@@ -293,8 +296,10 @@ That is no longer the goal: the design system is complete, it includes elements 
 never had, and the content model is changing. Holding design constant would mean building the old
 site twice.
 
-**Do not carry CSS or componentization decisions over from `web/`.** They reflect older habits and
-are explicitly not the target. The clean slate is the point.
+**Do not carry CSS or componentization decisions over from the 11ty build.** They reflect older
+habits and are explicitly not the target. The clean slate is the point. (This line said "from
+`web/`" until the cutover rename, when `web/` became the Astro site — the instruction is about the
+old tree, now at `06cd8e5`, not the directory name.)
 
 **What this costs, and what replaces it.** There is no longer an automated way to prove the port is
 faithful, because it is not meant to be. Visual verification is against DESIGN.md and the Figma
@@ -316,7 +321,8 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    `studio/`. pnpm workspace, one root lockfile, **Node 24 everywhere** — Node 20 is EOL as of April
    2026, so the current CI pin is on an unsupported runtime. Settle the two-workflow deploy shape
    below and the data-fetching shape below before writing pages.
-   *This must not reach `main`: `main` still runs `npm ci` against `web/package-lock.json`.*
+   *This could not reach `main` before cutover, while `main` still ran `npm ci` against the 11ty
+   `web/package-lock.json`.*
 1. **Studio on `production-26`.** New studio, current schema as the starting point, TypeGen wired.
    **Permalink *design* lands here and is recorded in
    [docs/urls-and-filtering.md](docs/urls-and-filtering.md)** — the URL surface, the addressing
@@ -338,7 +344,7 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    5. **JSON-LD, across every template at once** — deliberately last, so the entity model is
       settled in one pass rather than five. **Built 2026-09-12**, in four pieces: the site
       graph (Organization, Person, WebSite), the Document branch, the Presentation branch,
-      then breadcrumbs and page-level types. `web-next/src/lib/linked-data.ts` holds it and
+      then breadcrumbs and page-level types. `web/src/lib/linked-data.ts` holds it and
       records the reasoning; `<BaseLayout>` takes a page's nodes as a prop so every page
       emits ONE `@graph` whose cross-references resolve. Validated by Andy.
 
@@ -363,7 +369,7 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    `PAGE_BAND_GET_IN_TOUCH`, with a different gate. So `BAND_GET_IN_TOUCH`'s three-rung ladder is
    hand-transcribed GROQ with no consumer and no query whose result type anyone has checked.
    **Probe that query when it lands**, with a known-good control, per the box in
-   `web-next/src/sanity/fragments.ts`: a fragment that untypes its query fails silently and
+   `web/src/sanity/fragments.ts`: a fragment that untypes its query fails silently and
    `astro check` stays green. This is exactly how the `LADDER` defect survived for weeks.
 
    **Search behavior is already specified** — see DESIGN.md → Components → Search. Phase 3 ships the
@@ -388,7 +394,7 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    0 → 5 results, `card sorting` 1 → 3, `information architecture` 10 → 23.
 
    **The consequence for you: adding a concept is now a search change.** A multiword term is
-   invisible to search until it exists in a scheme — nothing is inferred. `web-next/scripts/
+   invisible to search until it exists in a scheme — nothing is inferred. `web/scripts/
    phrase-candidates.mjs` is the hand-run generator that proposes candidates from the corpus into
    [docs/phrase-candidates.md](docs/phrase-candidates.md); it never feeds the build. Note also that
    `keywords.ts` now carries an `ALLOW` list so `ai`, `ia`, `ui` and `ux` survive the two-character
@@ -495,7 +501,7 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    Portable Text on `presentation`; recordings are a `recording[]` array on `event`, because a
    recording is a property of a DELIVERY — one talk given three times can have three. One object
    covers audio and video, with `kind` selecting the section heading, the player and the JSON-LD
-   type; see `studio-next/schemas/objects/recording.ts`, which also records the poster ladder and
+   type; see `studio/schemas/objects/recording.ts`, which also records the poster ladder and
    the GROQ trap under it.
 5. **Content parity check.** Render every document of every type; catch dangling references and
    fields that silently stopped rendering.
@@ -573,9 +579,16 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
    `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
 
+   **The rename is DONE (2026-09-28), and the archiving changed on the way.** The old pair left the
+   tree rather than moving within it (Andy's call: git history keeps them, last at `06cd8e5`), and
+   `__web_2022` turned out never to have been tracked — see Stack and layout for where it, and the
+   rest of the untracked material, went. The four upstream font files `subset-fonts.sh` reads were
+   the one live dependency on the old tree; they moved to `web/scripts/font-sources/`, and the
+   script was shown to regenerate the committed fonts byte-identical from there.
+
    **Fonts can take `immutable`.** An earlier note here warned they could not, because they shipped
    from `public/` at unhashed URLs. They now go through Astro's Fonts API from
-   `web-next/src/assets/fonts/` and are emitted hashed into `_astro/fonts/`, so
+   `web/src/assets/fonts/` and are emitted hashed into `_astro/fonts/`, so
    `max-age=31536000, immutable` is safe for that directory alongside the rest of `_astro/`.
 
    **`/search.json` CANNOT, and that is the other half of the same rule** (decided 2026-09-13). It
@@ -799,7 +812,7 @@ Serving Sanity URLs at runtime means the build never fetches an image at all.
 
 The cost is that Astro no longer generates `srcset` — so **`<SanityImage>` is a real component we
 write**: takes an image ref, applies hotspot/crop via `@sanity/image-url`, emits `srcset`, `sizes`,
-`width` and `height`. `web/_11ty/shortcodes/clientLogo.js` has most of the logic already. Sanity's
+`width` and `height`. The 11ty build's `clientLogo.js` shortcode had most of the logic. Sanity's
 `auto=format` still negotiates AVIF/WebP.
 
 **Astro's `<Image>` still applies to repo assets** — logo, OG images, anything checked in. Two
@@ -896,7 +909,7 @@ because "webmentions need mf2" is true in a roundabout way:
 **The structural consequence, and it is not free:** `h-entry` needs **one element containing both
 `p-name` (the h1) and `e-content` (the body)**. On the article page those sit in two different bands
 so that the hero can be reordered between them, and no element contains both — see
-`web-next/src/pages/insights/[slug].astro`. Resolving that is a real markup decision, not a class
+`web/src/pages/insights/[slug].astro`. Resolving that is a real markup decision, not a class
 attribute.
 
 **Decided against:** the **domain change to andyfitzgerald.net is off** (2026-07-27). Also **against
@@ -919,8 +932,8 @@ which is why it sits here; the layout constraints it protects are in DESIGN.md.
 
 ## Known debt
 
-**Most of the old debt list has been deleted rather than carried forward.** It described
-`web/style/` — the import chain, uncontrolled measure, ten hand-picked font sizes, Sass-era dead
+**Most of the old debt list has been deleted rather than carried forward.** It described the 11ty
+build's `web/style/` — the import chain, uncontrolled measure, ten hand-picked font sizes, Sass-era dead
 comments, the ungoverned grays, the shipped contrast failures. None of it survives a build that
 starts from DESIGN.md, and keeping it would only invite someone to "migrate" the thing we are
 deliberately not migrating. **If you want to know how the old CSS worked, read the git history.**
@@ -943,7 +956,7 @@ What remains is infrastructure, content-model constraints, and one measured inpu
 
 - **`h5` was dropped from the schema in phase 1** — `article`, `caseStudy` and `singleton` offer
   `h1`–`h4` only, matching DESIGN.md, so no h5 role is needed. `h4` renders from day one in
-  `web-next/src/styles/base.css`. The residue this note used to warn about — dropping a style from a
+  `web/src/styles/base.css`. The residue this note used to warn about — dropping a style from a
   schema does not remove it from published blocks — **was measured on 2026-09-09 and there is none.**
   Zero documents of those three types carry an `h5`. No longer a phase 5 item.
 - **Portable Text emits a flat sequence with no section wrappers**, which is why vertical rhythm is
@@ -952,14 +965,15 @@ What remains is infrastructure, content-model constraints, and one measured inpu
 
 **Fonts — settled in phase 2, recorded because the shape is easy to undo by accident:**
 
-`web/assets/fonts/` held **2.7 MB** across six files. `web-next` ships **154 KB** across four, and the
-old files stay where they are — `web/` is frozen.
+The 11ty build's `web/assets/fonts/` held **2.7 MB** across six files. The Astro site ships **154 KB**
+across four. At the cutover rename the four upstream files `subset-fonts.sh` reads moved to
+`web/scripts/font-sources/`; Open Sans and Lato Medium went with the old tree.
 
 - **Two families, four faces.** Noto Serif roman and italic (variable `wght 100–900`), Lato 400 and
   700. Open Sans was dropped because DESIGN.md never mentions it, and `Lato-Medium.woff2` because it
   had **no consumer at all** — DESIGN.md's only `fontWeight: 500` role is `display`, which is *Noto
   Serif* and covered by its variable axis. Together those two were ~780 KB of pure deletion.
-- **Astro's Fonts API with the `local` provider**, configured in `web-next/astro.config.mjs`, with
+- **Astro's Fonts API with the `local` provider**, configured in `web/astro.config.mjs`, with
   `<Font>` in `BaseLayout`. `local` rather than `google` on purpose: a downloading provider would be
   cold on every CI run, the same problem recorded against Content Layer and the image cache. What it
   buys over hand-written `@font-face` is **`optimizedFallbacks`** — a metric-matched fallback face per
@@ -974,7 +988,7 @@ old files stay where they are — `web/` is frozen.
   against the generic's canonical font — Times New Roman, Arial — whatever is named ahead of it, and
   that face resolves through `local()`. So any named family in the list sits behind a face that has
   already matched and is unreachable. Georgia and Helvetica Neue were both there, both dead.
-- **`web-next/scripts/subset-fonts.sh` regenerates the four files** and is run by hand, never by the
+- **`web/scripts/subset-fonts.sh` regenerates the four files** and is run by hand, never by the
   build. It pins `wdth=100` out of the Noto Serif variable files before subsetting, because DESIGN.md
   never uses a narrow width. It also pins `SOURCE_DATE_EPOCH`: fontTools stamps `head.modified` with
   the current time, and that 4-byte change perturbs woff2 compression enough that two runs on
