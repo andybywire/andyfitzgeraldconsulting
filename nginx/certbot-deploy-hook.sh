@@ -26,7 +26,7 @@
 # `authenticator = webroot`, no installer, no renew_hook, and all three
 # renewal-hooks/ directories were empty. Its next renewal, around 2026-11-19,
 # would have succeeded and been ignored. The other certificates on the droplet
-# use certbot's nginx installer, which reloads on renewal, so a neighbour
+# use certbot's nginx installer, which reloads on renewal, so a neighbor
 # renewing in the right window would sometimes have rescued it. That would have
 # been luck, not a mechanism.
 #

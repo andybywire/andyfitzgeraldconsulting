@@ -230,7 +230,7 @@ fi
 #
 # THIS IS THE SEMICOLON CASE. Deleting the `;` after `index index.html` PASSES
 # `nginx -t`, because `index` accepts multiple arguments and swallows the
-# `error_page` line that follows — and the site then serves nginx's grey default
+# `error_page` line that follows — and the site then serves nginx's gray default
 # 404 with nothing reporting an error anywhere. Measured, along with two controls
 # that nginx did catch. Matching on the version string nginx puts in its own error
 # pages is a negative assertion on purpose: it stays true whatever our 404 says.
