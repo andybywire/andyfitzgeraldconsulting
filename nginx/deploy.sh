@@ -2,7 +2,19 @@
 #
 # ── DEPLOY THE NGINX CONFIGURATION ──────────────────────────────────────────
 #
-#   AFC_SSH=root@164.92.65.133 nginx/deploy.sh
+#   AFC_SSH=<ssh target> AFC_STAGING_AUTH=user:pass nginx/deploy.sh
+#
+# AFC_SSH is handed to `ssh` and `scp` exactly as given, so it can be — and
+# usually should be — a Host alias from ~/.ssh/config rather than `root@<ip>`.
+# The alias is what selects the key. `root@<ip>` does not match a `Host` entry, so
+# its `IdentityFile` is never offered, and with nothing in the agent the result is
+# `Permission denied (publickey)` against a perfectly good key. That is how this
+# header's old example failed on 2026-09-28.
+#
+# While the 11ty site's config is still enabled on the droplet, a run IS THE
+# CUTOVER, and it will not happen by accident — see "THE TWO INTERLOCKS" below:
+#
+#   AFC_SSH=<ssh target> AFC_STAGING_AUTH=user:pass AFC_CUTOVER=yes nginx/deploy.sh
 #
 # ── WHY THIS IS A SCRIPT AND NOT A WORKFLOW ────────────────────────────────
 #
@@ -40,34 +52,48 @@
 # ── AND WHAT IT BUYS ───────────────────────────────────────────────────────
 #
 # `deploy-astro.yml` — the workflow that fires on every Sanity publish — uses no
-# sudo at all. It writes only under /var/www/afc-preview, and its `chgrp www-data`
-# works from group membership. So with nginx out of CI, **no key held by GitHub is
-# root-equivalent on the droplet.** That is the whole point of the change.
+# sudo at all. It writes only under its own release base in /var/www, and its
+# `chgrp www-data` works from group membership. So with nginx out of CI, **no key
+# held by GitHub is root-equivalent on the droplet.** That is the whole point of
+# the change.
+#
+# UNTIL 2026-09-28 THAT RESTED ON A PASSWORD. The deploy user `afc` was in the
+# `sudo` group with `(ALL : ALL) ALL` — not NOPASSWD, so the GitHub key alone
+# was not root, but the key plus one short password was. `afc` was removed from
+# the group that day (`gpasswd -d afc sudo`); nothing it does needs sudo, and root
+# work goes through a separate root login. So the claim now holds by construction.
+# If `afc` is ever put back in `sudo`, this paragraph stops being true.
 
 set -euo pipefail
 
 # ── Inputs ──────────────────────────────────────────────────────────────────
 
-: "${AFC_SSH:?Set AFC_SSH to the droplet ssh target, e.g. root@164.92.65.133}"
+: "${AFC_SSH:?Set AFC_SSH to the droplet ssh target — an ~/.ssh/config Host alias, see the header}"
 
 # "user:password" for the staging host's basic auth. Optional — without it the
-# smoke check below drops to a status probe and says so.
+# preview smoke checks drop to a status probe and say so.
 AFC_STAGING_AUTH="${AFC_STAGING_AUTH:-}"
 
+# "yes" to permit THE CUTOVER. Only consulted while the 11ty site's config is
+# still enabled on the droplet; after that it is ignored. See the interlocks.
+AFC_CUTOVER="${AFC_CUTOVER:-}"
+
 PREVIEW_HOST="${PREVIEW_HOST:-preview.andyfitzgeraldconsulting.com}"
+APEX_HOST="${APEX_HOST:-andyfitzgeraldconsulting.com}"
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# afc-production.conf is DELIBERATELY ABSENT from this list. Installing it before
-# the 11ty site is retired takes the live site down — its apex block collides with
-# sites-enabled/andyfitzgeraldconsulting.com, conf.d loads first, and nginx
-# reports the collision as a warning rather than an error so `nginx -t` passes.
-# See the cutover sequence in that file's header; adding it here is one of those
-# steps, paired with removing the sites-enabled symlink.
+# afc-production.conf was deliberately absent from this list until cutover was
+# built (2026-09-28), because installing it alone takes the live site down: its
+# apex block collides with sites-enabled/andyfitzgeraldconsulting.com, conf.d
+# loads first, and nginx reports the collision as a warning rather than an error,
+# so `nginx -t` passes. It is here now because the remote half below retires that
+# link IN THE SAME INSTALL — the one-change sequence in afc-production.conf's
+# header, done by the script rather than by hand.
 #
 # certbot-deploy-hook.sh is not nginx config, but it ships from here because it
 # exists only to reload nginx, and this script already runs as root on the droplet.
-FILES=(afc.conf site-common.conf redirects.conf certbot-deploy-hook.sh)
+FILES=(afc.conf afc-production.conf site-common.conf redirects.conf certbot-deploy-hook.sh)
 
 for f in "${FILES[@]}"; do
   [[ -f "$HERE/$f" ]] || { echo "missing: $HERE/$f" >&2; exit 1; }
@@ -91,22 +117,78 @@ trap 'rm -f "$REMOTE_SCRIPT"' EXIT
 cat > "$REMOTE_SCRIPT" <<'REMOTE'
 set -euo pipefail
 
+# Passed as an argument rather than through the environment, because `sudo`
+# resets the environment and would silently drop it.
+CUTOVER="${1:-}"
+
 STAGED=/tmp/afc-nginx
 BACKUP="/tmp/afc-nginx-backup-$(date +%Y%m%d%H%M%S)"
 
-# afc.conf goes to conf.d/ because it holds `limit_req_zone`, an http-context
-# directive. The other two hold server-context directives and MUST NOT be in
-# conf.d/, which nginx includes at http level — they would fail to load.
+# The two `.conf` files go to conf.d/ because they are complete server blocks and
+# afc.conf also holds `limit_req_zone`, an http-context directive. The snippets
+# hold server-context directives and MUST NOT be in conf.d/, which nginx includes
+# at http level — they would fail to load.
 CONF=/etc/nginx/conf.d/afc.conf
+PROD=/etc/nginx/conf.d/afc-production.conf
 COMMON=/etc/nginx/snippets/afc-common.conf
 REDIR=/etc/nginx/snippets/afc-redirects.conf
 
+# The 11ty site's server block, as sites-enabled/ links it. Only the LINK is ever
+# removed. Its target in sites-available/ is never touched, which is what makes
+# rollback a matter of re-creating one symlink.
+LEGACY=/etc/nginx/sites-enabled/andyfitzgeraldconsulting.com
+legacy_present() { [ -e "$LEGACY" ] || [ -L "$LEGACY" ]; }
+
+# ── THE TWO INTERLOCKS ────────────────────────────────────────────────────
+#
+# Both run before anything is backed up, installed or removed, so a refusal
+# leaves the droplet exactly as it was.
+#
+# 1. THE CUTOVER MUST BE ASKED FOR. While the 11ty link exists, this run would
+#    retire it and move the apex — which is right exactly once, and wrong every
+#    other time someone runs this to ship an unrelated fix. So it has to be
+#    named. Once the link is gone this check has nothing to guard and passes.
+#
+# 2. A RELEASE MUST EXIST AT THE PRODUCTION ROOT. The precondition afc-
+#    production.conf's header lists and `nginx -t` cannot check: nginx never
+#    looks at web roots (measured, see validate-nginx.yml), so without this a
+#    missing release validates, installs, reloads, and serves 404 to the whole
+#    site. The root is READ FROM THE FILE BEING INSTALLED rather than written here
+#    a second time, so the check cannot drift away from the config it protects.
+#    `index.html` rather than the directory, because an empty release is as much
+#    of an outage as a missing one.
+if legacy_present; then
+  if [ "$CUTOVER" != "yes" ]; then
+    echo "!!! $LEGACY is still enabled, so this run would be THE CUTOVER:" >&2
+    echo "!!! it would retire the 11ty site and move the apex to the Astro build." >&2
+    echo "!!! Re-run with AFC_CUTOVER=yes when that is the intent. Nothing was changed." >&2
+    exit 1
+  fi
+  echo ">>> CUTOVER requested: this run retires $LEGACY"
+fi
+
+PROD_ROOT="$(sed -nE 's#^[[:space:]]*root[[:space:]]+(/var/www/afc-production/[^;[:space:]]*);.*#\1#p' "$STAGED/afc-production.conf")"
+if [ -z "$PROD_ROOT" ]; then
+  echo "!!! Could not read the production root from afc-production.conf." >&2
+  echo "!!! The interlock depends on it; refusing rather than guessing. Nothing was changed." >&2
+  exit 1
+fi
+if [ ! -f "$PROD_ROOT/index.html" ]; then
+  echo "!!! No release at $PROD_ROOT (no index.html)." >&2
+  echo "!!! Installing now would serve 404 on the apex. Deploy the site first. Nothing was changed." >&2
+  exit 1
+fi
+echo ">>> Production release present at $PROD_ROOT"
+
 echo ">>> Backing up the installed configuration to $BACKUP"
 mkdir -p "$BACKUP"
-# `|| true` for the first deploy, when none of these exist yet.
-for f in "$CONF" "$COMMON" "$REDIR"; do
+# `|| true` for the first deploy of each, when it does not exist yet.
+for f in "$CONF" "$PROD" "$COMMON" "$REDIR"; do
   cp "$f" "$BACKUP/$(basename "$f")" 2>/dev/null || true
 done
+# `cp -P` copies the symlink ITSELF rather than the file it points at, so restore
+# puts back exactly what was there — the same link to the same target.
+if legacy_present; then cp -P "$LEGACY" "$BACKUP/legacy-site"; fi
 
 # ── WHY EVERY FAILURE PATH RESTORES ───────────────────────────────────────
 #
@@ -120,7 +202,7 @@ done
 # always equals what is running.
 restore() {
   echo "!!! Restoring the previous configuration" >&2
-  for f in "$CONF" "$COMMON" "$REDIR"; do
+  for f in "$CONF" "$PROD" "$COMMON" "$REDIR"; do
     b="$BACKUP/$(basename "$f")"
     if [ -f "$b" ]; then
       install -m 644 -o root -g root "$b" "$f"
@@ -130,6 +212,13 @@ restore() {
       rm -f "$f"
     fi
   done
+  # A failed cutover must hand the apex back to the 11ty site. Without this the
+  # link is gone, afc-production.conf has been removed above, and NOTHING claims
+  # the apex — a failed deploy turned into an outage by its own cleanup.
+  if [ -e "$BACKUP/legacy-site" ] || [ -L "$BACKUP/legacy-site" ]; then
+    cp -P "$BACKUP/legacy-site" "$LEGACY"
+    echo "!!! Re-enabled $LEGACY -> $(readlink "$LEGACY" || echo '(a regular file)')" >&2
+  fi
   # Prove the restored state is loadable before walking away from it.
   if nginx -t; then
     systemctl reload nginx || true
@@ -141,9 +230,23 @@ restore() {
 
 echo ">>> Installing"
 mkdir -p /etc/nginx/snippets
-install -m 644 -o root -g root "$STAGED/afc.conf"         "$CONF"
-install -m 644 -o root -g root "$STAGED/site-common.conf" "$COMMON"
-install -m 644 -o root -g root "$STAGED/redirects.conf"   "$REDIR"
+install -m 644 -o root -g root "$STAGED/afc.conf"            "$CONF"
+install -m 644 -o root -g root "$STAGED/afc-production.conf" "$PROD"
+install -m 644 -o root -g root "$STAGED/site-common.conf"    "$COMMON"
+install -m 644 -o root -g root "$STAGED/redirects.conf"      "$REDIR"
+
+# ── RETIRING THE 11TY SITE, IN THE SAME CHANGE ────────────────────────────
+#
+# After the install and before the test, so that the test and the reload see
+# both halves at once: the new apex block present AND the old one gone. That is
+# the whole of the one-change rule in afc-production.conf's header. Either half
+# alone passes `nginx -t` and breaks the apex at reload.
+CUTOVER_RAN=no
+if legacy_present; then
+  rm -f "$LEGACY"
+  CUTOVER_RAN=yes
+  echo ">>> Removed $LEGACY (sites-available/ keeps its target, for rollback)"
+fi
 
 echo ">>> Testing"
 if ! nginx -t; then restore; exit 1; fi
@@ -172,6 +275,13 @@ install -m 755 -o root -g root "$STAGED/certbot-deploy-hook.sh" "$HOOK"
 find /tmp -maxdepth 1 -name 'afc-nginx-backup-*' -type d | sort -r | tail -n +6 | xargs -r rm -rf
 
 echo ">>> Installed and reloaded."
+
+if [ "$CUTOVER_RAN" = yes ]; then
+  echo
+  echo ">>> CUTOVER DONE. One follow-up, once, after the smoke checks pass —"
+  echo ">>> move the apex certificate off the nginx authenticator (see afc-production.conf):"
+  echo "      certbot reconfigure --cert-name andyfitzgeraldconsulting.com --webroot -w /var/www/certbot"
+fi
 REMOTE
 
 # ── Ship and run ────────────────────────────────────────────────────────────
@@ -186,7 +296,10 @@ scp -q "$REMOTE_SCRIPT" "$AFC_SSH:/tmp/afc-nginx/install.sh"
 # `-t` allocates a terminal so sudo can prompt. If the ssh user is root, sudo is
 # a no-op and nothing is asked.
 echo ">>> Running install on the droplet (sudo may prompt)"
-ssh -t "$AFC_SSH" 'sudo bash /tmp/afc-nginx/install.sh'
+# Reduced to one of two fixed words HERE, so no user-supplied text is ever pasted
+# into the remote command line and there is no quoting to get wrong.
+if [[ "$AFC_CUTOVER" == "yes" ]]; then CUTOVER_ARG=yes; else CUTOVER_ARG=no; fi
+ssh -t "$AFC_SSH" "sudo bash /tmp/afc-nginx/install.sh $CUTOVER_ARG"
 
 # ── Smoke check, from HERE rather than from the droplet ─────────────────────
 #
@@ -195,8 +308,16 @@ ssh -t "$AFC_SSH" 'sudo bash /tmp/afc-nginx/install.sh'
 # firewall. From a laptop it is an ordinary request over the real internet.
 #
 # It cannot restore on failure — the reload already happened and this process is
-# not on the droplet — so a failure here is a REPORT, not a rollback. Rolling
-# back is re-running this script from an earlier commit.
+# not on the droplet — so a failure here is a REPORT, not a rollback. For the
+# preview host, rolling back is re-running this script from an earlier commit.
+# FOR THE APEX IT IS NOT: earlier versions neither install nor remove
+# afc-production.conf, so it would stay in conf.d/ and keep winning. The apex
+# rollback is written out in that file's header.
+#
+# Pre-cutover none of this runs: an interlock refusal exits non-zero on the
+# droplet, `ssh` returns that, and `set -e` stops here before the first check.
+
+SKIPPED=""
 
 echo
 echo ">>> Smoke-checking https://$PREVIEW_HOST/"
@@ -220,45 +341,153 @@ if [[ " $OK " != *" $CODE "* ]]; then
 fi
 echo "    1. serving ($CODE)"
 
+# Checks 2 and 3 need credentials. Without them they are SKIPPED rather than
+# ending the run, because the apex checks below need none and matter more.
 if [[ -z "$AFC_STAGING_AUTH" ]]; then
   echo "    2/3. SKIPPED — set AFC_STAGING_AUTH to check the 404 page and X-Robots-Tag."
-  echo ">>> Done (verified less thoroughly than it could have been)."
-  exit 0
+  SKIPPED="preview checks 2/3"
+else
+
+  # A missing URL must get OUR 404 page, not nginx's.
+  #
+  # THIS IS THE SEMICOLON CASE. Deleting the `;` after `index index.html` PASSES
+  # `nginx -t`, because `index` accepts multiple arguments and swallows the
+  # `error_page` line that follows — and the site then serves nginx's gray default
+  # 404 with nothing reporting an error anywhere. Measured, along with two controls
+  # that nginx did catch. Matching on the version string nginx puts in its own error
+  # pages is a negative assertion on purpose: it stays true whatever our 404 says.
+  #
+  # The empty-body guard is checked FIRST and is not padding. `grep -q` for that
+  # marker also succeeds on an EMPTY string, so a fetch that failed outright would
+  # report success — a check that goes green precisely when it cannot see anything.
+  BODY="$(smoke "https://$PREVIEW_HOST/__smoke_check_missing__/" || true)"
+  if [[ -z "$BODY" ]]; then
+    echo "!!! 404 probe returned an empty body — the server did not answer." >&2
+    exit 1
+  fi
+  if printf '%s' "$BODY" | grep -q '<hr><center>nginx/'; then
+    echo "!!! 404s are serving nginx's default page, not the site's." >&2
+    echo "!!! Usually a swallowed error_page directive — check site-common.conf." >&2
+    exit 1
+  fi
+  echo "    2. 404 is the site's own page"
+
+  # X-Robots-Tag is one of the two things keeping staging out of search results, and
+  # it is easy to lose silently: nginx REPLACES the inherited `add_header` set the
+  # moment a location declares its own, so a refactor of site-common.conf can strip
+  # it from every page while `curl -I /` still looks correct.
+  if ! smoke -D- -o /dev/null "https://$PREVIEW_HOST/" | grep -qi '^x-robots-tag: *noindex'; then
+    echo "!!! X-Robots-Tag: noindex is MISSING." >&2
+    echo "!!! Staging is indexable. See the add_header note in site-common.conf." >&2
+    exit 1
+  fi
+  echo "    3. X-Robots-Tag present"
+
 fi
 
-# A missing URL must get OUR 404 page, not nginx's.
+# ── THE APEX: AT THE ORIGIN FIRST, THEN THROUGH CLOUDFLARE ────────────────
 #
-# THIS IS THE SEMICOLON CASE. Deleting the `;` after `index index.html` PASSES
-# `nginx -t`, because `index` accepts multiple arguments and swallows the
-# `error_page` line that follows — and the site then serves nginx's gray default
-# 404 with nothing reporting an error anywhere. Measured, along with two controls
-# that nginx did catch. Matching on the version string nginx puts in its own error
-# pages is a negative assertion on purpose: it stays true whatever our 404 says.
+# The apex is proxied, so an ordinary request to it from here measures
+# Cloudflare rather than nginx. So checks 4–7 pin the connection to the ORIGIN
+# with `--resolve`, at the address ssh itself connects to — `ssh -G` prints the
+# resolved client config without connecting, which makes an alias work as well
+# as a bare IP. Check 8 then goes through the CDN, because that is what visitors
+# actually get.
 #
-# The empty-body guard is checked FIRST and is not padding. `grep -q` for that
-# marker also succeeds on an EMPTY string, so a fetch that failed outright would
-# report success — a check that goes green precisely when it cannot see anything.
-BODY="$(smoke "https://$PREVIEW_HOST/__smoke_check_missing__/" || true)"
-if [[ -z "$BODY" ]]; then
-  echo "!!! 404 probe returned an empty body — the server did not answer." >&2
-  exit 1
-fi
-if printf '%s' "$BODY" | grep -q '<hr><center>nginx/'; then
-  echo "!!! 404s are serving nginx's default page, not the site's." >&2
-  echo "!!! Usually a swallowed error_page directive — check site-common.conf." >&2
-  exit 1
-fi
-echo "    2. 404 is the site's own page"
+# `--resolve` needs an address. If the ssh target turns out to be a hostname, the
+# origin checks are SKIPPED with a warning rather than quietly falling back to
+# DNS, which would be Cloudflare again — a check that looks like it tested nginx
+# and tested something else.
+#
+# No `-k` anywhere. The origin presents the real Let's Encrypt certificate for
+# both names, so verifying it is part of what these checks prove.
 
-# X-Robots-Tag is one of the two things keeping staging out of search results, and
-# it is easy to lose silently: nginx REPLACES the inherited `add_header` set the
-# moment a location declares its own, so a refactor of site-common.conf can strip
-# it from every page while `curl -I /` still looks correct.
-if ! smoke -D- -o /dev/null "https://$PREVIEW_HOST/" | grep -qi '^x-robots-tag: *noindex'; then
-  echo "!!! X-Robots-Tag: noindex is MISSING." >&2
-  echo "!!! Staging is indexable. See the add_header note in site-common.conf." >&2
+echo
+echo ">>> Smoke-checking https://$APEX_HOST/"
+
+ORIGIN_IP="$(ssh -G "$AFC_SSH" | awk '$1 == "hostname" { print $2; exit }')"
+
+origin() {
+  curl -s --max-time 15 \
+    --resolve "$APEX_HOST:443:$ORIGIN_IP" \
+    --resolve "www.$APEX_HOST:443:$ORIGIN_IP" "$@"
+}
+
+if [[ ! "$ORIGIN_IP" =~ ^[0-9.]+$ && "$ORIGIN_IP" != *:* ]]; then
+  echo "    4–7. SKIPPED — the ssh target resolves to '$ORIGIN_IP', not an IP address,"
+  echo "         so the origin cannot be pinned. Use a Host alias whose HostName is an IP."
+  SKIPPED="${SKIPPED:+$SKIPPED, }apex origin checks 4–7"
+else
+  echo "    (origin: $ORIGIN_IP)"
+
+  CODE="$(origin -o /dev/null -w '%{http_code}' "https://$APEX_HOST/" || echo 000)"
+  if [[ "$CODE" != "200" ]]; then
+    echo "!!! apex / at the origin returned $CODE" >&2
+    echo "!!! 000 is no answer at all, or a certificate that did not verify." >&2
+    exit 1
+  fi
+  echo "    4. apex serving at the origin ($CODE)"
+
+  # PRODUCTION MUST BE INDEXABLE, and this is the preview host's check 3 turned
+  # round. `$afc_robots` is empty here and non-empty there; the two share every
+  # location in site-common.conf, so a mistake in either direction is one variable
+  # away. The status-line guard is the empty-body lesson again: "no x-robots-tag
+  # header" is ALSO what an empty response says.
+  HEADERS="$(origin -D- -o /dev/null "https://$APEX_HOST/" || true)"
+  if ! printf '%s' "$HEADERS" | grep -q '^HTTP/'; then
+    echo "!!! apex / returned no response headers — nothing to check." >&2
+    exit 1
+  fi
+  if printf '%s' "$HEADERS" | grep -qi '^x-robots-tag'; then
+    echo "!!! The apex is sending X-Robots-Tag — production is telling search engines to leave." >&2
+    echo "!!! Check \$afc_robots in afc-production.conf." >&2
+    exit 1
+  fi
+  echo "    5. apex carries no X-Robots-Tag"
+
+  # www → apex is a BEHAVIOR CHANGE at cutover (the 11ty config served both names
+  # directly). A path rather than `/`, so the check also proves $request_uri
+  # survives the hop instead of every www URL landing on the home page.
+  GOT="$(origin -o /dev/null -w '%{http_code} %{redirect_url}' "https://www.$APEX_HOST/insights/" || echo 000)"
+  WANT="301 https://$APEX_HOST/insights/"
+  if [[ "$GOT" != "$WANT" ]]; then
+    echo "!!! www returned '$GOT', expected '$WANT'" >&2
+    exit 1
+  fi
+  echo "    6. www 301s to the apex, path intact"
+
+  # Check 2's semicolon case, on the apex. Same two guards, same reasons.
+  BODY="$(origin "https://$APEX_HOST/__smoke_check_missing__/" || true)"
+  if [[ -z "$BODY" ]]; then
+    echo "!!! apex 404 probe returned an empty body — the server did not answer." >&2
+    exit 1
+  fi
+  if printf '%s' "$BODY" | grep -q '<hr><center>nginx/'; then
+    echo "!!! apex 404s are serving nginx's default page, not the site's." >&2
+    exit 1
+  fi
+  echo "    7. apex 404 is the site's own page"
+fi
+
+# Through the CDN, as a visitor. `cf-ray` is what says the answer really came via
+# Cloudflare. Its absence is reported rather than failed: it means the apex is no
+# longer proxied, which is a dashboard change worth knowing about, not a broken
+# deploy — but it also means every real_ip assumption in afc-production.conf has
+# stopped applying.
+CDN="$(curl -s --max-time 15 -D- -o /dev/null "https://$APEX_HOST/" || true)"
+CODE="$(printf '%s' "$CDN" | awk 'toupper($1) ~ /^HTTP\// { code = $2 } END { print code + 0 }')"
+if [[ "$CODE" != "200" ]]; then
+  echo "!!! apex / through Cloudflare returned $CODE" >&2
   exit 1
 fi
-echo "    3. X-Robots-Tag present"
+if printf '%s' "$CDN" | grep -qi '^cf-ray:'; then
+  echo "    8. apex serving through Cloudflare ($CODE)"
+else
+  echo "    8. apex serving ($CODE), but WITHOUT a cf-ray header — is the proxy off?"
+fi
 
-echo ">>> Done."
+if [[ -n "$SKIPPED" ]]; then
+  echo ">>> Done, with $SKIPPED SKIPPED — verified less thoroughly than it could have been."
+else
+  echo ">>> Done."
+fi
