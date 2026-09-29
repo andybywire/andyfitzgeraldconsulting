@@ -5,6 +5,18 @@
       "name": "web",
       "url": "http://localhost:4321",
       "port": 4321
+    },
+    {
+      "name": "web-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "web", "dev:preview"],
+      "port": 4321
+    },
+    {
+      "name": "studio",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "studio", "dev"],
+      "port": 3030
     }
   ]
 }
