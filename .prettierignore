@@ -1,0 +1,14 @@
+# Hand-wrapped prose. Prettier reflows markdown, which would destroy deliberate line breaks in
+# DESIGN.md, CLAUDE.md and the decision records. Likewise, `pnpm format` rewrites workflow docs.
+*.md
+.github/
+
+# Generated output
+web/dist/
+web/.astro/
+studio/dist/
+studio/schema.json
+
+# Lockfiles
+pnpm-lock.yaml
+package-lock.json

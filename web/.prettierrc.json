@@ -1,0 +1,18 @@
+{
+  "plugins": ["prettier-plugin-astro"],
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": false,
+  "singleQuote": true,
+  "bracketSpacing": false,
+  "trailingComma": "all",
+  "overrides": [
+    {
+      "files": ["*.json", "*.yml", "*.yaml"],
+      "options": {
+        "singleQuote": false
+      }
+    }
+  ]
+}

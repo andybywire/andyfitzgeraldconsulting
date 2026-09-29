@@ -1,0 +1,600 @@
+/*
+ * Design tokens — transcribed by hand from DESIGN.md's front matter and its
+ * Colors → Dark mode table. Verified against the Figma library 2026-08-20:
+ * all 105 variables matched, both themes.
+ *
+ * INVARIANT: this file contains nothing but custom-property declarations.
+ * No rules, no selectors doing work, no `color-scheme`. That is what lets it be
+ * diffed mechanically against DESIGN.md. Element-level role styles live in
+ * base.css; everything else is component-scoped.
+ *
+ * UNITS — split by cause, the same way DESIGN.md splits responsive behavior:
+ *   type sizes    rem   — never px (DESIGN.md, Conventions)
+ *   spacing       rem   — type-derived. One body line box is 32px = 2rem, and
+ *                         space-1…7 are quarters of it, so the rhythm should
+ *                         scale with a reader's font-size preference.
+ *   grid          px    — viewport-derived. The arithmetic closes against the
+ *                         viewport, which is a px space; in rem a reader who
+ *                         scaled text up would push the columns off the grid.
+ *   radius, borders px  — neither is a measurement that should track type.
+ *
+ * `primary` in DESIGN.md's front matter is deliberately NOT emitted: the file
+ * says it is a format requirement rather than a role, nothing binds it, and it
+ * has no Figma counterpart.
+ */
+
+:root {
+  /* ── Color primitives ──────────────────────────────────────────────────── */
+  /* Blue: hue 197° / saturation 45%, stepped by lightness. Step numbers do NOT
+     track lightness — 500 is the accent, at L 36%. */
+  --blue-50: #e1eff4;
+  --blue-100: #c4dee9;
+  --blue-200: #aed2e0;
+  --blue-300: #4e9dbc;
+  --blue-400: #3e86a3;
+  --blue-500: #326e85;
+  --blue-600: #275568;
+  --blue-700: #1f4351;
+
+  /* Neutral: derived from #051319 (198°, essentially the brand hue) toward white. */
+  --neutral-900: #051319;
+  --neutral-850: #142329;
+  --neutral-800: #283439;
+  --neutral-700: #505a5e;
+  --neutral-600: #788083;
+  --neutral-500: #969c9e;
+  --neutral-400: #b4b8ba;
+  --neutral-300: #d2d5d6;
+  --neutral-200: #e9eaea;
+  --neutral-100: #f9fafb;
+
+  /* Error: hue 8°, deliberately far from the brand's 197°. */
+  --error-100: #f9e9e7;
+  --error-300: #e09185;
+  --error-500: #cc4c38;
+  --error-600: #b33f2e;
+  --error-800: #341814;
+
+  --white: #ffffff;
+
+  /* ── Semantic color roles — LIGHT ──────────────────────────────────────── */
+  /* Pick a role by NAME, never by value: several pairs render identically here
+     and diverge in dark, which has already produced wrong bindings. */
+  --color-bg: var(--neutral-100);
+  --color-surface: var(--white);
+  --color-surface-hover: var(--neutral-100);
+  --color-surface-pressed: var(--neutral-200);
+  --color-surface-muted: var(--neutral-200);
+  --color-surface-accent: var(--blue-500);
+  --color-surface-logo-band: var(--white);
+
+  --color-text: var(--neutral-900);
+  --color-text-muted: var(--neutral-700);
+  --color-text-lead: var(--neutral-700);
+  --color-text-title: var(--neutral-800);
+  --color-text-heading: var(--neutral-800);
+  --color-text-on-accent: var(--white);
+  --color-text-on-accent-hover: var(--white);
+
+  --color-icon: var(--neutral-900);
+  --color-icon-on-accent: var(--white);
+
+  --color-border: var(--neutral-300);
+  --color-border-control: var(--neutral-400);
+  --color-border-control-hover: var(--blue-500);
+  --color-border-on-accent: var(--white);
+  --color-border-quote: var(--neutral-300);
+
+  --color-accent: var(--blue-500);
+  --color-accent-hover: var(--blue-600);
+  --color-accent-pressed: var(--blue-700);
+  --color-link-hover: var(--blue-500);
+  --color-link-strong: var(--blue-700);
+
+  --color-control-hover: var(--blue-300);
+  --color-control-pressed: var(--blue-400);
+
+  --color-focus-ring: var(--blue-500);
+  --color-focus-offset: var(--white);
+  --color-disabled-surface: var(--neutral-200);
+  --color-disabled-text: var(--neutral-500);
+
+  --color-error-bg: var(--error-100);
+  --color-error-line: var(--error-500);
+  --color-error-text: var(--error-600);
+
+  /* ── Font stacks — NOT declared here ───────────────────────────────────── */
+  /* --font-prose and --font-heading are declared by ASTRO, not by this file, and
+     deliberately so. `fonts` in astro.config.mjs owns the two families and the
+     <Font> components emit the variables, so each stack arrives with the
+     metric-matched fallback face Astro derives from the real font metrics — a
+     value we could not write by hand without measuring the fonts ourselves.
+     Declaring them here too would shadow that, and the fallback is the point.
+     base.css consumes them exactly as if they were local. */
+
+  /* ── ...except this one ────────────────────────────────────────────────── */
+  /* A THIRD FAMILY, and the only font stack this file declares. DESIGN.md's
+     Typography names two faces, so this is an addition rather than a
+     transcription — decided 2026-08-26, for `pre` blocks and the inline `code`
+     decorator, neither of which had any rule at all before.
+
+     IT SHIPS NO WEBFONT, which is why it does not really break the two-family
+     rule. Noto Serif and Lato are ours, subset and served; this is whatever the
+     reader's platform calls monospace. For code that is arguably the right
+     answer — a developer reading a shell command sees it in the face they read
+     code in every day — and it costs zero bytes and nothing in
+     scripts/subset-fonts.sh.
+
+     The trade is that the rendered width of a code line varies by OS: SF Mono on
+     macOS, Consolas on Windows, whatever `monospace` resolves to on Linux. So the
+     exact point at which a block starts scrolling is not ours to know. That is
+     accepted; the alternative is a third subset file to maintain for content that
+     is 25 blocks in four documents.
+
+     Declared HERE rather than in base.css because it is a value, not a rule —
+     which is the whole division these two files are built on. Astro owns the two
+     families it serves; this one has no provider to own it. */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ── Type scale — 18px base, ratio 1.25, fluid 375 → 1200px ────────────── */
+  /* Steps 0 and 1 are static: 1 is the legibility floor, 0 is chrome only.
+     Every preferred value is rem-dominant on purpose — a vw-dominant value
+     locks the reader's font-size preference. */
+  --font-size-0: 0.875rem;
+  --font-size-1: 1rem;
+  --font-size-2: clamp(1.0625rem, 1.0341rem + 0.1212vw, 1.125rem);
+  --font-size-3: clamp(1.3125rem, 1.2699rem + 0.1818vw, 1.40625rem);
+  --font-size-4: clamp(1.5625rem, 1.4737rem + 0.3788vw, 1.7578125rem);
+  --font-size-5: clamp(1.875rem, 1.7285rem + 0.625vw, 2.197265625rem);
+  --font-size-6: clamp(2rem, 1.6606rem + 1.4479vw, 2.746582031rem);
+
+  /* `masthead-name` is NOT a token, and its absence here is the two-layer rule
+     working rather than an omission. A semantic TEXT role is a bundle of applied
+     properties, so in CSS it is a rule — which is why h1-h4 and body live in
+     base.css and every other type role lives in the component that owns it.
+     `--role-masthead-name` was the one exception, and it existed only because the
+     size steps by viewport; a component can read `--breakpoint-lg` and do that
+     itself. The role now lives in Masthead.astro with the rest of its bundle. */
+
+  /* ── Spacing primitives ────────────────────────────────────────────────── */
+  /* One body line box (18px × 1.8 = 32.4px) rounded to 32 = 2rem, then
+     quartered: ¼, ½, ¾, 1, 1½, 2, 3 units. An 8px grid derived from the line
+     box rather than imposed on it. */
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+  --space-6: 4rem;
+  --space-7: 6rem;
+
+  /* ── Page flow ─────────────────────────────────────────────────────────── */
+  /* band and section interpolate with no breakpoint — they are page-derived, so
+     they are the only rhythm roles that vary by viewport. */
+  --rhythm-tight: var(--space-1);
+  --rhythm-heading-close: var(--space-2);
+  --rhythm-item: var(--space-2);
+  --rhythm-paragraph: var(--space-3);
+  --rhythm-list: var(--space-4);
+  --rhythm-block: var(--space-5);
+  --rhythm-heading-minor: var(--space-5);
+  --rhythm-heading-major: var(--space-6);
+  --rhythm-band: clamp(2rem, 1.0909rem + 3.8788vw, 4rem);
+  --rhythm-section: clamp(4rem, 3.0909rem + 3.8788vw, 6rem);
+
+  /* ── Component internals ───────────────────────────────────────────────── */
+  --card-gap: var(--space-1);
+  --card-pad: var(--space-2);
+  /* The gap BESIDE media — the horizontal card's image-to-text column gap. */
+  --card-media: var(--space-3);
+  /* And the gap BELOW it, when the card stacks. Two different values for the
+     same relationship on the two axes: 24 inline, 16 block, both read off the
+     Figma card component. Added 2026-08-28 — it had been expressed as
+     `card-gap` twice, which was arithmetic standing in for a name. */
+  --card-media-block: var(--space-2);
+  --chrome-pad-header: var(--space-3);
+  --chrome-pad-footer: var(--space-5);
+  --chrome-inset: var(--space-2); /* -> space-5 at md */
+  --field-height: var(--space-5);
+  --quote-indent: var(--space-3); /* -> space-5 at md */
+
+  /* Border WIDTHS carry the `-width-` infix so a stroke's width cannot collide
+     with its color: --color-border-quote is a different token. */
+  --border-width-hairline: 1px;
+  --border-width-quote: 4px; /* -> 6px at md */
+
+  /* ── Icons ─────────────────────────────────────────────────────────────── */
+  /* Unitless numbers, not lengths: `stroke-width` in an SVG is in USER UNITS, and
+     Lucide draws everything in a 24x24 viewBox, so the value is scaled along with
+     the icon. Rendered px = stroke x (size / 24).
+
+     Sizes are set from CSS, not from Lucide's `size` prop, so they live here in one
+     place. Consequence worth knowing: `size={N}` at a call site is SILENTLY
+     OVERRIDDEN. Use the size classes in base.css instead.
+
+     Stroke is proportional by default — the same drawing scaled, so 20px renders
+     1.67px and 18px renders 1.50px. To make the two read as one weight family
+     instead, set the smaller stroke to keep rendered px constant:
+     2 x (20/24) / (18/24) = 2.22. */
+  --icon-size: 20px;
+  --icon-size-sm: 18px;
+  --icon-stroke: 2;
+  --icon-stroke-sm: 2;
+
+  /* ── Breakpoint flags — deliberately NOT declared here ─────────────────── */
+  /* `--breakpoint-md` and `--breakpoint-lg` are set ONLY inside their media
+     queries below, and their absence up here is the base state rather than an
+     omission: an undeclared custom property matches no style container query, so
+     "narrower than md" and "no such property" are the same condition. Declaring
+     them `0` would say the same thing at the cost of a second place to keep in
+     step. Full explanation of the flag mechanism with the breakpoints below. */
+
+  /* ── Radius ────────────────────────────────────────────────────────────── */
+  /* radius-2 is exactly 2 × radius-1. radius-full is the filter chip only, and
+     is arbitrarily large because border-radius clamps to half the shorter
+     side — it is not a measurement. */
+  --radius-1: 3px;
+  --radius-2: 6px;
+  --radius-full: 9999px;
+
+  /* ── Grid — 12 columns, 996px content, 222px margins at 1440 ───────────── */
+  /* --grid-margin is a FORMULA, not the 222px DESIGN.md quotes. Cap content at
+     996 and let the margins absorb the remainder, floored at the mobile value:
+     222 at 1440, 105 at 1206, 16 below ~1028, and content never exceeds 996 at
+     any width. 222 is what the formula produces at 1440, not an input. Reading
+     it as an input is what open-questions.md recorded as "the one known hole".
+
+     Used directly as `padding-inline` on the grid. px, not rem, per the units
+     note at the top of this file: the arithmetic closes against the viewport.
+
+     FIVE TOKENS WERE REMOVED HERE — grid-column (61), grid-skip-1 (109),
+     grid-skip-2 (194), grid-span-3 (231), grid-span-4 (316). A real CSS grid
+     expresses every one of them structurally, so emitting them as lengths would
+     invite someone to type a length where a line number belongs:
+
+       repeat(12, 1fr) + column-gap    ->  columns compute to 61 at 1440
+       grid-column: 1 / span 8         ->  656, the prose width
+       grid-column: 10 / span 3        ->  starts at line 10, so column 9 is
+                                           skipped — that gap IS skip-1, 109
+       grid-column: 9 / span 4         ->  after `1 / span 6`, skips 7-8 = 194
+
+     They exist in DESIGN.md's front matter because Figma has no `fr` and needed
+     lengths. We don't. Same shape as box-shadow deriving the focus-ring radii. */
+  --grid-content: 996px;
+
+  /* PERCENTAGE, not vw, and the difference is a real bug not a preference.
+     `50vw` includes the scrollbar, so on a 1440 window with a 16px classic
+     scrollbar the inset computes from 720 while only 1424 is available to
+     content — giving 980 where DESIGN.md says 996, and dragging the column,
+     prose and skip widths 16px short with it. Measured. macOS overlay
+     scrollbars hide this; Windows, where classic scrollbars are the default,
+     does not.
+
+     CONSTRAINT that comes with it: a percentage resolves against the
+     CONTAINING BLOCK, so this is only correct as `padding-inline` on a
+     full-width element. Used on something narrower it silently returns the
+     16px floor rather than the page margin. <Grid> is its one consumer. */
+  --grid-margin: max(16px, calc((100% - var(--grid-content)) / 2));
+  --grid-gutter: 8px; /* -> 24px at md */
+  /* DESIGN.md: use gutter-content for real gaps between content columns;
+     grid-gutter exists to make the arithmetic close. No consumer yet. */
+  --grid-gutter-content: 32px; /* -> 24px at md. LARGER here, not smaller */
+
+  /* ── Column placement ──────────────────────────────────────────────────── */
+  /* A custom property can hold ANY token sequence, `/` included, so a whole grid
+     placement fits in one. That is what keeps the breakpoint in a single place:
+     these collapse in the md query below and no component needs a query of
+     its own. Verified — flipping the value re-lays out.
+
+     The names are the RELATIONSHIP, per DESIGN.md's skip family: 8 + skip-1 + 3
+     "reads as a sidebar, set apart from the prose". Add a pair when a layout
+     actually needs one; do not build the vocabulary speculatively.
+
+     The grid itself stays `repeat(12, 1fr)` at every width — only these collapse.
+     That is deliberate: if a component forgets the token and hardcodes
+     `10 / span 3`, it lands in columns 10-12, narrow and visibly wrong but
+     recoverable. Against a one-column grid the same mistake would create nine
+     IMPLICIT columns and break the layout structurally. Same collapse, milder
+     failure. */
+  --col-full: 1 / -1; /* never varies */
+  --col-main: var(--col-full); /* -> 1 / span 8 at md */
+  --col-rail: var(--col-full); /* -> 10 / span 3 at md */
+}
+
+/*
+ * ══ THE BREAKPOINTS ═════════════════════════════════════════════════════════
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  THESE ARE THE ONLY MAJOR BREAKPOINTS IN THE CODEBASE — md at 48rem and   │
+ * │  lg at 64rem. To move one, edit the ONE `min-width` value on its block.   │
+ * │  No component carries a major breakpoint of its own.                      │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * MAJOR versus MINOR, because the rule above is about major breakpoints only.
+ * A MAJOR breakpoint is a width the whole page agrees on, and it lives here. A
+ * MINOR one is a single component adjusting to the space IT has — a card that
+ * needs two columns once its own box is wide enough — and that belongs in the
+ * component, because its condition is particular to it and could not be stated
+ * globally anyway. Prefer a real SIZE container query for those:
+ *
+ *     .deck { container-type: inline-size }
+ *     @container (inline-size > 30rem) { .card { … } }
+ *
+ * — which answers to the space the component actually occupies, so a card in the
+ * 3-column rail and the same card at full width get different treatment from one
+ * rule where a media query would give both the same answer. Note that a size
+ * query needs `container-type` on an ancestor; the style queries below do not.
+ * There are no minor breakpoints yet. This is the model for when there are.
+ *
+ * `@media (min-width: var(--bp))` is invalid CSS and always will be: a media
+ * query is evaluated against the media context, which is not attached to any
+ * element, while custom properties resolve per element at computed-value time.
+ * There is nothing for var() to resolve against, so the rule is dropped whole.
+ *
+ * The way around it is this block: flip TOKENS in one query and let components
+ * read tokens. It works for more than lengths — a custom property holds any
+ * token sequence, so `1 / span 8`, `column`, `grid` and `"a" "b"` all fit, which
+ * means placement, flex-direction, display and grid-template-areas can all be
+ * driven from here. Verified, not assumed.
+ *
+ * THE FLAGS — `--breakpoint-md` and `--breakpoint-lg` — exist for the case a
+ * token flip CANNOT express: a rule that must genuinely EXIST or NOT EXIST at a
+ * width, like the masthead's accent band, which is a whole bundle of declarations
+ * rather than one value. A component reads a flag with a STYLE container query:
+ *
+ *     @container style(--breakpoint-lg: true) { … }
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  ALWAYS THE `: true` FORM, NEVER THE BARE `style(--breakpoint-lg)`.       │
+ * │  The bare form tests whether the property is DECLARED, not whether it is  │
+ * │  true — `false`, `0` and an empty value all MATCH it. Verified.           │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * The scenario that convention protects is not someone disabling a live
+ * breakpoint, which nobody does. It is someone SCAFFOLDING the next one:
+ *
+ *     @media (min-width: 80rem) { :root { --breakpoint-xl: false } }
+ *
+ * — stubbed out until the layout is ready, which is an ordinary thing to write.
+ * Under the bare form that is live the moment it is typed. Under `: true` it is
+ * inert, which is what its author meant. Seven characters to make a wrong value
+ * fail loudly instead of quietly, which is the standard the rest of this file
+ * holds to.
+ *
+ * Four more things about the mechanism, all verified rather than assumed:
+ *
+ *   - It needs no `container-type`. Every element is a style container by
+ *     default, which is what makes this cheap.
+ *   - It evaluates on the nearest ANCESTOR, never on the element itself. That
+ *     works only because the flags inherit from :root down through <body>. If
+ *     anything ever sets a flag on the same element it styles, that element will
+ *     not see it.
+ *   - Only CUSTOM properties are queryable this way. Style queries on standard
+ *     properties are not shipped anywhere.
+ *   - An UNDECLARED property matches nothing, which is what makes the base state
+ *     work and why the flags carry no declaration in :root. "Narrower than md"
+ *     and "no such property" are the same condition, deliberately — and with the
+ *     `: true` form, so is "declared to anything else".
+ *
+ * Support: style queries are Chrome/Edge 111, Firefox 128, Safari 18 — Baseline
+ * since late 2024, and the `: true` form is the original one every engine shipped
+ * first. Verified here in Chromium only, so it is still worth one manual pass in
+ * Safari and Firefox, because the whole layout rests on it. The failure mode is
+ * safe: an engine that does not match the query keeps the base rules, which is
+ * the stacked layout at desktop width — degraded, not broken.
+ *
+ * NAMED BY WIDTH, NOT BY PURPOSE, and that trade is deliberate. `--masthead-inline`
+ * — what this flag was first called — could only ever be wrong for the masthead.
+ * `--breakpoint-lg` can be read by any component, which is the point of a MAJOR
+ * breakpoint, but it also means a change made for one component lands on every
+ * other one. The mitigation is the note on each block below recording what PINS
+ * its value. Add to those notes rather than replacing them.
+ *
+ * MOBILE-FIRST, and here it is load-bearing twice over. :root holds the narrow
+ * values and these blocks hold the wide ones, so a query that never evaluates
+ * leaves a phone with the phone layout. That covers the container queries too: an
+ * engine without style-query support matches no `@container` block, so every
+ * component keeps its base rules and a desktop gets the stacked layout — degraded
+ * but working. Written the other way round it would put the inline layout on a
+ * phone. DESIGN.md calls desktop values canonical, so THESE blocks are the side to
+ * diff against; each token in :root carries an inline `-> value at md/lg` note so
+ * the pair is findable. See DESIGN.md → Layout & Spacing → Responsive.
+ *
+ * ANOTHER BREAKPOINT is one more block, not a sweep through components. The WIDER
+ * query comes LAST: both are true at wide widths, specificity is equal, and source
+ * order decides — which is why lg sits below md and may override it. Keep every
+ * query in one direction: a `max-width` and a `min-width` at the same value both
+ * match at exactly that width.
+ *
+ * WHAT DOES NOT NEED A BREAKPOINT, worth reading before adding one. The Figma
+ * boards draw the nav two ways — six items on two rows when narrow, one row when
+ * inline — and never drew the tablet state, one row still on the accent band. It
+ * did not need drawing: six items in equal columns produce it on the way from one
+ * shape to the other. Reach for a token flip first, a flag second, and a new
+ * breakpoint only when neither works.
+ *
+ * Nine declarations vary, two of which are flags. Note what does NOT need to be here:
+ * --grid-margin is a formula that floors itself, and --rhythm-band and
+ * --rhythm-section clamp. If this list grows much past a dozen, that is the signal
+ * something structural wants its own query rather than another token.
+ */
+
+/* ── Medium breakpoint ────────────────────────────────────────────────────── */
+/*
+ * 48rem = 768px. Arrived at by eye, and CONFIRMED against the real article page.
+ *
+ * WHAT PINS IT: the article detail page, judged on screen 2026-08-26. It carries
+ * two unrelated decisions — the nav going to a single row, and the content grid
+ * opening its 8+3 split — and for a long time only the nav was thought to be
+ * comfortable here. The split takes the prose from 66 characters at 767 to 49 at
+ * 768, recovering at about 1028, and leaves the rail 166px wide. Both measured, in
+ * the browser, on a real article: 66 at 767, 49 at 768, 58 at 900, 66 again by 1023.
+ *
+ * That was ACCEPTED rather than overlooked (2026-08-24) on the reasoning that a
+ * short measure is the cheaper failure — long lines lose the reader at the line
+ * return, short ones only cost a few extra returns — and that the rail was the
+ * likelier thing to force a change, where DESIGN.md's `body-compact` role already
+ * exists for "a column too narrow for body".
+ *
+ * IT IS NOW SETTLED RATHER THAN ACCEPTED (Andy, 2026-08-26): the 49-character
+ * measure reads fine on the real page, so this stops being "the one to move first"
+ * and the reasoning above stands confirmed rather than provisional. It stays cheap
+ * to revisit precisely because no component hardcodes a width; if one ever does,
+ * this decision gets expensive.
+ */
+@media (min-width: 48rem) {
+  :root {
+    --breakpoint-md: true;
+    /* The splits open up. DESIGN.md: 8 + skip-1 + 3 "reads as a sidebar, set
+       apart from the prose" — below this width both are full bleed. */
+    --col-main: 1 / span 8;
+    --col-rail: 10 / span 3;
+
+    /* Page-derived, so it varies. Type-derived spacing does not. */
+    --chrome-inset: var(--space-5);
+
+    /* The quote bar and its indent both grow, and the calc() in base.css keeps
+       the bar inside the indent at either size: 48 - 6 = 42px of space. */
+    --quote-indent: var(--space-5);
+    --border-width-quote: 6px;
+
+    /* 24, not 8. This is the gutter the whole grid arithmetic closes against:
+       (996 - 11 x 24) / 12 = 61, DESIGN.md's column. */
+    --grid-gutter: 24px;
+
+    /* SMALLER here than on mobile. DESIGN.md is explicit and it reads like a
+       typo until you know — until the footer's link columns, which are its first
+       consumer and are gapped 32 on mobile against 24 here. */
+    --grid-gutter-content: 24px;
+  }
+}
+
+/* ── Large breakpoint ─────────────────────────────────────────────────────── */
+/*
+ * 64rem = 1024px.
+ *
+ * WHAT PINS IT: arithmetic, not taste. The masthead's inline form needs
+ *
+ *     chrome-inset 48 + identity 309 + nav 548 + chrome-inset 48  =  953px
+ *
+ * — the identity being an 80px mark, a 16px gap and a 213px wordmark; the nav
+ * being six items at 18px with 24px gaps. Measured in the browser at 951px, which
+ * leaves 73px between the two halves at 1024. DO NOT MOVE THIS BELOW ~62rem: the
+ * halves touch, then flex-shrink squeezes the identity and the wordmark breaks
+ * onto two lines. That failure is quiet — it looks like a spacing problem.
+ *
+ * NOTHING BUT THE FLAG IS SET HERE, and that is the point of the flag. The three
+ * things that step at this width — the mark's size, the wordmark's size, and the
+ * nav's baseline offset — are all component internals with exactly one consumer
+ * each, so they live in Logo.astro and Masthead.astro and read `--breakpoint-lg`
+ * from here. A value with one consumer is not a token.
+ */
+@media (min-width: 64rem) {
+  :root {
+    --breakpoint-lg: true;
+  }
+}
+
+/* ── Semantic color roles — DARK ─────────────────────────────────────────── */
+/*
+ * Two blocks, not one, so an explicit choice wins in both directions: the media
+ * query is skipped when the reader has asked for light, and the attribute
+ * selector overrides a system preference for dark.
+ *
+ * Dark is NOT a mechanical inversion. Contrast is non-linear, so mirrored steps
+ * give un-mirrored ratios; and the accent family inverts to dark text on light
+ * fills rather than keeping white text. Read docs/decisions/color.md before
+ * changing a value here.
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: var(--neutral-900);
+    --color-surface: var(--neutral-850);
+    --color-surface-hover: var(--neutral-800);
+    --color-surface-pressed: var(--neutral-700);
+    --color-surface-muted: var(--neutral-800);
+    --color-surface-accent: var(--blue-300);
+    --color-surface-logo-band: var(--neutral-900);
+
+    --color-text: var(--neutral-200);
+    --color-text-muted: var(--neutral-500);
+    --color-text-lead: var(--neutral-300);
+    --color-text-title: var(--neutral-200);
+    --color-text-heading: var(--neutral-200);
+    --color-text-on-accent: var(--neutral-900);
+    --color-text-on-accent-hover: var(--neutral-900);
+
+    --color-icon: var(--neutral-200);
+    --color-icon-on-accent: var(--neutral-900);
+
+    --color-border: var(--neutral-700);
+    --color-border-control: var(--neutral-700);
+    --color-border-control-hover: var(--blue-300);
+    --color-border-on-accent: var(--neutral-900);
+    --color-border-quote: var(--neutral-700);
+
+    --color-accent: var(--blue-300);
+    --color-accent-hover: var(--blue-50);
+    --color-accent-pressed: var(--white);
+    --color-link-hover: var(--blue-300);
+    --color-link-strong: var(--blue-200);
+
+    --color-control-hover: var(--blue-700);
+    --color-control-pressed: var(--blue-600);
+
+    --color-focus-ring: var(--blue-300);
+    --color-focus-offset: var(--neutral-900);
+    --color-disabled-surface: var(--neutral-800);
+    --color-disabled-text: var(--neutral-600);
+
+    --color-error-bg: var(--error-800);
+    --color-error-line: var(--error-500); /* unchanged — mirrors the table */
+    --color-error-text: var(--error-300);
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: var(--neutral-900);
+  --color-surface: var(--neutral-850);
+  --color-surface-hover: var(--neutral-800);
+  --color-surface-pressed: var(--neutral-700);
+  --color-surface-muted: var(--neutral-800);
+  --color-surface-accent: var(--blue-300);
+  --color-surface-logo-band: var(--neutral-900);
+
+  --color-text: var(--neutral-200);
+  --color-text-muted: var(--neutral-500);
+  --color-text-lead: var(--neutral-300);
+  --color-text-title: var(--neutral-200);
+  --color-text-heading: var(--neutral-200);
+  --color-text-on-accent: var(--neutral-900);
+  --color-text-on-accent-hover: var(--neutral-900);
+
+  --color-icon: var(--neutral-200);
+  --color-icon-on-accent: var(--neutral-900);
+
+  --color-border: var(--neutral-700);
+  --color-border-control: var(--neutral-700);
+  --color-border-control-hover: var(--blue-300);
+  --color-border-on-accent: var(--neutral-900);
+  --color-border-quote: var(--neutral-700);
+
+  --color-accent: var(--blue-300);
+  --color-accent-hover: var(--blue-50);
+  --color-accent-pressed: var(--white);
+  --color-link-hover: var(--blue-300);
+  --color-link-strong: var(--blue-200);
+
+  --color-control-hover: var(--blue-700);
+  --color-control-pressed: var(--blue-600);
+
+  --color-focus-ring: var(--blue-300);
+  --color-focus-offset: var(--neutral-900);
+  --color-disabled-surface: var(--neutral-800);
+  --color-disabled-text: var(--neutral-600);
+
+  --color-error-bg: var(--error-800);
+  --color-error-line: var(--error-500); /* unchanged — mirrors the table */
+  --color-error-text: var(--error-300);
+}

@@ -1,0 +1,232 @@
+---
+/**
+ * The source card — the thing a note points AT, in the rail.
+ *
+ * ── ONE CARD, TWO LAYOUTS, NO `variant` PROP ─────────────────────────────────
+ *
+ * The Figma component set (439:717) has a `Type` axis of Link and Book, and it looks
+ * at first like two designs. It is one, with different slots filled:
+ *
+ *   Type=Link  231x224   pad 16, title h29, 8, image 199x123, 8, source h24
+ *   Type=Book  231x125   pad 16, author h24, 8, title h29, 8, source h24
+ *
+ * Read as `[author?] title [image?] [source?]` both variants fall out of a single
+ * template in the same DOM order, and nothing here branches. That is ArticleCard's
+ * rule applied again — "one component, two layouts, no variant prop" — and it is
+ * better than a flag for the same reason: a caller cannot wire it up wrong, because
+ * there is nothing to wire.
+ *
+ * `source` carries different content per variant and the same ROLE in both: what
+ * published the thing. A Clipping's is the domain, a Book Note's is
+ * "Publisher, Year". Composing that string is the caller's job, not this card's.
+ *
+ * ── THE THUMBNAIL'S RATIO IS A JUDGMENT, AND THE BOARD IS AMBIGUOUS ──────────
+ *
+ * The board draws the image **123px tall at BOTH widths** — 199 wide on desktop
+ * (442:718) and 311 on mobile (875:4247). That is a fixed HEIGHT, not a ratio, and
+ * taken literally it makes the mobile thumbnail a 2.53:1 strip.
+ *
+ * Read as a nested Figma frame that was drawn once and never revisited, so this uses
+ * `aspect-ratio` instead, per ArticleCard and DESIGN.md. **16/9 rather than the
+ * board's 1.618**, because it is the natural shape of the asset — the one live clip
+ * image is 480x270 — so `cover` has nothing to crop away. It costs 11px of height
+ * against the board at desktop (112 vs 123) and it is the honest reading of the
+ * intent. **Worth Andy's eye; the value is one line.**
+ */
+import {ArrowUpRight} from '@lucide/astro'
+import SanityImage from '../SanityImage.astro'
+import type {SanityImageSource} from '../../sanity/image'
+
+interface Props {
+  href: string
+  title: string
+  /** The Book variant's line ABOVE the title. Absent on a Clipping. */
+  author?: string | null
+  /** What published it — a domain, or "Publisher, Year". Below everything. */
+  source?: string | null
+  /** The Clipping's thumbnail. The Book's cover is NOT this — it sits in the rail
+      above the card, at its own natural size. */
+  image?: SanityImageSource | null
+  class?: string
+  [key: string]: unknown
+}
+
+const {href, title, author, source, image, class: className, ...rest}: Props = Astro.props
+---
+
+<article class:list={['source-card', className]} {...rest}>
+  {author && <p class="source-author">{author}</p>}
+
+  {
+    /*
+    THE ANCHOR IS ON THE TITLE AND THE WHOLE CARD IS THE TARGET — the stretched
+    pseudo-element below, which is ArticleCard's pattern and its reasoning: the click
+    area becomes the card while the accessible name stays the title, where wrapping
+    an anchor around everything would announce author, title and publisher as one
+    link.
+
+    The arrow is INSIDE the anchor, so it reads as part of the affordance rather than
+    as loose punctuation next to it, and it travels with the title's colour on hover.
+    Lucide sets `aria-hidden` unless given an a11y prop, so it adds nothing to the
+    accessible name — which is right: "opens an external site" is what the icon says
+    to sighted users, and the href already says it to everyone else.
+
+    NO `target="_blank"`. The board draws an external-link arrow, which is a
+    statement about DESTINATION, not about window management; forcing a new tab takes
+    a choice away from the reader and breaks Back. The arrow is the whole signal.
+  */
+  }
+  <p class="source-title">
+    <a href={href}>{title}<ArrowUpRight class="source-arrow" /></a>
+  </p>
+
+  {
+    image && (
+      <div class="source-media">
+        {/* Decorative: the title above and the domain below already say what this is,
+            and a thumbnail of a page adds nothing a screen reader wants. */}
+        <SanityImage image={image} aspect="16/9" alt="" />
+      </div>
+    )
+  }
+
+  {source && <p class="source-meta">{source}</p>}
+</article>
+
+<style>
+  /* ── The box ────────────────────────────────────────────────────────────── */
+  /*
+   * Boxed AT REST at every width, like an article card and unlike a note card. The
+   * note card's disappearing border exists to make it read as lighter THAN the
+   * article cards beside it; this one never sits beside anything — it is alone in a
+   * rail — so the contrast has nothing to carry and the box is doing its plain job
+   * of showing where a tappable thing ends.
+   */
+  .source-card {
+    display: grid;
+    row-gap: var(--card-gap);
+
+    /* See ArticleCard: a grid container's `align-content` is `normal`, which behaves
+       as `stretch`, so a card given surplus height grows its GAPS rather than leaving
+       the slack at the bottom. */
+    align-content: start;
+
+    /* Containing block for the full-card link overlay. */
+    position: relative;
+
+    padding: var(--card-pad);
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+    transition: box-shadow 0.15s;
+  }
+
+  /* The hard 2px accent offset, no blur and no spread — DESIGN.md → Elevation &
+     Depth. `box-shadow` and not a thicker border, which would reflow the contents;
+     with no spread it inherits `radius-2` and tapers at the corners. */
+  .source-card:hover,
+  .source-card:focus-within {
+    box-shadow: 2px 2px 0 0 var(--color-accent);
+  }
+
+  /* ── Type ───────────────────────────────────────────────────────────────── */
+  /*
+   * ── THE TITLE IS A <p>, NOT A HEADING, AND THAT IS THE POINT ───────────────
+   *
+   * ArticleCard and NoteCard take an `as` prop because their titles ARE headings —
+   * each card is an entry in a listing, and the listing has an outline. This card is
+   * apparatus hanging off one note: a heading here would insert "Still Holds: Gall's
+   * Law" into the note's outline as a peer of its own sections, and a screen-reader
+   * user tabbing by heading would land on the source rather than the writing.
+   *
+   * So it takes the h3 ROLE's type without taking an h3, which is exactly the split
+   * ArticleCard describes — the card owns its type, the element owns the outline.
+   */
+  .source-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+  }
+
+  /* `text-title` and no underline — DESIGN.md's Links rule: a title in its own block
+     at heading size is identified as a link by position. base.css gives every anchor
+     an underline, so this is the opt-out. */
+  .source-title a {
+    color: var(--color-text-title);
+    text-decoration: none;
+  }
+
+  .source-title a:hover {
+    color: var(--color-link-hover);
+  }
+
+  /* The whole card is the target; the accessible name stays the title. */
+  .source-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  /*
+   * ── THE ARROW SITS ON THE TEXT BASELINE, NOT IN THE MIDDLE OF THE LINE ─────
+   *
+   * `vertical-align: middle` is the reflex and it is wrong here: it centres the icon
+   * on the x-height's midpoint, which on a title that wraps to three lines leaves it
+   * floating away from the final word. base.css gives icons `vertical-align`
+   * alignment as a class; this one wants the baseline, with a small optical lift so
+   * the glyph's diagonal reads as level with the cap height.
+   *
+   * `inline-size`/`block-size` in `em` rather than `--icon-size-sm` (18px): the arrow
+   * belongs to the title's text, so it should scale with it if the type scale moves.
+   * At font-size-3 that is ~0.75 x 21 = 16px, close to the board's optical weight.
+   *
+   * `margin-inline-start` is a WORD SPACE, so the arrow cannot end up alone on a line
+   * — a non-breaking hair of space would be better still, but that needs a text node
+   * and this is markup the CMS never touches.
+   */
+  .source-title :global(.source-arrow) {
+    display: inline-block;
+    inline-size: 0.75em;
+    block-size: 0.75em;
+    margin-inline-start: 0.25em;
+    vertical-align: baseline;
+    transform: translateY(0.05em);
+  }
+
+  /*
+   * `body-compact` — the same step as body at 1.5 rather than 1.8, which is the
+   * role's stated purpose: "a column too narrow for `body`", and 199px is the
+   * narrowest column in the build.
+   *
+   * BOTH LINES ARE `text-muted` and the title is not. That is the card's whole
+   * hierarchy: the destination is the thing you act on, the attribution is context.
+   */
+  .source-author,
+  .source-meta {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+  }
+
+  /* ── The thumbnail ──────────────────────────────────────────────────────── */
+  /*
+   * `radius-1` and not `radius-2` — the inner corner of a rounded box wants to be
+   * tighter than the outer one, which is what both card components already do.
+   *
+   * base.css sets `height: auto` on every image, correct for images that size
+   * themselves and wrong here where the box is fixed by the wrapper's ratio — hence
+   * the explicit `block-size`. `cover` has nothing to crop on the one live asset,
+   * which is already 16/9, but it is what keeps a differently-shaped clip image from
+   * distorting.
+   */
+  .source-media {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-1);
+  }
+
+  .source-media img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+</style>

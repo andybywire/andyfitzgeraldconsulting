@@ -1,0 +1,787 @@
+---
+/**
+ * The deck viewer — a presentation's slides, as images.
+ *
+ * ── WHY IMAGES AND NOT THE PDF, IN ONE MEASUREMENT ───────────────────────────
+ *
+ * The deck this was built against was 53.6 MB. Diagnosed 2026-09-09: 99% of it is image
+ * data, and 69 of 71 unique image objects are stored LOSSLESSLY — one 3396x2547 photo
+ * alone is 27.3 MB, 51% of the file. Not pixel dimensions, not the full-slide
+ * rasterization the kickoff suspected; just lossless encoding of photographs.
+ *
+ * The same slides through this component, as 1920x1080 exports served by Sanity's CDN,
+ * measure ~24 KB each at `w=1280` — the CDN returns WebP (measured; it does NOT return
+ * AVIF even when AVIF is offered in `Accept`). With lazy loading only the first few are
+ * fetched, so opening the page costs tens of kilobytes rather than tens of megabytes.
+ *
+ * Which is also why pdf.js is not here. It would cost a few hundred KB plus a worker
+ * wired into Astro's asset pipeline, to render a file that is the wrong shape anyway.
+ *
+ * ── TWO STATES, AND THE NO-SCRIPT ONE IS A REAL DESIGN ───────────────────────
+ *
+ * Base: a row-major GRID, 3 columns from lg, 2 from md, 1 below. Every slide visible,
+ * nothing unreachable, no controls that cannot work. Andy's call (2026-09-10) over a
+ * vertical list, and it is why this component emits no per-slide anchor ids — an id
+ * scheme would renumber on every re-export, and the grid removes the need for one.
+ *
+ * Enhanced: `html.js` swaps the grid for a horizontal scroll-snap TRACK. That class is
+ * set by BaseLayout's synchronous head script (BaseLayout.astro:72), which runs while
+ * <head> is still parsing — so the track is in force at the FIRST paint and the grid
+ * never flashes before it. Same mechanism CardMasonry's pre-paint truncation uses.
+ *
+ * THE TRACK NEEDS NO JAVASCRIPT OF ITS OWN. Scroll-snap, native swipe, the scrollbar and
+ * keyboard scrolling are all CSS and the platform. The script below only adds the
+ * buttons, the arrow keys and the counter — which is why they ship `hidden` and are
+ * revealed by it, the same contract <FacetFilters> uses for its disclosure controls.
+ */
+import {ChevronLeft, ChevronRight, Download, Fullscreen, Minimize} from '@lucide/astro'
+import SanityImage from './SanityImage.astro'
+import type {SanityImageSource} from '../sanity/image'
+
+/**
+ * A slide. `assetAlt` is alt text stored on the ASSET DOCUMENT and `altText` is stored on
+ * the array item — two genuinely different fields, verified in the dataset, not two names
+ * for one thing. The asset one follows the image everywhere it is used, so it wins.
+ */
+export interface Slide extends SanityImageSource {
+  assetAlt?: string | null
+  filename?: string | null
+}
+
+interface Props {
+  slides: Slide[]
+  /** Names the group for assistive technology: "Slides from Language Arts…". */
+  title: string
+  /** The deck's download URL, from `deckUrl()`. The board puts this link in the control
+      row rather than beside it, so the component renders it. Absent on a presentation
+      with slides and no PDF, which is a live state in the corpus. */
+  deckHref?: string | null
+  /** "7.9 MB", from `deckSize()`. A deck is a heavy, deliberate download. */
+  deckWeight?: string | null
+}
+
+const {slides, title, deckHref, deckWeight}: Props = Astro.props
+
+/**
+ * ── ALT RESOLUTION, AND WHY THE DEFAULT IS EMPTY ─────────────────────────────
+ *
+ * Asset alt, then the item's own, then `alt=""`.
+ *
+ * The empty default is a claim rather than an oversight, and the claim is this: a slide
+ * is one frame of a sequence that is already described twice over — by the transcript
+ * where there is one, and by the deck itself, which is linked. Fifty-four alt strings
+ * repeating slide titles would be read out in place of the page's actual prose, which is
+ * worse than silence. The GROUP carries the name instead, via `aria-label` on the list.
+ *
+ * A slide whose content is genuinely load-bearing and appears nowhere else can be given
+ * alt — on the asset, so it follows the image, or on the item.
+ */
+const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+---
+
+<div class="deck" data-deck>
+  {
+    /*
+    <ol> because a deck is an ordered sequence and the order is the meaning — the one
+    place a list's numbering is load-bearing rather than decorative. `role="list"`
+    because `list-style: none` drops list semantics in Safari, the same reason the
+    facet chip row and the delivery list carry it.
+
+    `tabindex="0"` so the track is reachable by keyboard: Chrome and Firefox make
+    scrollable regions focusable on their own, Safari does not — so without this,
+    arrow-key scrolling is simply unavailable there. Valid on an <ol> given the
+    `aria-label`, and honest: this element really is an interactive scroll region.
+  */
+  }
+  <ol class="deck-track" role="list" tabindex="0" aria-label={`Slides from ${title}`}>
+    {
+      slides.map((slide, i) => (
+        <li class="deck-slide">
+          {/* No `aspect`: the asset's own dimensions drive the box, so a 4:3 deck is not
+              letterboxed into 16:9. The CSS note on the old resting-state poster called
+              for exactly this once a viewer existed.
+
+              The first slide loads eagerly — it is what the section looks like before
+              anyone interacts, and lazy-loading it leaves a blank frame on arrival. */}
+          <SanityImage image={slide} alt={altFor(slide)} loading={i === 0 ? 'eager' : 'lazy'} />
+        </li>
+      ))
+    }
+  </ol>
+
+  {
+    /*
+    ── THE CONTROL ROW ──────────────────────────────────────────────────────
+    Board 843:3838, frame `Viewer Controls` (2708:4342): 656x40, sitting 16 below the
+    slide, `space-between`: download on the left, pager on the right.
+
+    The board also draws a Full Screen button in the left group. It is NOT here yet — it
+    lands with the full-screen view itself, because a control that nothing can reveal is
+    dead markup, which is the same objection that kept `data-genre` off the presentation
+    cards until a filter read them.
+
+    The pager ships `hidden` and is revealed by the script, the contract <FacetFilters>
+    uses. The download link does NOT — it is a plain anchor that works with no script at
+    all, so hiding it would remove the one control a no-JS visitor can actually use.
+  */
+  }
+  <div class="deck-controls">
+    <div class="deck-controls-group">
+      {
+        /* `aria-label` carries the accessible name because the icon is decorative —
+          Lucide marks its own SVG `aria-hidden`. `title` adds the board's annotated
+          tooltip on hover; it does not appear on keyboard focus or touch, which is a
+          limit of the attribute rather than of this markup. */
+      }
+      <button
+        class="deck-button"
+        type="button"
+        data-deck-open
+        aria-label="Full screen"
+        title="Full screen"
+        hidden
+      >
+        <Fullscreen />
+      </button>
+
+      {
+        deckHref && (
+          <a class="deck-download" href={deckHref}>
+            <Download />
+            <span class="deck-label">download{deckWeight && <span> ({deckWeight})</span>}</span>
+          </a>
+        )
+      }
+    </div>
+
+    <div class="deck-controls-group">
+      {
+        /* The board annotates both with the keyboard shortcut, which is the only place a
+          visitor would learn it. Disabled rather than hidden at the ends, so the row
+          does not reflow as you page — and `disabled` on a real <button> takes it out
+          of the tab order honestly rather than leaving a dead target. */
+      }
+      <button
+        class="deck-button"
+        type="button"
+        data-deck-prev
+        aria-label="Previous slide"
+        title="Previous slide"
+        hidden
+      >
+        <ChevronLeft />
+      </button>
+      <button
+        class="deck-button"
+        type="button"
+        data-deck-next
+        aria-label="Next slide"
+        title="Next slide"
+        hidden
+      >
+        <ChevronRight />
+      </button>
+    </div>
+  </div>
+
+  {
+    /*
+    ── FULL SCREEN ──────────────────────────────────────────────────────────
+
+    <dialog> rather than a hand-built overlay, and the reason is everything it brings
+    for free: a real top layer that cannot be trapped under a stacking context, a
+    focus trap, Esc-to-close, inert background content, and `::backdrop`. Rebuilding
+    any one of those by hand is where accessible modals usually go wrong.
+
+    THE TRACK IS MOVED IN, NOT COPIED. A second copy would double 40 slides' worth of
+    srcset — 447 URLs on this page already — and give two scroll containers that could
+    disagree about which slide you are on. Moving it means the index, the snap and the
+    arrow keys are the same objects in both places, so there is one state and it cannot
+    drift. `data-deck-stage` is where it goes; `close` puts it back.
+
+    No counter and no slide numbers: the board draws none, and inventing one here
+    would be designing rather than building.
+  */
+  }
+  <dialog class="deck-dialog" data-deck-dialog aria-label={`Slides from ${title}, full screen`}>
+    <div class="deck-stage" data-deck-stage></div>
+
+    {
+      /* The bar mirrors the inline control row rather than inventing a second layout:
+         the same left/right split, so the button that leaves full screen sits exactly
+         where the button that entered it was. */
+    }
+    <div class="deck-dialog-bar">
+      <div class="deck-controls-group">
+        <button
+          class="deck-button"
+          type="button"
+          data-deck-close
+          aria-label="Exit full screen"
+          title="Exit full screen"
+        >
+          <Minimize />
+        </button>
+      </div>
+
+      <div class="deck-controls-group">
+        <button
+          class="deck-button"
+          type="button"
+          data-deck-prev
+          aria-label="Previous slide"
+          title="Previous slide"
+        >
+          <ChevronLeft />
+        </button>
+        <button
+          class="deck-button"
+          type="button"
+          data-deck-next
+          aria-label="Next slide"
+          title="Next slide"
+        >
+          <ChevronRight />
+        </button>
+      </div>
+    </div>
+  </dialog>
+</div>
+
+<style>
+  /* ── The base state: a row-major grid ────────────────────────────────────── */
+  /*
+   * Mobile-first, reading the `--breakpoint-*` flags rather than restating 48rem and
+   * 64rem, so tokens.css stays the only place those widths are written.
+   *
+   * `max-inline-size: none` IS LOAD-BEARING. base.css caps `.detail :where(p, ul, ol,
+   * blockquote, figure)` at 66ch, and that is a DESCENDANT selector — so it catches this
+   * <ol> at any depth, not just as a direct child. At the prose column 66ch happens to
+   * resolve near the same 656px, so the cap would look correct while being the
+   * "matched by luck" failure Figure.astro's header warns about. Stated, not relied on.
+   */
+  .deck-track {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-inline-size: none;
+
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+  }
+
+  @container style(--breakpoint-md: true) {
+    .deck-track {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @container style(--breakpoint-lg: true) {
+    .deck-track {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* ── The enhanced state: a horizontal snap track ──────────────────────────── */
+  /*
+   * One slide per view, `grid-auto-columns: 100%` rather than a fixed width so the track
+   * follows whatever column it is placed in.
+   *
+   * `overscroll-behavior-x: contain` IS NOT AN OPTIMISATION. Without it a trackpad or
+   * iOS swipe past the last slide chains to the page and triggers browser BACK — the
+   * visitor loses the page by swiping the thing they were reading. This is the single
+   * most likely way to ship a broken carousel.
+   *
+   * `scroll-behavior: smooth` is guarded on `prefers-reduced-motion` and set HERE rather
+   * than inherited: base.css sets it on `html`, and that does not propagate into a
+   * separate scroll container.
+   */
+  html.js .deck-track {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    gap: 0;
+
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
+  }
+
+  /*
+   * ── NO `scroll-behavior: smooth`, AND THAT IS A DECISION ───────────────────
+   *
+   * It was here and came out (Andy, 2026-09-10): paging a deck is not a journey across a
+   * document, it is a replacement of what you are looking at, and animating it reads as
+   * lag rather than as continuity. The difference is most obvious entering and leaving
+   * full screen, where a smooth restore animates the deck back to a position it never
+   * visibly left.
+   *
+   * base.css sets `scroll-behavior: smooth` on `html`, and that does NOT propagate into a
+   * separate scroll container — so there is nothing to override here, only something not
+   * to add. Recorded because "add smooth scrolling" is the obvious later improvement.
+   */
+
+  html.js .deck-slide {
+    scroll-snap-align: start;
+  }
+
+  /* DESIGN.md gives content images `radius-1`. The slide is the image itself — there is
+     no frame around it, so the radius belongs on the picture. */
+  .deck-slide :global(img) {
+    inline-size: 100%;
+    block-size: auto;
+    border-radius: var(--radius-1);
+  }
+
+  /* ── The control row ──────────────────────────────────────────────────────── */
+  /*
+   * The board draws it 16 below the slide and `space-between` across the full width.
+   * `flex-wrap` so a narrow column stacks the two groups rather than overlapping them —
+   * at 375 the row measures under 320 and does not wrap, so this only ever fires if a
+   * label grows.
+   */
+  .deck-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-block-start: var(--space-2);
+  }
+
+  .deck-controls-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  /*
+   * ── THE ICON IS 24px, WHICH base.css DOES NOT OFFER ────────────────────────
+   *
+   * base.css sizes `svg.lucide` at 20 and gives one opt-out, `icon-sm` at 18. The board
+   * draws these at 24, so the size is set here rather than by adding a third global
+   * step for a single consumer — the promotion rule's usual direction. If a second
+   * consumer wants 24, `icon-lg` in base.css is the right answer instead.
+   *
+   * `:global(svg)` anchored under an element this component owns: Lucide renders its own
+   * <svg>, so the descendant is not guaranteed to carry this component's scope.
+   */
+  .deck-button :global(svg),
+  .deck-download :global(svg) {
+    inline-size: 24px;
+    block-size: 24px;
+  }
+
+  /*
+   * 56x40 on the board: a 24px icon with `space-2` inline and `space-1` block padding.
+   * `--color-accent` with the glyph knocked out — Lucide strokes with `currentColor`, so
+   * `color` alone draws the icon and there is no second declaration for it.
+   */
+  .deck-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: var(--space-1) var(--space-2);
+    border: none;
+    border-radius: var(--radius-1);
+    background-color: var(--color-accent);
+    color: var(--color-text-on-accent);
+
+    cursor: pointer;
+    /* The 0.15s affordance end of DESIGN.md's convention, on the resting rule so it
+       eases both in and out. */
+    transition: background-color 0.15s;
+  }
+
+  .deck-button:hover {
+    background-color: var(--color-accent-hover);
+  }
+
+  /*
+   * At the ends, and it has to read as unavailable rather than broken. `disabled` also
+   * removes the button from the tab order, so a keyboard user is not stopped on a
+   * control that does nothing.
+   */
+  .deck-button:disabled {
+    background-color: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
+    cursor: default;
+  }
+
+  /*
+   * ── THE DOWNLOAD LINK, AND IT IS NOT A BUTTON ────────────────────────────
+   *
+   * The board draws it as icon plus lowercase text on the page ground, at body size in
+   * body colour — the honest shape, since it navigates where the three buttons act on
+   * the page.
+   *
+   * The board's annotation: "Underline on hover, no animation." That is the rail's
+   * treatment MINUS the easing, and the difference from <Eyebrow> is deliberate rather
+   * than an oversight — Eyebrow animates `text-decoration-color` over 0.15s precisely
+   * because `text-decoration-line` cannot be animated from `none`. Here the annotation
+   * asks for no animation at all, so the line is simply switched on.
+   */
+  .deck-download {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+
+    color: var(--color-text);
+    text-decoration: none;
+
+    /* DESIGN.md's `nav` role, restated rather than inherited: base.css binds these four
+       declarations to the `nav` ELEMENT, and this control row is not a nav. Restating is
+       also what keeps the wipe-in `::after` away — that rule is `nav :is(a, button)`, and
+       the board asks for a plain underline here, not the chrome gesture. */
+    font-family: var(--font-heading);
+    font-size: var(--font-size-2);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  /*
+   * ── THE SIZE IS PART OF THE LABEL, NOT AN ASIDE ────────────────────────────
+   *
+   * It carries no colour of its own, so it inherits the link's — which is what makes the
+   * hover apply to the whole string rather than lighting up "download" and leaving
+   * "(8.3 MB)" behind (Andy, 2026-09-10). A muted weight was tried and read as two
+   * controls.
+   *
+   * The colour change sits on the anchor so the ICON moves with it — Lucide strokes with
+   * `currentColor` — while the underline sits on the text alone, since a rule drawn under
+   * a 24px glyph reads as a mistake. The board's annotation: "Underline on hover, no
+   * animation", which is why nothing here transitions.
+   */
+  .deck-download:hover {
+    color: var(--color-link-hover);
+  }
+
+  .deck-download:hover .deck-label {
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+  }
+
+  /* ── Full screen ──────────────────────────────────────────────────────────── */
+  /*
+   * The dialog IS the surface — it fills the viewport rather than floating on a dim
+   * backdrop, because a deck wants every pixel. The backdrop is still painted for the
+   * moment the dialog animates in and for any browser that insets it.
+   *
+   * `max-inline-size`/`max-block-size` are reset because the UA stylesheet caps a dialog
+   * at `calc(100% - 6px - 2em)`, which would leave a hairline of page showing at the
+   * edges and read as a rendering fault rather than a design.
+   */
+  .deck-dialog {
+    inline-size: 100vw;
+    max-inline-size: 100vw;
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+
+    margin: 0;
+    padding: 0;
+    border: none;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  .deck-dialog::backdrop {
+    background-color: rgb(0 0 0 / 0.9);
+  }
+
+  /* The stage takes the space the bar does not, so the slide is sized against what is
+     actually left rather than against the viewport height. */
+  .deck-dialog[open] {
+    display: grid;
+    grid-template-rows: 1fr auto;
+  }
+
+  .deck-stage {
+    min-block-size: 0; /* a grid item's default `min-height: auto` would let the track
+                          push the bar off-screen instead of shrinking */
+    display: grid;
+
+    /* The gutter lives HERE rather than on each slide, so the image can fill its slide
+       exactly and needs no `calc()` to subtract its own padding back out. Block axis only:
+       slides run edge to edge horizontally, which is what a full-screen deck wants and
+       what keeps the snap boundaries flush with the viewport. */
+    padding-block: var(--space-2);
+  }
+
+  /*
+   * ── THE SLIDE FITS THE STAGE IN BOTH AXES ──────────────────────────────────
+   *
+   * Inline the deck sizes to its column and the height follows. Here neither axis is
+   * free: a 16:9 slide at 100vw is taller than the viewport on most laptops, so
+   * constraining width alone would crop the bottom off every slide. `object-fit:
+   * contain` with both maxima is what makes an arbitrary aspect ratio fit — which is
+   * the same reason `aspect` is never forced on these images.
+   */
+  /*
+   * ── THE TRACK'S ROWS HAVE TO BE MADE DEFINITE ──────────────────────────────
+   *
+   * This is what was cropping the bottom off a 16:9 slide on a laptop. `grid-auto-flow:
+   * column` creates implicit COLUMNS; the single implicit ROW stays `auto`, which sizes
+   * to content — so the row grew to the image's natural height (1440 x 9/16 = 810px) and
+   * overflowed a stage barely 700px tall. `max-block-size: 100%` on the image could not
+   * help, because 100% of an auto-sized row is just the image's own height.
+   *
+   * `block-size: 100%` gives the track a definite height from the stage, and
+   * `grid-auto-rows: 100%` resolves against it — so the row is the stage, the slide fills
+   * the row, and the image's maxima finally have something real to measure against.
+   */
+  .deck-dialog .deck-track {
+    block-size: 100%;
+    grid-auto-rows: 100%;
+  }
+
+  /*
+   * ── THE SLIDE IS A POSITIONED BOX AND THE IMAGE FILLS IT ───────────────────
+   *
+   * This is what was cropping the bottom off a 16:9 slide, and the two obvious fixes both
+   * fail. Measured at 1512x860, where the stage is 788 and the slide's content box 756:
+   *
+   *   max-block-size: 100%    ->  833px   no clamp
+   *   block-size: 100%        ->  833px   ignored
+   *   height: 100% (inline)   ->  833px   ignored
+   *   align-self: stretch     ->  833px   ignored
+   *   abspos + inset only     ->  851px   worse (intrinsic width)
+   *   max-height: 756px       ->  756px   works, but hardcodes the bar
+   *
+   * TWO SEPARATE THINGS DEFEAT THE PERCENTAGE FORMS. The image's containing block takes
+   * its height from `grid-auto-rows: 100%`, against a track sized `block-size: 100%`,
+   * against a `1fr` stage — a percentage measured through that chain is not definite even
+   * though its used value plainly is 788. And `stretch` cannot rescue it either, because
+   * the `width`/`height` attributes give the image an intrinsic `aspect-ratio`, so with a
+   * definite inline size its block size is derived rather than `auto` — and stretch only
+   * applies to an auto block size.
+   *
+   * ABSOLUTE POSITIONING FIXES BOTH, BUT NOT VIA THE INSETS. An abspos element's
+   * containing block is the padding box of its positioned ancestor, and THAT height is
+   * definite — so `block-size: 100%` finally resolves. The insets alone are not enough:
+   * for an absolutely positioned REPLACED element, `inline-size: auto` uses the image's
+   * INTRINSIC width rather than deriving it from the insets, which measured 1512x851 and
+   * was worse than where it started. The sizes have to be stated.
+   *
+   * `object-fit: contain` then letterboxes the picture inside that box and centres it,
+   * which is also why `aspect` is never forced on these images — a 4:3 deck fits by the
+   * same rule with nothing to change.
+   *
+   * The image leaves the flow, which is correct here: the slide is sized by the grid, not
+   * by its contents. That is only true inside the dialog; the inline track still sizes to
+   * its images.
+   */
+  .deck-dialog .deck-slide {
+    position: relative;
+    /* `min-block-size: 0` for the same reason the stage has it: a grid item's automatic
+       minimum size would otherwise refuse to shrink below its content. */
+    min-block-size: 0;
+  }
+
+  .deck-dialog .deck-slide :global(img) {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: contain;
+  }
+
+  .deck-dialog-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-2);
+  }
+
+  /* The close button takes the same accent fill as the pager (Andy, 2026-09-10) — it is
+     a peer control, not a quieter one, and it stands where Full Screen stood. */
+</style>
+
+<script>
+  /**
+   * The enhancement: reveal the pager, wire the arrow keys, and keep the buttons honest
+   * at the ends. The TRACK itself is CSS — swipe, snap, scrollbar and native keyboard
+   * scrolling all work before this runs, which is why the controls ship `hidden` rather
+   * than the track shipping broken.
+   */
+  for (const deck of document.querySelectorAll<HTMLElement>('[data-deck]')) {
+    const track = deck.querySelector<HTMLElement>('.deck-track')
+    const dialog = deck.querySelector<HTMLDialogElement>('[data-deck-dialog]')
+    const stage = deck.querySelector<HTMLElement>('[data-deck-stage]')
+    const open = deck.querySelector<HTMLButtonElement>('[data-deck-open]')
+    const close = deck.querySelector<HTMLButtonElement>('[data-deck-close]')
+    if (!track) continue
+
+    const slides = Array.from(track.children) as HTMLElement[]
+    if (slides.length < 2) continue
+
+    /* BOTH pagers, inline and full screen, driven from one place. They are separate
+       buttons because they live in different containers, but they act on the same track
+       and read the same index — so there is no second state to keep in step. */
+    const pagers = Array.from(deck.querySelectorAll<HTMLButtonElement>('[data-deck-prev]')).map(
+      (prev, i) => ({prev, next: deck.querySelectorAll<HTMLButtonElement>('[data-deck-next]')[i]}),
+    )
+
+    for (const {prev, next} of pagers) {
+      prev.hidden = false
+      next.hidden = false
+    }
+
+    /*
+     * The current index is derived from scroll position rather than stored, so a swipe, a
+     * scrollbar drag, a keyboard scroll and a button press cannot disagree about where the
+     * deck is. `Math.round` rather than `floor`: a snap lands within a pixel or two of the
+     * boundary and floor would report the previous slide for the whole first half of a
+     * rounding error.
+     *
+     * ── IT CACHES, BECAUSE THE TRACK CAN HAVE NO WIDTH ─────────────────────────
+     *
+     * `clientWidth` is 0 whenever the track is inside a CLOSED dialog, and the closing
+     * sequence reads the index at exactly that moment — so the naive form divides by zero
+     * and returns NaN, which then propagates into `scrollTo` and loses the reader's place
+     * silently. Every measurable call refreshes `lastIndex`; a call taken while the track
+     * is collapsed returns the last good value instead of a broken one.
+     */
+    let lastIndex = 0
+
+    const indexNow = () => {
+      const width = track.clientWidth
+      if (!width) return lastIndex
+      lastIndex = Math.round(track.scrollLeft / width)
+      return lastIndex
+    }
+
+    /* Writes `lastIndex` directly rather than waiting for the scroll to settle, so a close
+       that happens between a button press and `scrollend` still restores the right slide. */
+    const goTo = (i: number, behavior: ScrollBehavior = 'auto') => {
+      const clamped = Math.max(0, Math.min(i, slides.length - 1))
+      lastIndex = clamped
+      track.scrollTo({left: clamped * track.clientWidth, behavior})
+    }
+
+    /* Disabled at the ends rather than hidden, so neither row reflows mid-page. */
+    const syncButtons = () => {
+      const i = indexNow()
+      for (const {prev, next} of pagers) {
+        prev.disabled = i <= 0
+        next.disabled = i >= slides.length - 1
+      }
+    }
+
+    for (const {prev, next} of pagers) {
+      prev.addEventListener('click', () => goTo(indexNow() - 1))
+      next.addEventListener('click', () => goTo(indexNow() + 1))
+    }
+
+    /*
+     * Arrow keys, scoped to the track rather than the document — a global listener would
+     * hijack Left/Right for the whole page, including for someone using them to move a
+     * text caret elsewhere. The track is focusable (`tabindex="0"`) precisely so this has
+     * somewhere to live.
+     *
+     * That scoping is why the buttons carry no "(left arrow key)" hint: the keys work
+     * once the track has focus, and a tooltip on a button would promise otherwise.
+     *
+     * `preventDefault` because the browser's own arrow-key scrolling would move the track
+     * by a fraction of a slide and fight the snap.
+     */
+    track.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+      event.preventDefault()
+      goTo(indexNow() + (event.key === 'ArrowRight' ? 1 : -1))
+    })
+
+    /*
+     * `scrollend` fires once the snap has settled, which is what the buttons should
+     * follow; `scroll` would fire continuously mid-gesture. Safari added it in 18.4, so
+     * where it is missing the buttons fall back to plain `scroll` — chattier, identical
+     * result.
+     */
+    const settled = 'onscrollend' in window ? 'scrollend' : 'scroll'
+    track.addEventListener(settled, syncButtons)
+
+    /* Slide width changes with the column — and changes a great deal when the track moves
+       into the dialog — so a resize moves the boundaries even though the index does not. */
+    new ResizeObserver(syncButtons).observe(track)
+
+    syncButtons()
+
+    /*
+     * ── FULL SCREEN ──────────────────────────────────────────────────────────
+     *
+     * The track is MOVED into the dialog and back, so both views share one scroll
+     * container, one index and one set of loaded images. The alternative — a second copy
+     * of the markup — would double 447 srcset URLs and give two containers that could
+     * disagree about which slide is showing.
+     *
+     * THE INDEX HAS TO BE CARRIED ACROSS BY HAND. `scrollLeft` is in pixels against a
+     * container whose width is about to change from a 656px column to the viewport, so
+     * the browser does not preserve it: it is read as a slide number before the move and
+     * written back as pixels after. Restored with `behavior: 'auto'` rather than smooth —
+     * a restore is not a navigation and should not animate.
+     */
+    if (dialog && stage && open && close) {
+      const home = track.parentElement
+      /* `sizes` is swapped on the way in and back on the way out. Inline, `auto, 100vw`
+         resolves against a 656px box; full screen the same slide needs a source several
+         rungs up, and without this the browser keeps the small one and upscales it. */
+      const restSizes = slides.map((slide) => slide.querySelector('img')?.getAttribute('sizes'))
+
+      open.hidden = false
+
+      open.addEventListener('click', () => {
+        const i = indexNow()
+        for (const slide of slides) slide.querySelector('img')?.setAttribute('sizes', '100vw')
+        stage.appendChild(track)
+        dialog.showModal()
+        goTo(i)
+        syncButtons()
+        /* Focus the track rather than leaving it on the button now behind the dialog, so
+           the arrow keys work immediately on opening. */
+        track.focus()
+      })
+
+      /*
+       * ── THE RESTORE IS IDEMPOTENT AND CALLED FROM BOTH PATHS ─────────────────
+       *
+       * It was originally hung on the dialog's `close` event alone, which is the tidy way
+       * to catch the button and Esc together. MEASURED IN THE BROWSER, `dialog.close()`
+       * set `open` to false and fired NO `close` event — a listener added in the same
+       * call counted zero — leaving the track stranded in the dialog and the page
+       * silently missing its slides.
+       *
+       * Whether that is a real platform behaviour or an artifact of the automated pane
+       * (which also suppresses rAF and scroll events) I could not establish from here.
+       * So this does not depend on the answer: the button restores directly, the `close`
+       * event restores as well for Esc, and the parent check makes the second call a
+       * no-op. One of the two always runs.
+       */
+      const exitFullscreen = () => {
+        if (track.parentElement !== stage) return
+        const i = indexNow()
+        slides.forEach((slide, n) => {
+          const img = slide.querySelector('img')
+          const rest = restSizes[n]
+          if (img && rest) img.setAttribute('sizes', rest)
+        })
+        home?.insertBefore(track, home.firstChild)
+        goTo(i)
+        syncButtons()
+        open.focus()
+      }
+
+      /* `indexNow()` BEFORE `close()`, because closing collapses the track to zero width
+         and the cache is what the restore then reads. */
+      close.addEventListener('click', () => {
+        indexNow()
+        dialog.close()
+        exitFullscreen()
+      })
+
+      dialog.addEventListener('close', exitFullscreen)
+    }
+  }
+</script>

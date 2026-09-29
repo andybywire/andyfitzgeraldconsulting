@@ -1,0 +1,1160 @@
+---
+/**
+ * The site header. Three states, one DOM, no media query.
+ *
+ *   STACKED  base    identity centered; nav below it on a full-bleed accent
+ *                    band, in two rows of three
+ *   ROW      md      the same, with the nav on ONE row — the state the Figma
+ *                    boards never drew, and the reason it needed no design
+ *   INLINE   lg      identity left, nav right, no band
+ *
+ * Each state is additive on the one before it, read off a `--breakpoint-*` flag
+ * with a style container query. Nothing here undoes anything, which is what makes
+ * the base state what a browser falls back to — see tokens.css → THE BREAKPOINTS.
+ *
+ * ── WHY THERE IS NO <Band> HERE ──────────────────────────────────────────────
+ *
+ * The masthead is chrome, and chrome is inset from the VIEWPORT rather than laid
+ * on the content grid — the Figma boards put it 48px from each edge on Desktop
+ * and 16 on Mobile, which is `chrome-inset` exactly, not `grid-margin`. So no
+ * <Grid>. And <Band> would only contribute `data-space="none"` and a tone this
+ * header does not have, while adding a wrapper between <header> and the two
+ * things that have to be flex siblings in the inline state. So no <Band> either.
+ *
+ * That leaves the question the accent band poses: how does the nav reach the
+ * viewport edge when the header is inset? Answer — WHICH ELEMENT CARRIES THE
+ * INSET IS ITSELF PART OF THE STATE:
+ *
+ *   stacked  the two CHILDREN are inset; <header> is not, so the band bleeds
+ *   inline   <header> is inset; the children are not, because there is no band
+ *
+ * Putting it on the children in both states is the obvious-looking version and it
+ * is wrong. The identity's trailing inset and the nav's leading one look free —
+ * one is behind a centered block, the other behind a nav pushed to the far side —
+ * but they still occupy 96px of the header's MINIMUM width, which is enough to
+ * make the inline layout overflow at its own breakpoint. It did: flex-shrink then
+ * squeezed the identity until the wordmark broke onto two lines, and the header
+ * came out 184px tall against the board's 144. Measured, not theorized.
+ *
+ * ── AND WHY THE BAND IS NOT A <Band> EITHER ──────────────────────────────────
+ *
+ * <Band tone="accent"> re-points the whole role bundle, which is the right idea
+ * and the wrong direction here: those declarations would have to be UNDONE at
+ * lg, and restoring an inherited custom property from inside the block that
+ * overrode it means `unset` and a paragraph explaining it. Three explicit
+ * declarations per state is smaller than that, and reads in both directions.
+ *
+ * ── THE NAV / SEARCH SLOT ────────────────────────────────────────────────────
+ *
+ * `.slot` is a seam, not decoration. Search expands IN PLACE, replacing the nav
+ * items (DESIGN.md → Components → Search), so the two occupy one slot and the
+ * slot has to be able to hold either. Phase 3 puts the nav in it and leaves the
+ * toggle inert.
+ */
+import Logo from './Logo.astro'
+import {SITE_FACTS} from '../lib/linked-data'
+import {Search} from '@lucide/astro'
+
+/**
+ * ── WHICH SECTION THE PAGE IS IN, DRAWN AS A RESTING UNDERLINE ───────────────
+ *
+ * Ported from the live site: the section's nav item carries its underline at rest,
+ * with the LABEL at its ordinary resting colour. The underline alone says where you
+ * are; a coloured label would read as a permanent hover.
+ *
+ * base.css already draws it — `nav :is(a, button)[aria-current]::after` sets the
+ * same `inline-size: 100%` that hover does, and its comment ends "Nothing sets it
+ * yet." This is what sets it. Nothing about the colour needed changing, because only
+ * `:hover` moves a nav label's colour and `aria-current` is not a hover.
+ *
+ * COMPUTED HERE, NOT PASSED IN. Every page renders this component, so deriving the
+ * section from the URL means no page can forget to declare it — and a page type
+ * added later is correct before anyone thinks about it.
+ *
+ * ── `page` vs `true`, AND WHY BOTH ARE USED ──────────────────────────────────
+ *
+ * ARIA has no `section` token. On `/insights/` the item IS the current page, so it
+ * takes `page`; on `/insights/some-note/` it is the current item in a set but not
+ * the page itself, which is what the generic `true` means. Both match the
+ * `[aria-current]` selector, so the indicator is identical and only what is
+ * announced differs.
+ *
+ * NEVER `aria-current="false"`. `[aria-current]` is an ATTRIBUTE-PRESENCE selector,
+ * so the string "false" would draw the underline on every item that is not current —
+ * the exact inverse of the feature. Returning `undefined` omits the attribute, which
+ * is what Astro does with `undefined`, `null` and `false`.
+ *
+ * ── ROOT-LEVEL PAGES MATCH NOTHING, BY CONSTRUCTION ──────────────────────────
+ *
+ * About, Colophon and Apologia sit at the root and belong to no section, so no item
+ * underlines (Andy, 2026-09-01). That needs no special case: `/about/` is not a
+ * prefix match for any of the five hrefs, and neither is `/`. The prefix test only
+ * works because every section href is itself a directory ending in `/` — without the
+ * trailing slash, a future `/insight-search/` would light up Insights.
+ */
+const here = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`
+
+/* Returned as props and spread, so the href is written ONCE per item. Passing it
+   twice — to `href` and to a checker — is a drift the indicator would fail silently
+   on, since a mismatched section simply never lights up. */
+/* The return type is annotated rather than inferred, and it is not decoration:
+   without it the ternary's two string literals widen to `string`, and Astro types
+   `aria-current` as the ARIA token union — so every call site fails to typecheck.
+   Naming the union here keeps the literals narrow and makes a typo in one of the two
+   tokens an error rather than a silently inert attribute. */
+const navLink = (href: string): {href: string; 'aria-current'?: 'page' | 'true'} => ({
+  href,
+  'aria-current': here === href ? 'page' : here.startsWith(href) ? 'true' : undefined,
+})
+
+/**
+ * ── THE REPRESENTATIVE h-card, AND WHY IT IS OPT-IN ─────────────────────────
+ *
+ * Every page emits `<link rel="author" href="/">`, and a consumer resolving the author
+ * of a post follows it here. What it looks for is a REPRESENTATIVE h-card: one whose
+ * `u-url` is the page it was found on. That is only true on `/`, so only the home page
+ * asks for it — the same opt-in shape `Eyebrow` and `TopicList` use for their mf2, and
+ * for the same reason. An h-card on every page would put a second, non-representative
+ * card on all 45 others, which a parser has to consider and discard.
+ *
+ * ── IT MARKS UP TEXT THAT IS ALREADY VISIBLE ────────────────────────────────
+ *
+ * `p-name`, `p-job-title` and `u-url` all land on the wordmark and its link, which a
+ * reader already sees. That is the IndieWeb's "visible data" principle satisfied rather
+ * than worked around — invisible markup is what rots, because nothing shows when it goes
+ * wrong. Only the photo has nothing to attach to; see `photo` below.
+ *
+ * The root goes on <header> rather than a new wrapper, so no element is added and the
+ * layout is untouched. The nav ends up inside the card, which is inert: its links carry
+ * no mf2 classes, and the implied-name and implied-url rules that might otherwise scrape
+ * them only fire when `p-name` and `u-url` are ABSENT. Both are explicit here.
+ */
+interface Props {
+  /** Emit the representative h-card. Home only — see the note above. */
+  microformats?: boolean
+  /**
+   * An absolute URL for `u-photo`, which is the avatar a site shows beside a webmention
+   * from here. It is the one property with no visible element to hang on, because the
+   * design carries no portrait — so it is emitted as data rather than as a picture.
+   *
+   * The PAGE resolves the URL, including the square crop an avatar wants. This component
+   * knows nothing about Sanity or image builders; it is handed a string.
+   */
+  photo?: string | null
+  /**
+   * Render with the field already open, for `/search/` itself.
+   *
+   * ── IT SETS AN ATTRIBUTE; CSS GATED ON `html.js` DOES THE REST ─────────────
+   *
+   * Without it the script would have to open the field after the document parsed, and
+   * `/search/` would paint the nav and then visibly replace it. `html.js` is set by
+   * BaseLayout's SYNCHRONOUS head script, so a rule keyed on it is true at the FIRST
+   * paint rather than applied as a correction — the same mechanism CardMasonry uses to
+   * truncate before anything is drawn.
+   *
+   * A visitor with no JavaScript never gets the class, so the swap never happens and they
+   * keep the nav. That is the honest state: the field cannot rank anything without a
+   * script, and `/search/` already answers them with the Common Topics list instead.
+   */
+  search?: boolean
+}
+
+const {microformats = false, photo = null, search = false}: Props = Astro.props
+---
+
+{
+  /*
+  DOM ORDER IS READING ORDER at both widths, and nothing here depends on CSS to
+  be legible: identity, then a list of links. That is the stacked configuration,
+  so a document that loses its stylesheet entirely degrades to it rather than to
+  a half-collapsed inline header.
+
+  ── THE WORDMARK COMES FROM CODE, NOT FROM SANITY. DECIDED 2026-09-15 ────────
+
+  This comment used to end "worth a decision before phase 4". This is that
+  decision, recorded because the obvious-looking alternative is the wrong one and
+  will look tempting again.
+
+  `settings.siteTitle` and `settings.siteSubtitle` exist, the live 11ty site reads
+  them, and the phase 5 parity check flagged them as populated fields reaching no
+  query — which is what put the question back on the table. They now hold exactly
+  these two strings. Wiring them up anyway was rejected:
+
+    - `SITE_FACTS` in lib/linked-data.ts ALREADY carries `personName` and
+      `jobTitle`, exported with a comment inviting precisely this use. So the
+      choice was never "code or CMS" but "one copy in code, or two copies plus a
+      fetch". The masthead and the JSON-LD Person node assert the same fact about
+      the same human, and they should not be able to disagree.
+    - A fetch would put a Sanity round trip on the critical path of all 69 pages
+      for a string that changes about once a decade, and would add a staleness
+      question under SSR preview that a constant simply does not have.
+    - `queries/home.ts` already refused to fetch settings in this component for
+      the weaker version of the same reason: 68 pages paying for a field one page
+      needs. This is that reasoning holding, not being overturned.
+
+  The test this is really applying is the one tokens.css uses — a value with one
+  consumer is not a token, and a second consumer triggers promotion. There were
+  three consumers and the promotion target was the existing constant.
+
+  So `settings.siteTitle` and `siteSubtitle` are DEAD DATA, and stay on phase 7's
+  deletion list with the other four unread `settings` fields. The parity check
+  will keep warning about them until they are deleted, which is correct.
+
+  The microformats stay a PERSON card, and that is the other half of the decision.
+  `p-name` is a human's name and `p-job-title` is a human's job title; both are
+  honest here and neither would have been if the org name and a service tagline
+  had landed in them. Detail pages' `rel=author` resolves here.
+*/
+}
+<header
+  class:list={['masthead', microformats && 'h-card']}
+  data-search={search ? 'open' : undefined}
+>
+  <a class:list={['identity', microformats && 'u-url']} href="/" rel="home">
+    <Logo class="mark" />
+    <span class="wordmark">
+      <span class:list={['name', microformats && 'p-name']}>{SITE_FACTS.personName}</span>
+      <span class:list={['role', microformats && 'p-job-title']}>{SITE_FACTS.jobTitle}</span>
+    </span>
+  </a>
+
+  {
+    /*
+      ── `<data>`, NOT `<link>`, AND THAT IS AN HTML VALIDITY FIX ──────────────
+
+      `<link class="u-photo" href="…">` is the usual IndieWeb idiom for a URL that is data
+      rather than display, and it was the plan until it was checked against the HTML spec.
+      A <link> is only conforming inside <body> when it carries `itemprop` or a body-ok
+      `rel` — the list is dns-prefetch, modulepreload, pingback, preconnect, prefetch,
+      preload and stylesheet. A bare `class="u-photo"` link has neither, so it would ship
+      as invalid markup and fail the HTML validation gate phase 8 adds.
+
+      `<data value>` is in microformats2's own u-* parsing chain — after the href and src
+      elements, before text content — so parsers read it identically, and <data> is
+      ordinary phrasing content that validates anywhere. Same invisibility, same
+      semantics, no image request, no validity cost.
+
+      It sits OUTSIDE the anchor deliberately: inside, it would be a child of the `u-url`
+      element, which is fine for parsing but puts non-rendering data inside a link's
+      accessible name computation for no reason.
+    */
+  }
+  {microformats && photo && <data class="u-photo" value={photo} />}
+
+  <div class="slot">
+    <nav aria-label="Main">
+      {
+        /*
+        `role="list"` because Safari drops list semantics from a `list-style: none`
+        list, which is the one thing that makes the declaration an a11y change
+        rather than a cosmetic one.
+      */
+      }
+      <ul role="list">
+        <li><a {...navLink('/insights/')}>Insights</a></li>
+        <li><a {...navLink('/presentations/')}>Presentations</a></li>
+        <li><a {...navLink('/projects/')}>Projects</a></li>
+        <li>
+          {
+            /*
+            One link, one href, two labels — the terse one for the band and the
+            verbose one for the inline nav, exactly parallel to the search item
+            below. Two <li>s would mean two links to one page in one nav.
+
+            THE SPACE BELONGS INSIDE `.label-inline`, and that is deliberate. With
+            no space at all, a document that lost its stylesheet would read
+            "ConsultingWork with me"; with the space outside the spans, the
+            surviving label would carry a stray one and a centered label would sit
+            half a space off. Inside the span it is removed with the span when the
+            span is hidden, and when the OTHER span is hidden it lands first in the
+            line box, where white-space processing drops it. Correct in all three
+            cases, which is why it is written this way rather than tidily.
+
+            It has to be `{' '}` rather than typed whitespace: Astro trims leading
+            whitespace inside an element written across a line break, so a literal
+            space here silently disappears from the build. Verified in the output,
+            after writing it the other way first.
+          */
+          }
+          <a {...navLink('/consulting/')}>
+            <span class="label-stacked">Consulting</span>
+            <span class="label-inline">{' '}Work with me</span>
+          </a>
+        </li>
+        <li><a {...navLink('/contact/')}>Contact</a></li>
+        <li class="search-item">
+          {
+            /*
+            A <button> rather than a link because search does not navigate — it
+            replaces this slot's contents in place.
+
+            ── THE WHOLE <li> GOES WITHOUT JAVASCRIPT, NOT JUST THE BUTTON ──────
+
+            It was inert and VISIBLE until now, which made it the one control in the
+            build a visitor could click to no effect. The contract <SlideDeck> and
+            <FacetFilters> state is that a control needing JavaScript ships hidden,
+            and this closes that.
+
+            Hiding the <li> rather than the button is what keeps the stacked state
+            tidy: the nav is a 3-column grid there, so an empty cell would leave a
+            hole where the sixth item was. Five items fall into 3 + 2 instead.
+
+            It is gated in CSS on `html.js` rather than carrying `hidden`, because
+            `[hidden]` is applied by a script and would therefore arrive AFTER the
+            first paint — a visible reflow on every page in the site. See the rule.
+
+            The label is real text at BOTH widths, visually hidden rather than
+            removed in the inline state. That is what lets an icon-only control
+            have an accessible name without `aria-label`: Lucide marks its own SVG
+            `aria-hidden`, so with `display: none` on the label the button would
+            have no name at all.
+          */
+          }
+          <button
+            class="search-toggle"
+            type="button"
+            aria-expanded={search ? 'true' : 'false'}
+            aria-controls="masthead-search"
+          >
+            <Search class="search-icon" />
+            <span class="search-label">Search</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+
+    {
+      /*
+      ── A REAL FORM, WHICH IS WHY IT WORKS BEFORE THE CONTROLLER EXISTS ───────
+
+      `action="/search/"` with `method="get"` and `name="q"`, so pressing Return
+      navigates to `/search/?q=…` with no JavaScript involved in the submit. Phase 4's
+      controller intercepts it to swap results in place; until then the navigation IS the
+      behaviour, and it degrades to exactly the same URL a shared link uses.
+
+      `role="search"` names the landmark. `<label>` rather than `aria-label` on the input
+      because the field has a real visible placeholder and a name that should survive
+      autofill and translation — ThemeToggle's note draws the line: `aria-label` is for a
+      name that is NEVER visible, which is not this.
+
+      ── `Esc` IS A BUTTON, NOT AN INDICATOR ──────────────────────────────────
+
+      The boards draw it as a key cap, and on a desktop keyboard it IS just a hint — but
+      it is drawn on the 375 board too, where there is no Esc key to press. So it has to
+      be tappable, which makes a <button> the honest element and <kbd> the honest thing
+      inside it.
+
+      `aria-label` overrides the visible "esc" deliberately, and this is the case
+      ThemeToggle's rule allows: the visible text is a KEY NAME, not a description of what
+      the control does. A screen-reader user gets "Close search"; nobody needs to be told
+      the glyph says E-S-C.
+    */
+    }
+    <form class="search-field" id="masthead-search" role="search" action="/search/" method="get">
+      <label class="search-field-label" for="masthead-search-input">Search this site</label>
+      <Search class="search-field-icon" aria-hidden="true" />
+      <input
+        class="search-field-input"
+        id="masthead-search-input"
+        type="search"
+        name="q"
+        placeholder="Enter a search term"
+        autocomplete="off"
+        enterkeyhint="search"
+      />
+      {
+        /*
+        ── A REAL SUBMIT BUTTON, EVEN THOUGH NO BOARD DRAWS ONE ────────────────
+
+        Without it this form relies on IMPLICIT SUBMISSION, which HTML only guarantees
+        when the form holds exactly one field that blocks it. That is true today — one
+        `type="search"` input — so Enter would work; it stops being true the moment a
+        second text field is added, and it would fail silently, as "Enter does nothing".
+
+        It also gives the soft keyboard's Go key and any assistive technology navigating
+        by control a real thing to activate, rather than a behaviour that only exists as a
+        side effect of the form's current shape.
+
+        Visually hidden rather than drawn, because the boards show a field with a
+        magnifier and an Esc cap and nothing else. The alternative considered was making
+        the magnifier itself the submit control — visible, conventional, no invisible
+        focus stop — and rejected for now because it would add a hover and focus treatment
+        to an element the design draws as decoration. Worth revisiting on screen.
+      */
+      }
+      <button class="search-submit" type="submit">Search</button>
+
+      <button class="search-dismiss" type="button" aria-label="Close search">
+        <kbd aria-hidden="true">esc</kbd>
+      </button>
+    </form>
+  </div>
+</header>
+
+<style>
+  /* ── The header ─────────────────────────────────────────────────────────── */
+  /* No padding, no width, no background. Stacked is plain block flow, so the
+     stacked state needs no rule at all — see the note above about why the inset
+     lives on the children. */
+
+  /* ── Identity ───────────────────────────────────────────────────────────── */
+
+  .identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block: var(--chrome-pad-header);
+    padding-inline: var(--chrome-inset);
+    text-align: center;
+    text-decoration: none;
+  }
+
+  /* The mark names its role here; the component itself binds no color. */
+  .mark {
+    color: var(--color-accent);
+
+    /* A flex item shrinks by default, and an SVG has no intrinsic minimum to stop
+       it, so under any width pressure the disc goes oval before the text beside it
+       gives an inch. base.css does this for Lucide icons for the same reason. */
+    flex: none;
+  }
+
+  /* Name over role with NO gap — the boards stack them on their own line boxes
+     and the leading does the spacing, which is why the block measures 62px at
+     both widths despite the name changing size. */
+  .name,
+  .role {
+    display: block;
+
+    /* Stated on the children rather than on the link, so base.css's
+       `a:hover { color: var(--color-link-hover) }` cannot reach them: it sets
+       `color` on the <a>, and a child with its own value simply does not inherit
+       it. Overriding it on `.identity:hover` instead would need (0,2,0) to beat
+       the pseudo-class's (0,1,1) — a specificity race for no reason.
+
+       DESIGN.md assigns no color role to either. `text` is the reading, since the
+       wordmark is the site's own name rather than apparatus around content. */
+    color: var(--color-text);
+  }
+
+  .name {
+    /*
+     * Noto Serif 400 — DESIGN.md's `masthead-name` role, kept here as a RULE
+     * rather than a token because a semantic text role is a bundle of applied
+     * properties. It briefly lived in tokens.css as `--role-masthead-name`, the
+     * only `--role-*` token in the system, purely because its size steps by
+     * viewport; reading `--breakpoint-lg` here does that without the exception.
+     *
+     * THE ONE ROLE WHOSE SIZE GROWS AS THE VIEWPORT NARROWS: 30px stacked,
+     * 28.125 inline. A STEP at lg rather than an inverted clamp, because lg is
+     * where the header restacks — a 2px snap inside a relayout that moves the
+     * whole identity block is invisible, where the same snap drifting on its own
+     * would not be.
+     *
+     * STATIC AT BOTH ENDS, and these two literals are the only place in the CSS
+     * that retypes a value off the scale. They are `size/5`'s mobile endpoint and
+     * `size/4`'s desktop endpoint — the ramp's ends, which are not themselves
+     * tokens; only the clamps between them are. Using var(--font-size-5) and
+     * var(--font-size-4) would ride those clamps and make the snap WORSE:
+     * font-size-4 computes to 26.6px at lg, so the step would be 3.4px rather
+     * than 1.9. The wordmark sits deliberately outside the type hierarchy, so
+     * holding still at each end is the point. If the scale moves, move these.
+     */
+    font-family: var(--font-prose);
+    font-size: 1.875rem;
+    font-weight: 400;
+    line-height: 1.1;
+  }
+
+  .role {
+    /* Lato 400 at size/3, riding the ordinary fluid ramp — only the name is
+       special. */
+    font-family: var(--font-heading);
+    font-size: var(--font-size-3);
+    font-weight: 400;
+    line-height: 1.3;
+    color: var(
+      --color-text-muted
+    ); /* Muting to decrease relative prominence — this is too similar in size and color to .name */
+  }
+
+  /* NO HOVER TREATMENT ON THE IDENTITY, deliberately. An underline on the
+     wordmark was tried and read as noise, and a color change is louder still —
+     the identity is chrome, not a link in prose. A wordmark linking home is a
+     strong enough convention that the pointer carries it. Nothing is lost for
+     keyboard users either: the focus ring is unaffected. If it ever needs more,
+     it wants a designed interaction rather than a borrowed link style. */
+
+  /* ── The slot: a full-bleed accent band in the stacked state ────────────── */
+  /*
+   * Three declarations, not a token re-point. `color` is enough for everything
+   * inside because base.css gives links `color: inherit` and Lucide strokes with
+   * `currentColor`, so the band's text and its icons both follow from one value.
+   */
+
+  .slot {
+    background-color: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+    padding-block: var(--space-3);
+    padding-inline: var(--chrome-inset);
+  }
+
+  /* The focus ring needs NO override on the band, which is worth stating because
+     it looks like it should. base.css orders the rings offset-then-ring, so on
+     this band the inner 2px is `focus-offset` — white on light, near-black on
+     dark, both legible against the fill — and the outer 2px is `focus-ring`,
+     which blends into it. A tight legible ring rather than an offset one, in both
+     themes. Verified against both dark values, not assumed. */
+
+  /* ── Nav ────────────────────────────────────────────────────────────────── */
+
+  ul {
+    /* base.css's reset zeroes list margin but deliberately keeps the UA's
+       padding-inline-start as a prose indent, so this list has to drop it. */
+    padding: 0;
+    list-style: none;
+
+    /*
+     * ── EXPLICIT COLUMNS, NOT WRAPPING ──────────────────────────────────────
+     *
+     * A wrapping row would also produce the three states, but it would choose
+     * the break points itself — 3+3, then 4+2, then 5+1 — and a lone "Search" on
+     * its own row is not a layout anyone drew. Stating the column count instead
+     * means the shape only ever changes where we say it does.
+     *
+     * No column gap, and that is not an omission. The board centers each label
+     * in an equal share of the line, and every label is narrower than its share,
+     * so the whitespace between hit areas is real without a gap declaration —
+     * which also means the columns stay EVEN. A column gap would reintroduce the
+     * unevenness this grid exists to prevent: `1fr` is `minmax(auto, 1fr)`, so a
+     * track cannot shrink below its own min-content, and once the gaps take
+     * enough room "Presentations" keeps its 107px while the other five share
+     * what is left. That is exactly what happens at md — see the note there.
+     */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: var(--space-3);
+  }
+
+  li {
+    text-align: center;
+
+    /* Inert at THIS state — grid ignores `flex` — and inert at lg, which
+       overrides it. It is here for md alone, where the list becomes a flex row
+       and the items need a shared basis to share the line. Leaving it in the
+       base rule rather than the md block keeps one declaration instead of two,
+       at the cost of looking dead where it is written. */
+    flex: 1 1 6.5rem;
+  }
+
+  /*
+   * base.css draws the wipe-in underline in `--color-link-hover`, which is
+   * blue-500 — the band's own fill, so it would be invisible here. This is the
+   * band treatment's fourth declaration, alongside the fill and the two text
+   * colors above, and like them it is stated per state rather than re-pointed:
+   * re-pointing the token would have to be undone at lg, and undoing an inherited
+   * custom property from inside the block that overrode it needs `unset` and a
+   * paragraph explaining it.
+   *
+   * No hover COLOR change on the band either — the underline carries it alone. The
+   * two go together, so the cancel sits right here rather than in base.css.
+   */
+  .slot :is(a, button)::after {
+    border-block-end-color: var(--color-text-on-accent-hover);
+  }
+
+  /*
+   * THE HOVER COLOR IS CANCELLED ON THE BAND AND RESTORED AT lg. base.css states no
+   * nav-hover rule at all, so the global `a:hover { color: var(--color-link-hover) }`
+   * reaches these links — and `link-hover` is blue-500, which is this band's own
+   * fill. Uncancelled, a label turns the color of the surface behind it and vanishes
+   * under the pointer.
+   *
+   * ADDITIVE, not a `not style(--breakpoint-lg: true)` query, and the difference is
+   * the fallback. One inverted query would say "hold the color still while on the
+   * band" in a single declaration — but an engine without style-query support
+   * matches NO @container block, so `not` would fail to match too and the bug would
+   * be the fallback state. Cancelling unconditionally and re-enabling at lg keeps
+   * the safe state as the base one, which is the pattern the whole file is built on.
+   *
+   * `inherit` rather than `text-on-accent`, because it means "whatever this already
+   * was" — which is correct in both themes without naming either.
+   *
+   * ANCHORS ONLY, NOT `:is(a, button)`. Two reasons, and the second is a real bug
+   * avoided: the global rule it cancels only ever matched anchors, so a button needs
+   * no cancel; and `.slot :is(a, button):hover` is (0,2,1), which would outrank
+   * `.search-toggle:hover` at (0,2,0) and override the knocked-out glyph color in
+   * the search button's fill treatment at lg.
+   */
+  .slot a:hover {
+    color: inherit;
+  }
+
+  /* ── The two swapped labels ─────────────────────────────────────────────── */
+  /* Each pair keeps the STACKED member in normal flow and hides its inline twin,
+     so the base state is the one a document keeps if the container query below
+     never evaluates. */
+
+  .label-inline {
+    display: none;
+  }
+
+  .search-icon {
+    display: none;
+  }
+
+  .search-toggle {
+    /* Not `all: unset` — that would take the font, cursor and inherited color
+       with it. Just the five things a UA button brings that this one does not
+       want. */
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+
+    /*
+     * `flex`, NOT `inline-flex` — this is the fix for the icon sitting high
+     * against the other nav items.
+     *
+     * Once the label is visually hidden the button's only in-flow child is the
+     * 20px icon, so the button collapses to 20px. As an INLINE-level box it then
+     * participates in the row's inline formatting context, and a flex container's
+     * baseline with no baseline-aligned items is synthesized from its bottom
+     * margin edge — so the icon's bottom landed on the text baseline and the
+     * whole glyph sat above it, about 3px high.
+     *
+     * Going block-level takes it out of that inline context entirely, and
+     * `1lh` gives it the nav's own line height, so it matches the text rows it
+     * sits beside without a number being typed. Measured against the "Contact"
+     * row: 0.0px off center, and the Figma board agrees (20px icon at y=3.5 in a
+     * 27px row).
+     */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /*
+     * SQUARE, from the type. `1lh` is the nav's own line height, so both axes come
+     * out at whatever a nav row measures — 27px today — and the icon centres in it
+     * without a number being typed.
+     *
+     * `min-` on both, not a fixed size. At the stacked and md widths this button
+     * holds the WORD "Search", which is wider than 1lh, so the inline minimum is
+     * inert there and the label sizes the box as before. It only bites once the
+     * control is icon-only, which is exactly where the square is wanted — and it
+     * leaves room for the search field to widen the slot in phase 4.
+     *
+     * The cost is 7px of nav width at rest, since the box goes 20 -> 27. No jitter:
+     * the change is at rest, not on hover.
+     */
+    min-block-size: 1lh;
+    min-inline-size: 1lh;
+
+    /* A <button> sizes to fit-content whatever its `display` is, so going
+       block-level above stopped it inheriting the cell's `text-align: center` and
+       left "Search" flush left in its column while every other label stayed
+       centered. Auto margins center the box itself.
+       Deliberately not `width: 100%`: that would center the word too, but it
+       would also stretch the focus ring across the whole cell, where every
+       neighboring link's ring hugs its text. */
+    margin-inline: auto;
+
+    /* Containing block for the visually-hidden label in the inline state, so it
+       cannot land somewhere that lengthens the page. */
+    position: relative;
+
+    /* Matching the mode selector, which is the other control that fills on
+       interaction. Inert below lg, where nothing about this button's fill
+       changes. */
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-toggle {
+      transition: none;
+    }
+  }
+
+  /* base.css hangs the nav underline 0.15em below its host box. That lands right
+     for the links, which are INLINE and whose boxes stop at the descent line —
+     but this button is block-level and fills the whole row, so its box bottom is
+     already a half-leading lower and the rule came out 2.5px below its
+     neighbours'. Anchoring it flush to its own bottom edge puts it back within
+     0.2px of theirs. The half-leading itself is not derivable — it needs the
+     font's content height — so this pins the box rather than computing the gap. */
+  .search-toggle::after {
+    inset-block-end: 0;
+  }
+
+  /* ── Row: md ────────────────────────────────────────────────────────────── */
+  /*
+   * Still on the band, still centered, but the six items go to one row. This is
+   * the tablet state the boards never drew.
+   *
+   * ONE KNOWN ROUGH EDGE, unresolved rather than overlooked: between 768 and
+   * about 864 the items are NOT even — 89,89,107,89,89,89 at 768 — because the
+   * 24px gaps take enough of the line that "Presentations" falls back on its own
+   * min-content while the other five share the rest. Flex and grid behave
+   * identically here; `flex: 1 1 6.5rem` and `1fr` have the same min-content
+   * floor, so switching between them changes nothing.
+   *
+   * The one-line alternative is `grid-template-columns: repeat(6, 1fr)` with no
+   * column gap, keeping the base state's mechanism and giving an even 112px per
+   * column at 768. It reads as the more consistent answer; it is not made here
+   * because it is a layout call, not a comment fix.
+   */
+  @container style(--breakpoint-md: true) {
+    ul {
+      display: flex;
+      flex-wrap: nowrap;
+      column-gap: var(--space-3);
+    }
+  }
+
+  /* ── Inline: lg ─────────────────────────────────────────────────────────── */
+  /*
+   * The header stops being a stack and becomes one row: identity left, nav
+   * right, band gone. The width this fires at is pinned by arithmetic rather
+   * than taste — the inline form needs 951px minimum, measured — so if this
+   * layout ever looks cramped, read the note on the lg block in tokens.css
+   * before moving anything.
+   */
+  @container style(--breakpoint-lg: true) {
+    /*
+     * Drops the nav onto the wordmark's baseline.
+     *
+     * IT IS AN OPTICAL CONSTANT AND CANNOT BE DERIVED, which is worth stating
+     * because CSS looks like it should be able to. Two mechanisms were tried:
+     *
+     *   - `align-items: baseline` on the header. Lands 44px out. A flex
+     *     container's baseline comes from its FIRST flex item, and `.identity`'s
+     *     first item is the logo — a replaced element whose baseline is its
+     *     bottom margin edge. So the header aligns the nav to the bottom of the
+     *     disc rather than to the name.
+     *   - Making the wordmark supply that baseline instead, via `align-self:
+     *     baseline` on it. That works, but a single baseline participant is
+     *     placed at cross-start, so the wordmark jumps 10px up and stops being
+     *     centered against the mark.
+     *
+     * Arithmetic is out too: the offset needs the name's half-leading plus its
+     * ASCENT, and CSS exposes no font metric. So it is eye-set, and it measures
+     * 0.59px off — better than most derivations would land. Re-check it by eye if
+     * either type role or `--chrome-pad-header` moves.
+     */
+    nav {
+      padding-top: var(--space-2);
+    }
+
+    /* The inset moves UP to the header, which is what the two `padding-inline: 0`
+       declarations below are for. See the note at the top of the file: leaving it
+       on the children costs 96px of minimum width and overflows this breakpoint. */
+    .masthead {
+      display: flex;
+
+      /* Top-aligned so the nav can be dropped onto the wordmark's baseline by
+         its own padding above. `flex-start`, NOT `top` — there is no `top` for
+         align-items, so that declaration was dropped as invalid and the computed
+         value fell back to `normal`, which behaves as `stretch`. It looked right
+         because a stretched slot puts its content at the top anyway; this says the
+         same thing on purpose, and renders identically. */
+      align-items: flex-start;
+      justify-content: space-between;
+      padding-inline: var(--chrome-inset);
+    }
+    .name {
+      font-size: 1.7578125rem;
+    }
+
+    .identity {
+      flex-direction: row;
+      text-align: start;
+      padding-inline: 0;
+
+      /*
+       * ASYMMETRIC HERE AND NOWHERE ELSE — 24 above, 32 below (2026-08-26, judged
+       * against the real article page, which is what DESIGN.md's note on
+       * `chrome-pad-header` said to wait for).
+       *
+       * The identity is the taller child at this width, so it sets the header's
+       * height and this padding IS the gap between the wordmark and whatever the
+       * page puts underneath. Symmetric 24 read too tight there. The top stays at
+       * the token: the space above the mark is against the viewport edge, which
+       * needs less than a boundary with content does.
+       *
+       * Not a token, and not in tokens.css, because it has one consumer and only
+       * one of its two ends varies. Bumping `--chrome-pad-header` itself was tried
+       * and is the wrong instrument: it would move the stacked and tablet states
+       * too, where the header is already tall and nothing was wrong.
+       */
+      padding-block: var(--chrome-pad-header) var(--space-4);
+    }
+
+    /* The band goes away. `padding-block` deliberately stays: the identity is the
+       taller child, so it sets the header's height and this padding never shows —
+       and it is the breathing room the search field will want in phase 4. */
+    .slot {
+      background-color: transparent;
+      color: var(--color-text);
+      padding-inline: 0;
+    }
+
+    /* The band is gone, so the underline goes back to the role base.css names —
+       and thickens. 3px is the live site's desktop weight; the footer and the
+       band both stay on base.css's 2px. Neither is a token: DESIGN.md has
+       `border-hairline` at 1px and the quote bar at 4/6, and nothing between. */
+    .slot :is(a, button)::after {
+      border-block-end-color: var(--color-link-hover);
+      border-block-end-width: 3px;
+    }
+
+    /* And the LABEL goes blue with it. No band here, so there is nothing for
+       `link-hover` to collide with — this restores what the global rule in base.css
+       would have done, undoing the base-state cancel above. Same specificity as
+       that rule, so source order decides and this block is below it. */
+    .slot a:hover {
+      color: var(--color-link-hover);
+    }
+
+    /* NO RULE UNDER THE MAGNIFIER. Search does not navigate — it replaces this
+       slot in place — so borrowing the nav items' hover would say it does. The
+       word "Search" on the band keeps the underline, because there it IS reading
+       as one of six labels; only the icon-only form drops it.
+       Left without a hover treatment on purpose rather than given a new one: the
+       theme toggle needs a selected/hover pattern of its own, and reusing that
+       once it exists beats inventing a second one here. */
+    .search-toggle::after {
+      content: none;
+    }
+
+    /*
+     * ...and in its place, the field fills. `accent` behind `text-on-accent` is
+     * DESIGN.md's `button-primary` pair, so on hover the control briefly becomes
+     * the primary button it structurally is — a filled chip with the magnifier
+     * knocked out of it. Both themes clear AA: white on blue-500 at 5.67, and
+     * neutral-900 on blue-300 at 6.17 once the accent inverts.
+     *
+     * The glyph is knocked out by `color` alone, because Lucide strokes with
+     * `currentColor`. There is no second declaration for the icon.
+     *
+     * `border-radius` above is what shapes the fill; at rest it is invisible.
+     *
+     * THIRD TREATMENT TRIED HERE, and the earlier two are worth knowing about
+     * before a fourth: the mode selector's 1px outline read as too slight at this
+     * size, and a blue outline with a blue glyph read as neither one thing nor the
+     * other. This is the loudest of the three — it is the primary-button
+     * treatment, and it may prove too loud for a nav row where every neighbour
+     * answers hover with a 3px underline.
+     *
+     * Only at lg. Below it the button shows the word "Search" and reads as one of
+     * six nav labels, so it takes the same wipe-in underline they do; this is the
+     * icon-only form, which is the one that is not a nav item.
+     */
+    .search-toggle {
+      border-radius: var(--radius-1);
+    }
+
+    .search-toggle:hover {
+      background-color: var(--color-accent);
+      color: var(--color-text-on-accent);
+    }
+
+    /* Content-width items with a real gap, rather than equal shares of the line.
+       `nowrap` because at this width they fit by construction — lg is pinned by
+       that arithmetic — so wrapping here would mean the breakpoint is wrong
+       rather than that the nav should reflow. */
+    ul {
+      display: flex;
+      flex-wrap: nowrap;
+      column-gap: var(--space-3);
+    }
+
+    li {
+      flex: 0 0 auto;
+    }
+
+    .label-stacked {
+      display: none;
+    }
+
+    .label-inline {
+      display: inline;
+    }
+
+    .search-icon {
+      display: block;
+    }
+
+    /*
+     * Visually hidden, NOT removed — the icon is `aria-hidden`, so this text is
+     * the button's entire accessible name.
+     *
+     * ── IT DOES NOT USE <VisuallyHidden>, AND THAT IS DELIBERATE ────────────
+     *
+     * That component carries these same seven declarations and two others use it.
+     * This one cannot, because it hides CONDITIONALLY — only inside this container
+     * query, from `lg`. Below it the button shows the word "Search" and reads as one
+     * of six nav labels, so the icon-only form is the exception rather than the rule.
+     *
+     * A nav label that collapses at one rung is a different thing from text that is
+     * never drawn, however identical the declarations look. Serving it from the
+     * component would need a `when` prop keyed to a condition the component cannot
+     * see — this is a container query on the NAV — which is the "consumer restates a
+     * breakpoint the component could measure" shape the card components argue
+     * against. Sharing a technique is not sharing a job.
+     *
+     * NEITHER `visibility: hidden` NOR `width: 0` can do this job:
+     *
+     *   - `visibility: hidden` takes an element out of the ACCESSIBILITY TREE as
+     *     surely as `display: none` does. The button ends up with no accessible
+     *     name at all, which is the one thing this rule exists to prevent.
+     *   - `width: 0` does not remove text from layout, it only makes it spill.
+     *     This label sits at the nav's right edge, so "Search" overflowed 54px
+     *     past it — 6px past the viewport — putting a horizontal scrollbar on
+     *     every page at this width. Measured: scrollWidth 1206 against 1200.
+     *
+     * So `overflow: hidden` and the negative margin are load-bearing rather than
+     * boilerplate. Every declaration here is doing something.
+     *
+     * The icon shift this was reaching for is real, and it is fixed on
+     * `.search-toggle` instead — see the note there.
+     */
+    .search-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  /* ── Search: the swap, and the field ──────────────────────────────────────── */
+  /*
+   * ── WITHOUT JAVASCRIPT THE CONTROL DOES NOT EXIST ───────────────────────────
+   *
+   * Not `hidden` plus a script that removes it: that would arrive after the first paint
+   * and reflow the nav on every page in the site. `html.js` is set by BaseLayout's
+   * SYNCHRONOUS head script while <head> is still parsing, so this rule is already
+   * resolved when the nav is first drawn — the mechanism CardMasonry uses to truncate
+   * before anything is painted.
+   *
+   * WRITTEN IN THE NEGATIVE, which is the one place this file departs from the
+   * `html.js .thing` shape used elsewhere. The positive form would have to restate the
+   * button's `display` and every state that depends on it; the negative form leaves all
+   * of that untouched and simply removes the item when the class never arrives.
+   */
+  html:not(.js) .search-item {
+    display: none;
+  }
+
+  /*
+   * ── THE NAV AND THE FIELD ARE ONE SLOT, WHICH IS WHAT `.slot` IS FOR ────────
+   *
+   * DESIGN.md: search "expands in place, replacing the nav items". So this is a swap
+   * inside the existing box rather than a second box appearing — the header does not
+   * change height, and nothing below it moves.
+   *
+   * Both halves are gated on `html.js` for the reason above, and it is load-bearing on
+   * the nav specifically: hiding the navigation for a visitor who could never open the
+   * field would leave them a header with nothing in it.
+   */
+  .search-field {
+    display: none;
+  }
+
+  html.js .masthead[data-search='open'] nav {
+    display: none;
+  }
+
+  html.js .masthead[data-search='open'] .search-field {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  /*
+   * The band goes with the nav. Below `lg` the slot IS a full-bleed accent strip, and the
+   * 375 board draws the open field on the page ground instead, inset by `chrome-inset` —
+   * so the fill and the knocked-out text colour are both undone here. `padding-inline` is
+   * already `chrome-inset` at rest and needs no restating; from `lg` the slot has no band
+   * to remove and this rule is inert.
+   */
+  html.js .masthead[data-search='open'] .slot {
+    background-color: transparent;
+    color: var(--color-text);
+  }
+
+  /*
+   * The box, measured off board 2768:4729: a hairline in `--color-border` — the CARD
+   * hairline, not `border-control`, which is the chip's — with `space-1` all round.
+   *
+   * ── NO HEIGHT IS SET, AND THE ESC CAP IS WHAT SETS IT ──────────────────────
+   *
+   * The board draws 52, as `9 + 34 + 9` — its Esc frame is 34 tall, which makes the CAP
+   * the tallest child rather than the input. So the field's height is `space-1` twice,
+   * plus two hairlines, plus whatever the cap measures: 8 + 8 + 2 + 34.4 = 52.4.
+   *
+   * That only holds once the UA's own padding is cleared off both controls, which is why
+   * the rules below zero them. Left in, a <button>'s default `padding: 1px 8px` and an
+   * <input>'s `1px 2px` pushed this to 54.4 — a 2px error that looks like a rounding
+   * artefact and is actually two user-agent stylesheets showing through.
+   *
+   * Letting the type produce the height rather than declaring one means the field grows
+   * with the scale instead of drifting away from it. `--field-height` exists and is NOT
+   * used here for that reason: it would pin the box while the type inside it moved.
+   */
+  .search-field {
+    padding: var(--space-1);
+    border: var(--border-width-hairline) solid var(--color-border);
+    /* `radius-1`, matching the Esc cap inside it (Andy, 2026-09-12). The boards draw both
+       square; DESIGN.md's smaller radius is the house value for a control-sized box. */
+    border-radius: var(--radius-1);
+
+    /* Containing block for the two clipped elements below — the label and the submit
+       button. Both are `position: absolute`, so without this they resolve against
+       whatever is positioned further up and can land somewhere that lengthens the page.
+       `.search-toggle` carries the same declaration for the same reason. */
+    position: relative;
+  }
+
+  /* The label is never visible at any width, so this is the case ThemeToggle's rule sends
+     to a clip rather than to `aria-label`: the input needs a real associated <label> that
+     survives autofill and translation. */
+  .search-field-label {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .search-field-icon {
+    flex: 0 0 auto;
+  }
+
+  /* Same clip as the label above. It is left IN the tab order deliberately: a control
+     that submits the form is a real control, and removing it with `tabindex="-1"` would
+     hide it from keyboard users while keeping it for the pointer — the wrong way round.
+     The order it produces is input, Search, Esc, which reads correctly. */
+  .search-submit {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * ── AN INPUT INHERITS NO TYPE, SO ALL OF IT HAS TO BE SAID ─────────────────
+   *
+   * `font: inherit` would be shorter and is avoided on purpose: it would also inherit the
+   * slot's line-height and weight, which differ between the accent band and the inline
+   * state. Each property is named instead.
+   *
+   * `var(--font-prose)` and never a family name — Astro's Fonts API scopes the real
+   * family it registers, so `'Noto Serif'` here would match nothing and fall through to a
+   * system serif that looks plausible.
+   */
+  .search-field-input {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+
+    /* The UA gives an input `1px 2px`. Cleared so the field's height comes from the type
+       and its padding, not from a default nobody chose. See the box rule above. */
+    padding: 0;
+    border: 0;
+
+    /*
+     * ── A RADIUS ON SOMETHING WITH NO VISIBLE BOX, AND IT IS NOT DECORATIVE ──
+     *
+     * This input has no border and no fill, so the radius draws nothing at rest. It is
+     * the FOCUS RING it exists for: base.css builds that ring from two `box-shadow`
+     * spreads precisely so "the rings stay concentric with whatever radius the control
+     * has". At 0 the ring came out square-cornered inside a field rounded to `radius-1` —
+     * two different corner treatments, 1px apart, on the only control in the header.
+     */
+    border-radius: var(--radius-1);
+    background-color: transparent;
+    color: var(--color-text);
+    font-family: var(--font-prose);
+    font-size: var(--font-size-2);
+    line-height: 1.8;
+  }
+
+  .search-field-input::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1; /* Firefox dims placeholders by default, which would fail the contrast. */
+  }
+
+  /* `type="search"` earns the right semantics and brings a WebKit clear button with it.
+     Removed: the board draws one dismiss affordance, and two controls that both empty the
+     field is a choice nobody asked for. */
+  .search-field-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  /*
+   * The key cap, from board 2768:4812: `border-control` — this one IS a control boundary,
+   * unlike the field's own card hairline — at `radius-1` with `space-1` inline.
+   *
+   * `<kbd>` defaults to monospace in every UA stylesheet and base.css's Code section
+   * covers `pre` and `code` but not this, so the family has to be set here or the glyph
+   * lands in a font the design does not contain.
+   */
+  .search-dismiss {
+    flex: 0 0 auto;
+
+    /* Block padding zeroed EXPLICITLY, not just left unset: a <button>'s UA default is
+       `1px 8px`, so `padding-inline` alone would leave the 1px top and bottom in place
+       and make the cap — the tallest child — 2px taller than the board's 34. */
+    padding: 0 var(--space-1);
+    border: var(--border-width-hairline) solid var(--color-border-control);
+    border-radius: var(--radius-1);
+    background-color: transparent;
+    color: var(--color-text-muted);
+  }
+
+  .search-dismiss kbd {
+    font-family: var(--font-prose);
+    font-size: var(--font-size-2);
+    line-height: 1.8;
+  }
+
+  /*
+   * 500 is the board's, and it only applies once the header is a row — below `lg` the
+   * slot is full width and the field fills it, which is what the 375 board draws at 343.
+   * `max-inline-size` keeps it from outgrowing the slot at the breakpoint itself, where
+   * tokens.css records the identity-plus-nav budget as having about 73px of slack.
+   */
+  @container style(--breakpoint-lg: true) {
+    html.js .masthead[data-search='open'] .search-field {
+      inline-size: 500px;
+      max-inline-size: 100%;
+    }
+  }
+</style>
+
+<script>
+  /* The component that owns the control boots the behaviour, so the module is only
+     fetched by pages that have a masthead — which is all of them, but the dependency runs
+     the right way round. <FacetFilters> boots `card-index` the same way.
+
+     Opening and closing used to live here inline. It moved when the querying arrived: the
+     two share the input, the toggle and the open/closed state, and splitting them across
+     two scripts would have meant two owners of one state. */
+  import {initSearch} from '../scripts/search'
+  initSearch()
+</script>

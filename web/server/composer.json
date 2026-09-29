@@ -1,0 +1,20 @@
+{
+  "name": "andy/afc-contact",
+  "description": "Contact endpoint for andyfitzgeraldconsulting.com — Gmail API over OAuth",
+  "require": {
+    "php": ">=8.0",
+    "google/apiclient": "^2.15",
+    "vlucas/phpdotenv": "^5.5"
+  },
+  "scripts": {
+    "pre-autoload-dump": "Google\\Task\\Composer::cleanup"
+  },
+  "extra": {
+    "google/apiclient-services": ["Gmail"]
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "config": {
+    "optimize-autoloader": true
+  }
+}

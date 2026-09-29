@@ -1,0 +1,90 @@
+---
+/**
+ * Text that is announced but not drawn.
+ *
+ * ── WHAT IT IS FOR, PUT AS A TEST ────────────────────────────────────────────
+ *
+ * `ContactForm.astro` states the boundary better than a definition does, while
+ * explaining why its honeypot is NOT this: "that exists for content that SHOULD be
+ * announced but not drawn. This is the opposite — drawn nowhere and announced nowhere."
+ *
+ * So the test is two-sided. Content that should be neither drawn nor announced wants
+ * `aria-hidden` and `display: none`; content that should be drawn wants no help. This is
+ * only for the case where the visual context supplies meaning that the text alone does
+ * not carry.
+ *
+ * ── A COMPONENT, NOT A UTILITY CLASS IN base.css ─────────────────────────────
+ *
+ * The promotion trigger fired — two consumers — but base.css was the wrong destination,
+ * and the reason is architectural rather than about count. CLAUDE.md's global tier is
+ * "primitive tokens, semantic role tokens, and the element-level role styles" — h1-h4,
+ * body prose, `nav`, the rhythm mechanism. Those are ELEMENT-level ROLE styles. A
+ * `.visually-hidden` utility class is neither, and the same rule is explicit that "there
+ * is no global `components/` layer."
+ *
+ * Putting it in base.css would therefore not be a move, it would be a decision to open a
+ * utility-class tier that does not exist. This project has answered "shared treatment"
+ * three times already — <Chip>, <Eyebrow>, <TopicList> — and answered it with a
+ * component every time. This follows that rather than starting a fourth pattern.
+ *
+ * ── THE THREE DECLARATIONS THAT LOOK REDUNDANT AND ARE NOT ───────────────────
+ *
+ * Every line below is load-bearing, and the two obvious simplifications both break it.
+ * Masthead recorded this when its own copy was written and the findings are general:
+ *
+ *   - `visibility: hidden` and `display: none` remove the element from the
+ *     ACCESSIBILITY TREE as surely as each other. Either one leaves the content
+ *     unannounced, which is the single thing this exists to prevent — and on a live
+ *     region it means the region is silent forever.
+ *   - `width: 0` does not remove text from layout, it only makes it spill. Measured in
+ *     the masthead: "Search" overflowed 54px past the nav's right edge, 6px past the
+ *     viewport, putting a horizontal scrollbar on every page at that width —
+ *     `scrollWidth` 1206 against 1200.
+ *
+ * So `overflow: hidden` and the negative margin are the mechanism, not boilerplate. The
+ * 1px clipped box is the only way to be invisible and still in the tree.
+ *
+ * ── MASTHEAD DELIBERATELY DOES NOT USE THIS ──────────────────────────────────
+ *
+ * `.search-label` carries the same seven declarations and is NOT a consumer, because it
+ * is hidden CONDITIONALLY — only from `lg`, inside a container query. Below that the
+ * button shows the word "Search" and reads as one of six nav labels; the icon-only form
+ * is the exception rather than the rule.
+ *
+ * That is a different thing wearing the same declarations: a nav label that collapses at
+ * one rung, not text that is never drawn. Serving it here would mean a `when` prop
+ * keyed to a breakpoint the component cannot see — the condition is a container query on
+ * the NAV — which is precisely the "make every consumer restate a breakpoint" shape
+ * ArticleCard's header argues against. Two components sharing a technique is the honest
+ * outcome; if a second conditional case ever appears, that is its own component.
+ */
+interface Props {
+  /**
+   * `span` for a phrase inside running text or a control; `div` or `p` where the
+   * content is a block — a live region being the case that wants one.
+   */
+  as?: 'span' | 'div' | 'p'
+  class?: string
+  /* Forwarded to the root, which is what carries `role`, `id` and any hook a script
+     selects on — and, invisibly, the parent's scope attribute, so a consumer's own
+     rules still reach this element. */
+  [key: string]: unknown
+}
+
+const {as: Tag = 'span', class: className, ...rest}: Props = Astro.props
+---
+
+<Tag class:list={['visually-hidden', className]} {...rest}><slot /></Tag>
+
+<style>
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

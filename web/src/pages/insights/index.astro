@@ -1,0 +1,324 @@
+---
+/**
+ * The Insights index — item 2 in the phase 4 order, and the Document branch's index.
+ *
+ * ── IT IS NOW A COMPOSITION, AND THAT IS THE POINT ───────────────────────────
+ *
+ * This file was 1,702 lines: the masonry, the facet controls, the bottom bar and ~600
+ * lines of filter behaviour, all inline. Presentations became a second consumer of every
+ * one of those, so they moved out — <CardMasonry>, <FacetFilters>, <ResultsFooter> and
+ * scripts/card-index.ts. The reasoning moved with them rather than being summarised;
+ * each file carries the measurements behind its own decisions.
+ *
+ * What stays here is what is genuinely this page's: which documents it fetches, how a
+ * document becomes a card, which card component each one gets, and where the pieces sit
+ * on its grid.
+ *
+ * ── THE DOM IS IN DATE ORDER, AND THAT IS A PAGE DECISION ────────────────────
+ *
+ * Cards are emitted FLAT, in date order, into one grid — never partitioned into column
+ * wrappers. It stays here because it is a fact about the markup this page emits, and
+ * <CardMasonry> only works because of it.
+ *
+ * The rejected alternative was a greedy build-time partition into three columns. It
+ * worked, but wrappers force a contiguous DOM slice per column, so DOM order became
+ * partition order and a CSS `order` per card was needed to put the visual sequence back
+ * — buying a correct visual order at the cost of a visual-versus-focus mismatch,
+ * non-chronological screen-reader traversal, and a future `h-feed` out of date order.
+ * Replaced by Andy's design, 2026-08-28. The comparison table is in <CardMasonry>.
+ */
+import {loadQuery} from '../../sanity/load-query'
+import {INSIGHTS_INDEX_QUERY} from '../../sanity/queries/insights'
+import {SINGLETON_WORK_BAND_QUERY} from '../../sanity/queries/singletons'
+import {slugify} from '../../lib/slug'
+import {facetGroups} from '../../lib/facets'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import {FEEDS} from '../../lib/feeds'
+import Band from '../../components/Band.astro'
+import Grid from '../../components/Grid.astro'
+import Masthead from '../../components/Masthead.astro'
+import Footer from '../../components/Footer.astro'
+import PageHeader from '../../components/PageHeader.astro'
+import ArticleCard from '../../components/cards/ArticleCard.astro'
+import NoteCard from '../../components/cards/NoteCard.astro'
+import CardMasonry from '../../components/cards/CardMasonry.astro'
+import FacetFilters from '../../components/FacetFilters.astro'
+import ResultsFooter from '../../components/ResultsFooter.astro'
+import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
+import {pageNode} from '../../lib/linked-data'
+
+/* Both fetches are independent, so they go together rather than in series. */
+const [page, insights] = await Promise.all([
+  loadQuery(SINGLETON_WORK_BAND_QUERY, {slug: 'insights'}),
+  loadQuery(INSIGHTS_INDEX_QUERY),
+])
+
+/* Loud rather than quiet, matching `[slug].astro`. The singleton is content, so it can
+   be unpublished or re-slugged in the Studio — and a page that silently lost its own
+   title and lead would look like a styling bug rather than a missing document. */
+if (!page) throw new Error('[insights/index] no singleton with slug "insights"')
+
+/**
+ * One flat shape per card, in date order — which is now also DOM order.
+ *
+ * Resolved here rather than in the template so the template does no data work beyond
+ * choosing a component. `body` and `hasMedia` no longer feed a height model — nothing
+ * predicts heights any more — but they still record which of the two strings a card
+ * actually renders, which the filter chips will want.
+ *
+ * The query filters on `defined(slug.current)`, but TypeGen types a projected slug as
+ * `string | null` because it cannot see the filter — so this narrows rather than
+ * asserting, exactly as `[slug].astro` does for `getStaticPaths`.
+ */
+const cards = insights.flatMap((item) => {
+  if (!item.slug) return []
+
+  const isNote = item._type === 'note'
+  const sourceDomain = isNote ? (item.clipRef?.publisher ?? null) : null
+
+  return [
+    {
+      id: item._id,
+      isNote,
+      href: `/insights/${item.slug}/`,
+      title: item.title ?? 'Untitled',
+      genre: item.genre,
+      date: item.pubDate,
+      description: item.shortDescription,
+      image: item.heroImage,
+      sourceDomain,
+      /* Which string the card actually renders: a Clipping shows its source domain
+         where a Note shows its description. */
+      body: sourceDomain ?? item.shortDescription,
+      hasMedia: Boolean(item.heroImage?.asset),
+
+      /*
+       * ── THE FACETS, AS SLUGS, ON THE CARD ITSELF ───────────────────────────
+       *
+       * There is no JSON facet index and there does not need to be one: every
+       * document renders, so the DOM already holds the complete topic and genre sets
+       * that live counts need. urls-and-filtering.md called for the index on the
+       * grounds that co-occurrence "requires the topic set of EVERY resource, not
+       * just those in the DOM" — true, and satisfied here by rendering all of them.
+       * It comes back when show-more stops rendering everything, around 150 items.
+       *
+       * SLUGIFIED FROM prefLabel, WITH NO altLabels. Rendering an altLabel as its own
+       * chip would put two controls with identical behaviour side by side; they are
+       * for eventual search support instead (Andy, 2026-08-28). Verified across the
+       * live vocabulary: 31 topics and 9 genres in use produce 40 distinct slugs with
+       * zero collisions, all clean kebab-case.
+       *
+       * `slugify` and not a stored slug because concepts have no slug field — and
+       * because this is the same transform the phase 6 nginx rule assumes when it
+       * rewrites `/insights/tag/{slug}/` to `?topic={slug}`.
+       *
+       * ── SPACE-SEPARATED, WHICH IS A REAL CHOICE ────────────────────────────
+       *
+       * `data-topics="a b c"` rather than a comma list, because `~=` matches one word
+       * of a space-separated attribute natively: `[data-topics~="knowledge-graphs"]`
+       * is a selector, not a parse. That keeps the option of filtering in pure CSS
+       * open, and it means the script never splits a string to test membership.
+       *
+       * It also sidesteps the stega problem urls-and-filtering.md flags — these are
+       * clean slugs in an attribute, never rendered text, so preview mode's encoded
+       * metadata cannot land in them.
+       */
+      genreSlug: item.genre ? slugify(item.genre) : null,
+      topicSlugs: (item.topics ?? [])
+        .filter((topic): topic is string => Boolean(topic))
+        .map(slugify),
+    },
+  ]
+})
+
+/**
+ * The facet groups, tallied at build time from the same documents the cards come from.
+ * `facetGroups` and its `tally` moved to lib/facets.ts when the Presentations index
+ * became a second consumer computing the identical thing from a different document set;
+ * the reasoning for the count-descending sort and the static floor lives there now.
+ *
+ * The vocabulary is whatever these rows contain — there is no allow-list — so this page
+ * shows exactly the concepts its own corpus uses.
+ */
+const facets = facetGroups(insights)
+
+/* A CollectionPage — this page lists things rather than being one. No ItemList: see
+   pageNode for why enumerating the entries would restate the anchors for real weight. */
+if (!Astro.site) throw new Error('[insights/index.astro] `site` is unset in astro.config.mjs')
+const jsonLd = [
+  pageNode({
+    site: Astro.site,
+    url: new URL('/insights/', Astro.site).href,
+    type: 'CollectionPage',
+    name: page.title,
+    description: page.lede,
+  }),
+]
+---
+
+<BaseLayout
+  title={page.title ?? 'Insights'}
+  description={page.lede ?? undefined}
+  jsonLd={jsonLd}
+  feeds={[FEEDS.insights]}
+>
+  <Masthead />
+
+  <main id="main" tabindex="-1">
+    <Band as="section" class="index-band">
+      <Grid>
+        {
+          /*
+          ── MOVED TO <PageHeader> ────────────────────────────────────────────
+
+          This was inline until Reviews arrived, and the note that used to sit here
+          named that as the condition: a SECOND CONSUMER is the promotion trigger. The
+          h1, the lead role and the spacing between them now live in the component; what
+          stays here is where the header sits on THIS page's grid, below.
+
+          No `body` prop. That third slot takes a singleton's `bodyText`, and an index
+          page has no intro copy under its lead — the facets come next.
+        */
+        }
+        <PageHeader title={page.title ?? 'Insights'} lede={page.heroCopy} />
+
+        {
+          /*
+          ── THE FACET GROUPS ─────────────────────────────────────────────────
+
+          Extracted to <FacetFilters> when Presentations became the second consumer.
+          The component owns the markup, the chip states and its own grid placement —
+          7 + skip-1 + 4, which both index boards draw identically — and it boots the
+          shared behaviour in scripts/card-index.ts. What the page supplies is the
+          tallied vocabulary and the route its static hrefs are built from.
+        */
+        }
+        <FacetFilters facets={facets} basePath="/insights/" label="Filter insights" />
+
+        {
+          /*
+          FLAT, AND IN DATE ORDER. No column wrappers: the columns are `nth-child`
+          rules in the style block, so the DOM sequence is the reading sequence at
+          every width and there is nothing here for a partition to reorder.
+
+          ── THE HEADING OUTLINE IS FLAT, AND THAT IS THE DECISION ──────────────
+
+          `as="h2"` puts the card titles at the same level as "Topics" and "Genres",
+          so the page reads h1 then a run of h2s. Dropping the cards to h3 was
+          considered and REJECTED (Andy, 2026-08-31): it would situate every card
+          title as subordinate to *Genres*, the heading immediately above it, which
+          is a worse claim than a flat run. Getting a strictly correct tree would
+          mean inventing upper-level divisions to compartmentalise the controls
+          separately from the results, and that is more structure than this page
+          needs.
+        */
+        }
+        <CardMasonry class="masonry" truncate>
+          {
+            cards.map((card) =>
+              card.isNote ? (
+                <NoteCard
+                  as="h2"
+                  data-genre={card.genreSlug}
+                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  sourceDomain={card.sourceDomain}
+                />
+              ) : (
+                <ArticleCard
+                  as="h2"
+                  data-genre={card.genreSlug}
+                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  description={card.description}
+                  image={card.image}
+                />
+              ),
+            )
+          }
+        </CardMasonry>
+
+        {
+          /*
+          ── THE BOTTOM BAR ───────────────────────────────────────────────────
+
+          Extracted to <ResultsFooter>, which owns the count line, the reveal controls
+          and the live region, and records why the two text elements are not duplicates.
+          The noun is handed to it rather than baked into the component, and it passes
+          that word through to the script as data attributes so the server-rendered
+          sentence and the client-rewritten one cannot disagree.
+        */
+        }
+        <ResultsFooter total={cards.length} noun={{one: 'insight', many: 'insights'}} />
+      </Grid>
+    </Band>
+
+    {
+      /*
+      The band's content resolves in the query, not here — the page hands over what
+      SINGLETON_WORK_BAND_QUERY produced and never learns which of the three tiers it
+      came from. Insights sets its own, so today this is tier one.
+
+      Rendered only when the ladder produced something. There is a site default, so the
+      only way to reach null is Settings having no Work with Me band at all — in which
+      case a heading and a button over empty space would be worse than no band.
+    */
+    }
+    {
+      page.workBand && (
+        <WorkWithMeBand message={page.workBand.message} clientLogos={page.workBand.clientLogos} />
+      )
+    }
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /*
+   * ── ALL THAT IS LEFT HERE IS PLACEMENT ──────────────────────────────────────
+   *
+   * The facet chips, the masonry ladder and the bottom bar moved to <FacetFilters>,
+   * <CardMasonry> and <ResultsFooter> when Presentations became a second consumer of
+   * each. What a page keeps is where those things sit on ITS grid, which is a fact about
+   * the page rather than about the component.
+   *
+   * ── FULL WIDTH, BECAUSE THERE IS NO RAIL TO LEAVE ROOM FOR ─────────────────
+   *
+   * `--col-main` is 8 of 12, and those 8 exist so a rail can occupy 10-12. This page has
+   * no rail, so the header was reserving space for nothing — and the cost was real: at
+   * 656px the lede ran THREE lines where it runs two at 996, pushing the cards a whole
+   * line further down the initial view (Andy, 2026-08-31).
+   *
+   * The rule generalises to any index built on the masonry-and-filters pattern;
+   * DESIGN.md -> Card grids carries it, and the Presentations index is the second
+   * consumer. The lead role, the measure cap and the h1-to-lead spacing live in
+   * <PageHeader>; placement did not move, and Reviews is the argument — it spans
+   * `--col-main` because it has a rail.
+   */
+  .page-header {
+    grid-column: var(--col-full);
+  }
+
+  .masonry {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * A grid item in its own right, so <Grid>'s `rhythm-heading-major` row gap is what
+   * separates it from the masonry. That token's rationale — "what lands below always
+   * starts with a heading" — does not hold here, and 64 below a grid whose bottom is
+   * ragged may read as too much or as exactly right. Left as the grid gives it, to be
+   * judged on screen rather than guessed at.
+   */
+  .results-footer {
+    grid-column: var(--col-full);
+  }
+</style>

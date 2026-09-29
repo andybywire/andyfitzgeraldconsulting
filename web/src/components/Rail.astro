@@ -1,0 +1,152 @@
+---
+/**
+ * The rail shell — an <aside> beside the prose that disperses below md, with its
+ * contents pinned while the page scrolls.
+ *
+ * ── EXTRACTED ON ITS SECOND IDENTICAL CONSUMER ───────────────────────────────
+ *
+ * The article page built this and the presentation page repeated it byte for byte:
+ * the same two elements, the same `display: contents` dispersal, the same sticky
+ * child at the same offset, the same 48 between groups. That is the project's
+ * promotion trigger, and the same one that produced <RailNav> — which is what goes
+ * INSIDE this, and is a different thing.
+ *
+ * ── WHAT IT OWNS: THE BEHAVIOUR. WHAT IT DOES NOT: THE PLACEMENT ─────────────
+ *
+ * No `grid-column` here, matching TopicList's rule that placement belongs to the
+ * caller. Which columns a rail occupies is a fact about the page's grid — and the
+ * pages differ: an article auto-places into row 1, while a page with a transparent
+ * <PageHeader> needs `grid-row: 2 / -1` to start at the lede. Neither is this
+ * component's business.
+ *
+ * The caller reaches the root because `{...rest}` forwards its scope attribute. A
+ * component that does not spread rest silently cannot be styled by its parent; the
+ * house pattern, and PageHeader's header records the bug.
+ *
+ * ── THE TWO INVARIANTS COME WITH IT, AND BOTH FAIL SILENTLY ──────────────────
+ *
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  1. `.rail` MUST REMAIN A STRETCHED GRID ITEM. Do not let a caller add    │
+ * │     `align-self: start`.                                                  │
+ * │  2. NO `overflow` other than `visible` on any ancestor between the sticky  │
+ * │     child and the page.                                                    │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * A sticky element travels only inside its containing block, which is `.rail`'s box.
+ * A grid item stretches to its row by default, so the rail is as tall as the prose
+ * beside it and the child has the whole article to travel down. With
+ * `align-self: start` the box collapses to its own content height and the child
+ * scrolls away like anything else, with nothing on screen to say why. Measured at a
+ * 3000px prose column when the article page first built this.
+ *
+ * ── ONE SLOT, AND THE PAGE TEMPLATE IS WHY THERE IS NOT YET A SECOND ─────────
+ *
+ * Everything slotted here pins together, which is what both current consumers want:
+ * an article and a presentation put "On This Page" and Topics in one group.
+ *
+ * The `page` template's rail is the shape that does NOT fit — its hero sits above
+ * the nav and must scroll away while the nav pins, so it needs a second, unpinned
+ * slot. That is deliberately not built: a slot with no content to put in it is a
+ * guess at what the content would look like, the same rule that keeps the `table`
+ * serializer unwritten. Add it when that page adopts this, not before.
+ *
+ * `reviews.astro` is a third shape again — it pins the <aside> ITSELF and hides it
+ * outright below md rather than dispersing. Adopting this there would mean wrapping
+ * its nav and moving the stickiness onto the wrapper; behaviourally equivalent, and
+ * a change to a page already signed off, so it is offered rather than assumed.
+ */
+import type {HTMLAttributes} from 'astro/types'
+
+interface Props extends HTMLAttributes<'aside'> {
+  class?: string
+  /* Forwarded to the root, which is what lets a page place this — see the note above. */
+  [key: string]: unknown
+}
+
+const {class: className, ...rest}: Props = Astro.props
+---
+
+{
+  /*
+    <aside>, AND IT COSTS NO LANDMARK. An unnamed <aside> maps to `complementary`
+    only when its nearest sectioning ancestor is <body>. Both current consumers sit
+    inside <article> or <Band as="section">, so it maps to `generic` and the <nav>s
+    within stay the landmarks a screen-reader user navigates by.
+
+    That is also why there is deliberately no `aria-label`: naming it would promote
+    it to a landmark competing with the two real ones inside it.
+  */
+}
+<aside class:list={['rail', className]} {...rest}>
+  {
+    /*
+      A <div> and not a <section>: it is a positioning wrapper with no thematic
+      content of its own, and <section> is explicitly not a generic container — it
+      would put a nameless entry in the outline.
+    */
+  }
+  <div class="rail-sticky">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  /*
+   * ── BELOW md THE RAIL DISPERSES RATHER THAN COLLAPSING ─────────────────────
+   *
+   * The obvious implementation — let `--col-rail` collapse to `1 / -1` and drop the
+   * whole rail under the prose — is the one the design rejects. The mobile boards send
+   * the groups SEPARATE WAYS: "On This Page" disappears entirely, and Topics reappears
+   * at the foot of the prose as an inline comma-separated run. They are not one block
+   * that reflows.
+   *
+   * `display: contents` erases both boxes while keeping their children, so each group
+   * becomes a grid item of the caller's <Grid> in its own right — free to place itself,
+   * or to not render. One DOM, no duplicated link list, nothing hidden that a screen
+   * reader would still read.
+   *
+   * Both elements are plain containers with no role, so the historic `display: contents`
+   * accessibility bug — the element vanishing from the tree — has nothing to take. The
+   * <nav>s inside keep their boxes and their landmarks.
+   *
+   * MOBILE-FIRST, per tokens.css: an engine that never evaluates the container query has
+   * to be left with the phone layout. The cost is that md says `display: block` rather
+   * than unsetting anything.
+   */
+  .rail,
+  .rail-sticky {
+    display: contents;
+  }
+
+  @container style(--breakpoint-md: true) {
+    .rail,
+    .rail-sticky {
+      display: block;
+    }
+
+    /*
+     * `top` is a judgment the boards cannot show, since they draw no scroll position.
+     * The masthead does not stick, so `top: 0` would pin the group flush against the
+     * viewport edge; `rhythm-band` gives it the breathing room the bands have. Judged
+     * on screen and settled (Andy, 2026-08-26).
+     */
+    .rail-sticky {
+      position: sticky;
+      top: var(--rhythm-band);
+    }
+
+    /*
+     * 48 between rail groups — `heading-minor` because what follows is a heading. Both
+     * are 48, and DESIGN.md's rule is to pick by prefix and name rather than by value.
+     *
+     * `:global()` IS REQUIRED HERE AND IS NOT A SHORTCUT. Slotted content carries the
+     * CALLER's scope attribute, never this component's, so a plain `nav + nav` would
+     * compile to `nav[cid-rail] + nav[cid-rail]` and match nothing — the rule would
+     * ship and be silently dead. Scoping it under `.rail-sticky`, which does carry this
+     * component's attribute, keeps the global half contained to inside a rail.
+     */
+    .rail-sticky :global(nav + nav) {
+      margin-top: var(--rhythm-heading-minor);
+    }
+  }
+</style>

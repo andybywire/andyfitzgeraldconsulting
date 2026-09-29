@@ -1,0 +1,123 @@
+---
+/**
+ * The chip — DESIGN.md's `filter-chip`, as a shape.
+ *
+ * ── EXTRACTED, NOT WRITTEN (2026-09-02) ──────────────────────────────────────
+ *
+ * Every declaration here came from `insights/index.astro`, where the facet chips
+ * were the only consumer. The genre prev/next nav is the second, and the Figma
+ * boards instantiate the *same* `filter` component for both — so this is DESIGN.md's
+ * promotion trigger, taken before the second copy was written rather than after.
+ *
+ * ── WHERE THE SEAM IS, AND WHY IT IS THERE ───────────────────────────────────
+ *
+ * Only the PILL AND ITS POINTER STATES moved. Selection, disabling and the count
+ * stayed behind in the Insights index, and that split is not arbitrary — it is what
+ * the second consumer does and does not have:
+ *
+ *   here                 the box, the type role, `:hover`, `:active`, the
+ *                        wipe-in opt-out
+ *   the filter's own     `aria-current` (selected), `aria-disabled`, `.chip-count`,
+ *                        `.is-zero`, and the `.facet-chips` row
+ *
+ * A prev/next chip is never *selected*, and it is never *disabled* — when there is no
+ * previous entry the chip is absent, not dimmed. So those states belong to the filter
+ * rather than to the chip, and hoisting them here would have been generalising from
+ * one case.
+ *
+ * The index's remaining rules still reach this component's root, because Astro passes
+ * a parent's scope attribute down to a child component's root element. Its JS is
+ * untouched for the same reason: `.chip` still lands on the rendered element, and the
+ * facet script selects `.chip[data-facet]`, `.chip-count` and friends exactly as
+ * before.
+ *
+ * ── `as`, BECAUSE THE INDEX NEEDS BOTH ───────────────────────────────────────
+ *
+ * The index renders three variants — an `<a>` per facet, and `<button>`s for "See
+ * all" and "Show more" — and the note that used to sit on `.chip` explains why they
+ * are styled together: "See all" has to LOOK like a chip while being semantically a
+ * disclosure, so appearance is the one thing that must not diverge. Hence one shape
+ * and an element switch, rather than two components.
+ */
+interface Props {
+  as?: 'a' | 'button'
+  class?: string
+  /* Forwarded to the root, which is what carries `href`, `type`, `data-facet`,
+     `data-slug`, `aria-current`, `aria-disabled` and `hidden` from the call site —
+     and, invisibly, the parent's scope attribute, which is how a consumer's own
+     rules still reach this element. */
+  [key: string]: unknown
+}
+
+const {as: Tag = 'a', class: className, ...rest}: Props = Astro.props
+---
+
+<Tag class:list={['chip', className]} {...rest}><slot /></Tag>
+
+<style>
+  /*
+   * DESIGN.md's `filter-chip`: surface fill, the CONTROL border rather than the card
+   * hairline — a card is not a control, a chip is — `radius-full`, and the `chip` type
+   * role, which is Lato at the 14px step with no tracking.
+   *
+   * `inline-flex` because an anchor is inline by default: without it the pill has no
+   * box, and a chip that wrapped a line would have its focus ring split into two
+   * fragments. It also makes a label and a count share a baseline row.
+   */
+  .chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-1);
+
+    /*
+     * MEASURED OFF THE BOARD, BECAUSE DESIGN.md DOES NOT SPECIFY IT. The `filter-chip`
+     * entry carries fill, border, radius and typography but no padding and no height —
+     * `field-height` is 48 and belongs to the input field, not to this. The board draws
+     * the chip 29 tall, and 29 = 21 line box + 2 border + 3 + 3, so the block padding
+     * is 3px. Off the 8px space scale of necessity: a 21px line box cannot be centred
+     * in a 29px capsule by a scale derived from a 32px one.
+     *
+     * Recorded in DESIGN.md → Filter chips, so a consumer derives it from the spec
+     * instead of re-measuring the board. The prev/next nav's boards draw 29 with the
+     * same 4/10 padding, which is the confirmation rather than a second measurement.
+     */
+    padding: 3px 0.75rem;
+    border: var(--border-width-hairline) solid var(--color-border-control);
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface);
+
+    color: var(--color-text);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-0);
+    font-weight: 400;
+    line-height: 1.5;
+
+    /* Eased, not switched — the 0.15s affordance end of DESIGN.md's convention. */
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      color 0.15s;
+  }
+
+  /*
+   * NOT LINK-SHAPED, AND DESIGN.md ANTICIPATED THIS ONE BY NAME: "a nav whose links
+   * are not link-shaped — filter chips are the case coming — opts out with
+   * `::after { content: none }`." The wipe-in underline is a chrome gesture; a row of
+   * pills animating under a moving pointer is noise. base.css's nav reset already
+   * removes the resting underline, so this only cancels the hover wipe.
+   *
+   * It applies to both consumers for the same reason, and it only does anything when
+   * the chip is inside a <nav> — which both are.
+   */
+  .chip::after {
+    content: none;
+  }
+
+  .chip:hover {
+    background-color: var(--color-control-hover);
+  }
+
+  .chip:active {
+    background-color: var(--color-control-pressed);
+  }
+</style>

@@ -1,0 +1,851 @@
+---
+/**
+ * The presentation detail page — phase 4 item 4, and the Presentation branch's only
+ * detail template.
+ *
+ * ── EVERY SECTION IS FIELD-DRIVEN, WHICH IS THE WHOLE SHAPE OF THIS PAGE ─────
+ *
+ * The article page's h2s come out of Portable Text; these do not. Each one is a
+ * template heading over a distinct field, so what a page contains is decided by what
+ * the document carries:
+ *
+ *   (no heading)              bodyText          every presentation
+ *   <Genre> Highlights        highlights        6 of 10, every genre
+ *   Venue(s)                  eventDetail[]     every presentation
+ *   View Slides               presentationDeck  Talks and Keynotes
+ *   Listen to / Watch the …   one per recording Interviews, recorded Talks
+ *   Transcript                transcript        Interviews so far
+ *
+ * The three boards are the same template at three fill levels rather than three
+ * designs: "Talk, Short Format" (2405:11933) has only a description and its venues, and
+ * its rail lists exactly one entry. That is the case to keep working.
+ *
+ * ── SO THE RAIL IS BUILT FROM WHAT RENDERED, NOT FROM THE BODY ───────────────
+ *
+ * `headingLinks` walks Portable Text for h2s, which is right for an article and useless
+ * here — there are no h2 blocks to find. `sections` below is assembled in the same order
+ * the template emits, and both the headings and the rail read from it, so they cannot
+ * disagree about what exists.
+ *
+ * `headingLinks` IS still used, for the transcript's own contents list, which is
+ * genuinely Portable Text — its h3s. Two navigation lists, two mechanisms, each
+ * matching its source.
+ *
+ * ── NO SECTION WRAPPERS, AND THAT IS FORCED ──────────────────────────────────
+ *
+ * Every heading and its content are DIRECT children of `.detail`, emitted through
+ * <Fragment> so nothing wraps them. The rhythm ramp is `.detail > * + *` with `* + h2`
+ * at 64 — a direct-child selector — so a <section> around each group would push the h2
+ * one level down, stop `* + h2` matching, and silently collapse 64 to 24.
+ *
+ * That is the same constraint Portable Text imposes on the article body, arrived at from
+ * the other direction. The cost is that the sections are not `region` landmarks; the
+ * headings carry the outline instead, which is what they do on every other page here.
+ *
+ * ── WHAT IS DELIBERATELY NOT BUILT YET ───────────────────────────────────────
+ *
+ * This page was first built with the deck and the recordings in their RESTING STATE
+ * only: a poster (or a titled panel where there is none) and a link out. That was a
+ * complete, working, no-JS page, and it paid off exactly as intended — both the slide
+ * viewer and the audio player layered onto that markup without changing it.
+ *
+ * What is left is the VIDEO facade: click-to-load from youtube-nocookie.com, landing on
+ * the placeholder that <Recording> still renders for a poster-less video. Audio needed
+ * no facade — see that component's header for why the two interiors differ.
+ *
+ * Related Presentations IS built, as of 2026-09-11, and needed no third branch in
+ * lib/related.ts — that arm already existed. It took `presentation` in the pool query
+ * and a `basePath` on <RelatedBand>. The RSS band above it is built.
+ */
+import {loadQuery} from '../../sanity/load-query'
+import {
+  PRESENTATION_SLUGS_QUERY,
+  PRESENTATION_DETAIL_QUERY,
+  PRESENTATION_TRANSCRIPT_QUERY,
+  PRESENTATION_DELIVERY_QUERY,
+  PRESENTATION_RSS_BAND_QUERY,
+  PRESENTATION_SLIDES_QUERY,
+  PRESENTATION_NAV_QUERY,
+} from '../../sanity/queries/presentations'
+import {MapPin} from '@lucide/astro'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import Band from '../../components/Band.astro'
+import Grid from '../../components/Grid.astro'
+import Masthead from '../../components/Masthead.astro'
+import Footer from '../../components/Footer.astro'
+import EntryHeader from '../../components/EntryHeader.astro'
+import Prose from '../../components/prose/Prose.astro'
+import Rail from '../../components/Rail.astro'
+import RailNav from '../../components/RailNav.astro'
+import TopicList from '../../components/TopicList.astro'
+import SanityImage from '../../components/SanityImage.astro'
+import GenreNav from '../../components/GenreNav.astro'
+import RssBand from '../../components/bands/RssBand.astro'
+import RelatedBand from '../../components/bands/RelatedBand.astro'
+import SlideDeck from '../../components/SlideDeck.astro'
+import Recording from '../../components/Recording.astro'
+import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
+import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
+import {deckSize, deckUrl} from '../../sanity/file'
+import {headingLinks, type HeadingLink} from '../../components/prose/headingId'
+import {formatLocation, isoCountry} from '../../lib/location'
+import {slugify} from '../../lib/slug'
+import {breadcrumbs, presentationGraph} from '../../lib/linked-data'
+import {formatDate} from '../../lib/date'
+import {highlightsHeading} from '../../lib/presentation'
+
+export async function getStaticPaths() {
+  const rows = await loadQuery(PRESENTATION_SLUGS_QUERY)
+  /* Narrowing rather than asserting, as the other two slug routes do: the query filters
+     on `defined(slug.current)` but TypeGen cannot see the filter, and a null would
+     become the literal path `/presentations/null`. */
+  return rows
+    .filter((row): row is {params: {slug: string}} => Boolean(row.params.slug))
+    .map((row) => ({params: row.params}))
+}
+
+/* SEVEN QUERIES, CONCURRENTLY. The split is forced by the `ClientReturn` ceiling — see
+   the header of queries/presentations.ts, where each one is probed. Unlike the article
+   route, none of them depends on another's result: PRESENTATION_NAV_QUERY resolves its
+   own comparison key with `^.pubDate`, so the nav joins the same round trip instead of
+   costing a serial await, and RELATED_POOL_QUERY takes no parameters at all. */
+const {slug} = Astro.params
+const [presentation, transcriptDoc, delivery, bands, nav, slideDoc, related] = await Promise.all([
+  loadQuery(PRESENTATION_DETAIL_QUERY, {slug}),
+  loadQuery(PRESENTATION_TRANSCRIPT_QUERY, {slug}),
+  loadQuery(PRESENTATION_DELIVERY_QUERY, {slug}),
+  loadQuery(PRESENTATION_RSS_BAND_QUERY, {slug}),
+  loadQuery(PRESENTATION_NAV_QUERY, {slug}),
+  loadQuery(PRESENTATION_SLIDES_QUERY, {slug}),
+  loadQuery(RELATED_POOL_QUERY),
+])
+
+/* Loud rather than quiet, matching the other detail routes: every slug here came out of
+   the dataset a moment ago, so a miss means the queries disagree about the same
+   document — which should fail the build rather than ship an empty page. */
+if (!presentation) throw new Error(`[presentations/[slug]] no document for slug "${slug}"`)
+
+/* `genre` is required by the schema and constrained to the Presentation branch, so the
+   fallback is for a document mid-edit rather than for the corpus. It is also the chip
+   copy for prev/next and part of every recording heading. */
+const genreLabel = presentation.genre ?? 'Presentation'
+
+/* TypeGen types a dereferenced prefLabel as `string | null`, so the nulls are filtered
+   rather than asserted away. */
+const topics = (presentation.topics ?? []).filter((topic): topic is string => Boolean(topic))
+
+if (!Astro.site) throw new Error('[presentations/[slug]] `site` is unset in astro.config.mjs')
+const permalink = new URL(`/presentations/${slug}/`, Astro.site).href
+
+const events = (delivery?.events ?? []).filter((event) => Boolean(event))
+const deck = delivery?.deck ?? null
+const transcript = transcriptDoc?.transcript ?? null
+
+/**
+ * ── RELATED PRESENTATIONS ────────────────────────────────────────────────────
+ *
+ * The same three calls the article page makes, against the same pool. Presentations
+ * relating only to presentations needs no special case: `branchForType` maps this
+ * `_type` to the Presentation branch and `genresForBranch` admits only genres whose
+ * parent is that top concept, so Talk, Keynote, Interview, Workshop and Panel are in and
+ * every Document-branch genre is out.
+ *
+ * This document's own topic row is taken FROM THE POOL rather than from
+ * PRESENTATION_DETAIL_QUERY, which projects topics as labels for display and not in the
+ * shape the ranker needs. One projection to keep in step instead of two.
+ *
+ * ── THE DATE FALLBACK IS A LIVE PATH HERE, WHICH IT IS NOT ON AN ARTICLE ─────
+ *
+ * `lib/related.ts` records that nothing in the corpus ever fails to score. That was
+ * measured on insights. `rankRelated` skips any candidate with an empty topic set, so a
+ * presentation carrying NO topics scores nothing against anything and falls through to
+ * the most recent eligible rows under a "Recent Presentations" heading. Two of nine
+ * presentations are in that state today.
+ *
+ * Left as it is rather than special-cased: the fallback is the designed behaviour and a
+ * page with no way forward would be worse. The real fix is content — those documents
+ * want topics, which would also put them into the index's facets, where they are
+ * currently just as invisible.
+ */
+const branch = branchForType(presentation._type)
+const eligibleGenres = genresForBranch(branch, related.genres?.tops, related.genres?.concepts)
+const self = related.pool.find((row) => row._id === presentation._id)
+const {items: relatedItems, isFallback} = rankRelated(
+  {_id: presentation._id, topics: self?.topics},
+  related.pool,
+  eligibleGenres,
+)
+
+/**
+ * ── SLIDE ORDER IS DERIVED FROM THE FILENAME, NOT FROM THE ARRAY ─────────────
+ *
+ * The opposite of the poster ladder's rule, and deliberately so (Andy, 2026-09-10):
+ * there is no scenario where slides should sit in an order other than the deck's, so
+ * editorial ordering buys nothing here and costs vigilance.
+ *
+ * IT HAS TO BE DERIVED, BECAUSE STORED ORDER IS NOT RELIABLE. Dropping a batch of files
+ * on an array field uploads them concurrently and appends each item as its upload
+ * RESOLVES, so a heavy slide that started first lands after a light one that started
+ * later. Measured in the dataset: `.004` completed before `.003`, `.006` before `.005`.
+ * Nondeterministic, invisible, and nothing to do with the filenames.
+ *
+ * `localeCompare(…, {numeric: true})` RATHER THAN `| order()` IN GROQ. GROQ's string
+ * ordering is lexicographic with no natural-number mode, so it is correct only while
+ * every name is zero-padded — true of Keynote's export (`.001`…`.040`) and false the
+ * first time one slide is re-exported alone as `deck_7.png`. A natural sort handles both.
+ */
+const slides = [...(slideDoc?.slides ?? [])].sort((a, b) =>
+  (a.filename ?? '').localeCompare(b.filename ?? '', 'en', {numeric: true}),
+)
+
+/**
+ * ── THE BUILD REPORTS DROPPED UPLOADS, BECAUSE NOTHING ELSE WILL ─────────────
+ *
+ * Batch upload into an array silently loses files — measured, 8 of 40 on one attempt,
+ * and a second attempt of the same set landed clean. Intermittent, so it cannot be
+ * relied on to be noticed.
+ *
+ * A missing slide is far worse than a mis-ordered one: wrong order is visible the moment
+ * you look at the deck, and an absent slide 26 is invisible unless you count. Zero-padded
+ * contiguous filenames are what make it detectable at all — a gap in the run is the only
+ * trace a dropped upload leaves.
+ *
+ * A warning rather than a thrown error, matching `[SanityHero] no altText`: the page is
+ * still worth rendering, and the gap is a content problem for a person to fix in the
+ * Studio rather than a reason to fail the build.
+ *
+ * Reads the LAST number in the filename so a deck whose name contains digits does not
+ * confuse it. Decks that are not numbered at all simply produce no numbers and no check.
+ */
+const slideNumbers = slides
+  .map((slide) => slide.filename?.match(/(\d+)(?!.*\d)/)?.[1])
+  .filter((n): n is string => Boolean(n))
+  .map(Number)
+
+if (slideNumbers.length === slides.length && slides.length > 0) {
+  const gaps: number[] = []
+  for (let n = slideNumbers[0]; n < slideNumbers[slideNumbers.length - 1]; n++) {
+    if (!slideNumbers.includes(n)) gaps.push(n)
+  }
+  if (gaps.length > 0) {
+    console.warn(
+      `[presentations/${slug}] ${slides.length} slides, ${gaps.length} missing from the run: ` +
+        `${gaps.join(', ')} — likely dropped uploads, re-upload them in the Studio`,
+    )
+  }
+}
+
+/* The deck's URL goes through `deckUrl()` rather than being built here, so the phase 6
+   move to the droplet is one edit. `size` was already projected and unused. */
+const deckHref = deckUrl(deck)
+const deckWeight = deckSize(deck?.size)
+
+const hasHighlights = (presentation.highlights?.length ?? 0) > 0
+const hasTranscript = (transcript?.length ?? 0) > 0
+
+/**
+ * The transcript's own contents list — its h3s.
+ *
+ * RENDERED ONLY WHEN THERE ARE h3s (Andy, 2026-09-07), which is a different condition
+ * from whether the transcript exists: a transcript with no headings is a valid document
+ * and simply has nothing to list. TRANSCRIPT_STYLES also allows h4, deliberately outside
+ * this list.
+ */
+const transcriptContents = headingLinks(transcript, 'h3')
+
+/**
+ * ── ONE SECTION PER RECORDING, IN EDITORIAL ORDER ────────────────────────────
+ *
+ * Flattened across events in stored order — events first, then recordings within each —
+ * which is the same order the card's poster ladder walks, and for the same reason: the
+ * arrays are user-sortable and that sort is a judgment about the work.
+ *
+ * In practice there is one recording per presentation, but both show if both exist
+ * (Andy, 2026-09-08).
+ *
+ * ── THE FRAGMENT IDS ARE STABLE UNDER ADDITION, WHICH IS WHY THEY LOOK ODD ───
+ *
+ * `watch` and `listen`, with an index appended only from the SECOND of a kind onward.
+ * The obvious alternative — numbering everything `recording-1`, `recording-2` — reads
+ * badly in a URL for the single-recording case that is almost every page. The obvious
+ * fix to THAT — numbering only when there are several — would rename `#watch` to
+ * `#watch-1` the day a second video is added, breaking any link anyone had shared.
+ *
+ * Counting only prior recordings OF THE SAME KIND keeps the first of each stable
+ * forever, which is the property that matters for a fragment.
+ */
+const recordings = events.flatMap((event) => event?.recordings ?? []).filter(Boolean)
+
+const recordingSections = recordings.map((recording, index) => {
+  const isVideo = recording?.kind === 'video'
+  const base = isVideo ? 'watch' : 'listen'
+  const priorOfKind = recordings
+    .slice(0, index)
+    .filter((r) => (r?.kind === 'video') === isVideo).length
+  return {
+    id: priorOfKind === 0 ? base : `${base}-${priorOfKind + 1}`,
+    label: `${isVideo ? 'Watch' : 'Listen to'} the ${genreLabel}`,
+    /* Returned rather than discarded so <Recording> can take it as a prop. `kind` is
+       `'audio' | 'video' | null`, so testing for one kind is not the complement of
+       testing for the other — deriving the flag twice would let a null-kind recording
+       get this heading and the other branch's body. See the component's Props. */
+    isVideo,
+    recording,
+  }
+})
+
+/**
+ * The rail's "On This Page", and the source of every section heading's id.
+ *
+ * ASSEMBLED IN EMISSION ORDER, and read by both the rail and the headings below, so a
+ * section cannot appear in one and not the other. Built imperatively rather than as a
+ * filtered array literal because `.filter(Boolean)` does not narrow the type — the
+ * pushes keep it `HeadingLink[]` without a predicate.
+ */
+/**
+ * "Venue", pluralised by the count.
+ *
+ * ── THE THIRD LABEL THIS HEADING HAS HAD, AND THE REASON IS ONLINE EVENTS ────
+ *
+ * The board drew "Delivery", which is the word for the CONCEPT that separates
+ * `presentation` from `event` and not the word for the line beneath the heading. That
+ * became "Location", which was better and still wrong for the case that matters: a
+ * podcast recorded over the internet has no location, so "Location: Online" reads as a
+ * missing value rather than an answer.
+ *
+ * "Venue" absorbs it. A venue can be a conference hall or it can be a show, and neither
+ * reading is strained — which is what makes it the label that covers the corpus rather
+ * than the label that covers most of it (Andy, 2026-09-08). Two of the three
+ * presentations here are online.
+ *
+ * ── TWO NEIGHBOURING NAMES DELIBERATELY DO NOT FOLLOW IT ─────────────────────
+ *
+ * `formatLocation` and `lib/location.ts` keep their names because they format the
+ * `location` OBJECT on `event` — city, state, country — and matching the schema field is
+ * worth more than matching the heading above the output.
+ *
+ * `.deliveries` keeps its name for the same kind of reason: it names what the list IS,
+ * one row per delivery occasion, which is the modelled concept CLAUDE.md uses. The
+ * heading names what a reader is looking at. Those are allowed to differ, and this note
+ * is what stops someone reconciling them later on the assumption it was an oversight.
+ *
+ * Pluralised because a presentation given three times shows three rows and a singular
+ * heading over a list reads as a mistake. Naive `s` pluralisation is safe on this one
+ * word; UNEXERCISED so far, since every presentation currently has exactly one event.
+ */
+const venueLabel = events.length > 1 ? 'Venues' : 'Venue'
+
+const sections: HeadingLink[] = []
+if (hasHighlights)
+  sections.push({id: 'presentation-highlights', label: highlightsHeading(presentation.genre)})
+if (events.length > 0) sections.push({id: 'venue', label: venueLabel})
+if (deck || slides.length > 0) sections.push({id: 'view-slides', label: 'View Slides'})
+for (const {id, label} of recordingSections) sections.push({id, label})
+if (hasTranscript) sections.push({id: 'transcript', label: 'Transcript'})
+
+/**
+ * ── THE PRESENTATION'S JSON-LD: THE WORK, ITS DELIVERIES, THEIR RECORDINGS ───
+ *
+ * Three entities mirroring the content model — see lib/linked-data.ts for why that
+ * mapping is exact rather than convenient. The builder takes plain values; assembling
+ * them from the query shape is this route's job, as it is on the insights route.
+ *
+ * ── RECORDINGS ARE MATCHED BACK TO THEIR EVENT BY IDENTITY ──────────────────
+ *
+ * `recordingSections` above is FLAT — `events.flatMap(...)` — because the page renders
+ * one section per recording in editorial order and does not care which delivery each
+ * came from. The graph does care: `recordedAt` is the whole point of hanging a
+ * recording off a delivery rather than off the work.
+ *
+ * `flatMap` does not clone, so the objects in that flat list are the same objects still
+ * sitting on each event. A Map keyed on the object recovers the grouping exactly, with
+ * no index arithmetic to drift out of step if either list is ever reordered.
+ */
+const fragmentFor = new Map(recordingSections.map((section) => [section.recording, section.id]))
+
+/* Slugged from the event's own name and date: stable when the array is reordered —
+   which it is designed to be — readable, and free of internal ids. The counter is the
+   tie-break for two deliveries that slug identically; nothing in the corpus does, but a
+   duplicate `@id` would silently merge two Events into one. */
+const usedFragments = new Map<string, number>()
+const deliveries = events.map((event, index) => {
+  const stem = slugify([event?.name, event?.date].filter(Boolean).join(' '))
+  const base = stem ? `event-${stem}` : `event-${index + 1}`
+  const seen = usedFragments.get(base) ?? 0
+  usedFragments.set(base, seen + 1)
+
+  return {
+    fragment: seen === 0 ? base : `${base}-${seen + 1}`,
+    name: event?.name,
+    date: event?.date,
+    link: event?.link,
+    online: event?.online,
+    city: event?.city,
+    state: event?.state,
+    /* Mapped to ISO 3166-1 alpha-2 here rather than in the builder, because
+       lib/location.ts already owns every rule about this field. */
+    countryCode: isoCountry(event?.country),
+    recordings: (event?.recordings ?? []).filter(Boolean).flatMap((recording) => {
+      const fragment = fragmentFor.get(recording)
+      /* No fragment means the recording never rendered a section, which cannot happen —
+         both lists come from the same source. Skipped rather than given a made-up id,
+         since a node addressing nothing is worse than a node absent. */
+      if (!fragment) return []
+      return [
+        {
+          fragment,
+          kind: recording.kind,
+          url: recording.url,
+          mediaUrl: recording.mediaUrl,
+          sourceName: recording.sourceName,
+          duration: recording.duration,
+          posterRef: recording.poster?.asset?._ref ?? null,
+        },
+      ]
+    }),
+  }
+})
+
+const jsonLd = [
+  breadcrumbs(permalink, [
+    {name: 'Presentations', url: new URL('/presentations/', Astro.site).href},
+    {name: presentation.title ?? 'Presentation'},
+  ]),
+  ...presentationGraph({
+    site: Astro.site,
+    permalink,
+    title: presentation.title,
+    description: presentation.description,
+    pubDate: presentation.pubDate,
+    updatedAt: presentation._updatedAt,
+    genre: presentation.genre,
+    topics,
+    posterRef: presentation.poster?.asset?._ref ?? null,
+    deliveries,
+  }),
+]
+---
+
+<BaseLayout
+  title={presentation.title ?? 'Presentation'}
+  description={presentation.description ?? undefined}
+  jsonLd={jsonLd}
+>
+  <Masthead />
+
+  <main id="main" tabindex="-1">
+    {
+      /*
+        <article class="h-entry"> holds the title AND the body, which is the structural
+        requirement mf2 imposes and the reason the article page is shaped this way too:
+        `p-name` and `e-content` need a common root or Bridgy cannot build a syndicated
+        copy. <EntryHeader> supplies `p-name`, `dt-published` and `u-url`; `e-content`
+        goes on the prose column below.
+
+        NO HERO, and that is a layout input rather than an omission — <EntryHeader>
+        derives its title-to-prose gap from `data-hero`, and its absence gives the 16 at
+        every width that all three boards draw (title block 128, next frame at 144).
+      */
+    }
+    <article class="h-entry">
+      <EntryHeader
+        title={presentation.title}
+        genre={genreLabel}
+        date={presentation.pubDate}
+        permalink={permalink}
+        basePath="/presentations/"
+      />
+
+      <Band as="div" space="none" class="entry-band">
+        <Grid class="entry-grid">
+          <div class="detail e-content">
+            <Prose value={presentation.bodyText} />
+
+            {
+              hasHighlights && (
+                <Fragment>
+                  <h2 id="presentation-highlights">{highlightsHeading(presentation.genre)}</h2>
+                  <Prose value={presentation.highlights} />
+                </Fragment>
+              )
+            }
+
+            {
+              /*
+                VENUE — one row per occasion, which is the inversion `presentation`
+                exists for: the work is the page and the deliveries are its history.
+                A <ul> because it is a list of peers; `role="list"` because
+                `list-style: none` drops list semantics in Safari.
+
+                The heading comes from `venueLabel` rather than being written here, so
+                the rail and the h2 cannot disagree about its number.
+              */
+            }
+            {
+              events.length > 0 && (
+                <Fragment>
+                  <h2 id="venue">{venueLabel}</h2>
+                  <ul class="deliveries" role="list">
+                    {events.map((event) => {
+                      const place = formatLocation({
+                        online: event!.online,
+                        city: event!.city,
+                        state: event!.state,
+                        country: event!.country,
+                      })
+                      /* Composed in JS rather than interpolated across the template:
+                         Astro drops whitespace between adjacent expressions once a
+                         formatter splits them over lines, which has shipped a run-on
+                         string into this build's output before. The board reads
+                         "Information Architecture Conference, Seattle, WA | April 13,
+                         2024" — venue and place joined by a comma, the date behind a
+                         pipe. Each part drops out cleanly when absent, which the corpus
+                         needs: 10 events have no location at all. */
+                      const line = [event!.name, place].filter(Boolean).join(', ')
+                      const when = formatDate(event!.date)
+                      return (
+                        <li>
+                          <MapPin />
+                          <span>
+                            {/* The link wraps the VENUE only. `event.link` points at the
+                                conference's session page, so the date is not part of what
+                                it addresses — and a date inside the accessible name would
+                                make "…Conference, Seattle, WA | April 13, 2024" the name
+                                of a link to a session listing. */}
+                            {event!.link ? <a href={event!.link}>{line}</a> : line}
+                            {when && ` | ${when}`}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </Fragment>
+              )
+            }
+
+            {
+              /*
+                VIEW SLIDES. The slides are the viewer; the poster is the fallback for a
+                presentation that has a PDF but no slide images yet, which is a live state
+                in the corpus rather than a hypothetical.
+
+                THE GATE IS `deck || slides`, NOT `deck`. All four combinations occur:
+                slides with a PDF, slides alone, a PDF alone, and neither. Gating on the
+                deck alone — as this did — renders nothing for a presentation whose slides
+                are uploaded but whose PDF is not.
+
+                <Fragment> and no <section>: the rhythm ramp is `.detail > * + h2` at 64,
+                a DIRECT-child selector, so a wrapper would silently collapse it to 24.
+              */
+            }
+            {
+              (slides.length > 0 || deck) && (
+                <Fragment>
+                  <h2 id="view-slides">View Slides</h2>
+                  {slides.length > 0 ? (
+                    <SlideDeck
+                      slides={slides}
+                      title={presentation.title ?? 'this presentation'}
+                      deckHref={deckHref}
+                      deckWeight={deckWeight}
+                    />
+                  ) : (
+                    <Fragment>
+                      {presentation.poster?.asset && (
+                        <SanityImage
+                          image={presentation.poster}
+                          aspect="16/9"
+                          class="deck-poster"
+                          sizes="(min-width: 48rem) 656px, 100vw"
+                        />
+                      )}
+                      {deckHref && (
+                        <p class="deck-download-fallback">
+                          <a href={deckHref}>
+                            Download the slides{deckWeight && ` (${deckWeight})`}
+                          </a>
+                        </p>
+                      )}
+                    </Fragment>
+                  )}
+                </Fragment>
+              )
+            }
+
+            {
+              /*
+                RECORDINGS — one section each. <Recording> owns the heading, the face,
+                the player and the source line, and emits them as direct children of
+                `.detail` with no wrapper, which the ramp above requires.
+
+                Extracted once the audio player landed: the video facade brings its own
+                script and styles, and the two interiors differ enough that keeping the
+                shared container in one file is what makes them read as one pattern.
+              */
+            }
+            {recordingSections.map((section) => <Recording {...section} />)}
+
+            {
+              /*
+                TRANSCRIPT — the one section whose headings come from Portable Text
+                rather than from this file, which is why its contents list is built with
+                `headingLinks` and the rail's is not.
+
+                A PLAIN <ul>, NOT A <nav>, and the first draft got this wrong. Wrapping
+                it in <nav> earned a landmark but pulled in base.css's
+                `nav :is(a, button)` reset, which strips the resting underline and adds
+                the wipe-in `::after`. Restating the underline on top of that produced
+                TWO lines, the second animating on hover — visible immediately on screen.
+
+                Dropping the <nav> is the fix rather than cancelling the `::after`,
+                because these links sit in running prose and should behave exactly like
+                the links around them (Andy, 2026-09-08). A plain list inherits that for
+                free; a <nav> would mean re-deriving the prose treatment rule by rule and
+                keeping it in step by hand.
+
+                The landmark is the cost, and a small one: the list sits directly under
+                its own "Transcript" heading, which is what a reader navigates by anyway.
+              */
+            }
+            {
+              hasTranscript && (
+                <Fragment>
+                  <h2 id="transcript">Transcript</h2>
+                  {transcriptContents.length > 0 && (
+                    <ul class="transcript-contents" role="list">
+                      {transcriptContents.map((heading) => (
+                        <li>
+                          <a href={`#${heading.id}`}>{heading.label}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <Prose value={transcript} />
+                </Fragment>
+              )
+            }
+          </div>
+
+          {
+            /*
+              THE RAIL is the article page's, and this is now its SECOND consumer with
+              this exact shape — "On This Page" plus Topics, dispersing below md so the
+              nav disappears and Topics reappears inline under the prose. Reviews has a
+              rail with one group and the `page` template has a hero above a nav, so
+              neither is this.
+
+              Left as a copy rather than promoted, because extracting the shell is a
+              component-boundary call. Flagged for that decision; the rules below are
+              deliberately the same tokens as insights/[slug].astro so a later extraction
+              is a move rather than a merge.
+            */
+          }
+          {
+            (sections.length > 0 || topics.length > 0) && (
+              <Rail>
+                {sections.length > 0 && <RailNav items={sections} id="rail-contents" />}
+                {topics.length > 0 && (
+                  <TopicList
+                    topics={topics}
+                    id="rail-topics"
+                    basePath="/presentations/"
+                    as="h3"
+                    microformats
+                    class="rail-topics"
+                  />
+                )}
+              </Rail>
+            )
+          }
+        </Grid>
+      </Band>
+    </article>
+
+    {
+      /* Immediately after the entry and before the bands, which is where all three
+         boards draw it and what makes its own bottom margin work — the component decides
+         that with `:has(+ [data-tone]…)`, so it has to be a sibling of whatever follows.
+
+         "Presentation" rather than the genre (Andy, 2026-09-07): a Keynote and a Talk are
+         much closer to each other than a Note is to a Case Study, so stepping across the
+         whole branch is the more useful move. <GenreNav> needs no change — its `genre`
+         prop is only the chip copy. */
+    }
+    {
+      /* NEXT IS OLDER — the crossing is deliberate and matches the Insights route. The
+         sequence is the index, which runs newest first, so "next" moves further down it.
+         See genre-nav.ts for why the query reports dates rather than directions. */
+    }
+    {
+      nav && (
+        <GenreNav genre="Presentation" prev={nav.newer} next={nav.older} base="/presentations/" />
+      )
+    }
+
+    {
+      /* `presentation.customBands` accepts only `bandRss`, matching the boards. Rendered
+         only if the ladder produced one; a heading over an empty band is worse than no
+         band. */
+    }
+    {
+      bands?.rssBand && (
+        <RssBand
+          title={bands.rssBand.title}
+          message={bands.rssBand.message}
+          buttonTarget={bands.rssBand.buttonTarget}
+        />
+      )
+    }
+
+    {
+      /* AFTER the RSS band, which is where both presentation boards put it — the
+         Interview's Related band is at y=4032 against the RSS CTA's 3725. Worth noting
+         it is the other way round on an article, where Related comes first and Work
+         with Me follows; the order is per board rather than a site-wide rule.
+
+         Omitted entirely when nothing ranks, same as the article page: a heading over no
+         cards is worse than no band. */
+    }
+    {
+      relatedItems.length > 0 && (
+        <RelatedBand
+          noun="Presentations"
+          basePath="/presentations"
+          isFallback={isFallback}
+          items={relatedItems}
+        />
+      )
+    }
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<style>
+  /* ── The entry band ───────────────────────────────────────────────────────── */
+  /*
+   * BOTTOM PADDING ONLY, which is <NoteEntry>'s treatment and is right here for the same
+   * reason: this page has no lede, so the title band sits directly above the prose and
+   * <EntryHeader> has already spaced them by 16.
+   *
+   * A first pass used `padding-block` on both edges and added 64 on top of that 16,
+   * pushing the opening paragraph well clear of its own title (Andy, on screen). The
+   * article page reaches the same place from the other direction — it zeroes its top
+   * padding at lg, once the hero has moved out from between the title and the prose.
+   */
+  .entry-grid {
+    padding-block-end: var(--rhythm-band);
+  }
+
+  .detail {
+    grid-column: var(--col-main);
+  }
+
+  /* Every rail link targets one of these, so each is a fragment target. `rhythm-band` is
+     the offset the other two rail-bearing pages settled on. */
+  .detail :global(h2),
+  .detail :global(h3) {
+    scroll-margin-block-start: var(--rhythm-band);
+  }
+
+  /* ── Venue(s) ─────────────────────────────────────────────────────────────── */
+  /*
+   * A row per occasion: pin, then the line. `align-items: start` rather than `center`
+   * because a long venue wraps to two lines and a centred pin would float against the
+   * middle of them; the board draws the icon level with the first line (y=4 against a
+   * 32-tall row, which is the optical centring of a 24px glyph on a 27px line box).
+   *
+   * 16 between rows, from the short-format board — two Body Groups at y=51 and y=99 with
+   * the first 32 tall.
+   */
+  /*
+   * `align-items: center` on the row, not `start`. A first pass used `start` on the
+   * reasoning that a wrapped venue name would leave a centred pin floating against the
+   * middle of two lines — true, but it put the pin visibly above the text on the single-
+   * line case that is every event today (Andy, on screen). Centring is the right default;
+   * revisit if a venue ever wraps.
+   */
+  .deliveries {
+    padding: 0;
+    list-style: none;
+  }
+
+  .deliveries li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .deliveries li + li {
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  /* ── The deck ─────────────────────────────────────────────────────────────── */
+  /*
+   * 16:9 at the prose width, which is what the Talk board draws (656 x 369). The aspect
+   * is forced here rather than taken from the asset because this is a resting state for
+   * a viewer that will impose its own box — see the file header. When the viewer lands,
+   * the poster's real dimensions should drive this instead, so an older 4:3 deck is not
+   * letterboxed.
+   *
+   * `radius-1`, which DESIGN.md gives content images.
+   *
+   * THIS WAS ONE RULE WITH `.recording-poster` until the recordings moved into their own
+   * component. It could not move with them and it could not stay grouped: Astro scopes by
+   * authoring file, so the grouped selector would have compiled against THIS file's id
+   * and stopped matching an element authored elsewhere — while still looking right,
+   * because base.css's `img { max-width: 100% }` caps the width anyway and only the
+   * corners would have gone square. Recording.astro carries its own copy.
+   */
+  .deck-poster {
+    inline-size: 100%;
+    border-radius: var(--radius-1);
+  }
+
+  /* ── The transcript's contents ────────────────────────────────────────────── */
+  /*
+   * A RAISED PANEL, which the structural walk of the board could not show: a frame
+   * reports its geometry and not its fills, so the first pass read 16px of padding as an
+   * indent on a transparent list and shipped it flat (Andy, on screen).
+   *
+   * `--color-surface` with a hairline border and `radius-2` — the card treatment, and
+   * the same reason DESIGN.md gives for using it: ground-to-surface is 1.045 in light,
+   * so the border is what makes the panel legible rather than the fill.
+   *
+   * 16 all round is the board's padding (links inset 16 inside a 656 frame), and 24
+   * between links is its 51px pitch on a 27px line box.
+   *
+   * NO LINK RULES HERE AT ALL, deliberately. These are prose links and inherit the prose
+   * treatment; see the note in the template for why this stopped being a <nav>.
+   */
+  .transcript-contents {
+    padding: var(--rhythm-heading-close);
+    list-style: none;
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+  }
+
+  .transcript-contents li + li {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  /* ── The rail ─────────────────────────────────────────────────────────────── */
+  /*
+   * PLACEMENT ONLY. <Rail> owns the dispersal below md, the sticky child and the 48
+   * between groups, along with the two invariants that make the stickiness work. What
+   * stays here is which columns it occupies, which is a fact about this page's grid.
+   *
+   * `.rail` reaches <Rail>'s root because that component spreads `{...rest}`, so this
+   * page's scope attribute travels to it.
+   */
+  .rail {
+    grid-column: var(--col-rail);
+  }
+
+  /* Below md Topics has left the rail and become a grid item of its own — TopicList
+     chooses the inline run from its OWN width, so only the placement is stated. */
+  .rail-topics {
+    grid-column: var(--col-main);
+  }
+</style>

@@ -1,0 +1,315 @@
+---
+/**
+ * The article card — one component, two layouts, no `variant` prop.
+ *
+ * ── IT INFERS ITS LAYOUT FROM ITS OWN WIDTH ──────────────────────────────────
+ *
+ * Horizontal or vertical is not a viewport question. The same card is horizontal on
+ * the home page's 571px column and vertical in the Insights index's 316px masonry
+ * AT THE SAME VIEWPORT, so a media query could only ever be right for one of them.
+ * What decides it is how much width the card has been given — which is precisely
+ * what a SIZE CONTAINER QUERY answers, and what DESIGN.md already nominates:
+ *
+ *   "Prefer a real size container query for those, which answers to the space the
+ *    component occupies rather than to the viewport, so the same card in the rail
+ *    and at full width get different treatment from one rule."
+ *
+ * This is the first one in the build. The alternative — `variant="horizontal"` —
+ * would work (home is its only caller) but makes every consumer restate a
+ * breakpoint the card can measure for itself, and can be wired up wrong.
+ *
+ * THE THRESHOLD IS 32rem, and the two real widths sit well clear either side: 316
+ * (`grid-span-4`) and 571 (DESIGN.md's computed wide column, 996 − 316 − 109).
+ * Below about 32rem the horizontal text column falls under ~28 characters — inside
+ * `body-compact`'s register but too tight for an excerpt — so the switch happens
+ * before it gets there rather than at the midpoint between the two real widths.
+ *
+ * ── GEOMETRY, READ OFF THE FIGMA COMPONENT (46:885) ──────────────────────────
+ *
+ *   horizontal 571x198   pad 16, title h29, gap 8, [145x129 media | 24 | text]
+ *   vertical   316x385   pad 16, title h29, gap 8, media 284x160, 16, text
+ *
+ * Both media boxes are ratios rather than heights: 145x129 is 9/8 and 284x160 is
+ * 16/9, each landing on the drawn pixel. Two crops of one source, which is what
+ * SanityImage's `aspect` is for.
+ *
+ * ── WHAT THE CARD DOES NOT DECIDE ────────────────────────────────────────────
+ *
+ * Its outdent. On the home page a note card beside this one is pulled out by
+ * `card-pad` so its text aligns with the column edge; on an index it is not, so its
+ * hover box matches this card's rather than exceeding it. That is the CONTEXT's
+ * call — the same direction as `--thumb-float` — and neither card reaches for it.
+ */
+import SanityImage from '../SanityImage.astro'
+import Eyebrow from '../Eyebrow.astro'
+import type {SanityImageSource} from '../../sanity/image'
+
+interface Props {
+  href: string
+  title: string
+  genre?: string | null
+  date?: string | null
+  description?: string | null
+  image?: SanityImageSource | null
+  /** Heading level, so a card can sit under whatever precedes it. */
+  as?: 'h2' | 'h3' | 'h4'
+  class?: string
+  /* Anything else is forwarded to the root element — Band's pattern, and here it
+     carries the Insights index's `data-genre` / `data-topics`. It is also what lets a
+     PAGE style this component at all: Astro passes the parent's scope down as a prop,
+     and it only reaches the DOM if the component spreads rest onto an element. */
+  [key: string]: unknown
+}
+
+const {
+  href,
+  title,
+  genre,
+  date,
+  description,
+  image,
+  as: Tag = 'h3',
+  class: className,
+  ...rest
+}: Props = Astro.props
+---
+
+<article class:list={['card', className]} {...rest}>
+  {
+    /*
+    THE INNER ELEMENT IS NOT GRATUITOUS. A container query evaluates against the
+    nearest ANCESTOR container, never against the element itself — so the element
+    that declares `container-type` cannot be the one the query restyles. With the
+    grid on `.card` the descendant rules fired and `grid-template-columns` silently
+    did not, giving a single column holding a 537x477 image. Measured, not guessed.
+
+    So `.card` is the box that measures itself and `.card-inner` is the grid that
+    responds. tokens.css records the same rule for the style queries.
+  */
+  }
+  <div class="card-inner">
+    {
+      /*
+      THE ANCHOR IS ON THE TITLE; THE WHOLE CARD IS THE TARGET. Those are not in
+      tension — a pseudo-element stretched from this anchor covers the card, so the
+      click area is the card while the accessible name stays the title. Wrapping an
+      anchor around the whole card would instead announce title, genre, date and
+      description as one link. `text-title` and no underline, per DESIGN.md's Links
+      rule: a block-level link title is identified as a link by position. See the
+      note on `.card-title a::after`.
+    */
+    }
+    <Tag class="card-title"><a href={href}>{title}</a></Tag>
+
+    {
+      image?.asset && (
+        <div class="card-media">
+          <SanityImage image={image} aspect="16/9" alt="" />
+        </div>
+      )
+    }
+
+    <div class="card-body">
+      <Eyebrow genre={genre} date={date} />
+      {description && <p class="card-desc">{description}</p>}
+    </div>
+  </div>
+</article>
+
+<style>
+  /* ── The box ────────────────────────────────────────────────────────────── */
+  /*
+   * An article card is boxed AT REST at every width, where a note card is not below
+   * `md` — that contrast is the weight difference DESIGN.md describes, and it is why
+   * this file has no viewport logic in it at all.
+   */
+  .card {
+    /* What makes the layout query possible, and the reason the grid is one level in:
+       a query cannot restyle its own container. Also contains the inline axis, which
+       is what we want — the card takes its width from its grid column, never from
+       its contents. */
+    container-type: inline-size;
+
+    /* The containing block for the full-card link overlay below. `container-type`
+       already implies layout containment, which would establish one on its own —
+       stated anyway, because relying on a side effect of an unrelated property is
+       how this stops working when the container query is someday removed. */
+    position: relative;
+
+    padding: var(--card-pad);
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+    transition: box-shadow 0.15s;
+  }
+
+  .card-inner {
+    display: grid;
+    row-gap: var(--card-gap);
+
+    /*
+     * `start`, NOT the default. A grid container's `align-content` is `normal`,
+     * which behaves as `stretch` — so whenever the card is taller than its content,
+     * which is every equal-height row, the auto rows GREW and swallowed the extra
+     * height as gaps. The card looked correct in isolation and wrong beside a taller
+     * sibling, which is why it survived the first review.
+     */
+    align-content: start;
+  }
+
+  /*
+   * The hover highlight: a hard 2px accent offset down and to the right, no blur and
+   * no spread — see DESIGN.md → Elevation & Depth for why that is not a breach of
+   * "no soft shadows". `box-shadow` rather than two thicker borders because a border
+   * would change the box and reflow the card's contents; with no spread it inherits
+   * `radius-2`, so the highlight tapers at the corners as the board draws it.
+   *
+   * EASED, NOT SWITCHED. 0.15s is the controls-immediate end of DESIGN.md's
+   * convention, which is where a hover affordance belongs; the languid 0.3s is for
+   * decoration like the nav underline's wipe. The transition sits on the resting
+   * rule so it eases both in and out.
+   */
+  .card:hover,
+  .card:focus-within {
+    box-shadow: 2px 2px 0 0 var(--color-accent);
+  }
+
+  /*
+   * ── THE WHOLE CARD IS THE TARGET, AND THE NAME IS STILL THE TITLE ──────────
+   *
+   * A stretched pseudo-element rather than an anchor wrapped around the card. Both
+   * make the card clickable; only this one keeps the accessible name to the title,
+   * where wrapping would announce the title, genre, date and description as one
+   * enormous link. It also keeps the markup honest — the heading stays a heading
+   * containing a link, rather than a link containing a heading.
+   *
+   * The cost is that text inside the card can no longer be selected by dragging, and
+   * any second link in a card would need lifting above this with `z-index`. Neither
+   * card has one today.
+   */
+  .card-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ── Type ───────────────────────────────────────────────────────────────── */
+  /*
+   * ── THE CARD OWNS ITS TYPE; `as` OWNS ONLY THE OUTLINE LEVEL ───────────────
+   *
+   * Without this the title takes whatever base.css gives the element it happened to
+   * be rendered as, so the Insights index passing `as="h2"` — which is the correct
+   * level under that page's single h1 — silently drew the board's 22.5/29.25 title
+   * at h2's 28.125/35.16 with -1.5% tracking. Measured, not noticed by eye.
+   *
+   * The prop exists so a card can sit under whatever precedes it, which is a document
+   * outline concern and should cost nothing visually. Pinned to the `h3` role, which
+   * is what both card boards draw.
+   *
+   * THIS IS A SECOND HOME FOR THE h3 ROLE, deliberately and with precedent — the
+   * article page's rail restates the same two declarations for the same reason. If
+   * the h3 role ever moves, this and NoteCard are the other two places.
+   */
+  .card-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+    letter-spacing: normal;
+  }
+
+  /* `text-title` and no underline — DESIGN.md: a title in its own block at heading
+     size is identified as a link by position. base.css gives every anchor an
+     underline, so this is the opt-out. */
+  .card-title a {
+    color: var(--color-text-title);
+    text-decoration: none;
+  }
+
+  .card-title a:hover {
+    color: var(--color-link-hover);
+  }
+
+  /* `body-compact` — the same size step as body at 1.5 rather than 1.8. This is
+     exactly the role's stated purpose: "a column too narrow for `body`", which a
+     316px card is. */
+  .card-desc {
+    margin-top: var(--card-gap);
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+  }
+
+  /* ── Vertical: the base case ─────────────────────────────────────────────── */
+  /*
+   * The media-to-text gap is 16 where every other gap in the card is 8 or 24, and it
+   * matches no card token: `card-gap` is 8 and `card-media` is 24. Expressed as
+   * `card-gap` twice — the grid row gap plus this — rather than inventing a token
+   * for one consumer. Worth a look: it may just be that the board wants `card-media`
+   * here and drew 16.
+   */
+  .card-media {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-1);
+  }
+
+  /*
+   * ── THE BOX IS DECIDED IN CSS, THE CROP AT BUILD TIME ──────────────────────
+   *
+   * A container query resolves in the browser; SanityImage's `aspect` bakes a crop
+   * into the fetched URL while the page is generated. So the two cannot agree by
+   * construction — one image is fetched, and it has to serve a 16/9 box in the
+   * vertical layout and a 9/8 one in the horizontal.
+   *
+   * `object-fit: cover` is what absorbs the difference: fetch at 16/9, the ratio the
+   * index masonry uses and the more common case, and let CSS take the middle of it
+   * for the small horizontal thumbnail. base.css sets `height: auto` on every image,
+   * which is right for images that size themselves and wrong here, where the box is
+   * fixed by the wrapper's ratio — hence the explicit `block-size`.
+   *
+   * NOT YET AIMED BY THE HOTSPOT. SanityHero does the same double crop and passes
+   * `object-position` from the hotspot for exactly this reason; at 145px the drift is
+   * small, but the mechanism is identical and worth copying if a card crop ever cuts
+   * a subject badly.
+   */
+  .card-media img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /* The row gap already supplies `card-gap`; this tops it up to the block-axis
+     media gap. Written as the subtraction rather than as 8, so the relationship
+     survives either token moving. */
+  .card-inner:has(.card-media) .card-body {
+    margin-block-start: calc(var(--card-media-block) - var(--card-gap));
+  }
+
+  /* ── Horizontal: from 32rem of the CARD's own width ──────────────────────── */
+  /*
+   * `:has(.card-media)` guards the two-column form, so a card with no image stays
+   * single-column instead of reserving an empty 145px track. Every insight has a
+   * hero today, which is exactly why the guard is worth having — nothing would
+   * reveal the gap until the first one without.
+   */
+  @container (inline-size >= 32rem) {
+    .card-inner:has(.card-media) {
+      grid-template-columns: 145px 1fr;
+      column-gap: var(--card-media);
+    }
+
+    .card-inner:has(.card-media) .card-title {
+      grid-column: 1 / -1;
+    }
+
+    .card-inner:has(.card-media) .card-media {
+      /* 145 x 9/8 = 128.9, the board's 129. A squarer crop than the vertical card's,
+         because a 145px-wide 16/9 box would be 82px tall and read as a strip. */
+      aspect-ratio: 9 / 8;
+    }
+
+    /* Media and body share row 2, so the row gap already separates them from the
+       title and nothing extra is wanted above the body. */
+    .card-inner:has(.card-media) .card-body {
+      margin-block-start: 0;
+    }
+  }
+</style>

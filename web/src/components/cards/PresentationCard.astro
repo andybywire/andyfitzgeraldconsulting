@@ -1,0 +1,376 @@
+---
+/**
+ * The presentation card — the Presentations index, and the Presentation branch's only
+ * card.
+ *
+ * ── THE BOX IS THE SIGNAL, AND IT IS DECIDED BY CONTENT ──────────────────────
+ *
+ * A presentation WITH a poster is boxed — surface, hairline border, `radius-2`. One
+ * without sits directly on the page ground with no boundary. DESIGN.md's Elevation
+ * section states the principle: boxed cards read as richer and more worth clicking,
+ * which is exactly the claim a poster makes.
+ *
+ * THAT IS A THIRD, DISTINCT BOX RULE, which is why this is its own component rather
+ * than an ArticleCard variant. The three differ in KIND, not in degree:
+ *
+ *   ArticleCard        boxed always                           unconditional
+ *   NoteCard           boxed below md, bare from md           viewport-conditional
+ *   PresentationCard   boxed below md, poster-conditional     both
+ *                      from md
+ *
+ * The third rule gained its viewport half on 2026-09-11: the content rule distinguishes
+ * cards from each OTHER, which means nothing in a single column, where an unboxed card
+ * reads as unstyled rather than as the quieter of two treatments. See the box rule.
+ *
+ * A shared component expressing all three would need a `variant` prop, which is the
+ * thing ArticleCard's own header argues against — "makes every consumer restate a
+ * breakpoint the card can measure for itself, and can be wired up wrong."
+ *
+ * ── THE BORDER IS DECLARED TRANSPARENT, NOT ABSENT ───────────────────────────
+ *
+ * NoteCard's reasoning, and it applies here for a second reason. A border appearing
+ * from nothing on hover would shift the contents 1px — but more importantly, THE BOARD
+ * DRAWS BOTH VARIANTS WITH THE SAME 16px PADDING (verified: the boxed card's inner
+ * frame sits at x=16,y=16 and so does the unboxed one's). So an unboxed card is the
+ * same box with its border and fill turned off, and its TEXT therefore lands on the
+ * same vertical line as a boxed neighbour's. DESIGN.md: "on an index an unboxed card's
+ * hover should match the boxed cards beside it, not exceed them."
+ *
+ * `:has(.card-media)` rather than a `boxed` prop, mirroring ArticleCard's use of the
+ * same selector: the poster either rendered or it did not, so the box cannot fall out
+ * of step with what is on screen the way a separately-passed boolean could.
+ *
+ * ── GEOMETRY, READ OFF THE BOARD (767:1922 boxed, 875:4218 bare) ─────────────
+ *
+ *   boxed  316x362  pad 16, title h58(2ln), 8, media 284x160, 16, eyebrow h24,
+ *                   8, venue h27, 8, tags h21
+ *   bare   316x128  pad 16, title h29(1ln), 8, eyebrow h24, 8, venue h27
+ *
+ * So the gap is `card-gap` (8) EVERYWHERE except after the media, which is 16. That is
+ * the identical relationship ArticleCard encodes, and it is expressed the same way —
+ * as the subtraction, so it survives either token moving. 284 x 9/16 = 159.75, the
+ * board's 160, confirming the media is 16/9 as on the article card.
+ *
+ * ── NO CONTAINER QUERY, DELIBERATELY ─────────────────────────────────────────
+ *
+ * ArticleCard carries one because it is genuinely rendered at two widths — 571 on the
+ * home page and 316 in the masonry. This card has ONE consumer at ONE width, so a
+ * horizontal form would be a layout nothing asks for, and the `.card-inner` wrapper
+ * that a container query forces would exist to serve it. Flat until a second width
+ * exists; ArticleCard's header records what to do when one does.
+ */
+import SanityImage from '../SanityImage.astro'
+import Eyebrow from '../Eyebrow.astro'
+import VisuallyHidden from '../VisuallyHidden.astro'
+import type {SanityImageSource} from '../../sanity/image'
+
+/* `CardTag` moved to `presentationCard.ts` when the tag derivation did — a type belongs
+   with whatever constructs it, and both consumers now build tags through that helper.
+   Re-exported so the existing import path keeps working; see the note on
+   `.visually-hidden` below for what `hint` is for. */
+export type {CardTag} from './presentationCard'
+import type {CardTag} from './presentationCard'
+
+interface Props {
+  href: string
+  title: string
+  genre?: string | null
+  date?: string | null
+  /** Already composed by `formatLocation` — "Seattle, WA", "Online". */
+  venue?: string | null
+  poster?: SanityImageSource | null
+  tags?: CardTag[]
+  /** Heading level, so a card can sit under whatever precedes it. */
+  as?: 'h2' | 'h3' | 'h4'
+  class?: string
+  /* Forwarded to the root — the index's `data-genre` / `data-topics`, and invisibly
+     the parent's scope attribute, which is how a page styles this at all. */
+  [key: string]: unknown
+}
+
+const {
+  href,
+  title,
+  genre,
+  date,
+  venue,
+  poster,
+  tags = [],
+  as: Tag = 'h3',
+  class: className,
+  ...rest
+}: Props = Astro.props
+---
+
+<article class:list={['preso-card', className]} {...rest}>
+  {
+    /* The anchor is on the title; the whole card is the target, via a stretched
+       pseudo-element. Keeps the accessible name to the title rather than announcing
+       title, eyebrow, venue and every tag as one link. See ArticleCard for the full
+       note — including the cost, which is that a second link in here would need
+       lifting with `z-index`. This card has none. */
+  }
+  <Tag class="card-title"><a href={href}>{title}</a></Tag>
+
+  {
+    poster?.asset && (
+      <div class="card-media">
+        {/* Decorative: the title sits directly above it. Same call ArticleCard makes,
+            and it is why no `altText` is projected for the card's poster. */}
+        <SanityImage image={poster} aspect="16/9" alt="" />
+      </div>
+    )
+  }
+
+  <div class="card-body">
+    <Eyebrow genre={genre} date={date} />
+    {venue && <p class="card-venue">{venue}</p>}
+
+    {
+      /*
+      ── A LIST, AND `role="list"` IS NOT BELT-AND-BRACES ───────────────────
+      These are discrete markers, so a list is the honest element — but
+      `list-style: none` drops list semantics in Safari, which is why the role is
+      restated. The facet chip row in the Insights index carries the same pair for
+      the same reason.
+
+      NOT LINKS AND NOT BUTTONS. Every one of these is DERIVED — the query knows
+      whether a transcript exists, not an editor — and they are informative rather
+      than filterable. DESIGN.md's `tag` role is explicitly "a marker, deliberately
+      not a control. No hover, pressed or focus", which is why this does not reach
+      for <Chip>: that component is the `filter-chip` role and brings `:hover` and
+      `:active` states this must not have.
+    */
+    }
+    {
+      tags.length > 0 && (
+        <ul class="card-tags" role="list">
+          {tags.map((tag) => (
+            <li class="tag">
+              {tag.label}
+              {/*
+                ── ONLY `+N` CARRIES ONE, AND THAT IS THE RULE ──────────────
+                "transcript" and "audio" say what they are. "+2" does not — it means
+                "delivered at two further venues", which is unguessable from two
+                characters whether you can see it or not. The visible form stays terse
+                because the board draws it terse and it sits directly beside the venue
+                it counts from; the expansion makes it survive being read aloud out of
+                that context.
+              */}
+              {tag.hint && <VisuallyHidden>{tag.hint}</VisuallyHidden>}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  /* ── The box ────────────────────────────────────────────────────────────── */
+  .preso-card {
+    display: grid;
+    row-gap: var(--card-gap);
+
+    /* `start`, not the default. A grid container's `align-content` is `normal`, which
+       behaves as `stretch`, so a card shorter than its row grew its GAPS rather than
+       leaving the slack at the bottom. Both other cards carry this and record the
+       same finding. */
+    align-content: start;
+
+    /* Containing block for the full-card link overlay. */
+    position: relative;
+
+    /* Padding is on BOTH variants — see the header. The border is always DECLARED so
+       that turning it off below changes a colour rather than removing a property; a
+       border that came and went would shift the contents 1px. */
+    padding: var(--card-pad);
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+
+    /* Eased at the 0.15s affordance end of DESIGN.md's convention, on the resting
+       rule so it eases both in and out. */
+    transition:
+      border-color 0.15s,
+      background-color 0.15s,
+      box-shadow 0.15s;
+  }
+
+  /*
+   * ── EVERY CARD IS BOXED IN ONE COLUMN; THE POSTER RULE STARTS AT `md` ───────
+   *
+   * The content rule — boxed iff it has a poster — is about DISTINGUISHING cards from
+   * each other, and that only means something when there are cards side by side to
+   * compare. In one column there is no row to differ from: an unboxed card has nothing
+   * bounding it and nothing beside it, so it reads as unstyled rather than as the
+   * quieter of two treatments. Reported from the phone view of both the index masonry
+   * and the related band (Andy, 2026-09-11).
+   *
+   * So the base state is now BOXED and this rule takes the box away, rather than the
+   * other way round. That ordering matters: it makes single column the fallback, which
+   * is the state a container query cannot fail into.
+   *
+   * `--breakpoint-md` is the same switch both grids use to go from one column to two,
+   * so the card's treatment and the column count change together by construction rather
+   * than by two numbers being kept in step. It is also exactly what NoteCard does,
+   * inverted — that card is boxed below `md` and bare above it unconditionally, where
+   * this one is boxed below `md` and content-conditional above.
+   */
+  @container style(--breakpoint-md: true) {
+    .preso-card:not(:has(.card-media)) {
+      border-color: transparent;
+      background-color: transparent;
+    }
+  }
+
+  /*
+   * Hover resolves BOTH variants to the same treatment, which is the point: a bare
+   * card gains the box, a boxed one already has it, and both take the accent
+   * highlight. So the hover affordance is uniform across a row even though the
+   * resting state deliberately is not. NoteCard does exactly this below `md`.
+   *
+   * The highlight is the hard 2px accent offset with no blur and no spread — see
+   * DESIGN.md → Elevation & Depth for why that is not a breach of "no soft shadows".
+   * No spread means it inherits `radius-2` and tapers at the corners.
+   */
+  .preso-card:hover,
+  .preso-card:focus-within {
+    border-color: var(--color-border);
+    background-color: var(--color-surface);
+    box-shadow: 2px 2px 0 0 var(--color-accent);
+  }
+
+  /* ── Type ───────────────────────────────────────────────────────────────── */
+  /*
+   * The card owns its type; `as` owns only the outline level. Without this, the index
+   * passing `as="h2"` would draw the title at h2's size and tracking, which is not
+   * what the board draws (58px for two lines = 29.25 each, which is `font-size-3` at
+   * 1.3).
+   *
+   * THIS IS THE THIRD HOME FOR THE h3 ROLE — ArticleCard and NoteCard are the others,
+   * and the article page's rail restates it too. ArticleCard's header nominates the
+   * set; this adds to it rather than changing it. Promoting the shared card chrome is
+   * queued as its own change so it does not ride along with a new page.
+   */
+  .card-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+    letter-spacing: normal;
+  }
+
+  /* `text-title` and no underline — DESIGN.md: a title in its own block at heading
+     size is identified as a link by position. */
+  .card-title a {
+    color: var(--color-text-title);
+    text-decoration: none;
+  }
+
+  .card-title a:hover {
+    color: var(--color-link-hover);
+  }
+
+  .card-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ── Media ──────────────────────────────────────────────────────────────── */
+  .card-media {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--radius-1);
+  }
+
+  /* base.css sets `height: auto` on every image, which is right for images that size
+     themselves and wrong here, where the box is fixed by the wrapper's ratio. */
+  .card-media img {
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  /* The row gap already supplies `card-gap`; this tops it up to the board's 16 below
+     the media. Written as the subtraction so the relationship survives either token
+     moving — ArticleCard encodes the identical rule. */
+  .preso-card:has(.card-media) .card-body {
+    margin-block-start: calc(var(--card-media-block) - var(--card-gap));
+  }
+
+  /* ── Body ───────────────────────────────────────────────────────────────── */
+  /*
+   * The body's own children sit at `card-gap`, matching the board's 8 between the
+   * eyebrow, the venue and the tag row. A nested grid rather than margins so the
+   * three are spaced by one declaration.
+   */
+  .card-body {
+    display: grid;
+    row-gap: var(--card-gap);
+    align-content: start;
+  }
+
+  /*
+   * `body-compact` — the same size step as body at 1.5 rather than 1.8, which is the
+   * role's stated purpose ("a column too narrow for `body`"). The board draws this
+   * line 27 tall, which is `font-size-2` at 1.5 exactly, and in the PROSE face rather
+   * than Lato: it is content about the delivery, not apparatus about the card, so it
+   * reads at body colour rather than `text-muted`. That is the visible difference from
+   * the eyebrow directly above it.
+   */
+  .card-venue {
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+  }
+
+  /* ── Tags ───────────────────────────────────────────────────────────────── */
+  .card-tags {
+    /* base.css keeps the UA list indent for prose; a marker row is not prose. */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    display: flex;
+    flex-wrap: wrap;
+    /* The board sets three tags 8 apart in both axes. */
+    gap: var(--space-1);
+  }
+
+  /*
+   * DESIGN.md's `tag` role: `surface-muted` fill, `text-muted`, Lato 700 at the 14px
+   * step, `radius-1`, and NO BORDER — a tag is a marker, not a control, so it takes
+   * neither the card hairline nor the chip's control border.
+   *
+   * ── THE PADDING IS INLINE-ONLY, AND THAT IS MEASURED ───────────────────────
+   *
+   * DESIGN.md gives `padding: space-1` as a single value, which read as all four sides
+   * would make the tag 21 + 8 + 8 = 37 tall. THE BOARD DRAWS IT 21, which is the 14px
+   * type at 1.5 — the line box exactly, so the block padding is zero.
+   *
+   * This is the same gap the `filter-chip` had: DESIGN.md carried its fill, border,
+   * radius and typography but no padding or height, and `3px 12px` was derived by
+   * measuring the board and then recorded back into DESIGN.md. This wants the same
+   * treatment — worth adding to DESIGN.md → Filter chips as a sibling entry rather
+   * than leaving the next consumer to re-measure 767:1922.
+   *
+   * Widths corroborate: at 8px inline padding "audio" computes to 53 against the
+   * board's 52, and "+1" to 31 against 33.
+   */
+  .tag {
+    display: inline-flex;
+    align-items: baseline;
+
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-1);
+    background-color: var(--color-surface-muted);
+
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-0);
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  /* The `+N` tag's expansion is <VisuallyHidden>, which owns those declarations and
+     the reasoning for each of them. Nothing about hiding it lives here. */
+</style>

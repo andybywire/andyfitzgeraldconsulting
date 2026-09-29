@@ -1,52 +1,35 @@
 {
-  "name": "af-consulting",
+  "name": "studio",
+  "version": "3.0.0",
+  "description": "Sanity Studio for Andy Fitzgerald Consulting, LLC — the production-26 dataset",
   "private": true,
-  "version": "1.0.0",
   "type": "module",
-  "main": "package.json",
-  "license": "UNLICENSED",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
-    "dev": "sanity dev --port=3000",
+    "dev": "sanity dev --port=3030",
     "build": "sanity build",
     "deploy": "sanity deploy",
-    "deploy-graphql": "sanity graphql deploy",
-    "lint": "eslint .",
+    "typegen": "sanity schemas extract --force && sanity typegen generate",
     "typecheck": "tsc --noEmit"
   },
-  "keywords": [
-    "sanity",
-    "sanity-studio",
-    "cms"
-  ],
+  "author": "Andy Fitzgerald",
+  "license": "UNLICENSED",
   "dependencies": {
-    "@sanity/code-input": "^7.3.2",
-    "@sanity/vision": "^6.6.0",
+    "@sanity/code-input": "^7.3.5",
+    "@sanity/vision": "^6.10.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-icons": "^5.7.0",
-    "sanity": "^6.6.0",
-    "sanity-plugin-mermaid-content-model": "^1.0.0",
-    "sanity-plugin-taxonomy-manager": "^5.0.0",
-    "styled-components": "^6.4.4"
+    "sanity": "^6.9.2",
+    "sanity-plugin-mermaid-content-model": "^2.0.0",
+    "sanity-plugin-taxonomy-manager": "^6.0.0",
+    "styled-components": "^6.5.3"
   },
   "devDependencies": {
-    "@sanity/eslint-config-studio": "^6.0.0",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "csv-parser": "^3.2.1",
-    "dotenv": "^17.4.2",
-    "eslint": "^9.39.5",
-    "globals": "^14.0.0",
-    "prettier": "^3.9.6",
-    "typescript": "^5.9.3"
-  },
-  "prettier": {
-    "semi": false,
-    "printWidth": 100,
-    "bracketSpacing": false,
-    "singleQuote": true
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "typescript": "^6.0.3"
   }
 }

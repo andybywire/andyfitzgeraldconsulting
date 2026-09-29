@@ -1,0 +1,259 @@
+---
+/**
+ * A page's title, its optional lead, and an optional paragraph of intro copy.
+ *
+ * ── EXTRACTED ON ITS SECOND CONSUMER, WHICH IS THE PROJECT'S RULE ────────────
+ *
+ * This lived inline in `insights/index.astro`, whose comment named the condition for
+ * moving it: "Reviews, Presentations and Home all want exactly this pair. Whichever
+ * lands first is the second consumer, and that is when it moves." Reviews landed first.
+ *
+ * DESIGN.md describes the page header as "one component with an optional lead". The
+ * third slot is the amendment Reviews required and generic pages will reuse: a short
+ * paragraph of body copy under the lead, from the singleton's `bodyText`.
+ *
+ * ── THREE ROLES, THREE SIZES, AND THE MIDDLE ONE IS THE POINT ────────────────
+ *
+ *   title   h1, from base.css
+ *   lede    DESIGN.md's `lead` role — `font-size-3`, leading 1.6, `text-lead`
+ *   body    ordinary body copy, inheriting everything
+ *
+ * `lead` is component-scoped rather than global by base.css's own statement of scope:
+ * it owns h1-h4, body prose, links, nav, blockquote, figure, icons and the rhythm
+ * mechanism, and "every other typographic role in DESIGN.md (display, lead, small,
+ * label, …) is component-scoped and belongs to the component that owns it." The page
+ * header owns the lead. This is the component that comment anticipated.
+ *
+ * LEADING 1.6 IS THE ROLE, NOT THE SIZE. DESIGN.md indexes leading by MEASURE rather
+ * than by size step — 1.5 at ~29-33 characters, 1.6 at ~54, 1.8 at ~67 — and a lead
+ * sits in the middle register. `body`'s 1.8 here would be leading tuned for a line a
+ * third longer than this one runs.
+ *
+ * ── `.page-intro` EXISTS SO A RAIL CAN START AT THE LEAD ────────────────────
+ *
+ * The lead and the body are wrapped together rather than left as two siblings of the
+ * h1, and the reason is a page with a rail: "On This Page" lines up with the top of the
+ * LEAD, not the top of the h1 (Andy, 2026-09-03). The board draws exactly that — the
+ * title sits above a two-column region, and the rail's top edge is level with the first
+ * line of the lead, 64px lower.
+ *
+ * A rail is a sibling of this component, so it can only align to something this
+ * component makes addressable. With the three children flat, the header is ONE grid item
+ * and the rail's only choice is the top of the row — the h1. With the intro wrapped, a
+ * page can set `display: contents` here and the h1 and the intro become two grid ROWS,
+ * which the rail can then start from.
+ *
+ * The page opts in; nothing here does it. Insights renders no rail and stays a normal
+ * block, where these same margins produce the same spacing in ordinary flow. See
+ * reviews.astro for the opted-in half, which also has to zero the grid's row gap.
+ *
+ * The cost of `display: contents` on a <header> is that the element leaves the
+ * accessibility tree. Inside <main> a <header> maps to `generic`, so nothing named or
+ * navigable is lost — the h1 keeps its level and the outline is unchanged. The historic
+ * `display: contents` bug bit elements whose ROLE carried meaning (lists, tables); there
+ * is no such role here.
+ *
+ * ── PLACEMENT IS THE PAGE'S DECISION, APPLIED FROM HERE ─────────────────────
+ *
+ * Which columns a header spans is a fact about the PAGE: Insights takes `--col-full`
+ * because it has no rail to leave room for, Reviews takes `--col-main` because it does.
+ * So the page decides — but under `display: contents` the page cannot APPLY it, and that
+ * distinction is the whole reason this looks the way it does.
+ *
+ * A transparent header makes the h1 and the intro the grid items, and they are this
+ * component's descendants. Astro's scope attribute reaches a component's ROOT and never
+ * its descendants, so a page rule like `.page-header h1 { grid-column: … }` compiles,
+ * ships, and matches nothing. The first attempt did exactly that: both children fell to
+ * auto-placement, landed in columns 1 and 2, and stretched those tracks to their
+ * content — a 12-column grid whose first column was 160px wide.
+ *
+ * `--page-header-span` is the way across the boundary. Custom properties inherit, so the
+ * page sets it on the root it CAN reach and the value arrives at the children this
+ * component styles. The decision stays with the page; only the application moves here.
+ *
+ * The default is `--col-main`, which is what a header beside a rail wants. A page with
+ * no rail overrides it — or, like Insights, never goes transparent at all and places the
+ * header's own box instead, where these rules are inert.
+ *
+ * ── `{...rest}` IS WHAT MAKES THAT WORK, AND IT IS NOT OPTIONAL ──────────────
+ *
+ * A page's scoped rule only matches an element carrying the PAGE's scope attribute.
+ * Astro hands that attribute to a child component as an ordinary PROP; it does not
+ * apply it to the child's root by itself. So a component that does not forward its rest
+ * props silently cannot be styled by its parent — the rule compiles, ships, and matches
+ * nothing.
+ *
+ * That is exactly what happened in the first draft of this file: the extraction moved
+ * `.page-header` off the Insights scope id and its `grid-column: var(--col-full)` went
+ * dead, with the built CSS still containing the rule. Caught by diffing the built HTML,
+ * which is the only place it is visible.
+ *
+ * The spread is the house pattern for this — Band, Grid, Chip, Button, the cards and
+ * seven more all carry it.
+ */
+import Prose from './prose/Prose.astro'
+import type {TypedObject} from 'astro-portabletext/types'
+import type {HTMLAttributes} from 'astro/types'
+
+interface Props extends HTMLAttributes<'header'> {
+  /** The h1. Required — a page header with no title is not one. */
+  title: string
+  /** DESIGN.md's `lead`, from a singleton's `heroCopy`. One paragraph; see below. */
+  lede?: TypedObject[] | null
+  /** A short paragraph of intro copy under the lead, from a singleton's `bodyText`. */
+  body?: TypedObject[] | null
+}
+
+const {title, lede, body, class: className, ...rest}: Props = Astro.props
+---
+
+{
+  /*
+    A <div> around each Portable Text array rather than a bare <Prose>: the component is
+    deliberately TRANSPARENT — it emits a flat sequence of blocks and no container — so
+    the paragraphs would otherwise become children of <header> with nothing to scope
+    their role to.
+  */
+}
+<header class:list={['page-header', className]} {...rest}>
+  <h1>{title}</h1>
+  {
+    (lede || body) && (
+      <div class="page-intro">
+        {lede && (
+          <div class="page-lede">
+            <Prose value={lede} />
+          </div>
+        )}
+        {body && (
+          <div class="page-body">
+            <Prose value={body} />
+          </div>
+        )}
+      </div>
+    )
+  }
+</header>
+
+<style>
+  /*
+   * ── DESIGN.md's `lead` ROLE ────────────────────────────────────────────────
+   *
+   * Noto Serif at the `font-size-3` step, weight 400, in `text-lead`. Family and weight
+   * are inherited from body rather than restated: `--font-prose` at 400 is already what
+   * a <p> gets, so declaring them again would be two more places to drift.
+   */
+  .page-lede {
+    color: var(--color-text-lead);
+    font-size: var(--font-size-3);
+    line-height: 1.6;
+
+    /*
+     * THE CAP IS WHAT MAKES A FULL-WIDTH HEADER SAFE. DESIGN.md's Measure section
+     * specifies `66ch` as exactly this — "the cap is a safety net for anything wider"
+     * than the column span provides. Measured at 1440 on the Insights lede: 996px is 79
+     * characters of capacity, past the 60-75 target, where 66ch gives 830px and the same
+     * two lines. It costs that string nothing and stops the next, longer one running
+     * away. Inert at `--col-main`, where the column is already the narrower constraint.
+     *
+     * `ch` on the wrapper rather than the paragraph because the two share a font and a
+     * size, so it resolves identically — and it keeps the constraint on the element that
+     * owns the role rather than on whatever <Prose> happens to emit.
+     *
+     * Leading stays 1.6. At 66ch capacity this sits between the ramp's 1.6 (~54
+     * characters) and 1.8 (~67) rungs, and the longest line actually renders at 60 — so
+     * the role's own value is still the closer of the two.
+     */
+    max-width: 66ch;
+  }
+
+  /*
+   * ── THE BODY SLOT TAKES NO TYPE STYLING AT ALL ─────────────────────────────
+   *
+   * Only the measure cap, for the same reason the lead has one and by the same rule.
+   * Everything else — family, size, colour, leading — is what a <p> already gets from
+   * base.css, and restating any of it here would be a second place for body copy to be
+   * defined. The slot exists to be POSITIONED, not to be styled.
+   */
+  .page-body {
+    max-width: 66ch;
+  }
+
+  /*
+   * ── SPACING, AND WHY IT IS NOT THE `.detail` RAMP ──────────────────────────
+   *
+   * `.detail`'s sibling-margin ramp exists because Portable Text emits a flat sequence
+   * with no section wrappers, so there is nothing to put a `gap` on. Here there are
+   * real wrappers, and these two rules say what the ramp would have said anyway:
+   *
+   *   h1 -> intro    `heading-close`, because the lead is bound to the title the way a
+   *                  paragraph is bound to a heading. base.css's ramp covers h2-h4 and
+   *                  leaves the h1 out, which is why this is stated rather than
+   *                  inherited. Settled on the article page.
+   *   lead -> body   `rhythm-paragraph`, the base rule for any two adjacent blocks.
+   *
+   * MARGINS RATHER THAN A `gap` ON THE HEADER, and that is now load-bearing rather than
+   * stylistic: under `display: contents` (see the note above) there is no header box for
+   * a `gap` to belong to, and the two children become grid items whose spacing has to
+   * survive as margins. The same two rules produce the same two numbers in both modes.
+   */
+  /* Inert while the header is an ordinary block — a non-grid-item ignores
+     `grid-column` — and load-bearing the moment a page makes it transparent. */
+  .page-header > h1,
+  .page-intro {
+    grid-column: var(--page-header-span, var(--col-main));
+  }
+
+  .page-header h1 + .page-intro {
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  .page-lede + .page-body {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  /*
+   * ── AND BETWEEN THE BODY'S OWN PARAGRAPHS, WHICH NOTHING ELSE COVERS ───────
+   *
+   * `.page-body` sits inside <header>, not inside `.detail`, so the rhythm ramp never
+   * reaches it — two paragraphs here would butt together with no space at all. Reviews
+   * passes a single block, so this rule has no visible consumer today; it is written
+   * anyway because the failure is silent and arrives with whichever page first authors
+   * a two-paragraph intro.
+   *
+   * NOT the same call as the lead's missing `p + p` above. That absence is deliberate,
+   * because a lead must be one paragraph and the collision is the signal. A body may
+   * legitimately be several, so silence there would be a latent bug rather than a
+   * signal. `--rhythm-paragraph` between two adjacent blocks is the rhythm ramp's own
+   * base rule, so this restates a specified value rather than inferring one.
+   *
+   * `:global()` because <Prose> is a child component: a page or parent scope attribute
+   * reaches a component's ROOT, never its descendants, and these <p>s are Prose's.
+   */
+  .page-body :global(p + p) {
+    margin-top: var(--rhythm-paragraph);
+  }
+
+  /*
+   * ── A LEAD IS ONE PARAGRAPH, AND NOTHING HERE SPACES A SECOND ──────────────
+   *
+   * A draft carried `.page-lede :global(p + p)` giving a second paragraph
+   * `rhythm-paragraph`, on the grounds that `heroCopy` is an array and About currently
+   * holds two blocks. REMOVED DELIBERATELY (Andy, 2026-08-28): the second About
+   * paragraph is body copy that reads as body copy on the live site only because it was
+   * styled to, and it moves into `bodyText` when that page is built — which is now
+   * exactly what `.page-body` is for.
+   *
+   * The rule is not merely unnecessary — it is the mechanism by which the drift
+   * happened. Styling that makes a second paragraph look intentional is what stops
+   * anyone noticing the content model has been worked around. Without it a second block
+   * butts against the first with no space, which is visibly wrong and is the signal we
+   * want.
+   *
+   * `.page-body` is NOT under the same rule, and gets its own `p + p` above. It is body
+   * copy by definition, so a multi-paragraph one is legitimate there.
+   *
+   * The right home for the lead's invariant is `validation: Rule.max(1)` on `heroCopy`
+   * in the Studio, so the editor cannot create the state at all. That is schema work.
+   */
+</style>

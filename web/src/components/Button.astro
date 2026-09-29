@@ -1,0 +1,193 @@
+---
+/**
+ * DESIGN.md's button, in its two variants.
+ *
+ * ── ONE COMPONENT, BECAUSE THE GHOST IS AN INVERSION AND NOT A SECOND BUTTON ──
+ *
+ * DESIGN.md frames them that way: "on a band the ghost cannot lighten while keeping
+ * its label legible, so it inverts: outline -> solid white -> gray." Same typography,
+ * same radius, same box; only the color roles differ, and they differ by swapping
+ * which side of the pair is the fill. Two components would be two places to keep that
+ * in step.
+ *
+ * ── ELEMENT FOLLOWS DESTINATION ───────────────────────────────────────────────
+ *
+ * An `href` makes this an anchor, its absence a button. Both consumers today are
+ * navigations — "Learn more" to /consulting, "Subscribe via RSS" to the feed — so both
+ * render anchors, and middle-click and open-in-new-tab work as they should. This is the
+ * same reasoning docs/urls-and-filtering.md applies to the facet chips: a control with a
+ * destination is a link, and a control that only acts is a button.
+ */
+interface Props {
+  /** Present -> renders an <a>. Absent -> renders a <button type="button">. */
+  href?: string
+  /** `ghost` is the accent-band inversion. See the style block. */
+  variant?: 'primary' | 'ghost'
+  class?: string
+  [key: string]: unknown
+}
+
+const {href, variant = 'primary', class: className, ...rest}: Props = Astro.props
+const Tag = href ? 'a' : 'button'
+---
+
+<Tag
+  class:list={['button', className]}
+  data-variant={variant}
+  href={href}
+  type={href ? undefined : 'button'}
+  {...rest}
+>
+  <slot />
+</Tag>
+
+<style>
+  /*
+   * ── THE BOX, MEASURED OFF THE BOARD ─────────────────────────────────────────
+   *
+   * DESIGN.md specifies fill, text, typography and radius for both variants and no box
+   * at all — the same gap the filter chip had. From the board's `button` component:
+   *
+   *   231 x 43, label CENTERED, 8px above and below a 27px line box.
+   *
+   * The label is centered in a fixed width rather than padded: "Learn more" (90px) and
+   * "Subscribe via RSS" (138px) both sit in 231, with 70.5 and 46.5 either side. So the
+   * horizontal space is a consequence of the width, not a padding value to read off.
+   *
+   * `min-width` RATHER THAN `width`, which is the one departure. 231px is `span-3`, and
+   * a fixed pixel width would clip the first label longer than it — a real hazard for
+   * copy that comes from the CMS. This reproduces the board exactly for anything up to
+   * 183px of label and grows instead of breaking beyond it.
+   *
+   * ── 7px, NOT 8, AND THE BORDER IS WHY ───────────────────────────────────────
+   *
+   * The board draws 43 = 8 + 27 + 8 with the stroke drawn INSIDE the box, which Figma
+   * can do and CSS cannot. Here both variants carry the hairline — transparent on the
+   * primary, so the two are the same size — and it lands outside the padding box, so
+   * matching 43 means 7 + 27 + 7 + 2. Off the space scale by one pixel, for the same
+   * reason the chip's 3px is: a 27px line box cannot be centered in a 43px control by a
+   * scale built on multiples of 8.
+   */
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 231px;
+    padding: 7px var(--space-3);
+    border: var(--border-width-hairline) solid transparent;
+    border-radius: var(--radius-1);
+
+    /* The `nav` type role, which is what DESIGN.md's `typography: {typography.nav}`
+       points at. Declared rather than inherited: base.css scopes that role to `nav`,
+       and a button is not required to sit in one. */
+    font-family: var(--font-heading);
+    font-size: var(--font-size-2);
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: center;
+
+    /* An anchor arrives underlined from base.css's Links section. A button does not
+       arrive with the family or size. Between them these cover both elements, which is
+       the price of one component rendering either. */
+    text-decoration: none;
+    cursor: pointer;
+
+    /* DESIGN.md -> Transitions: affordances at 0.15s. */
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      color 0.15s;
+  }
+
+  /* ── Primary: on the page ground ─────────────────────────────────────────── */
+  /*
+   * "Interaction increases the fill's separation from the page" — 5.42 -> 7.77 -> 10.15
+   * on light. The direction is checked against the page, never against the previous
+   * step, which is why hover and pressed both darken rather than one lightening.
+   */
+  .button[data-variant='primary'] {
+    background-color: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+  }
+
+  /* `:hover` alone would leave the color to base.css's global `a:hover`, which moves an
+     anchor to `link-hover` — blue-500, the fill this button already has. */
+  .button[data-variant='primary']:hover {
+    background-color: var(--color-accent-hover);
+    color: var(--color-text-on-accent);
+  }
+
+  .button[data-variant='primary']:active {
+    background-color: var(--color-accent-pressed);
+    color: var(--color-text-on-accent);
+  }
+
+  /* ── Ghost: on an accent band ────────────────────────────────────────────── */
+  /*
+   * The resting fill is the ACCENT ITSELF, not `transparent`. It reads as transparent
+   * because the band behind it is the same color, and stating it explicitly is what
+   * makes the hover inversion a color change rather than an appearance from nothing.
+   *
+   * Inverting on hover is the point: on a band the ghost cannot lighten its fill and
+   * keep a legible label, so instead the fill becomes the surface and the label becomes
+   * the accent — the figure and ground trade places.
+   */
+  .button[data-variant='ghost'] {
+    background-color: var(--color-surface-accent);
+    border-color: var(--color-border-on-accent);
+    color: var(--color-text-on-accent);
+  }
+
+  .button[data-variant='ghost']:hover {
+    background-color: var(--color-surface);
+    color: var(--color-surface-accent);
+  }
+
+  .button[data-variant='ghost']:active {
+    background-color: var(--color-surface-pressed);
+    color: var(--color-accent-hover);
+  }
+
+  /*
+   * ── THE GHOST SWAPS THE FOCUS PAIR, AND HAS TO DO IT ITSELF ─────────────────
+   *
+   * <Band tone="accent"> deliberately does not re-point the focus ring — its own note
+   * explains both why it cannot (custom-property substitution is not sequential, so the
+   * two tokens would collapse into one color and the ring would disappear) and why it
+   * should not (which color contrasts "the control" depends on the control, not on the
+   * band).
+   *
+   * So the control swaps it. base.css's default is offset-then-ring, which on this band
+   * would paint a blue-500 ring onto a blue-500 ground — invisible on exactly the
+   * control that most needs it. Reversed, the inner ring reads against the button and
+   * the outer white one reads against the band. Same fix, same reasoning, as
+   * ThemeToggle's selected pill, which is the precedent.
+   */
+  .button[data-variant='ghost']:focus-visible {
+    box-shadow:
+      0 0 0 2px var(--color-focus-ring),
+      0 0 0 4px var(--color-focus-offset);
+  }
+
+  /*
+   * Specified in DESIGN.md for both variants, so it is built rather than left for the
+   * next consumer to re-derive. `aria-disabled` alongside `:disabled` because an anchor
+   * has no disabled attribute — the same split the filter chips landed on.
+   */
+  .button:is(:disabled, [aria-disabled='true']) {
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .button[data-variant='primary']:is(:disabled, [aria-disabled='true']) {
+    background-color: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
+  }
+
+  .button[data-variant='ghost']:is(:disabled, [aria-disabled='true']) {
+    background-color: var(--color-surface-accent);
+    border-color: var(--color-disabled-text);
+    color: var(--color-disabled-text);
+  }
+</style>

@@ -1,15 +1,82 @@
 import {defineCliConfig} from 'sanity/cli'
 
+/**
+ * ── THE DEPLOYED STUDIO IS A NEW APP AT afconsulting.sanity.studio ─────────────────────────
+ *
+ * No hyphen, and a NEW Studio app — not the one the 11ty era deployed (Andy, 2026-09-28). This
+ * file had no `studioHost` until the cutover, because the only deployed Studio then was the
+ * `production` one and any `sanity deploy` from here risked overwriting it.
+ *
+ * ── WHAT IS THERE, MEASURED 2026-09-28, AND THE TRAP IN IT ────────────────────────────────
+ *
+ * The project has ONE Studio app, `nzdgq8jqulaft9768ud9xxk9`. Its `appHost` is `af-consulting`,
+ * and it serves the 11ty-era Studio against the `production` dataset. Its dashboard TITLE is
+ * "afconsulting.sanity.studio", which looks like it claims this host. It does not: a title is a
+ * label, and no app's `appHost` is `afconsulting` — the host returned 404.
+ *
+ * So `deployment.appId` must NEVER be that id. With it, `sanity deploy` would replace the old
+ * Studio instead of creating this one. Without an `appId`, the first deploy CREATES a new app at
+ * `studioHost` and prints the id it issued; that id goes below, so later deploys update the same
+ * app instead of prompting.
+ *
+ * DONE 2026-09-28: the first deploy created `g1jo20nnopb0mtoyt45zqakx` on `afconsulting`, at
+ * 6.9.2 and not auto-updating. Confirmed through the management API, which also showed the old
+ * app's active deployment still dated 2026-08-05 — untouched.
+ *
+ * `afconsulting.sanity.studio` 302s to the Studio's route on www.sanity.io, as the old host does,
+ * and the redirect keeps the path — `/intent/edit/…` arrives intact, with the `default`
+ * workspace inserted. So stega's edit links can name this host. The deploy did NOT add it to
+ * CORS; the Studio runs on Sanity's own origin, so that is expected rather than missing.
+ *
+ * ── `autoUpdates: false`, PINNED FOR LAUNCH (Andy, 2026-09-28) ───────────────────────────
+ *
+ * The old app auto-updates, and this started out matching it. `sanity build` then showed what
+ * that would mean here: the deployed Studio would run `sanity` 6.16.0 while this workspace — and
+ * everything written against it — is on 6.9.2. Seven minors, arriving on the same day as the
+ * cutover, and the first run of 6.16 against this schema and its plugins would be in production.
+ * Some of this code is version-specific: the `sanity.videoAsset` workaround in sanity.config.ts
+ * was read out of 6.9.2's own bundle.
+ *
+ * So the Studio ships exactly the version in the lockfile. Upgrading is its own piece of work:
+ * bump `sanity`, test locally, redeploy — and turn auto-updates on then, if wanted.
+ *
+ * Presentation and stega's click-to-edit links point at this host — `PUBLIC_SANITY_STUDIO_URL`
+ * in the preview build.
+ */
 export default defineCliConfig({
   api: {
     projectId: '7v0qvet6',
-    dataset: 'production'
+    dataset: 'production-26',
   },
-  studioHost: 'af-consulting',
+
+  studioHost: 'afconsulting',
   deployment: {
-    autoUpdates: true,
-    appId: 'nzdgq8jqulaft9768ud9xxk9'
-  }
+    autoUpdates: false,
+    // Issued by the first `sanity deploy`. Never 'nzdgq8jqulaft9768ud9xxk9' — see above.
+    appId: 'g1jo20nnopb0mtoyt45zqakx',
+  },
+
+  /**
+   * TypeGen runs here because the schema is here, but writes into web, because that is where
+   * the queries are and where the types get consumed.
+   *
+   * `enabled: false` deliberately. With it on, `sanity dev` regenerates in watch mode, which makes
+   * a second writer of a committed file — and the dev server's prettier resolves differently from
+   * the CLI's, so the two produce identical types in different formats (827 lines against 901).
+   * Whichever ran last won, and `sanity.types.ts` churned by ~900 lines between them. One writer,
+   * invoked deliberately, is worth losing live regeneration for: run `pnpm typegen` from the root
+   * after changing the schema or a query. Phase 7 should add a CI check that regenerates and fails
+   * on a diff, which catches forgetting.
+   *
+   * No `--enforce-required-fields`: the preview environment reads drafts, and a draft can sit in
+   * an invalid state, so a field marked required in the schema can still arrive undefined. Types
+   * that promise otherwise would be lying exactly where it costs most.
+   */
+  typegen: {
+    enabled: false,
+    path: '../web/src/**/*.{ts,tsx,js,jsx,astro}',
+    schema: 'schema.json',
+    generates: '../web/sanity.types.ts',
+    overloadClientMethods: true,
+  },
 })
-
-

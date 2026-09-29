@@ -1,0 +1,98 @@
+---
+/**
+ * An image from Sanity, sized by the browser.
+ *
+ * ── `sizes="auto"` IS WHY THIS FILE HAS NO BREAKPOINTS IN IT ─────────────────
+ *
+ * `sizes` normally has to DECLARE how wide the image's box will be, which means
+ * restating the layout's breakpoints in an HTML attribute — one that cannot read a
+ * custom property, because it is resolved outside any element's style context.
+ * That would have put breakpoint values in a second place and left them to be kept
+ * in step by hand, which is the thing tokens.css exists to prevent.
+ *
+ * `sizes="auto"` removes the problem rather than managing it: the browser uses the
+ * image's ACTUAL LAID-OUT BOX, so the CSS stays the only description of the
+ * layout. There is nothing here to fall out of sync because there is nothing here.
+ *
+ * Two conditions come with it, and both are handled below:
+ *
+ *   - It is only valid on a LAZY image. The browser needs layout to have happened,
+ *     which cannot be true for something above the fold. `loading="eager"` here
+ *     therefore drops the `auto` rather than emitting a value that is silently
+ *     invalid — see the `sizes` default.
+ *   - A browser without support ignores it and uses the rest of the list, so the
+ *     `100vw` after it is the fallback. That over-fetches rather than breaking:
+ *     correct pixels, too many of them. Accepted deliberately (2026-08-25) —
+ *     revisit if a performance budget in phase 8 says otherwise. The cost is
+ *     smaller than it looks, because at 2x a 656px prose slot needs 1312 either
+ *     way; it only bites at 1x, at roughly 2x the bytes.
+ *
+ * ── LAYOUT SHIFT ─────────────────────────────────────────────────────────────
+ *
+ * `width` and `height` carry the intrinsic RATIO, not the display size, and that
+ * is what reserves the box before the file arrives. It works because base.css
+ * already pairs them with `height: auto` — the two halves have to be present
+ * together, and neither one alone does anything useful.
+ *
+ * A lazy image is exactly the case where this matters: it loads late, so an
+ * unreserved box collapses and then jolts the page when the bytes land.
+ *
+ * `decoding="async"` is unrelated to CLS — the box is already reserved — but it
+ * keeps a large decode off the main thread and out of the way of interaction.
+ *
+ * The remaining hole is a missing or malformed ref, where there are no dimensions
+ * to state. Rendering an <img> with no width or height would give a 0-height box
+ * and then a shift, so this renders NOTHING instead. A gap is not a jump.
+ */
+import {imageAttrs, type SanityImageSource} from '../sanity/image'
+
+interface Props {
+  image: SanityImageSource
+  /** Overrides the asset's own `altText`. Pass `''` for a decorative image. */
+  alt?: string
+  /** `'16/9'`. Absent keeps the source's shape — and leaves the hotspot inert. */
+  aspect?: string
+  sizes?: string
+  loading?: 'lazy' | 'eager'
+  class?: string
+  [key: string]: unknown
+}
+
+const {image, alt, aspect, sizes, loading = 'lazy', class: className, ...rest}: Props = Astro.props
+
+const attrs = imageAttrs(image, {aspect})
+
+/**
+ * `auto` only where it is legal. An eager image has no layout to measure yet, so
+ * `auto` would be dropped and the whole attribute would fall to its default of
+ * `100vw` anyway — this just says so out loud.
+ */
+const resolvedSizes = sizes ?? (loading === 'lazy' ? 'auto, 100vw' : '100vw')
+
+/**
+ * Empty alt is a CLAIM that an image is decorative, so it should be reached
+ * deliberately rather than by an author forgetting a field. Rendering still
+ * degrades to the safe value; the warning is what stops it being silent.
+ */
+const resolvedAlt = alt ?? image?.altText ?? ''
+if (alt === undefined && !image?.altText && attrs) {
+  console.warn(`[SanityImage] no altText on ${image?.asset?._ref} — rendering alt=""`)
+}
+---
+
+{
+  attrs && (
+    <img
+      src={attrs.src}
+      srcset={attrs.srcset}
+      sizes={resolvedSizes}
+      width={attrs.width}
+      height={attrs.height}
+      alt={resolvedAlt}
+      loading={loading}
+      decoding="async"
+      class:list={className}
+      {...rest}
+    />
+  )
+}

@@ -1,0 +1,582 @@
+---
+/**
+ * The phase 2 shell — NOT the real layout.
+ *
+ * It exists to load the global tier and set the theme before first paint. The
+ * grid, masthead, footer and band system are phase 3 and belong to whoever
+ * writes the layout mechanics; this file should stay boring.
+ *
+ * Both stylesheets are imported here rather than in a page, so the global tier
+ * loads exactly once for every route. Neither sheet imports the other: Rollup
+ * concatenates them into a single emitted asset, so the file split is source
+ * organization with no delivery cost.
+ */
+import {Font} from 'astro:assets'
+import {FEEDS, type FeedMeta} from '../lib/feeds'
+import {PUBLIC_SITE_MODE} from 'astro:env/client'
+import SearchResults from '../components/SearchResults.astro'
+import {SITE_FACTS, serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
+
+import '../styles/tokens.css'
+import '../styles/base.css'
+
+interface Props {
+  title: string
+  description?: string
+  /**
+   * Where this page's content was FIRST published, when that is somewhere else.
+   *
+   * Omitted by almost every page, and the default below is the important half: this layout
+   * emits a SELF-canonical for everything, which the site did not do at all before. That is
+   * not decoration. `/insights/?genre=note` and `/insights/` serve the same document, a
+   * shared link can carry any query string, and without a canonical each variant is a
+   * separate URL competing with the original.
+   */
+  canonical?: string
+  /**
+   * The page's own JSON-LD nodes, appended to the site graph below.
+   *
+   * A prop rather than each page emitting its own script, because two scripts are two
+   * disconnected graphs: an Article here referring to `#person` by `@id` only resolves
+   * if the Person is in the SAME `@graph`. Pages contribute nodes; this layout owns the
+   * one graph they all land in.
+   */
+  jsonLd?: GraphNode[]
+  /**
+   * Keep this page out of search engines.
+   *
+   * ── INTERNAL SEARCH RESULTS ARE THE CASE THIS EXISTS FOR ───────────────────
+   *
+   * `/search/` is one static file, and query strings do not create new ones — so every
+   * `?q=` a crawler follows is a distinct URL serving identical markup. That is the
+   * duplicate-content shape Google's own guidance names when it says to keep internal
+   * search results out of the index, and it is not hypothetical here: the empty state
+   * links into `/insights/`, so there are real paths for a crawler to arrive by.
+   *
+   * `rel="canonical"` was the alternative and is weaker: it is advisory where this is a
+   * directive, and it would argue for indexing a page whose whole content is a form.
+   *
+   * The SearchAction target is allowed to be noindex — the sitelinks searchbox names a
+   * URL that accepts a query, and says nothing about indexing it.
+   */
+  noindex?: boolean
+  /**
+   * Feeds this page should advertise, BEFORE the site-wide one.
+   *
+   * ── THE SITE-WIDE FEED IS NOT PASSED, IT IS ALWAYS EMITTED ──────────────────
+   *
+   * A prop that every page had to remember would be a prop most pages forgot, and the
+   * failure is silent: a visitor who hands their reader a URL with no
+   * `<link rel="alternate">` is simply told there is no feed. So `/feed.xml` is
+   * unconditional here and this prop only adds something MORE SPECIFIC in front of it.
+   *
+   * ── ORDER IS LOAD-BEARING ───────────────────────────────────────────────────
+   *
+   * Several readers take the first `rel="alternate"` they find rather than presenting a
+   * picker, so the most specific feed goes first: on /insights/ the reader that asks no
+   * question should end up subscribed to Insights, not to everything Andy publishes.
+   * Readers that do present a picker show both, which is why `title` is set on each.
+   */
+  feeds?: FeedMeta[]
+}
+
+const {title, description, canonical, jsonLd, noindex = false, feeds = []} = Astro.props
+
+/**
+ * `Astro.url.pathname`, never `Astro.url` itself.
+ *
+ * Under SSR preview `Astro.url` is the REQUEST url and carries whatever query string a
+ * visitor arrived with, so building from it would emit a canonical per `?q=` — the exact
+ * duplication the tag exists to collapse. `insights/[slug].astro` already makes this
+ * distinction when it builds its permalink; same reasoning, stated here because this is the
+ * one that runs on every page.
+ */
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).href
+
+/* `Astro.site` is set in astro.config for both modes, so this cannot be null in
+   practice — but typing says otherwise, and a graph whose `@id`s silently became
+   `undefined#person` would validate as a set of unrelated nodes rather than fail. */
+if (!Astro.site) throw new Error('[BaseLayout] `site` is unset in astro.config.mjs')
+const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
+
+/**
+ * ── ANALYTICS SHIPS IN A PRODUCTION BUILD AND NOWHERE ELSE ─────────────────
+ *
+ * BOTH halves of this condition are load-bearing, and the second is the one that is easy
+ * to leave out.
+ *
+ * `PUBLIC_SITE_MODE !== 'preview'` keeps the script off preview, where draft content and
+ * Andy's own editing would otherwise be counted as traffic.
+ *
+ * `import.meta.env.PROD` keeps it out of `pnpm dev`, and without it the local dev server
+ * WOULD report: `web/.env` sets `PUBLIC_SITE_MODE=production`, and astro.config reads
+ * anything that is not the string 'preview' as production. So mode alone says "this is a
+ * production site" on a laptop. PROD is false under `astro dev` and true under
+ * `astro build`, which is the distinction that actually matters here — the question is
+ * whether this output will be served to the public, not what it calls itself.
+ *
+ * The failure mode is quiet and only visible weeks later, as a slow drip of self-traffic
+ * in numbers meant to inform decisions.
+ */
+const analytics = import.meta.env.PROD && PUBLIC_SITE_MODE !== 'preview'
+
+/**
+ * ── THE SITE ID IS IN THE FILENAME, NOT IN AN ATTRIBUTE ────────────────────
+ *
+ * `pa-AnHKBDixooI1l5rz0moo0.js` IS the identifier for Andy's Plausible site. The older
+ * arrangement — `js/script.js` plus a `data-domain` attribute — still serves and still
+ * works, but the dashboard now issues a per-site script URL instead, and that is the form
+ * to keep: it is what Plausible generates, documents and will go on supporting.
+ *
+ * NOT A SECRET, and worth saying so because an opaque token in a URL looks like one. It
+ * ships in the HTML of every page by design; anyone can read it and the worst they can do
+ * is send Andy's dashboard junk pageviews. The credential that IS real is the Stats API
+ * token for the 404's popular-pages list — build-time only, and never a `PUBLIC_` variable,
+ * since those are inlined into the client bundle.
+ *
+ * Taken verbatim from the dashboard on 2026-09-13. If the two ever disagree, the dashboard
+ * is right — this is generated configuration rather than something to reason out.
+ */
+const PLAUSIBLE_SRC = 'https://plausible.io/js/pa-AnHKBDixooI1l5rz0moo0.js'
+
+/**
+ * The queue stub, verbatim from the same snippet.
+ *
+ * It defines `window.plausible` as a function that pushes its arguments onto `plausible.q`,
+ * so a custom event fired before the async script arrives is captured rather than thrown
+ * away, and then calls `plausible.init()` to start it. Both `||` guards matter: if the
+ * async script happens to win the race it has already defined the real implementations, and
+ * the stub then leaves them alone and calls the real `init`.
+ *
+ * `plausible.init()` takes no options here, which is where the defaults are chosen —
+ * outbound links, file downloads and form submissions all stay OFF. Those record what a
+ * visitor clicked TOWARD, a step from measuring pages toward measuring people, and that is
+ * the step choosing Plausible was avoiding.
+ */
+const PLAUSIBLE_INIT =
+  'window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},' +
+  'plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()'
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    {
+      /*
+      Theme and the `js` flag, both resolved BEFORE anything paints.
+
+      `is:inline` is load-bearing. Without it Astro treats this as a module and
+      bundles it, which gives it `defer` semantics — it would run after the
+      document is parsed, so the page would paint in the wrong theme and then
+      correct itself. That flash is the exact failure the three-block CSS in
+      tokens.css was written to avoid, and deferring this script reintroduces it.
+
+      ── `html.js` IS THE SAME MECHANISM, SPENT ON A SECOND JOB ─────────────────
+
+      A synchronous inline script runs while <head> is still parsing, so the class
+      is on the root element before <body> exists and before the first paint. Any
+      rule keyed on `html.js` is therefore true FROM that paint rather than applied
+      as a correction to it — which is the whole point: progressive enhancement
+      that changes layout has to be in place before anything is drawn, or it is a
+      visible shift instead of an enhancement.
+
+      A visitor without JavaScript never gets the class, so those rules never match
+      and they see the un-enhanced page. That is the arrangement the Insights index
+      needs to hide cards 25+ before paint while keeping ALL of them visible when
+      nothing can reveal them again — a control that cannot work should not exist,
+      and neither should content nobody can reach.
+
+      Global rather than per-page because it is about the DOCUMENT, not a feature:
+      search lands on every page in phase 4 and wants the same flag.
+
+      Only an explicit choice sets the attribute. Following the system means
+      leaving `data-theme` ABSENT, so the `prefers-color-scheme` block applies
+      untouched — which is why there is no `else` here.
+
+      try/catch because reading localStorage THROWS outright (not returns null)
+      when storage is blocked, e.g. Safari with cross-site tracking prevention
+      in some embedded contexts. An exception here would break the whole page.
+    */
+    }
+    <script is:inline>
+      /* First, and outside the try: a localStorage failure must not cost the page
+         its enhancement flag. */
+      document.documentElement.classList.add('js')
+
+      try {
+        const t = localStorage.getItem('theme')
+        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t
+      } catch {}
+
+      /* ── ARRIVING WITH A QUERY, FLAGGED BEFORE ANYTHING PAINTS ──────────────
+
+         `/search/` is ONE static file for every `?q=`, so the server cannot know a
+         query is coming and always renders the resting page — the invitation and the
+         Common Topics list. The controller then hides both and puts results in their
+         place, which is a visible flash of content nobody asked for: it happens on a
+         shared link, and on every Return from the masthead field.
+
+         This runs while <head> is still parsing, so a rule keyed on the attribute is
+         true at the FIRST paint rather than applied as a correction. Same mechanism as
+         `js` above, spent on a third job. The rule itself lives in search.astro, which
+         owns the two elements.
+
+         Deliberately not `URLSearchParams`: this is the one script on the critical path
+         before first paint, and a substring test is enough to ask "is there a q". */
+      if (/[?&]q=/.test(location.search)) document.documentElement.dataset.searchQuery = ''
+    </script>
+
+    {
+      /*
+      Each <Font> emits its family's @font-face rules — including the
+      metric-matched fallback faces Astro derives from the real font metrics —
+      plus the preload links, which carry `crossorigin` automatically. That
+      attribute is required even same-origin: the CSS font loader always fetches
+      in anonymous CORS mode, so a preload without it does not match and the
+      font downloads TWICE. Worth knowing, since nothing here says it any more.
+
+      Preload only what paints above the fold on essentially every page. The
+      Noto Serif filter excludes the ITALIC, which serves only <em> and
+      captions; Lato takes both weights because 700 sets headings and 400 sets
+      nav and masthead chrome. A preload is a mandatory high-priority fetch
+      competing with the HTML and CSS, so this list stays short.
+    */
+    }
+    <Font cssVariable="--font-prose" preload={[{style: 'normal'}]} />
+    <Font cssVariable="--font-heading" preload />
+
+    {
+      /*
+      ── THE FAVICON SET, AND WHY IT SHIPS FROM `public/` ──────────────────────
+
+      Carried over from the live site's `/icons/`, at the same paths. These ship
+      from `public/` rather than through Astro's asset pipeline, so the filenames
+      stay stable and unhashed — the opposite of the rule this build applies to
+      fonts, which moved OUT of `public/` in phase 2 precisely so they could be
+      hashed and served `immutable`.
+
+      The difference is who asks for the file. A font is fetched from a URL our own
+      CSS names, so hashing it costs nothing. An icon is fetched from a path a
+      browser, a feed reader or a link preview already assumes, and swapping the
+      asset in place is the entire maintenance story. Stable path wins, and it also
+      keeps these off the phase 6 301 map.
+
+      ── WHAT IS DELIBERATELY NOT CARRIED ACROSS ──────────────────────────────
+
+      The live site also emits `<link rel="manifest">` and two MASKABLE icons as
+      `rel="icon"`. Neither belongs here:
+
+        - a manifest is part of the service-worker decision, which CLAUDE.md defers
+          to phase 8. Shipping one now advertises install behaviour nothing
+          implements, and a worker is one of the few ways to semi-permanently break
+          a static site.
+        - a maskable icon is a manifest concept. It carries a safe-zone margin so a
+          platform can crop it to any shape, which as a plain `rel="icon"` just
+          renders the mark small inside a lot of padding.
+
+      `theme-color` is absent for a third reason: the live site hardcodes one value,
+      and this build has two themes. It wants one per colour scheme or none.
+    */
+    }
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/icons/icon_x192.png" />
+
+    {
+      /*
+      ── `{page} | Andy Fitzgerald`, COMPOSED HERE RATHER THAN AT 11 CALL SITES ──
+
+      Ported from the live site, which builds the same pattern in `head.njk` — and
+      does it with an `{% if %}` chain over `page.url` listing every section by
+      hand. That chain is the thing not to carry across: it needs editing whenever
+      a section is added, and a section it has never heard of silently falls through
+      to the bare site name.
+
+      So the suffix is applied to whatever a page passes, and pages keep passing a
+      bare page title. Nothing to remember, nothing to keep in step.
+
+      ── HOME IS THE EXCEPTION, AND IT IS DERIVED, NOT DECLARED ──────────────────
+
+      `/` reads "Andy Fitzgerald" alone (Andy, 2026-09-15) — "Andy Fitzgerald |
+      Andy Fitzgerald" is the obvious failure and a suffix rule with no exception
+      produces it.
+
+      Derived from the pathname rather than taken as a prop, for the reason
+      Masthead.astro derives its section the same way: every page renders this
+      layout, so a rule computed here cannot be forgotten by a page, while a
+      `homepage` prop can be. index.astro still passes its own title, so the prop
+      is never ignored or overridden — this only decides whether a suffix is added.
+
+      ── THE SUFFIX IS `personName`, NOT `siteName`, WHICH IS DELIBERATE ─────────
+
+      `SITE_FACTS.siteName` is "Andy Fitzgerald Consulting" and still names the
+      WebSite node in the JSON-LD graph. The tab and the masthead say the person,
+      because the identity the site leads with is a person — the same call that put
+      `personName` in the wordmark.
+
+      The two being different strings was raised as a possible inconsistency and
+      RESOLVED as correct (Andy, 2026-09-15): the WebSite node names a site that is
+      still the LLC's main source of information, while the tab and the wordmark
+      name who a reader is here to read. Don't "fix" one to match the other.
+    */
+    }
+    <title>{Astro.url.pathname === '/' ? title : `${title} | ${SITE_FACTS.personName}`}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    {
+      /*
+      ── THE JSON-LD GRAPH ────────────────────────────────────────────────────
+
+      One script, one `@graph`, on every page — Organization, Person and WebSite from
+      lib/linked-data.ts, plus whatever nodes the page contributed. See that file for
+      why the graph is assembled here rather than per page, and for the two defects in
+      the old build that are fixed rather than carried across.
+
+      `set:html` because the content is already a JSON string and must reach the
+      document verbatim; Astro's normal interpolation would HTML-escape the quotes and
+      produce a script body no parser can read. `serializeGraph` does the escaping that
+      actually matters — `<` so nothing can close this element early.
+    */
+    }
+    <script type="application/ld+json" is:inline set:html={graph} />
+
+    {
+      /* PLACED AFTER <title> AND THE META DESCRIPTION deliberately. Those two are what a
+         crawler and a preview card need first, and a graph that grows with every page
+         type should not sit between the document's name and its summary. */
+    }
+
+    {
+      /*
+      ── rel=author, FOR MICROFORMATS AUTHORSHIP ──────────────────────────────
+
+      The design carries no byline — a detail page's eyebrow is genre and date, and
+      on a single-author site that is right. So an `h-entry` here has no visible
+      author to mark up, and an in-entry `p-author h-card` would have to be
+      invisible content, which microformats discourages.
+
+      The IndieWeb answer is the authorship algorithm: a consumer that finds no
+      `p-author` on the entry looks for a page-level `rel=author`, fetches it, and
+      takes the REPRESENTATIVE h-card it finds there. One attribute, no hidden
+      markup, no change to the design.
+
+      IT IS INERT UNTIL THE HOMEPAGE CARRIES THAT h-card, which is phase 4 item 3.
+      Harmless in the meantime — a consumer follows the link, finds no h-card and
+      reports no author, which is where it already was. Nothing consumes authorship
+      until syndication, and that is phase 8.
+
+      In <head> rather than on the masthead's identity link, which also points at
+      `/`. `rel` there means "this is the site's home"; overloading it with an
+      authorship claim would put a metadata concern on a nav element, and the two
+      would then have to be changed together. Site-wide because it is true
+      site-wide, not just on entries.
+
+      The h-card itself will need an author name and avatar. `settings` has neither
+      today — two fields Andy is adding.
+    */
+    }
+    {
+      /*
+      ── PLAUSIBLE ────────────────────────────────────────────────────────────
+
+      Cookieless and aggregate-only, which is why it needs no consent banner and why it
+      was chosen over Google Analytics: Andy wants site-use data "without stalking my
+      users", and this measures pages rather than people.
+
+      TWO TAGS, BOTH FROM THE DASHBOARD SNIPPET and reproduced in its order. The external
+      script carries the site id in its filename; the inline stub queues events and calls
+      `init`. See the constants above for what each is doing and why neither is a secret.
+
+      `async`, as the snippet specifies, rather than the `defer` the legacy snippet used.
+      The stub is what makes that safe: with the queue in place the load order stops
+      mattering, which is the whole reason Plausible ships the two together.
+
+      `is:inline` on both so Astro emits them verbatim. Its script handling is for
+      first-party modules and would otherwise bundle the stub and rewrite the tag whose
+      attributes are its entire configuration. `set:html` for the stub body is the same
+      device the JSON-LD above uses, and for the same reason: the content is already
+      JavaScript and normal interpolation would HTML-escape it into something no parser
+      can read.
+
+      ── IT WILL BE BLOCKED FOR SOME OF THIS AUDIENCE ─────────────────────────
+
+      `plausible.io` is on the common blocklists, so a technical readership will under-
+      report — usually quoted at 10-30%. The fix is a first-party proxy: nginx serving the
+      script and the event endpoint from the site's own origin, which is a phase 6 addition
+      to a config being written anyway. Worth knowing now, because it changes `src` and the
+      `endpoint` option and nothing else.
+
+      ── AND IT IS WHAT THE 404's POPULAR-PAGES LIST WAITS ON ─────────────────
+
+      Andy's plan is to generate that list from Plausible's Stats API at build. That needs
+      data to accumulate first, which is the real reason this lands now rather than at
+      launch. See `404.astro` for the fallback that has to survive it: an analytics outage
+      must not fail a build.
+    */
+    }
+    {
+      analytics && (
+        <>
+          <script is:inline async src={PLAUSIBLE_SRC} />
+          <script is:inline set:html={PLAUSIBLE_INIT} />
+        </>
+      )
+    }
+
+    {
+      /*
+        FEED AUTO-DISCOVERY. Without this a person must already know the exact feed URL:
+        a reader handed the SITE address fetches the HTML and looks for these, and finds
+        nothing otherwise. Distinct from the RSS Feeds page, which is for people reading
+        rather than for software.
+
+        `type` must be `application/atom+xml` and it is the one thing here that cannot be
+        fudged — a reader filters on it. Note that is a claim about the LINK, not about
+        what the server sends: these are prerendered `.xml` files, so nginx types them
+        `application/xml` until the phase 6 change recorded in docs/feeds-kickoff.md.
+        Readers sniff, so discovery works either way, but the two should agree eventually.
+
+        Root-relative hrefs so the preview deploy advertises its own feeds rather than
+        production's.
+      */
+    }
+    {
+      [...feeds, FEEDS.all].map((feed) => (
+        <link rel="alternate" type="application/atom+xml" href={feed.path} title={feed.label} />
+      ))
+    }
+
+    <link rel="author" href="/" />
+  </head>
+  <body>
+    {
+      /*
+      ── THE SKIP LINK ────────────────────────────────────────────────────────
+
+      The masthead puts roughly a dozen links before the content on every page, and a
+      keyboard or switch user tabs through all of them on every navigation. This is the
+      standard escape hatch, and it is FIRST IN THE DOCUMENT because that is the whole
+      mechanism — a skip link reachable only after the nav has already been traversed
+      has solved nothing.
+
+      It lives here rather than in <Masthead> for the reason the title suffix does: every
+      page renders this layout, so a page cannot forget it. <Masthead> would also be the
+      wrong owner semantically — this skips PAST the masthead, so belonging to it would
+      be circular.
+
+      ── `tabindex="-1"` ON THE TARGET IS NOT OPTIONAL ────────────────────────
+
+      Following a fragment moves the SCROLL POSITION but not keyboard focus unless the
+      target can hold focus, and <main> cannot by default. Without it the next Tab press
+      returns to the masthead link after the skip link — so the link appears to work,
+      the page visibly jumps, and the user is put straight back where they started. The
+      failure is invisible to anyone testing with a mouse.
+
+      `-1` rather than `0`: the target should be focusable PROGRAMMATICALLY without
+      joining the tab order itself, or every page would gain a stop on a non-interactive
+      element.
+
+      ── VISIBLE ON FOCUS, VIA `:not(:focus)` RATHER THAN AN UNDO ─────────────
+
+      The hiding is written as the negative so that focus restores the element by having
+      no rule apply, rather than by a second rule overriding the first. Same principle
+      the masthead states for its breakpoints: nothing here undoes anything, so there is
+      no specificity race to lose and no property that has to be reset to a value it was
+      never explicitly given.
+
+      The declarations are <VisuallyHidden>'s, which this deliberately does not reuse as
+      a component — that one is for content announced but never drawn, and this is drawn
+      the moment it matters. Borrowing the mechanism is right; borrowing the semantics
+      would not be.
+    */
+    }
+    <a class="skip-link" href="#main">Skip to main content</a>
+
+    <slot />
+
+    {
+      /*
+      ── SEARCH'S APPARATUS, WHICH IS DOCUMENT-LEVEL RATHER THAN PAGE-LEVEL ────
+
+      Two inert <template>s and their scoped CSS. Nothing renders; see the component.
+
+      It belongs HERE rather than in <Masthead> because what it holds is the page's main
+      CONTENT in its searched state, and the masthead is chrome. And it cannot belong to
+      the pages, because results have to be able to replace any of them — putting it in
+      eight page files would be eight copies of a thing the document needs once.
+
+      That does make this file slightly less boring than its header asks for. It already
+      owns the JSON-LD graph and the pre-paint theme script on the same grounds: concerns
+      that belong to the document rather than to any page.
+    */
+    }
+    <SearchResults />
+  </body>
+</html>
+
+<style>
+  /*
+   * The hidden state is the NEGATIVE rule, so focus reveals the link by having nothing
+   * apply rather than by overriding. See the note beside the markup.
+   *
+   * It also wins by specificity rather than by order — `:not(:focus)` is (0,2,0) against
+   * `.skip-link`'s (0,1,0) — so the two blocks can sit in either order and the resting
+   * state is never a coin toss about which stylesheet Astro emitted first. That is the
+   * same trap Logo.astro records for its `fill`.
+   *
+   * Declarations are <VisuallyHidden>'s, which documents why each is load-bearing and why
+   * `display: none`, `visibility: hidden` and `width: 0` are all wrong here.
+   */
+  .skip-link:not(:focus) {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * ── IT TAKES SPACE RATHER THAN FLOATING OVER THE PAGE ─────────────────────
+   *
+   * The visible state carries NO `position`, so a focused link is in normal flow as the
+   * first thing in <body> and pushes the masthead down by its own height. The page gains
+   * a strip at the top for as long as it is focused, and gives it back on blur.
+   *
+   * The first version of this was `position: absolute` at `--chrome-inset`, and it sat
+   * directly on top of the masthead logo and wordmark — Andy caught it in the browser.
+   * Overlaying is the more common pattern and it is the wrong one here: this element
+   * exists for someone who cannot see where it landed, so covering the identity of the
+   * page they just arrived on is the one thing it must not do. Matching NN/g, which does
+   * the same.
+   *
+   * That also retires the `z-index` the absolute version needed, and the argument about
+   * landing on the home page's accent hero — in flow it only ever sits on the page ground.
+   * The accent pair stays because it reads as a control rather than as stray text, and it
+   * is the system's own role pair: 5.67:1 light, 6.17:1 dark, both measured.
+   */
+  .skip-link {
+    display: inline-block;
+    margin: var(--space-1);
+    padding: var(--space-1);
+    border-radius: var(--radius-1);
+    background: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+    font-family: var(--font-heading);
+    /* A step below the nav's `--font-size-2`. Chrome that appears for one keypress and
+       then leaves should not be the largest thing on the page while it is there. */
+    font-size: var(--font-size-1);
+    /* The chrome leading, not the prose leading. Unset, this inherits body's 1.8 — the
+       reading measure's ramp — which is why the box came out 45px tall for one line of
+       16px text. `nav`, <Button> and <Chip> all set 1.5; this is the same control tier,
+       so it takes the same value rather than a number chosen to look right. */
+    line-height: 1.5;
+    text-decoration: none;
+  }
+</style>

@@ -1,0 +1,5 @@
+{
+  // The settings in settings.json route every language to Prettier. If the extension is not
+  // installed those settings fail silently, so it is recommended rather than assumed.
+  "recommendations": ["esbenp.prettier-vscode", "astro-build.astro-vscode"]
+}

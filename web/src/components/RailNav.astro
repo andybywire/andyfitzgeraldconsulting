@@ -1,0 +1,190 @@
+---
+/**
+ * "On This Page" — a rail's in-page link list.
+ *
+ * ── PROMOTED ON ITS THIRD CONSUMER, WHICH IS ONE LATER THAN THE RULE ─────────
+ *
+ * TopicList's header named the condition and this is it: "if a THIRD dense link list
+ * appears, the answer is to promote the treatment, not to write it a third time." The
+ * article rail and the Reviews rail had both written it, and the `page` template was
+ * about to be the third.
+ *
+ * The delay had already cost something measurable. The two existing copies had DRIFTED:
+ * the article rail opted out of the wipe-in underline and restated
+ * `text-decoration-thickness`, and Reviews did neither — so rail links animated the wipe
+ * on one page and not the other, from the same design. Nobody chose that. Promoting it
+ * is what makes "the rail behaves the same wherever it appears" (Andy, 2026-09-07) a
+ * fact about one file rather than a convention three files are trusted to keep.
+ *
+ * ── WHAT IT OWNS, AND THE ONE ARGUABLE INCLUSION ─────────────────────────────
+ *
+ * The markup, the type, the spacing ramp and the link treatment — everything the three
+ * pages said identically.
+ *
+ * It also owns its VISIBILITY, which is the arguable one, because this project's rule is
+ * that placement belongs to the caller — TopicList sets no `grid-column` and says so.
+ * `display` is not `grid-column`, and all three consumers hide this below md for the same
+ * reason: the mobile boards draw no rail on any of them. Leaving it out would have made
+ * the fourth copy of a rule that has never varied. If a page ever wants it on a phone,
+ * that is the moment to hand the decision back.
+ *
+ * WHAT IT DOES NOT OWN IS STICKINESS. That is a property of the rail's wrapper, not of
+ * this list, and it genuinely varies: the article pins two groups together in a
+ * `.rail-sticky` child, Reviews pins the aside itself, and the `page` template pins this
+ * while letting the hero above it scroll away. Three behaviours, one mechanism, none of
+ * them this component's business.
+ *
+ * ── THE HEADING IS PINNED AND THE ID IS NOT ──────────────────────────────────
+ *
+ * "On This Page" is hardcoded, exactly as TopicList hardcodes "Topics": all three
+ * consumers use it, and a field that does not vary should not be a prop.
+ *
+ * `id` IS required, and for TopicList's reason rather than for variation — every caller
+ * passes the same string today. It has to be namespaced against the page's own body
+ * heading ids, which are slugified from heading text, so an h2 titled "On This Page"
+ * would collide. Requiring it keeps that reasoning at the call site instead of burying a
+ * default that is only safe by luck.
+ */
+import type {HTMLAttributes} from 'astro/types'
+
+interface Props extends HTMLAttributes<'nav'> {
+  /** One entry per target: a same-page fragment id and the label to show for it. */
+  items: {id: string; label: string}[]
+  /**
+   * The heading's id, which `aria-labelledby` also points at. The CALLER supplies it
+   * because it has to be namespaced against that page's own body heading ids — see the
+   * note above.
+   */
+  id: string
+  class?: string
+  /* Forwarded to the root, which is what lets a page place this. Astro passes a
+     parent's scope attribute down as an ordinary prop and it reaches the DOM only if
+     the component spreads rest — a component that does not forward silently cannot be
+     styled by its caller. The house pattern; PageHeader's header records the bug. */
+  [key: string]: unknown
+}
+
+const {items, id, class: className, ...rest}: Props = Astro.props
+---
+
+<nav class:list={['rail-nav', className]} aria-labelledby={id} {...rest}>
+  {
+    /*
+    An <h3> rather than an <h2> on every consumer. This sits inside a rail that is
+    tangential to the page's content, so its level is not carrying page structure, and
+    the boards draw it at the same size as the h3 role.
+  */
+  }
+  <h3 {id}>On This Page</h3>
+  <ul role="list">
+    {
+      items.map((item) => (
+        <li>
+          <a href={`#${item.id}`}>{item.label}</a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>
+
+<style>
+  /*
+   * ── ABSENT BELOW md, NOT COLLAPSED ─────────────────────────────────────────
+   *
+   * `display: none` rather than a visual hide, because the design says this is not
+   * AVAILABLE on a phone: it should be out of the accessibility tree too. Every mobile
+   * board agrees — "Insight Detail — Mobile" drops it while keeping Topics,
+   * "Reviews — Mobile" has no rail at all, and "Consulting — Mobile" relocates the hero
+   * and drops this.
+   *
+   * Mobile-first, per tokens.css: an engine that never evaluates the container query has
+   * to be left with the phone layout. The cost of writing it this way round is that md
+   * has to say `display: block` rather than unset anything.
+   */
+  .rail-nav {
+    display: none;
+  }
+
+  @container style(--breakpoint-md: true) {
+    .rail-nav {
+      display: block;
+    }
+
+    /* base.css keeps the UA's list indent for prose; a nav is not prose. */
+    .rail-nav ul {
+      padding: 0;
+      list-style: none;
+    }
+
+    /* The ramp from base.css restated for a context it does not reach: 16 from a
+       heading to its list. `heading-close` by name, not by value. */
+    .rail-nav h3 + ul {
+      margin-top: var(--rhythm-heading-close);
+    }
+
+    /*
+     * ── THE ITEM GAP IS ASKED FOR, NOT INHERITED ─────────────────────────────
+     *
+     * It used to arrive from base.css's global `li + li`, and this list was the one
+     * place in the build genuinely relying on that rule. Removing it (2026-09-02)
+     * collapsed these entries against each other — visible immediately on any article
+     * with multi-line headings, and caught on screen rather than by the grep that found
+     * the rule's eight cancellations. A list that depends on a global by saying nothing
+     * is invisible to a search for overrides.
+     *
+     * `rhythm-item`, which is what it was getting and what TopicList's stacked form
+     * asks for. That parity is a requirement rather than a coincidence: on an article
+     * this list and Topics sit one above the other, and any difference between them
+     * reads as a mistake.
+     */
+    .rail-nav li + li {
+      margin-top: var(--rhythm-item);
+    }
+  }
+
+  /* ── Links ────────────────────────────────────────────────────────────────── */
+  /*
+   * OPTS OUT OF THE WIPE-IN UNDERLINE, which base.css's `nav` role provides for with
+   * exactly this escape hatch. The wipe is a chrome gesture for the masthead and the
+   * footer; a dense list of links animating one by one under a moving pointer is noise
+   * rather than affordance. DESIGN.md → The rail.
+   *
+   * THE THICKNESS HAS TO BE RESTATED, and that is the easy one to miss. base.css gives
+   * every anchor `text-decoration-thickness: 0.06em`, then `nav :is(a, button)` resets it
+   * with the `text-decoration` SHORTHAND — which includes `-thickness`. Without the
+   * declaration below the hover underline returns at the UA's `auto` weight, so two
+   * underlines in one viewport read as two systems. `text-underline-offset` is NOT in the
+   * shorthand and survives on its own.
+   *
+   * THE LINE IS DECLARED AT REST AND ONLY ITS COLOR MOVES, because
+   * `text-decoration-line` is a discrete keyword that cannot animate from `none` — it
+   * appeared instantly while everything else on the page eased.
+   *
+   * OUTSIDE THE md QUERY, unlike the spacing above: these are not layout, and scoping
+   * them to a breakpoint would be a rule that happens to be unreachable rather than a
+   * rule that means something.
+   *
+   * The hover COLOR is left to base.css's global `a:hover`. A rail sits on the page
+   * ground, where `link-hover` is right and the underline is not the only signal.
+   *
+   * This is now the ONLY copy of this treatment for rail navs. TopicList still states
+   * its own, and that is not a fourth copy waiting to be merged — it is a different
+   * component with its own container query, and merging the two would couple them.
+   */
+  .rail-nav a::after {
+    content: none;
+  }
+
+  .rail-nav a {
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+    text-decoration-color: transparent;
+    transition:
+      color 0.15s,
+      text-decoration-color 0.15s;
+  }
+
+  .rail-nav a:hover {
+    text-decoration-color: currentColor;
+  }
+</style>

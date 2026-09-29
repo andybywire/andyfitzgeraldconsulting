@@ -1,0 +1,543 @@
+---
+/**
+ * The results view, as two inert <template>s — and the reason it is templates rather
+ * than markup the controller writes by hand.
+ *
+ * ── ASTRO'S SCOPE ATTRIBUTE IS WHY THIS FILE EXISTS ─────────────────────────
+ *
+ * Scoped CSS compiles to `.thing[data-astro-cid-…]`, and an element built with
+ * `document.createElement` carries no such attribute — so a results list assembled in
+ * JavaScript would ship with its stylesheet matching nothing, silently. Cloning a
+ * SERVER-RENDERED template keeps the attribute on every node, which is what lets the
+ * rules below apply to nodes that did not exist at build time.
+ *
+ * It also means <Eyebrow> can be used for real. It is rendered here with placeholder
+ * values so its markup and its OWN scoped CSS are baked into the clone; the controller
+ * overwrites the text. That is the one piece of this view that is not a copy of something
+ * — see the note on the topic grid, which is.
+ *
+ * ── IT RENDERS NOTHING VISIBLE ──────────────────────────────────────────────
+ *
+ * <template> content is inert: not rendered, not in the accessibility tree, no requests.
+ * So carrying this on all 62 pages costs the markup and nothing else, which is what makes
+ * "results replace the current page" possible from any page rather than only from
+ * `/search/`.
+ */
+import {Link} from '@lucide/astro'
+import Chip from './Chip.astro'
+import ConceptList from './ConceptList.astro'
+import Eyebrow from './Eyebrow.astro'
+---
+
+<template data-search-view>
+  <div class="search-results">
+    {
+      /*
+      An <h1>, replacing the host page's own — which the controller hides, so exactly one
+      is ever in the accessibility tree. It is the STATE of the view: "8 results for …",
+      "No results for …", and on `/search/` at rest simply "Search".
+    */
+    }
+    <h1 data-search-title></h1>
+
+    {
+      /*
+      ── THE MESSAGE AND THE LIST ARE ONE GRID ITEM, NOT TWO ──────────────────
+
+      They are alternatives — a query either has results or a reason it does not — so as
+      separate items grid auto-placement gave each its own ROW and pushed the rail down
+      into a third, leaving Common Topics floating below the message instead of level
+      with it. Wrapping them makes the content column a single item, which lets the rail
+      share its row. search.astro has the same two-column row for the same reason.
+    */
+    }
+    <div class="search-column">
+      {
+        /*
+        ── THE COUNT LEFT THE HEADING, AND THAT IS THE POINT ────────────────────
+
+        It used to read "8 results for “taxonomy”" as the h1, which meant the FRONT of
+        the heading changed on every keystroke — the count, the widest-moving part, sat
+        where the eye anchors. Andy restyled it (2026-09-12): the h1 now always opens
+        with "Search", and the number moved down here where a changing digit disturbs
+        nothing above it.
+
+        Two lines rather than one, because they are different sentences: this one reports
+        the outcome, and the advice below only applies when there is none.
+      */
+      }
+      <p class="search-count" data-search-count hidden></p>
+      <p class="search-advice" data-search-advice hidden>
+        Please try another search term, or try out a category from a few of the most common topics.
+      </p>
+      <ul class="search-list" data-search-list role="list"></ul>
+    </div>
+
+    {
+      /*
+      ── THE FACETS SHARE THE RAIL WITH COMMON TOPICS ─────────────────────────
+
+      Never both: a query with results shows the filters, a query with none shows the
+      topic list. They occupy the same column so the rail does not move between states.
+
+      ── THESE ARE BUTTONS WHERE THE INDEX USES ANCHORS, AND THAT IS THE RULE ─
+
+      urls-and-filtering.md argues for links on the index pages, and the argument is
+      explicitly conditional: "Filter state lives in the URL by design, so every facet
+      control has a natural `href`: the URL representing the state AFTER that click."
+
+      Here it does not. Typing is an ephemeral preview and only Return commits a `?q=`, so
+      a search facet has no URL to point at — and an anchor with no destination is the
+      thing that argument exists to avoid. Which makes `aria-pressed` available, and it is
+      the honest attribute for a toggle: the same doc notes it "cannot use `aria-pressed`,
+      which is button-only" only because anchors were forced on it.
+    */
+    }
+    <nav class="search-facets" data-search-facets hidden aria-label="Filter results">
+      <div class="search-facet" data-search-facet="topic">
+        <div class="search-facet-head">
+          <h2 id="search-facet-topic">Topics</h2>
+          <button class="search-facet-reset" type="button" data-search-facet-reset hidden
+            >reset topics</button
+          >
+        </div>
+        <ul class="search-chips" data-search-chips role="list" aria-labelledby="search-facet-topic">
+          {
+            /*
+            The two reveal controls, parked as the LAST items and server-rendered so they
+            survive `replaceChildren` — the controller re-appends these exact nodes rather
+            than building them, which is how they keep the scope attribute and <Chip>'s
+            styles.
+
+            Both ship `hidden` and only one is ever shown: "see all" while the group is
+            truncated, "see fewer" once it has been expanded. Neither appears from `lg` up,
+            where the rail shows everything anyway.
+          */
+          }
+          <li hidden>
+            <Chip as="button" type="button" data-search-facet-more>See all topics</Chip>
+          </li>
+          <li hidden>
+            <Chip as="button" type="button" data-search-facet-fewer>See fewer topics</Chip>
+          </li>
+        </ul>
+      </div>
+
+      <div class="search-facet" data-search-facet="genre">
+        <div class="search-facet-head">
+          <h2 id="search-facet-genre">Genres</h2>
+          <button class="search-facet-reset" type="button" data-search-facet-reset hidden
+            >reset genres</button
+          >
+        </div>
+        <ul class="search-chips" data-search-chips role="list" aria-labelledby="search-facet-genre">
+          {
+            /*
+            The same pair as the Topics group above — see the note there.
+          */
+          }
+          <li hidden>
+            <Chip as="button" type="button" data-search-facet-more>See all genres</Chip>
+          </li>
+          <li hidden>
+            <Chip as="button" type="button" data-search-facet-fewer>See fewer genres</Chip>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <nav class="search-topics" data-search-topics hidden aria-labelledby="search-common-topics">
+      <h2 id="search-common-topics">Common Topics</h2>
+      {
+        /* No `items`: the controller fills it. <ConceptList> renders the shell and its
+          own container, so the CLONED node carries the component's scope attribute and the
+          grid rules still match — see the note at the top of this file. */
+      }
+      <ConceptList data-search-topic-list />
+    </nav>
+  </div>
+</template>
+
+{
+  /*
+  One chip, server-rendered so the clone carries both this component's scope attribute and
+  <Chip>'s own — the same reason <Eyebrow> is rendered into the result row rather than
+  hand-built. The label is a placeholder the controller overwrites.
+*/
+}
+<template data-search-chip>
+  <li><Chip as="button" type="button" data-facet-chip aria-pressed="false">Facet</Chip></li>
+</template>
+
+<template data-search-result>
+  <li class="result">
+    <h2 class="result-title"><a data-result-link href="/"></a></h2>
+    {
+      /*
+      PLACEHOLDER VALUES, and they are load-bearing rather than lazy. <Eyebrow> renders
+      nothing for an absent genre and drops the <time> for an absent date, so passing real
+      ones is the only way to get the full structure — the span, the time, and the
+      `span + time::before` pipe between them — into the clone. The controller replaces
+      both strings and removes the <time> when an entry has no date, which is the same
+      state <Eyebrow> would have produced itself.
+    */
+    }
+    <Eyebrow genre="Kind" date="2000-01-01" class="result-meta" />
+    <p class="result-desc" data-result-desc></p>
+    <p class="result-source" data-result-source hidden>
+      <Link class="icon-sm" aria-hidden="true" />
+      <span data-result-source-text></span>
+    </p>
+  </li>
+</template>
+
+<style>
+  /*
+   * ── THE VIEW SITS ON THE HOST PAGE'S <Grid>, AND CANNOT ASSUME ONE ─────────
+   *
+   * It is appended to `<main>`, which on most pages is a stack of <Band>s rather than a
+   * grid — so this brings its own band padding and its own grid instead of inheriting
+   * either. The numbers are <Band space="band" spaceEnd="section"> and <Grid>, restated
+   * because a component cannot compose those from inside a clone.
+   */
+  .search-results {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    padding-block: var(--rhythm-band) var(--rhythm-section);
+    padding-inline: var(--grid-margin);
+    column-gap: var(--grid-gutter);
+    row-gap: 0;
+  }
+
+  /* Placement, matching search.astro exactly: the results take the lede's column and the
+     topics take the rail's, so a query on `/search/` changes the content of those two
+     columns without moving either. */
+  [data-search-title] {
+    grid-column: var(--col-main);
+  }
+
+  .search-column,
+  .search-topics,
+  .search-facets {
+    grid-column: var(--col-full);
+  }
+
+  /*
+   * ── BELOW md THE FILTERS COME FIRST, WHICH DOM ORDER DOES NOT GIVE ─────────
+   *
+   * The mobile board (1045:5326) puts the filters between the heading and the results —
+   * y 166 against the list at 545 — where the DOM has the results column first, because
+   * on DESKTOP it is the left column and reading order puts it ahead of the rail.
+   *
+   * `order` rather than reordering the markup: the desktop arrangement is the one the DOM
+   * should describe, since that is where the two are side by side and the results genuinely
+   * lead. The h1 keeps the implicit 0 and stays first either way.
+   *
+   * The count line rides with the results rather than with the heading, so the sequence
+   * reads h1 -> filters -> "5 items found" -> list. That is the right way round: the count
+   * reports what the filters left standing.
+   */
+  .search-facets {
+    order: 1;
+  }
+
+  .search-column,
+  .search-topics {
+    order: 2;
+  }
+
+  @container style(--breakpoint-md: true) {
+    /* Side by side from here, so the visual order is the columns' and `order` has nothing
+       left to say. Reset rather than left dangling, so nothing depends on the placement
+       algorithm's tie-breaking. */
+    .search-facets,
+    .search-column,
+    .search-topics {
+      order: 0;
+    }
+
+    .search-column {
+      grid-column: 1 / span 7;
+    }
+
+    .search-topics,
+    .search-facets {
+      grid-column: 9 / span 4;
+    }
+  }
+
+  /* The h1-to-content relationship search.astro sets, for the same reason: the content
+     column and the rail both start one `heading-close` below the title and stay level. */
+  .search-column,
+  .search-topics,
+  .search-facets {
+    margin-top: var(--rhythm-heading-close);
+  }
+
+  /*
+   * ── BODY SIZE IN THE LEAD COLOUR, WHICH IS NOT DESIGN.md's `lead` ROLE ─────
+   *
+   * Measured off boards 2786:4934 and 1026:5290: Noto Serif at `font-size-2`, leading
+   * 1.8, in `text-lead`. The `lead` role is `font-size-3` at 1.6, and search.astro's
+   * resting invitation genuinely is that — so the two are a step apart on purpose. This
+   * is a report on the results rather than a standfirst introducing the page.
+   */
+  .search-count,
+  .search-advice {
+    color: var(--color-text-lead);
+    font-size: var(--font-size-2);
+    line-height: 1.8;
+  }
+
+  /* The board separates the two by a blank line, which at this leading is 32.4.
+     `--rhythm-list` is the token that lands there; `--rhythm-paragraph` (24) is the
+     ordinary block gap and reads tighter than drawn. */
+  .search-advice,
+  .search-list {
+    margin-top: var(--rhythm-list);
+  }
+
+  /* ── The result list ──────────────────────────────────────────────────────── */
+  /*
+   * A single-column LIST, not the index masonry — board 1010:4670 draws 571-wide rows 32
+   * apart, BOX to box, with 16 of padding inside each. `--rhythm-list` is the token for
+   * exactly that and had no consumer in the build until now.
+   */
+  .search-list {
+    padding: 0;
+    list-style: none;
+  }
+
+  .result + .result {
+    margin-top: var(--rhythm-list);
+  }
+
+  /*
+   * ── THE UNBOXED CARD, WHICH IS <NoteCard>'s RULE AND NOT A NEW ONE ─────────
+   *
+   * Andy's call (2026-09-12): a result is the same card the Insights and Presentations
+   * indexes use — no boundary at rest, a box and a highlight on hover.
+   *
+   * MOBILE-FIRST, SO THE BOXED STATE IS THE BASE and `md` takes the box away. That reads
+   * backwards until you remember an engine which never evaluates the query should leave a
+   * phone with the phone layout. Below `md` there is also NO HOVER STATE: a touch device
+   * cannot hover, so a permanently-hovered card would encode a state that cannot occur.
+   *
+   * `transparent` rather than `none`, which is the detail that makes it work: the border
+   * stays DECLARED and invisible, so the box arriving on hover changes a colour rather
+   * than adding a property that affects layout. A border appearing from nothing would
+   * shift every row's contents by 1px.
+   *
+   * The padding is NOT outdented. DESIGN.md says "outdent the card, never the column",
+   * and the home page pulls its note cards out by `card-pad` so their text sits flush
+   * with the column edge — but board 1010:4670 draws these cards at x 0 of the 571
+   * column with their content at x 16, so the text is meant to sit inside. Checked
+   * rather than assumed, because the two treatments look identical at rest.
+   */
+  .result {
+    position: relative; /* containing block for the full-card link overlay below */
+    padding: var(--card-pad);
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+  }
+
+  @container style(--breakpoint-md: true) {
+    .result {
+      border-color: transparent;
+      background-color: transparent;
+      transition:
+        border-color 0.15s,
+        background-color 0.15s,
+        box-shadow 0.15s;
+    }
+
+    .result:hover,
+    .result:focus-within {
+      border-color: var(--color-border);
+      background-color: var(--color-surface);
+      box-shadow: 2px 2px 0 0 var(--color-accent);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .result {
+      transition: none;
+    }
+  }
+
+  /* The card owns its type; the `h2` owns only the outline level. Without this the title
+     draws at h2's size and tracking, which is not what the board draws — the same note
+     every card carries. */
+  .result-title {
+    font-size: var(--font-size-3);
+    line-height: 1.3;
+    letter-spacing: normal;
+  }
+
+  /*
+   * UN-UNDERLINED, which all three cards do and DESIGN.md's Links section allows for:
+   * block-level link titles are exempt because POSITION identifies them, the same clause
+   * the filter chips rely on. Without it base.css's persistent `a` underline applies and
+   * every result title arrives underlined.
+   */
+  .result-title a {
+    color: var(--color-text-title);
+    text-decoration: none;
+  }
+
+  .result-title a:hover {
+    color: var(--color-link-hover);
+  }
+
+  /* The whole card is the target and the accessible name stays the title — the cards'
+     overlay, and what makes the hover box mean something you can click. */
+  .result-title a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .result-meta {
+    margin-top: var(--card-gap);
+  }
+
+  .result-desc,
+  .result-source {
+    margin-top: var(--card-gap);
+  }
+
+  /* Body Compact — the cards' description role. */
+  .result-desc {
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+  }
+
+  /* NoteCard's clipping row: the icon and the domain on one line. */
+  .result-source {
+    display: flex;
+    align-items: center;
+    gap: var(--card-gap);
+    font-size: var(--font-size-2);
+    line-height: 1.5;
+  }
+
+  /* ── The facets ───────────────────────────────────────────────────────────── */
+  /*
+   * ── THE GROUP GAP IS 64, WHERE THE BOARD DRAWS 109 ────────────────────────
+   *
+   * That 109 is `grid-skip-1`, a Figma variable tokens.css DELETED — "a real CSS grid
+   * expresses every one of them structurally, so emitting them as lengths would invite
+   * someone to type a length where a line number belongs". On the index boards the two
+   * groups sit SIDE BY SIDE and 109 is the column they skip; stacked in one rail it is a
+   * vertical distance wearing a horizontal value's name, and no spacing step is near it.
+   *
+   * `--rhythm-heading-major` is what base.css's own ramp gives `* + h2`, which is exactly
+   * what this is: a block, then a heading opening a new group. DESIGN.md wins over a
+   * board on a value; this is that rule, applied to a value the board inherited from a
+   * token that no longer exists.
+   */
+  .search-facets {
+    display: flex;
+    flex-direction: column;
+    gap: var(--rhythm-heading-major);
+  }
+
+  /*
+   * ── NOT STICKY, WHICH OVERRULES THE BOARD ANNOTATION ───────────────────────
+   *
+   * 2763:4482 says "Filters are sticky to the top of the viewport on Desktop", and it was
+   * built that way — `position: sticky` with `top: var(--rhythm-band)` and the
+   * `align-self: start` a grid item needs to have anywhere to travel.
+   *
+   * Removed on the real corpus (Andy, 2026-09-12). A search result set carries far more
+   * chips than an index page's tallied vocabulary — "content" alone produces 27 topics and
+   * 8 genres — so the rail is routinely TALLER THAN THE VIEWPORT. A `top`-pinned sticky
+   * element that overflows is the worst version of itself: it pins its head, so its foot
+   * can never be scrolled to, and by the time you reach the end of the results the thing
+   * on screen is the part you have already read.
+   *
+   * The annotation was written against a mock with ten chips. This is the case where the
+   * drawing and the data disagree, and the data is newer.
+   */
+
+  /* Heading left, reset right — `space-between` rather than a float, so the reset wraps
+     beneath instead of colliding when the column is narrow. "reset genres" is the longer
+     label in the narrower column, which is the case open-questions.md flags. */
+  .search-facet-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-2);
+  }
+
+  /*
+   * base.css's `nav :is(a, button)` strips the underline and replaces it with the wipe-in
+   * `::after` border. This control IS link-shaped, so it wants a plain underline back —
+   * and the pseudo-element cancelled, or it gets a static underline AND an animated one
+   * under the pointer. The opt-out base.css names, for the reason FacetFilters gives.
+   */
+  .search-facet-reset {
+    border: 0;
+    background-color: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: var(--font-size-1);
+    text-decoration-line: underline;
+    text-decoration-thickness: 0.06em;
+  }
+
+  .search-facet-reset::after {
+    content: none;
+  }
+
+  .search-chips {
+    margin-top: var(--rhythm-heading-close);
+    padding: 0;
+    list-style: none;
+
+    display: flex;
+    flex-wrap: wrap;
+    /* The boards draw 16 between chips in both axes. */
+    gap: var(--space-2);
+  }
+
+  /*
+   * SELECTED IS `aria-pressed`, not a class — DESIGN.md: "the fact belongs to the
+   * document, so the attribute that carries it to assistive technology should also draw
+   * the indicator." The colours are the index's `[aria-current='true']` exactly; only the
+   * attribute differs, because these are buttons. See the note at the markup.
+   */
+  .chip[aria-pressed='true'] {
+    border-color: var(--color-surface-accent);
+    background-color: var(--color-surface-accent);
+    color: var(--color-text-on-accent);
+  }
+
+  .chip[aria-pressed='true']:hover {
+    border-color: var(--color-accent-hover);
+    background-color: var(--color-accent-hover);
+  }
+
+  /*
+   * ── UNAVAILABLE, WHICH IS THE ORDINARY APPEARANCE OF AN EXCLUDED FACET ─────
+   *
+   * A chip whose selection would empty the list. The indexes' exact treatment, and the
+   * same attribute — `aria-disabled` rather than `disabled`, so it stays focusable and
+   * discoverable instead of dropping out of the tab order.
+   *
+   * `pointer-events: none` stops the pointer; the keyboard is stopped in the handler,
+   * because an `aria-disabled` control is deliberately still reachable by Tab.
+   *
+   * With no counts on the chips, this dim state is doing the whole job the indexes split
+   * between a number and a fill: it is the only thing on screen saying that a facet exists
+   * in the result set but has nothing left to give under the current selection.
+   */
+  .chip[aria-disabled='true'] {
+    border-color: var(--color-border);
+    background-color: var(--color-disabled-surface);
+    color: var(--color-disabled-text);
+    pointer-events: none;
+  }
+</style>
