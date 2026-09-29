@@ -43,6 +43,8 @@
  * inventing weights whose relative size would be arbitrary.
  */
 
+import {stegaClean} from '@sanity/client/stega'
+
 export type RelatedTopic = {
   _id: string | null
   parent?: string | null
@@ -97,8 +99,9 @@ export function genresForBranch(
   const allTops = (tops ?? []).filter(Boolean) as GenreTops[]
   const all = (concepts ?? []).filter(Boolean) as GenreConcept[]
 
-  const topId = (label: string) => allTops.find((t) => t.prefLabel === label)?._id
-  const conceptId = (label: string) => all.find((c) => c.prefLabel === label)?._id
+  /* stegaClean: preview encodes this label — see STEGA AND LOGIC in sanity/load-query.ts. */
+  const topId = (label: string) => allTops.find((t) => stegaClean(t.prefLabel) === label)?._id
+  const conceptId = (label: string) => all.find((c) => stegaClean(c.prefLabel) === label)?._id
 
   const documentId = topId('Document')
   const presentationId = topId('Presentation')

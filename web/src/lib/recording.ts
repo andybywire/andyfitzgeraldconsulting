@@ -13,6 +13,8 @@
  * about what `sourceName` MEANS and it outranks either consumer.
  */
 
+import {stegaClean} from '@sanity/client/stega'
+
 export interface RecordingSource {
   url?: string | null
   sourceName?: string | null
@@ -78,11 +80,12 @@ export function sourceLabelFor(recording: RecordingSource): string | null {
  * heading reads "Watch the Presentation" rather than "Watch the null".
  */
 export function recordingVerb(kind: string | null): 'Watch' | 'Listen' {
-  return kind === 'video' ? 'Watch' : 'Listen'
+  /* stegaClean: preview encodes `kind` — see STEGA AND LOGIC in sanity/load-query.ts. */
+  return stegaClean(kind) === 'video' ? 'Watch' : 'Listen'
 }
 
 export function recordingHeading(kind: string | null, genre: string | null): string {
-  const verb = kind === 'video' ? 'Watch' : 'Listen to'
+  const verb = stegaClean(kind) === 'video' ? 'Watch' : 'Listen to'
   return `${verb} the ${genre ?? 'Presentation'}`
 }
 

@@ -1,4 +1,5 @@
 ---
+import {stegaClean} from '@sanity/client/stega'
 /**
  * The Home page — phase 4 item 3, and mostly composition.
  *
@@ -126,6 +127,10 @@ const [insights, taxonomy] = await Promise.all([
 */
 const genres = taxonomy.genres
   .flatMap((genre) => (genre.prefLabel && genre.count > 0 ? [genre.prefLabel] : []))
+  /* stegaClean: preview encodes the label, and both the plural rule and the slug read its
+     characters — see STEGA AND LOGIC in sanity/load-query.ts. The cost is that these nav
+     labels are not click-to-edit in Presentation; the concept is edited in the scheme. */
+  .map((prefLabel) => stegaClean(prefLabel))
   .map((prefLabel) => ({label: pluralizeGenre(prefLabel), slug: slugify(prefLabel)}))
   .sort((a, b) => a.label.localeCompare(b.label))
 

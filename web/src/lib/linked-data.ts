@@ -55,6 +55,7 @@
  * │  is flagged rather than quietly decided.                                  │
  * └──────────────────────────────────────────────────────────────────────────┘
  */
+import {stegaClean} from '@sanity/client/stega'
 import {PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID} from 'astro:env/client'
 
 /**
@@ -620,7 +621,8 @@ export function presentationGraph(input: PresentationGraphInput): GraphNode[] {
     nodes.push(event)
 
     for (const recording of delivery.recordings) {
-      const isVideo = recording.kind === 'video'
+      // stegaClean: preview encodes `kind` — see STEGA AND LOGIC in sanity/load-query.ts.
+      const isVideo = stegaClean(recording.kind) === 'video'
       const thumbnail = recording.posterRef ? assetUrl(recording.posterRef) : null
 
       const node: GraphNode = {
