@@ -399,3 +399,114 @@ nginx, diff the installed files against what gets written rather than assuming t
 visual-editing upgrade will want the client moved up within v7. Worth noting that v8 exists but that
 both `@sanity/astro` and `@sanity/visual-editing` still peer on v7, so v7 is the compatible ceiling
 for now rather than a lag to fix.
+
+## The SSR preview, built here — patterns that apply there, 2026-09-29
+
+This project's preview host flipped from a static build to SSR on the **same droplet**, which is the
+situation `ux-methods` has been in all along. Four of the choices made here differ from what
+`ux-methods` does, and three of them bear directly on memory on a 458 MB box. Each entry marks what
+was measured here and what would need checking there before adopting it.
+
+### Bundle the server's dependencies, and ship no `node_modules` — *measured here*, *inferred* there
+
+**This is the one worth acting on first.** `deploy-preview.yml` there runs `pnpm install --prod` on
+the droplet under `--max-old-space-size=512` — the most memory-hungry thing that happens on the box,
+competing with four sites for one core, and dependent on a registry being up at deploy time. The
+section above ("`pnpm install` on the droplet is the expensive choice") weighed shipping
+`node_modules` in the artifact instead. Measured here, that is unworkable too:
+
+| | per release | ×3 releases |
+|---|---|---|
+| `pnpm deploy --prod` (ship `node_modules`) | **590 MB, 53,891 files** | 1.77 GB, more than the disk has free |
+| bundled into `dist/server` | **17 MB** with `dist/client`, no `node_modules` at all | ~51 MB |
+
+The size is because `dependencies` holds everything the BUILD needs — `sanity`, `typescript`,
+platform binaries — while the running server imports six packages. Vite's `ssr.noExternal: true`
+compiles those six into the server bundle, and the result runs from a directory with **no
+`node_modules` anywhere above it**. Checked against the unbundled build over all 94 sitemap URLs plus
+404 probes: identical bodies once asset hashes are masked, Shiki-highlighted code included. Memory
+did not move: 80 vs 76 MB idle, 274 vs 320 MB after the same sweep (macOS; ratios, not absolutes).
+
+**The memory payoff there is the deploy, not the process.** The droplet stops installing anything,
+so it needs Node and nothing else — no pnpm, no 512 MB-heap install on the box that serves the sites.
+
+Two traps, both found here the hard way:
+
+- **Set it with a Vite plugin carrying `apply: 'build'`, not as `vite.ssr.noExternal`.** The direct
+  setting also applies to `astro dev`, where it sends React's CommonJS entry through Vite's module
+  runner and the dev server fails to start: `module is not defined`. See `bundleServerDependencies`
+  in `web/astro.config.mjs`.
+- **A native addon cannot be bundled.** Here that is sharp, reached only through Astro's on-demand
+  `/_image` endpoint, which nothing uses. If `ux-methods` renders `<Image>` from `astro:assets` on
+  demand, this does not apply as-is — and the failure would arrive at request time, not at build.
+
+**Before adopting it there:** build with the plugin, run `dist/server/entry.mjs` from a directory
+with nothing above it, and sweep every URL against the unbundled build. `uxmethods-graph` is the
+dependency whose runtime shape is unknown from here. There is no local build to read, so the import
+list is unmeasured.
+
+If `pnpm deploy` is ever considered instead: since pnpm 10 it is lockfile-pinned only with
+`inject-workspace-packages` enabled — `--config.inject-workspace-packages=true` does it for one
+command — and it copies the whole package directory, **including an untracked `.env`** if one is
+present locally.
+
+### A systemd user unit instead of PM2 — *adopted here*, being built
+
+The five-week outage recorded above was PM2's own model failing: an empty in-memory process list,
+restored only at boot, on a machine that had not rebooted in 42 weeks. **An `enable`d systemd unit is
+declarative** — there is no saved list to go stale — and `Restart=always` covers the crash case PM2
+covers.
+
+- **Memory:** no supervisor daemon. That is 16–28 MB per PM2 user — ~16 MB in the capacity note
+  above, 28 MB measured for `uxm`'s in late September — and it is one per user, so two users running
+  PM2 is two daemons. A kernel-enforced memory cap replaces PM2's polled `max_memory_restart`.
+- **No sudo to restart:** a *user* unit plus `loginctl enable-linger <user>`, run once as root, lets
+  the deploy user manage its own service and has it start at boot.
+- **The unit names `/usr/bin/node`** (see the next entry), so the "unit hardcodes the Node version in
+  two places" trap above cannot occur.
+
+*To be completed when AFC's unit lands on the droplet*: the unit file, whether the kernel memory cap
+is available to user units there (it depends on the memory controller being delegated to them), and
+what the process actually measures on Linux.
+
+### System Node from NodeSource, not per-user nvm — *adopted here*
+
+A stable `/usr/bin/node` that upgrades in place with `apt`. It retires both traps in "Restored and
+moved to Node 24" above — the resurrect that restores an old `PATH`, and the startup unit pointing at a
+versioned directory — and the deploy script needs no nvm sourcing, which is where
+`nvm use 20 >/dev/null 2>&1 || true` lived.
+
+It costs root for installs and upgrades, and a third-party apt repository. It can coexist with `uxm`'s
+nvm on the droplet: nvm's `PATH` wins in `uxm`'s own shells and unit until `uxm` is moved deliberately.
+
+### `X-Forwarded-Proto` does nothing without `security.allowedDomains` — *measured there*
+
+This project's `nginx/afc.conf` used to say that `preview.uxmethods.org` "is missing"
+`X-Forwarded-Proto`, which implies adding it fixes scheme detection. **It would not.** Measured against
+`ux-methods`' installed astro 6.4.8, as well as 7.2.2 here: without `security.allowedDomains`, Astro
+discards both `Host` and `X-Forwarded-Proto` (`validateHost` and `validateForwardedHeaders` in
+`astro/dist/core/app/validate-headers.js` return nothing), and `Astro.url` becomes
+`http://localhost:<port>`. With an `allowedDomains` entry as a control, both are trusted.
+
+Nothing in `ux-methods`' `src/` reads `Astro.url`'s origin, so nothing is broken today. It starts to
+matter the day an on-demand route accepts a POST: Astro's `checkOrigin` compares the `Origin` header
+against that localhost origin and refuses a same-site form as cross-site. The fix is both halves —
+`allowedDomains` in `astro.config`, and the header in nginx.
+
+### One server-level `X-Robots-Tag` on a proxied host — *measured here*, *inferred* there
+
+On a host where nginx proxies everything and **no location declares an `add_header`**, a single
+server-level `add_header X-Robots-Tag … always` reaches every response — pages, assets, 404s, the auth
+challenge. The trap is relocated rather than gone: give the proxy location an `add_header` of its own
+and every page loses the tag while `/.env` keeps it. Reproduced in nginx 1.24 on 2026-09-29.
+
+Worth checking for when `preview.uxmethods.org`'s config is brought into its repository — it exists
+only on the server today (see the nginx entry above), so its current shape is unknown from here.
+
+### A `pipefail` trap for any health check that greps a page — *measured here*
+
+`printf '%s' "$BODY" | grep -q "$WANT"` under `set -o pipefail` reports a **present** match as
+missing once the body outgrows the pipe buffer: `grep` exits at its first match, `printf` is still
+writing and takes SIGPIPE (exit 141), and the pipeline fails. A 225 KB page did it; `PIPESTATUS` read
+`141 0`. Match with `[[ "$BODY" == *"$WANT"* ]]` instead. It matters there because the URL check the
+outage section says was missing is exactly the kind of script that would be written this way.

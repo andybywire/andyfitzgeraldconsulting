@@ -1,4 +1,5 @@
 ---
+import {stegaClean} from '@sanity/client/stega'
 /**
  * The presentation detail page — phase 4 item 4, and the Presentation branch's only
  * detail template.
@@ -123,7 +124,11 @@ const [presentation, transcriptDoc, delivery, bands, nav, slideDoc, related] = a
 /* Loud rather than quiet, matching the other detail routes: every slug here came out of
    the dataset a moment ago, so a miss means the queries disagree about the same
    document — which should fail the build rather than ship an empty page. */
-if (!presentation) throw new Error(`[presentations/[slug]] no document for slug "${slug}"`)
+/* A 404 when rendered on demand, a build error when prerendered — see pages/[slug].astro. */
+if (!presentation) {
+  if (Astro.isPrerendered) throw new Error(`[presentations/[slug]] no document for slug "${slug}"`)
+  return Astro.rewrite('/404')
+}
 
 /* `genre` is required by the schema and constrained to the Presentation branch, so the
    fallback is for a document mid-edit rather than for the corpus. It is also the chip
@@ -277,11 +282,12 @@ const transcriptContents = headingLinks(transcript, 'h3')
 const recordings = events.flatMap((event) => event?.recordings ?? []).filter(Boolean)
 
 const recordingSections = recordings.map((recording, index) => {
-  const isVideo = recording?.kind === 'video'
+  /* stegaClean: preview encodes `kind` — see STEGA AND LOGIC in sanity/load-query.ts. */
+  const isVideo = stegaClean(recording?.kind) === 'video'
   const base = isVideo ? 'watch' : 'listen'
   const priorOfKind = recordings
     .slice(0, index)
-    .filter((r) => (r?.kind === 'video') === isVideo).length
+    .filter((r) => (stegaClean(r?.kind) === 'video') === isVideo).length
   return {
     id: priorOfKind === 0 ? base : `${base}-${priorOfKind + 1}`,
     label: `${isVideo ? 'Watch' : 'Listen to'} the ${genreLabel}`,

@@ -376,11 +376,17 @@ export function feedResponse(entries: AtomEntry[], meta: FeedMeta, site: URL): R
   })
 
   /**
-   * NOTE the `content-type` set here only reaches a visitor in the SSR preview build.
-   * These are prerendered routes, so in production Astro writes the body to a `.xml`
-   * file and discards the header; nginx then types it from its own extension map. Making
-   * production serve `application/atom+xml` is an nginx change, recorded as a phase 6
-   * carry-forward in `docs/feeds-kickoff.md`.
+   * NOTE the `content-type` set here reaches NO visitor, in either build. These routes are
+   * prerendered in both modes — `prerender = true` holds under the preview build's
+   * `output: 'server'` too — so Astro writes the body to a `.xml` file and discards the
+   * header, and whatever serves the file types it. Production's nginx sends
+   * `application/atom+xml` from a location of its own (see the feeds location in nginx/);
+   * the SSR preview's Node server types it from the extension, as `application/xml`.
+   * Both measured 2026-09-29.
+   *
+   * This read "only reaches a visitor in the SSR preview build" until then, which assumed
+   * preview rendered feeds on demand. Kept because it is what the Response means, and it
+   * would take effect the day a feed is rendered on demand.
    */
   return new Response(stegaClean(xml), {
     headers: {'content-type': 'application/atom+xml; charset=utf-8'},

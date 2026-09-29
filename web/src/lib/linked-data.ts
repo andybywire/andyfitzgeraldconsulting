@@ -55,6 +55,7 @@
  * │  is flagged rather than quietly decided.                                  │
  * └──────────────────────────────────────────────────────────────────────────┘
  */
+import {stegaClean} from '@sanity/client/stega'
 import {PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID} from 'astro:env/client'
 
 /**
@@ -620,7 +621,8 @@ export function presentationGraph(input: PresentationGraphInput): GraphNode[] {
     nodes.push(event)
 
     for (const recording of delivery.recordings) {
-      const isVideo = recording.kind === 'video'
+      // stegaClean: preview encodes `kind` — see STEGA AND LOGIC in sanity/load-query.ts.
+      const isVideo = stegaClean(recording.kind) === 'video'
       const thumbnail = recording.posterRef ? assetUrl(recording.posterRef) : null
 
       const node: GraphNode = {
@@ -756,15 +758,25 @@ export function pageNode(input: PageNodeInput): GraphNode {
  * markup. Escaping the character is the standard fix and JSON-equivalent, so a consumer
  * reads exactly the same string. It closes `<!--` at the same time.
  *
- * Then the Unicode tag block, U+E0000–U+E007F, is stripped. That is where Sanity's stega
- * encoding hides its edit references: invisible characters woven into every string the
- * preview build fetches. They would be invisible in rendered text and NOT invisible to a
+ * Then stega is removed, because in a preview build every string carries Sanity's
+ * invisible edit references. They are invisible in rendered text and NOT invisible to a
  * structured-data validator, which is exactly where someone would go looking for a
- * problem that is not there. Production disables stega, so this only ever fires in
+ * problem that is not there. Production disables stega, so this only ever matters in
  * preview — which is precisely the build a person inspects by hand.
+ *
+ * ── `stegaClean`, NOT A CHARACTER-RANGE REGEX. THE REGEX WAS WRONG ──────────
+ *
+ * This used to strip the Unicode tag block, U+E0000–U+E007F, on the belief that stega
+ * lives there. MEASURED 2026-09-29 on the built preview server: one article's graph
+ * carried 8,872 stega characters, all ZERO-WIDTH (U+200B–U+200D, U+FEFF) and none in the
+ * tag block — so the regex removed nothing, and had never run against real stega before.
+ * Widening it to zero-width characters would be wrong too: legitimate content uses them
+ * (an emoji ZWJ sequence such as 🤷‍♂️ sits in the feeds). `stegaClean` removes only
+ * encoded sequences, which is the distinction a regex cannot draw.
  */
 export function serializeGraph(nodes: GraphNode[]): string {
-  return JSON.stringify({'@context': 'https://schema.org', '@graph': nodes})
-    .replace(/</g, '\\u003c')
-    .replace(/[\u{E0000}-\u{E007F}]/gu, '')
+  return JSON.stringify({'@context': 'https://schema.org', '@graph': stegaClean(nodes)}).replace(
+    /</g,
+    '\\u003c',
+  )
 }

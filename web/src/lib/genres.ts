@@ -1,3 +1,4 @@
+import {stegaClean} from '@sanity/client/stega'
 import type {GENRE_TREE_QUERY_RESULT} from '../../sanity.types'
 
 /**
@@ -126,15 +127,16 @@ export function pluralizeGenre(label: string): string {
  * which is precisely why the failure has to be loud.
  */
 export function partitionGenres(tree: Tree): GenrePartition {
-  const documentTop = tree.topConcepts?.find((c) => c.prefLabel === DOCUMENT)
+  /* stegaClean: preview encodes this label — see STEGA AND LOGIC in sanity/load-query.ts. */
+  const documentTop = tree.topConcepts?.find((c) => stegaClean(c.prefLabel) === DOCUMENT)
   if (!documentTop) {
     throw new Error(
       `Genre scheme has no "${DOCUMENT}" top concept — the Home Insights band cannot be built. ` +
-        `Found: ${(tree.topConcepts ?? []).map((c) => c.prefLabel).join(', ') || 'none'}.`,
+        `Found: ${(tree.topConcepts ?? []).map((c) => stegaClean(c.prefLabel)).join(', ') || 'none'}.`,
     )
   }
 
-  const note = tree.concepts.find((c) => c.prefLabel === NOTE)
+  const note = tree.concepts.find((c) => stegaClean(c.prefLabel) === NOTE)
   if (!note) {
     throw new Error(`Genre scheme has no "${NOTE}" concept — the Insights band cannot be split.`)
   }

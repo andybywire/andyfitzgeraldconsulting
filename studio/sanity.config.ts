@@ -1,7 +1,9 @@
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
+import {presentationTool} from 'sanity/presentation'
+import {resolve} from './resolve'
 import {taxonomyManager} from 'sanity-plugin-taxonomy-manager'
-import { mermaidContentModel } from 'sanity-plugin-mermaid-content-model'
+import {mermaidContentModel} from 'sanity-plugin-mermaid-content-model'
 import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemas'
 import {codeInput} from '@sanity/code-input'
@@ -47,6 +49,31 @@ const hiddenDocTypes = (listItem: any) =>
     'collection',
   ].includes(listItem.getId())
 
+/**
+ * ── WHERE PRESENTATION POINTS: DECIDED BY WHERE THE STUDIO IS RUNNING ─────────────────────
+ *
+ * The deployed Studio previews the SSR preview host; `sanity dev` on this laptop previews
+ * `pnpm --filter web dev:preview` on :4321, so the whole round trip can be exercised before any
+ * of it reaches the droplet.
+ *
+ * `initial` accepts a function of the Studio's own `location.origin`, and that is used instead of
+ * the conventional `SANITY_STUDIO_PREVIEW_URL` plus a committed `.env.development`: one place
+ * rather than two, nothing to forget to set, and no way for a deployed Studio to end up pointing
+ * at localhost — the failure an env var that leaked into `sanity deploy` would produce.
+ *
+ * NO `previewMode`. That option names a route which switches the front end into draft mode per
+ * visitor (a cookie), and this site has no such route by design: the preview host is a separate
+ * BUILD that always reads drafts (see web/src/sanity/load-query.ts). So the perspective switcher
+ * Presentation shows does not change what the preview renders — it is drafts either way.
+ *
+ * No `allowOrigins` either: it defaults to the origin of `initial`, which is the only one used.
+ */
+const PREVIEW_HOST = 'https://preview.andyfitzgeraldconsulting.com'
+const LOCAL_PREVIEW = 'http://localhost:4321'
+
+const previewUrlFor = (studioOrigin: string) =>
+  new URL(studioOrigin).hostname === 'localhost' ? LOCAL_PREVIEW : PREVIEW_HOST
+
 export default defineConfig({
   name: 'default',
   // Titled for the dataset, not the business: two studios against two datasets is how you edit
@@ -81,6 +108,13 @@ export default defineConfig({
             S.documentTypeListItem('skosConcept').title('Concepts'),
           ])
       },
+    }),
+    presentationTool({
+      previewUrl: {
+        initial: ({origin}) => previewUrlFor(origin),
+      },
+      // Which document a URL is about, and where a document shows — see ./resolve.ts.
+      resolve,
     }),
     taxonomyManager({
       baseUri: 'https://andyfitzgeraldconsulting.com/',

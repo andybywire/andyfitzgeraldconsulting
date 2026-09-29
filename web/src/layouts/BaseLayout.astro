@@ -121,6 +121,75 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
 const analytics = import.meta.env.PROD && PUBLIC_SITE_MODE !== 'preview'
 
 /**
+ * ── THE ROBOTS META: A PAGE'S OWN `noindex`, OR THE WHOLE PREVIEW BUILD ─────
+ *
+ * Preview's canonicals name the preview host — its `site` is that host — so nothing in the
+ * markup tells a crawler the real copy lives elsewhere. nginx keeps the host out of the index
+ * with basic auth and a server-level `X-Robots-Tag`, and both are CONFIG, which can drift: the
+ * header is one stray `add_header` away from vanishing off every page (see nginx/afc.conf).
+ * This is the guard that travels inside the build, so it holds wherever the HTML is served.
+ *
+ * `nofollow` on preview, `follow` on a production page that opts out, deliberately. A
+ * production 404 or search page should still pass a crawler on to the real pages it links to;
+ * nothing linked from preview should be followed at all, and the header already says
+ * `noindex, nofollow`, so the two agree.
+ *
+ * Production output is unchanged. `PUBLIC_SITE_MODE` is inlined at build time, so a production
+ * build resolves this to exactly the `noindex, follow` or nothing it emitted before.
+ */
+const robots =
+  PUBLIC_SITE_MODE === 'preview' ? 'noindex, nofollow' : noindex ? 'noindex, follow' : undefined
+
+/**
+ * ── VISUAL EDITING: THE PREVIEW HOST, AND NOTHING ELSE ─────────────────────
+ *
+ * The overlays that make a stega-encoded string clickable in Sanity's Presentation tool.
+ * Stega was already wired (load-query.ts encodes edit references into every string the
+ * preview build fetches); this is the half that READS them — until it existed, the edit
+ * links were in the page and nothing drew them.
+ *
+ * THE SAME MODE AS load-query.ts, deliberately. Encoding and overlays are two halves of
+ * one feature and must switch together: overlays without stega find nothing to draw, and
+ * stega without overlays is invisible characters in the text for no benefit — which is why
+ * production has neither.
+ *
+ * NOT `import.meta.env.PROD && …` like analytics above, and the difference is the point.
+ * Analytics must stay off a laptop; visual editing must stay ON one. `pnpm --filter web
+ * dev:preview` runs `astro dev` in preview mode, and that is where Presentation is first
+ * tested against a local Studio, before any of it reaches the droplet.
+ *
+ * ── A GATED IMPORT, NOT `<VisualEditing enabled={…}>` ─────────────────────
+ *
+ * The component takes an `enabled` prop, and the obvious version passes the mode to it.
+ * MEASURED 2026-09-29, that ships 660 KB of dead code to production. With `enabled` false
+ * no page renders the island, but Astro still BUNDLES every `client:only` component it can
+ * see, so three chunks — the island's entry, a 657 KB VisualEditing bundle, and its Comlink
+ * loader — landed in `_astro/`, referenced by no HTML page and loadable by nothing. With
+ * the gated import below the directory is 436 KB against 1156 KB: those 660 KB, plus
+ * ~60 KB more that went with them and was not identified.
+ *
+ * Importing the component ONLY in preview mode keeps it out of the production build
+ * entirely, because the bundler can drop the branch — but only if the condition is a
+ * constant at build time:
+ *
+ *   `import.meta.env.PUBLIC_SITE_MODE`   Vite replaces it with a literal. Dropped:
+ *                                        0 visual-editing files, 436 KB.
+ *   `PUBLIC_SITE_MODE` from astro:env    Read through a module, not folded. NOT dropped:
+ *                                        the same 3 files, 1156 KB.
+ *
+ * So this is the one place in the codebase that reads `import.meta.env` rather than
+ * `astro:env`, and the reason is the measurement above, not habit. Positive control: a
+ * `build:preview` run DOES contain the island, client and server chunks both.
+ *
+ * `null` in production, the component in preview; the template renders it only when it
+ * exists, so there is no `enabled` prop left to get wrong.
+ */
+const VisualEditing =
+  import.meta.env.PUBLIC_SITE_MODE === 'preview'
+    ? (await import('@sanity/astro/visual-editing')).VisualEditing
+    : null
+
+/**
  * ── THE SITE ID IS IN THE FILENAME, NOT IN AN ATTRIBUTE ────────────────────
  *
  * `pa-AnHKBDixooI1l5rz0moo0.js` IS the identifier for Andy's Plausible site. The older
@@ -325,7 +394,7 @@ const PLAUSIBLE_INIT =
     <title>{Astro.url.pathname === '/' ? title : `${title} | ${SITE_FACTS.personName}`}</title>
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={canonicalUrl} />
-    {noindex && <meta name="robots" content="noindex, follow" />}
+    {robots && <meta name="robots" content={robots} />}
 
     {
       /*
@@ -436,9 +505,11 @@ const PLAUSIBLE_INIT =
 
         `type` must be `application/atom+xml` and it is the one thing here that cannot be
         fudged — a reader filters on it. Note that is a claim about the LINK, not about
-        what the server sends: these are prerendered `.xml` files, so nginx types them
-        `application/xml` until the phase 6 change recorded in docs/feeds-kickoff.md.
-        Readers sniff, so discovery works either way, but the two should agree eventually.
+        what the server sends: these are prerendered `.xml` files, typed by whatever serves
+        them. Production's nginx sends `application/atom+xml` — the phase 6 change recorded
+        in docs/feeds-kickoff.md, verified on the live apex 2026-09-29 — so there the two
+        agree. The SSR preview's Node server sends `application/xml`. Readers sniff, and
+        nothing subscribes to a noindex host behind basic auth, so that one is left alone.
 
         Root-relative hrefs so the preview deploy advertises its own feeds rather than
         production's.
@@ -515,6 +586,30 @@ const PLAUSIBLE_INIT =
     */
     }
     <SearchResults />
+
+    {
+      /*
+      ── VISUAL EDITING'S OVERLAYS ─────────────────────────────────────────────
+
+      Document-level for the same reason as search above: every page needs it once, and
+      it belongs to no page. Position in the markup does not matter — it renders a
+      `client:only` React island that portals its own UI into <body>.
+
+      What the island does, all from @sanity/astro's defaults, none configured here:
+      draws a clickable outline on every stega-encoded string; keeps Presentation's URL
+      bar in step with the page as Andy navigates; and on each edit, RELOADS the page.
+      That last default is right precisely because preview is SSR with the drafts
+      perspective — a reload is a fresh server render of the draft, so no live-query
+      machinery is needed on top.
+
+      No `zIndex`. The library's default is 9999999 and the highest layer this site
+      sets is 1 (ThemeToggle), so the overlays already sit above everything.
+
+      In production `VisualEditing` is null and this renders nothing — and, because of
+      how it is imported (see the frontmatter), the build contains none of its code.
+    */
+    }
+    {VisualEditing && <VisualEditing enabled />}
   </body>
 </html>
 

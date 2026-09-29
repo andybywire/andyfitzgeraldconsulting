@@ -22,6 +22,7 @@
  * fields it actually reads are few enough to state, and stating them is what lets both
  * callers pass their own row unchanged.
  */
+import {stegaClean} from '@sanity/client/stega'
 import {formatLocation, type EventLocation} from '../../lib/location'
 
 /**
@@ -85,7 +86,8 @@ export function presentationVenueLine(item: PresentationCardSource): string | nu
  * because the query's `defined()` filter is invisible to TypeGen.
  */
 export function presentationTags(item: PresentationCardSource): CardTag[] {
-  const kinds = new Set((item.recordingKinds ?? []).filter(Boolean))
+  /* stegaClean: preview encodes each kind — see STEGA AND LOGIC in sanity/load-query.ts. */
+  const kinds = new Set((item.recordingKinds ?? []).filter(Boolean).map(stegaClean))
   const extra = (item.eventCount ?? 0) - 1
 
   return [

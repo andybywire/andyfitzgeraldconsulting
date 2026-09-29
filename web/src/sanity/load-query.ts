@@ -32,6 +32,37 @@ if (isPreview && !SANITY_API_READ_TOKEN) {
  * stega encodes edit references into the content strings themselves, which is what makes
  * click-to-edit work in Presentation. It needs the result source map to do that, so the two
  * are requested together or not at all.
+ *
+ * ── STEGA AND LOGIC: CLEAN ANY STRING THAT IS COMPARED, KEYED OR PARSED ────────────────
+ *
+ * In preview, almost every string this returns carries invisible characters after its
+ * visible text. That is harmless in markup and fatal in logic: `'Document' + stega !==
+ * 'Document'`, a Set of encoded kinds never `.has('video')`, and a slug built from an
+ * encoded label carries the junk into its URL. So any value that is COMPARED, used as a
+ * KEY, or PARSED must go through `stegaClean` (from '@sanity/client/stega') first; a value
+ * that is only rendered must not, or it loses its click-to-edit link.
+ *
+ * THIS WENT UNSEEN UNTIL 2026-09-29 because stega had never actually run: it is enabled
+ * only with a Studio URL, and none was set anywhere until the SSR preview work. The first
+ * run 500'd 73 of 83 pages — `lib/genres.ts` and `lib/related.ts` identify Genre concepts
+ * by prefLabel and threw — and a static audit then found five more sites failing SILENTLY,
+ * with a 200 and the wrong output, which no status sweep can catch.
+ *
+ * What stega skips, read from @sanity/client 7.26's own filter rather than assumed: keys
+ * beginning `_` or ending `Id` (so `_type`, `_id`, `_ref` are safe), `slug.current`, values
+ * that parse as URLs or dates, anything under `meta`, `metadata`, `openGraph` or `seo`, any
+ * path segment containing "type", a denylist (`id`, `key`, `slug`,
+ * `url`, `href`, `status`, `theme`, `variant` and a few dozen more), and Portable Text's
+ * `style`, `listItem` and `markDefs` — it walks only a block's `children` and a span's
+ * `text`. Everything else is encoded, INCLUDING `prefLabel` and `kind`.
+ *
+ * To find every site that needs it after a change, audit comparisons rather than trusting a
+ * list here (a list would rot):
+ *
+ *   grep -rnE "(===|!==)\s*'|\.has\('|slugify\(|new Set\(" web/src
+ *
+ * and ask of each hit whether the value came from a query. `feed-entries.ts` cleans its
+ * whole input up front instead, which is the right shape for output that is never edited.
  */
 const client = sanityClient.withConfig(
   isPreview

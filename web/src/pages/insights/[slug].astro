@@ -101,7 +101,11 @@ const [insight, bands, related] = await Promise.all([
 /* Loud rather than quiet. Every slug here came out of the dataset a moment ago,
    so a miss means the two queries disagree — which should fail the build, not
    ship a page with an empty body. */
-if (!insight) throw new Error(`[insights/[slug]] no document for slug "${slug}"`)
+/* A 404 when rendered on demand, a build error when prerendered — see pages/[slug].astro. */
+if (!insight) {
+  if (Astro.isPrerendered) throw new Error(`[insights/[slug]] no document for slug "${slug}"`)
+  return Astro.rewrite('/404')
+}
 
 /* `genre` is defined on all 42 documents (verified 2026-08-26), so the fallback is
    for a future document mid-edit rather than for the corpus. */
