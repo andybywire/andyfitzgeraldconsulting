@@ -1,6 +1,7 @@
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {presentationTool} from 'sanity/presentation'
+import {resolve} from './resolve'
 import {taxonomyManager} from 'sanity-plugin-taxonomy-manager'
 import {mermaidContentModel} from 'sanity-plugin-mermaid-content-model'
 import {visionTool} from '@sanity/vision'
@@ -112,6 +113,8 @@ export default defineConfig({
       previewUrl: {
         initial: ({origin}) => previewUrlFor(origin),
       },
+      // Which document a URL is about, and where a document shows — see ./resolve.ts.
+      resolve,
     }),
     taxonomyManager({
       baseUri: 'https://andyfitzgeraldconsulting.com/',
