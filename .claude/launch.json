@@ -17,6 +17,18 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "studio", "dev"],
       "port": 3030
+    },
+    {
+      "name": "web-ssr",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "HOST=127.0.0.1",
+        "PORT=8081",
+        "node",
+        "--env-file=web/.env",
+        "web/dist/server/entry.mjs"
+      ],
+      "port": 8081
     }
   ]
 }
