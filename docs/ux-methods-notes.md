@@ -404,9 +404,9 @@ for now rather than a lag to fix.
 
 This project's preview host flipped from a static build to SSR on the **same droplet**, which is the
 situation `ux-methods` has been in all along. Several of the choices made here differ from what
-`ux-methods` does, and four of them bear directly on memory on a 458 MB box: bundling, the systemd
-unit, `NODE_ENV`, and limits sized from a measurement. Each entry marks what was measured here and
-what would need checking there before adopting it.
+`ux-methods` does, and three of them bear directly on memory on a 458 MB box: bundling, the systemd
+unit, and limits sized from a measurement. Each entry marks what was measured here and what would need
+checking there before adopting it.
 
 **It went live on 2026-09-29** and was verified end to end — Presentation from the deployed Studio,
 overlays, click-through, reload on edit, navigation sync — so the entries below describe a working
@@ -596,15 +596,28 @@ declares ONE loses all of the server's. Measured: a single `proxy_set_header X-C
 `/_astro/` alone, and that location's requests arrived with `Host` reverted to the upstream's own
 address and no forwarded headers, while `/` kept all four.
 
-### `NODE_ENV=production` halves the process — *measured here*, already set there
+### macOS memory figures are noise; measure side by side, or on the droplet — *measured here*
 
-`ux-methods`' `ecosystem.config.cjs` sets `NODE_ENV: "production"` (*read*), so this is a reason to
-keep it rather than a fix. It is recorded because nothing looks wrong without it. React picks its
-production or development build at RUNTIME from this variable, bundled or not. Over the same 94-URL
-sweep here: **179 MB RSS with it, 339 MB without**, and the HTML byte-identical either way. So the one
-place it bites is a server started by hand while debugging — `node dist/server/entry.mjs` with no
-environment — which then measures at twice its real size and misleads whoever is sizing the droplet.
-This project's earliest macOS memory figures (280–355 MB) were very likely taken that way.
+**A retraction first.** An earlier version of this entry was titled "`NODE_ENV=production` halves the
+process", on the strength of ONE pair of macOS runs: 179 MB RSS with it, 339 MB without. That was
+wrong. A controlled comparison the same day — four fresh processes swept side by side, `NODE_ENV` ×
+V8 heap cap — gave:
+
+| after two full sweeps | heap cap 128 | no cap |
+|---|---|---|
+| `NODE_ENV=production` | 291 → 260 MB | 334 → 305 MB |
+| `NODE_ENV` unset | 288 → 268 MB | 296 → 304 MB |
+
+No `NODE_ENV` effect; a modest one, 30–45 MB, from the heap cap. And a structural reason for the
+first: the site's only React component, the visual-editing island, is client-only, so the server
+barely runs React. `ux-methods` sets `NODE_ENV: "production"` (*read*); it is the right setting, but
+not a memory lever unless React is rendered on the server — check that before expecting one.
+
+**The lesson that transfers is about method.** macOS RSS after a sweep ranged 180–370 MB across
+configurations and runs that should have been comparable; it does not reclaim freed pages the way
+Linux does. The droplet measured 148 MiB peak for the same sweep. So: compare configurations as fresh
+processes swept side by side on the same machine, never one run against another taken minutes apart —
+and take numbers that size a droplet from the droplet.
 
 ### Two deploy-script traps — *measured here*
 

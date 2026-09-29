@@ -99,13 +99,21 @@ ExecStart=/usr/bin/node --env-file=/var/www/afc-preview/preview.env --max-old-sp
 Environment=HOST=127.0.0.1
 Environment=PORT=8081
 
-# ── NODE_ENV=production IS NOT DECORATION — IT HALVES THE MEMORY ────────────
+# ── NODE_ENV=production: CORRECT, BUT NOT A MEMORY SAVING ───────────────────
 #
 # The bundled server carries BOTH of React's builds and picks one at runtime from
-# this variable. Unset, it runs React's development build. Measured 2026-09-29
-# over the same 94-URL sweep: 179 MB RSS with it, 339 MB without, and the HTML
-# byte-identical either way. So nothing looks wrong without it, and the process
-# costs twice what it should on a droplet with ~224 MB to spare.
+# this variable; unset, it would load the development build. That is the reason
+# to set it — the right build for a server, and it will matter the day a React
+# component is rendered on the server.
+#
+# It does NOT change memory today, and this comment first said it halved it.
+# That came from ONE pair of macOS runs (179 vs 339 MB) and was wrong. A
+# controlled comparison the same day — four fresh processes swept side by side,
+# NODE_ENV × heap cap — put NODE_ENV=production at 291/260 MB after two sweeps
+# and unset at 288/268: no difference. The heap cap below made a modest one
+# (30–45 MB). The reason is structural: the site's only React component, the
+# visual-editing island, is client-only, so the server barely runs React at all.
+# The droplet's own figures are further down.
 Environment=NODE_ENV=production
 
 Restart=always

@@ -617,7 +617,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      render limit bounds what bots cost. **Drafts on preview are readable by anyone who finds the
      host**, by Andy's call.
    - **Memory limits from the droplet:** 148 MiB peak over every sitemap page, so `MemoryHigh=200M`
-     and `MemoryMax=256M`. `NODE_ENV=production` halves it — React picks its build at runtime.
+     and `MemoryMax=256M`. Sized on Linux deliberately: macOS RSS for the same sweep read 180–370 MB
+     across runs, and a claim made from one macOS pair — that `NODE_ENV=production` halved memory —
+     had to be retracted the same day. See docs/ux-methods-notes.md.
 
    Found on the way and fixed in production too: `ls -t` pruning could delete the live release,
    because `tar` stamps a release with its artifact's build time. Now pruned by name.

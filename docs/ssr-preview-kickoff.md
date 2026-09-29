@@ -20,8 +20,11 @@
 > - "BaseLayout also emits a noindex meta in preview" — it did not; one was added.
 > - "`Astro.url` reads [`X-Forwarded-Proto`]" — not without `security.allowedDomains`; the header is
 >   sent and ignored today.
-> - "Memory (built SSR server, Mac): RSS 280–355 MB" — very likely measured without
->   `NODE_ENV=production`, which halves it. The droplet's figure is a 148 MiB peak.
+> - "Memory (built SSR server, Mac): RSS 280–355 MB" — not wrong as a measurement, but not a size
+>   either. This banner first blamed a missing `NODE_ENV=production` for it, and that was wrong
+>   too: a controlled comparison showed `NODE_ENV` makes no difference. It is simply macOS, whose
+>   RSS read 180–370 MB across comparable runs. The droplet's figure is a 148 MiB peak. This file's
+>   own warning, "Linux will differ — measure there", was the part to trust.
 >
 > One claim that held, and is now measured rather than assumed: the whole `visual-editing` branch
 > left production's output byte-identical to `main` (108/108 files) before it merged.
