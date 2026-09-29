@@ -250,6 +250,30 @@ export default defineConfig({
 
   vite: {
     plugins: [contactEndpointStub()],
+
+    /**
+     * ── PRE-BUNDLE THE VISUAL-EDITING ISLAND'S ENTRY, OR IT CANNOT HYDRATE IN DEV ──
+     *
+     * Found 2026-09-29: under `dev:preview` the overlays' island failed with
+     * `react-compiler-runtime … does not provide an export named 'c'`. The chain is
+     * @sanity/astro's island → @sanity/visual-editing/react → @sanity/ui → react-compiler-runtime,
+     * and that last one is CommonJS. @sanity/astro DOES ask Vite to pre-bundle it — which is what
+     * converts CommonJS to ES modules in dev — but names it bare, and under pnpm's isolated
+     * layout nothing in that chain is resolvable from web/. So the request failed with only a
+     * startup WARNING ("Failed to resolve dependency: react-compiler-runtime"), nothing was
+     * pre-bundled, and the browser was handed raw CommonJS as a module.
+     *
+     * The `parent > child` form is Vite's own answer to exactly this: it resolves the child from
+     * inside the parent. Pre-bundling the island's ENTRY, rather than the one leaf that failed,
+     * lets the bundler walk and convert the whole chain in one pass, the way a production build
+     * does — so the next CommonJS package somebody adds down there cannot reopen this.
+     *
+     * Dev only, by construction: `optimizeDeps` does nothing in `astro build`. And preview only,
+     * because nothing else ever loads the island.
+     */
+    ...(isPreview
+      ? {optimizeDeps: {include: ['@sanity/astro > @sanity/visual-editing/react']}}
+      : {}),
   },
 
   env: {
