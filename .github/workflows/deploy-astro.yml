@@ -399,9 +399,24 @@ jobs:
             # back to. build-prod.yml does the same thing under a comment claiming
             # five — commit 5e9fac8 changed the number and left the comment. This
             # preserves the behavior and fixes the comment.
+            #
+            # ── BY NAME, NOT `ls -t` (fixed 2026-09-29) ─────────────────────────
+            #
+            # This was `ls -1t | tail -n +4`, carried from build-prod.yml, and it
+            # could delete the LIVE release. A release's name is when it was
+            # deployed; its mtime is not, because `tar` restores the archive's own
+            # `./` entry onto the directory it extracts into — so the mtime is when
+            # the artifact was BUILT. Measured: extracted at 21:07, the directory
+            # read 21:03. Re-running an older workflow's deploy job would therefore
+            # make the release it had just activated the "oldest", and prune it. The
+            # preview deploy's test harness did exactly that before this fix — see
+            # deploy-preview.yml. Latent here, since it needs an old deploy re-run.
+            #
+            # The live release is also excluded by name, so no ordering mistake can
+            # ever select it.
             echo ">>> Pruning old releases (keeping the 3 most recent)"
             cd "$RELEASES"
-            ls -1t | tail -n +4 | xargs -r rm -rf
+            ls -1 | sort -r | tail -n +4 | grep -vxF "$(basename "$NEW_RELEASE")" | xargs -r rm -rf
 
             echo ">>> Done."
 
