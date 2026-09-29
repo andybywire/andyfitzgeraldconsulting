@@ -221,7 +221,7 @@ if [ "$UP_CODE" = "200" ]; then
 elif [ "$(upstream_of "$CONF")" = "$UPSTREAM" ]; then
   echo ">>> WARNING: the preview upstream $UPSTREAM answered $UP_CODE, not 200."
   echo ">>> The installed afc.conf already proxies there, so this run does not change that."
-  echo ">>> Installing anyway. Preview stays broken until the process is fixed — pm2 status, as afc."
+  echo ">>> Installing anyway. Preview stays broken until the process is fixed — systemctl --user status afc-preview, as afc."
 else
   echo "!!! The preview upstream $UPSTREAM answered $UP_CODE, not 200 (000 is no answer at all)." >&2
   echo "!!! This run would put preview behind a proxy that cannot serve it." >&2
@@ -391,7 +391,7 @@ if [[ " $OK " != *" $CODE "* ]]; then
   echo "!!! / returned $CODE" >&2
   # nginx itself is up if it can say this, so the fault is behind the proxy.
   if [[ "$CODE" == 50[234] ]]; then
-    echo "!!! nginx answered, but nothing usable did on the proxy port — pm2 status, as afc." >&2
+    echo "!!! nginx answered, but nothing usable did on the proxy port — systemctl --user status afc-preview, as afc." >&2
   fi
   exit 1
 fi
@@ -432,7 +432,7 @@ else
   fi
   if printf '%s' "$BODY" | grep -q '<hr><center>nginx/'; then
     echo "!!! A missing URL got nginx's own page ($CODE), so it never reached the site." >&2
-    echo "!!! A 502 is the preview process being down — pm2 status, as afc." >&2
+    echo "!!! A 502 is the preview process being down — systemctl --user status afc-preview, as afc." >&2
     exit 1
   fi
   if [[ "$CODE" != "404" ]]; then
