@@ -1,5 +1,31 @@
 # SSR preview — D4 onward, the last of phase 6
 
+> **DONE 2026-09-29.** D4–D7 are built, installed and verified; `preview.` is the SSR build behind an
+> nginx proxy, and visual editing works end to end from the deployed Studio. This file is kept as the
+> plan it was. CLAUDE.md's phase 6 block has the outcome, and the code carries the reasoning.
+>
+> **Where the build departed from this plan**, each decided with Andy:
+>
+> | this plan said | what shipped, and why |
+> |---|---|
+> | D4: split `site-common.conf` into a new `site-static.conf` | the static tier moved **inline** into `afc-production.conf` — one consumer after the flip, so no snippet |
+> | D5: `pnpm deploy --prod` for dependencies | **bundled** into `dist/server` — `pnpm deploy` measured 590 MB a release; no `node_modules` on the droplet |
+> | D5/D6: PM2 with `ecosystem.config.cjs` | a **systemd user unit**, `web/afc-preview.service` — ux-methods' PM2 outage; no daemon |
+> | D5: keep the PHP `server/` half in the preview release | preview's form runs **production's** PHP; the preview release is `app/` only |
+> | D6: Node for `afc` — nvm or a system package | **NodeSource**, `/usr/bin/node` |
+> | D7: basic auth, decided with evidence | **removed** — Presentation's frame gets a 401 with no prompt (Vivaldi); replaced by `noindex` ×2 and a render rate limit |
+>
+> **Claims below that turned out wrong**, so they are not re-derived from here:
+>
+> - "BaseLayout also emits a noindex meta in preview" — it did not; one was added.
+> - "`Astro.url` reads [`X-Forwarded-Proto`]" — not without `security.allowedDomains`; the header is
+>   sent and ignored today.
+> - "Memory (built SSR server, Mac): RSS 280–355 MB" — very likely measured without
+>   `NODE_ENV=production`, which halves it. The droplet's figure is a 148 MiB peak.
+>
+> One claim that held, and is now measured rather than assumed: the whole `visual-editing` branch
+> left production's output byte-identical to `main` (108/108 files) before it merged.
+
 Companion to [cutover-kickoff.md](cutover-kickoff.md), which this follows. **The cutover is done
 and verified** (2026-09-28): the apex serves the Astro build, and CLAUDE.md's phase 6 block records
 what was checked. What remains of phase 6 is flipping `preview.` from the static staging build to
