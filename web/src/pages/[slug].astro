@@ -134,7 +134,21 @@ const [page, bands, workBands] = await Promise.all([
 /* Loud rather than quiet. Every slug here came out of the dataset a moment ago, so a miss
    means the two queries disagree — which should fail the build rather than ship a page
    with an empty body. */
-if (!page) throw new Error(`[[slug]] no page document for slug "${slug}"`)
+/* ── A MISSING DOCUMENT: A BUILD ERROR WHEN STATIC, A 404 WHEN RENDERED ON DEMAND ───
+
+   Prerendered (the production build), `slug` came from getStaticPaths, so a document the
+   page query cannot find means the two queries disagree — a real bug, and the build should
+   fail loudly, which is what the throw has always done. Rendered on demand (the SSR
+   preview), `slug` is whatever was requested — a typo, a stale link, or the browser's own
+   `/favicon.ico` — and the honest answer is the site's 404 page with a 404 status.
+
+   `Astro.isPrerendered` is exactly that distinction, so neither mode loses its behavior.
+   Found 2026-09-29, when the preview's first page load 500'd on `/favicon.ico` and Astro's
+   dev server pushed the error onto every open page. */
+if (!page) {
+  if (Astro.isPrerendered) throw new Error(`[[slug]] no page document for slug "${slug}"`)
+  return Astro.rewrite('/404')
+}
 
 /**
  * ── "On This Page" — h2s ONLY, PLUS THE BAND ─────────────────────────────────

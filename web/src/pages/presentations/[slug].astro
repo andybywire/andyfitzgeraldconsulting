@@ -124,7 +124,11 @@ const [presentation, transcriptDoc, delivery, bands, nav, slideDoc, related] = a
 /* Loud rather than quiet, matching the other detail routes: every slug here came out of
    the dataset a moment ago, so a miss means the queries disagree about the same
    document — which should fail the build rather than ship an empty page. */
-if (!presentation) throw new Error(`[presentations/[slug]] no document for slug "${slug}"`)
+/* A 404 when rendered on demand, a build error when prerendered — see pages/[slug].astro. */
+if (!presentation) {
+  if (Astro.isPrerendered) throw new Error(`[presentations/[slug]] no document for slug "${slug}"`)
+  return Astro.rewrite('/404')
+}
 
 /* `genre` is required by the schema and constrained to the Presentation branch, so the
    fallback is for a document mid-edit rather than for the corpus. It is also the chip
