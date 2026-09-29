@@ -131,11 +131,17 @@ jobs:
           #
           #   DOES NOT:        a `root` pointing at a directory that does not exist
           #                    a missing `auth_basic_user_file`
+          #                    a `proxy_pass` to a port nothing listens on
+          #                    (added 2026-09-29: this job passes with the preview
+          #                    host proxying to 127.0.0.1:8081, and nothing in the
+          #                    container listens there)
           #
           # The practical consequence is worth knowing: a config can pass here,
           # install cleanly, reload without complaint and serve 404 to every
-          # request, because nothing on this path ever looks at the web root. That
-          # is the gap the smoke check in nginx/deploy.sh exists to cover.
+          # request, because nothing on this path ever looks at the web root — or
+          # 502 to every preview request, because nothing looks at the upstream
+          # either. Those are the gaps the interlocks and smoke checks in
+          # nginx/deploy.sh exist to cover.
           nginx -t
           SCRIPT
           docker run --rm -v "$PWD":/repo:ro -v /tmp/validate.sh:/validate.sh:ro \
