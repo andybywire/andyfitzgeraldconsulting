@@ -1,5 +1,6 @@
 import type {APIRoute} from 'astro'
 import {buildSearchIndex} from '../lib/search-index'
+import {stegaClean} from '@sanity/client/stega'
 import {loadQuery} from '../sanity/load-query'
 import {
   SEARCH_CONCEPTS_QUERY,
@@ -39,7 +40,7 @@ import {
 export const prerender = true
 
 export const GET: APIRoute = async () => {
-  /* Four independent queries, so four concurrent round trips rather than four serial
+  /* Five independent queries, so five concurrent round trips rather than five serial
      ones. Independent because they are split by the ClientReturn ceiling rather than by
      any data dependency — see the header of queries/search.ts. */
   const [insights, presentations, pages, reviews, concepts] = await Promise.all([
@@ -50,7 +51,15 @@ export const GET: APIRoute = async () => {
     loadQuery(SEARCH_CONCEPTS_QUERY),
   ])
 
-  const entries = buildSearchIndex({insights, presentations, pages, reviews, concepts})
+  /* ── CLEANED BEFORE THE INDEX IS BUILT, NOT AFTER ─────────────────────────────
+     This route is prerendered, so a preview build runs it with stega ON: measured
+     2026-09-29, 759,424 invisible characters in the preview index. Cleaning the finished
+     JSON (feed-entries.ts cleans its finished XML) would be too late here — keyword
+     extraction and tokenizing read the text, and stega sits glued to the last word of
+     every field. `stegaClean` rather than a zero-width regex, because it removes only
+     encoded sequences: real content carries zero-width joiners too (emoji). No effect in
+     production, where stega is off. See STEGA AND LOGIC in sanity/load-query.ts. */
+  const entries = buildSearchIndex(stegaClean({insights, presentations, pages, reviews, concepts}))
 
   /* Minified. The entries are sorted for determinism rather than for reading — see
      buildSearchIndex — and anything inspecting this by hand has `jq`. */
