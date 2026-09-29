@@ -124,10 +124,12 @@ const analytics = import.meta.env.PROD && PUBLIC_SITE_MODE !== 'preview'
  * ── THE ROBOTS META: A PAGE'S OWN `noindex`, OR THE WHOLE PREVIEW BUILD ─────
  *
  * Preview's canonicals name the preview host — its `site` is that host — so nothing in the
- * markup tells a crawler the real copy lives elsewhere. nginx keeps the host out of the index
- * with basic auth and a server-level `X-Robots-Tag`, and both are CONFIG, which can drift: the
- * header is one stray `add_header` away from vanishing off every page (see nginx/afc.conf).
- * This is the guard that travels inside the build, so it holds wherever the HTML is served.
+ * markup tells a crawler the real copy lives elsewhere. nginx sends a server-level
+ * `X-Robots-Tag`, and that is CONFIG, which can drift: the header is one stray `add_header`
+ * away from vanishing off every page (see nginx/afc.conf). This is the guard that travels
+ * inside the build, so it holds wherever the HTML is served — and since basic auth came off the
+ * preview host (2026-09-29; Presentation's frame cannot authenticate), these two are the only
+ * guards there are. nginx/deploy.sh checks both on every install.
  *
  * `nofollow` on preview, `follow` on a production page that opts out, deliberately. A
  * production 404 or search page should still pass a crawler on to the real pages it links to;
@@ -509,7 +511,7 @@ const PLAUSIBLE_INIT =
         them. Production's nginx sends `application/atom+xml` — the phase 6 change recorded
         in docs/feeds-kickoff.md, verified on the live apex 2026-09-29 — so there the two
         agree. The SSR preview's Node server sends `application/xml`. Readers sniff, and
-        nothing subscribes to a noindex host behind basic auth, so that one is left alone.
+        nothing subscribes to a noindex host, so that one is left alone.
 
         Root-relative hrefs so the preview deploy advertises its own feeds rather than
         production's.

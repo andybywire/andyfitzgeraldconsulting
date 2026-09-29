@@ -84,9 +84,9 @@ WorkingDirectory=/var/www/afc-preview/html/app
 #   or in the journal. A MISSING file makes Node exit at once, which is the
 #   intended failure: the deploy's health check sees it and rolls back.
 #
-# --max-old-space-size=128 caps V8's old generation. A full sweep of all 94 URLs
-#   under it, on macOS with NODE_ENV=production, finished with no heap-limit
-#   crash. What it guards against is growth, not the steady state.
+# --max-old-space-size=128 caps V8's old generation. Full sweeps under it finished
+#   with no heap-limit crash on macOS (94 URLs) and on the droplet (all 88 sitemap
+#   pages, NRestarts=0). What it guards against is growth, not the steady state.
 #
 # `dist/server/entry.mjs` is relative to WorkingDirectory. The server imports
 # nothing from node_modules — the preview build bundles its dependencies (see
@@ -95,7 +95,7 @@ ExecStart=/usr/bin/node --env-file=/var/www/afc-preview/preview.env --max-old-sp
 
 # The other end of nginx's `proxy_pass http://127.0.0.1:8081`. The loopback is
 # explicit so the process can never be reached around nginx — and so around its
-# basic auth and X-Robots-Tag. 8080 is preview.uxmethods.org's.
+# render limit and X-Robots-Tag. 8080 is preview.uxmethods.org's.
 Environment=HOST=127.0.0.1
 Environment=PORT=8081
 
@@ -111,18 +111,36 @@ Environment=NODE_ENV=production
 Restart=always
 RestartSec=5
 
-# ── THE MEMORY CEILING: PROVISIONAL UNTIL MEASURED ON THE DROPLET ───────────
+# ── THE MEMORY CEILING, SIZED FROM THE DROPLET ──────────────────────────────
 #
-# Past this the kernel kills the process and `Restart=` brings it back. 300M is a
-# guess sized from the macOS figure above with room to spare; Linux reclaims
-# differently, so the real number comes from the droplet. Revise it then, and
-# record the measurement here.
+# Measured on the droplet 2026-09-29, over all 88 sitemap pages in a row:
 #
-# It only works if the memory controller is delegated to afc's user manager.
-# When it is not, systemd accepts the line and quietly enforces nothing — so
-# check `cat /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/cgroup.controllers`
-# includes `memory` before trusting it. The V8 cap above works either way.
-MemoryMax=300M
+#   RSS                 98 MB fresh → 156 MB after the sweep
+#   MemoryCurrent       143 MiB   (what systemd counts, and what these enforce)
+#   MemoryPeak          148 MiB
+#   droplet available   162 MB, with this and preview.uxmethods.org both running
+#
+# The first version said 300M, sized from macOS with room to spare. Against the
+# droplet it was too loose to do its job: with 162 MB available, 300M would only
+# trip after the whole box was already swapping, so it protected nothing.
+#
+# MemoryMax=256M is ~1.7× the measured peak. Past it the kernel kills the process
+# and `Restart=` brings it back — a runaway preview restarts before the other
+# sites on the droplet feel it.
+#
+# MemoryHigh=200M is the soft line before that hard one. Above it the kernel
+# reclaims THIS service's memory first, pushing its pages to swap, rather than
+# squeezing preview.uxmethods.org or PHP-FPM. It throttles rather than kills,
+# which on a preview host is the right way round.
+#
+# Both only work because the memory controller IS delegated to afc's user
+# manager — confirmed 2026-09-29: `cgroup.controllers` for user@1001.service
+# reads `cpu memory pids`. If that ever changes, systemd accepts these lines
+# and quietly enforces nothing; re-check with
+#   cat /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/cgroup.controllers
+# The V8 cap above works either way.
+MemoryHigh=200M
+MemoryMax=256M
 
 [Install]
 WantedBy=default.target
