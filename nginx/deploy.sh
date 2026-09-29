@@ -2,7 +2,7 @@
 #
 # ── DEPLOY THE NGINX CONFIGURATION ──────────────────────────────────────────
 #
-#   AFC_SSH=<ssh target> AFC_STAGING_AUTH=user:pass nginx/deploy.sh
+#   AFC_SSH=<ssh target> nginx/deploy.sh
 #
 # AFC_SSH is handed to `ssh` and `scp` exactly as given, so it can be — and
 # usually should be — a Host alias from ~/.ssh/config rather than `root@<ip>`.
@@ -14,7 +14,7 @@
 # While the 11ty site's config is still enabled on the droplet, a run IS THE
 # CUTOVER, and it will not happen by accident — see "THE INTERLOCKS" below:
 #
-#   AFC_SSH=<ssh target> AFC_STAGING_AUTH=user:pass AFC_CUTOVER=yes nginx/deploy.sh
+#   AFC_SSH=<ssh target> AFC_CUTOVER=yes nginx/deploy.sh
 #
 # ── WHY THIS IS A SCRIPT AND NOT A WORKFLOW ────────────────────────────────
 #
@@ -70,9 +70,9 @@ set -euo pipefail
 
 : "${AFC_SSH:?Set AFC_SSH to the droplet ssh target — an ~/.ssh/config Host alias, see the header}"
 
-# "user:password" for the staging host's basic auth. Optional — without it the
-# preview smoke checks drop to a status probe and say so.
-AFC_STAGING_AUTH="${AFC_STAGING_AUTH:-}"
+# AFC_STAGING_AUTH is gone: the preview host dropped basic auth on 2026-09-29
+# (see afc.conf), so every smoke check below runs with no credentials. Setting it
+# does nothing now.
 
 # "yes" to permit THE CUTOVER. Only consulted while the 11ty site's config is
 # still enabled on the droplet; after that it is ignored. See the interlocks.
@@ -202,15 +202,27 @@ echo ">>> Production release present at $PROD_ROOT"
 
 # The `host:port` a config file proxies to, or nothing. Succeeds on a missing
 # file, so the first install of afc.conf does not trip `set -e`.
+#
+# `sort -u` because afc.conf has TWO proxy locations since 2026-09-29 — `/_astro/`
+# unlimited, `/` rate limited — both naming the same process. Without it this
+# returned both lines joined by a newline, and the probe below would have been
+# handed a malformed URL.
 upstream_of() {
   [ -f "$1" ] || return 0
-  sed -nE 's#^[[:space:]]*proxy_pass[[:space:]]+http://([0-9.]+:[0-9]+)[;/].*#\1#p' "$1"
+  sed -nE 's#^[[:space:]]*proxy_pass[[:space:]]+http://([0-9.]+:[0-9]+)[;/].*#\1#p' "$1" | sort -u
 }
 
 UPSTREAM="$(upstream_of "$STAGED/afc.conf")"
 if [ -z "$UPSTREAM" ]; then
   echo "!!! Could not read the preview upstream from afc.conf." >&2
   echo "!!! The interlock depends on it; refusing rather than guessing. Nothing was changed." >&2
+  exit 1
+fi
+# Two DIFFERENT upstreams would mean a config this interlock was not written for
+# — which one would it check? — so that is a refusal too, not a guess.
+if [ "$(printf '%s\n' "$UPSTREAM" | wc -l)" -ne 1 ]; then
+  echo "!!! afc.conf proxies to more than one upstream: $(printf '%s ' $UPSTREAM)" >&2
+  echo "!!! The interlock checks exactly one; refusing rather than guessing. Nothing was changed." >&2
   exit 1
 fi
 # `|| true`, not `|| echo 000`: curl already prints 000 when nothing answers,
@@ -374,116 +386,132 @@ SKIPPED=""
 echo
 echo ">>> Smoke-checking https://$PREVIEW_HOST/"
 
-smoke() {
-  if [[ -n "$AFC_STAGING_AUTH" ]]; then
-    curl -s --max-time 15 -u "$AFC_STAGING_AUTH" "$@"
-  else
-    curl -s --max-time 15 "$@"
-  fi
-}
+smoke() { curl -s --max-time 15 "$@"; }
 
-CODE="$(smoke -o /dev/null -w '%{http_code}' "https://$PREVIEW_HOST/" || true)"
-
-# 401 passes ONLY when we have no credentials to offer. With them, a 401 means
-# the htpasswd file is wrong, which should be reported rather than shrugged at.
-if [[ -n "$AFC_STAGING_AUTH" ]]; then OK="200 301 302"; else OK="200 301 302 401"; fi
-if [[ " $OK " != *" $CODE "* ]]; then
-  echo "!!! / returned $CODE" >&2
+# ── CHECK 1 RETRIES, BECAUSE `systemctl reload` DOES NOT WAIT ─────────────
+#
+# Measured 2026-09-29, on the run that flipped preview to SSR: this check read
+# 404 from the OLD static config, although nginx -t had passed and the reload had
+# succeeded. `systemctl reload nginx` returns once nginx has been SIGNALED, not
+# once its new workers are serving, and on a 1-vCPU box loading four sites'
+# certificates the first request can still reach an old worker. A second run a
+# minute later was green throughout. The production cutover escaped it by
+# timing, not by design.
+#
+# So check 1 polls for up to ten seconds before judging, and because it is the
+# first request after the reload, every later check inherits a settled nginx. A
+# fixed sleep was the alternative: shorter to write, but it is a guess about how
+# long the box takes, and a guess that is too short fails the same way.
+#
+# 200 and nothing else, now that preview is open. A 401 means basic auth is still
+# on, so this is not the afc.conf that was just installed.
+for _ in $(seq 1 10); do
+  CODE="$(smoke -o /dev/null -w '%{http_code}' "https://$PREVIEW_HOST/" || true)"
+  [[ "$CODE" == 200 ]] && break
+  sleep 1
+done
+if [[ "$CODE" != 200 ]]; then
+  echo "!!! / returned $CODE, still, after ten seconds" >&2
   # nginx itself is up if it can say this, so the fault is behind the proxy.
   if [[ "$CODE" == 50[234] ]]; then
     echo "!!! nginx answered, but nothing usable did on the proxy port — systemctl --user status afc-preview, as afc." >&2
+  elif [[ "$CODE" == 401 ]]; then
+    echo "!!! Basic auth is still on, so the running config is not this afc.conf." >&2
   fi
   exit 1
 fi
 echo "    1. serving ($CODE)"
 
-# Checks 2–4 need credentials. Without them they are SKIPPED rather than
-# ending the run, because the apex checks below need none and matter more.
-if [[ -z "$AFC_STAGING_AUTH" ]]; then
-  echo "    2–4. SKIPPED — set AFC_STAGING_AUTH to check the 404, X-Robots-Tag and which build answers."
-  SKIPPED="preview checks 2–4"
-else
-
-  # A missing URL must get a real 404 with OUR page: the status AND the body.
-  #
-  # Under SSR that page comes from Astro, so the ways this fails are new ones.
-  # A 200 is a SOFT 404 — a route rendering something for a slug that does not
-  # exist, which a static build cannot do and the `[slug]` routes now guard
-  # against by returning the site's 404 when rendered on demand. nginx's own page
-  # means the request never reached Node at all, which is a 502 from a process
-  # that is down. The version string nginx puts in its error pages is matched as
-  # a negative assertion on purpose: it stays true whatever our 404 says.
-  #
-  # The semicolon case this check was first written for lives in check 8 now.
-  # Preview has no `index` or `error_page` left to swallow.
-  #
-  # The empty-body guard is checked FIRST and is not padding. `grep -q` for that
-  # marker also succeeds on an EMPTY string, so a fetch that failed outright would
-  # report success — a check that goes green precisely when it cannot see anything.
-  #
-  # One request for both: the status is appended after a newline, and split back
-  # off here, so the body the grep sees is exactly what the server sent.
-  RESP="$(smoke -w '\n%{http_code}' "https://$PREVIEW_HOST/__smoke_check_missing__/" || true)"
-  CODE="${RESP##*$'\n'}"
-  BODY="${RESP%$'\n'*}"
-  if [[ -z "$BODY" ]]; then
-    echo "!!! 404 probe returned an empty body — the server did not answer." >&2
-    exit 1
-  fi
-  if printf '%s' "$BODY" | grep -q '<hr><center>nginx/'; then
-    echo "!!! A missing URL got nginx's own page ($CODE), so it never reached the site." >&2
-    echo "!!! A 502 is the preview process being down — systemctl --user status afc-preview, as afc." >&2
-    exit 1
-  fi
-  if [[ "$CODE" != "404" ]]; then
-    echo "!!! A missing URL returned $CODE, not 404 — the site's page, with the wrong status." >&2
-    echo "!!! A 200 is a soft 404: some route is rendering for a slug that does not exist." >&2
-    exit 1
-  fi
-  echo "    2. 404 is the site's own page, with a 404 status"
-
-  # X-Robots-Tag is one of the two things keeping preview out of search results —
-  # the ONLY two, since its canonicals now name this host (see afc.conf) — and it
-  # is easy to lose silently. It is set once at server level, and nginx REPLACES
-  # that inherited set the moment a location declares an `add_header` of its own:
-  # give the proxy location one and every page loses the tag while `/.env` keeps
-  # it (measured 2026-09-29). `/` goes through that location, so this catches it.
-  if ! smoke -D- -o /dev/null "https://$PREVIEW_HOST/" | grep -qi '^x-robots-tag: *noindex'; then
-    echo "!!! X-Robots-Tag: noindex is MISSING." >&2
-    echo "!!! Preview is indexable. See the add_header note in afc.conf." >&2
-    exit 1
-  fi
-  echo "    3. X-Robots-Tag present"
-
-  # IT IS THE SSR PREVIEW BUILD answering, not merely something. Checks 1–3 pass
-  # just as well against the old static staging build — and against the old
-  # CONFIG, if this install had somehow not taken. The canonical is what
-  # differs: the preview build's `site` is this host, while every static build
-  # names the apex. BaseLayout writes the tag, with its attributes in this order.
-  BODY="$(smoke "https://$PREVIEW_HOST/" || true)"
-  if [[ -z "$BODY" ]]; then
-    echo "!!! / returned an empty body — nothing to check." >&2
-    exit 1
-  fi
-  #
-  # A bash pattern match, NOT `printf | grep -q`, and that is a correctness fix:
-  # the first draft of this check failed against the healthy build. `grep -q`
-  # exits on its first match, `printf` is still writing a 225 KB page into the
-  # pipe and dies of SIGPIPE (exit 141), and `pipefail` reports the whole
-  # pipeline as failed — so a present canonical read as MISSING. Measured
-  # 2026-09-29; `PIPESTATUS` read `141 0`. The other greps in this script are
-  # piped the same way and survive only because a match there means a small
-  # input: nginx's own error page, or a block of headers, both inside the pipe
-  # buffer. Anything that has to FIND something in a real page matches this way.
-  WANT="<link rel=\"canonical\" href=\"https://$PREVIEW_HOST/\">"
-  if [[ "$BODY" != *"$WANT"* ]]; then
-    echo "!!! / does not carry $WANT" >&2
-    echo "!!! Something other than the SSR preview build is answering. A static build names the apex." >&2
-    exit 1
-  fi
-  echo "    4. the SSR preview build is answering (its canonical names $PREVIEW_HOST)"
-
+# A missing URL must get a real 404 with OUR page: the status AND the body.
+#
+# Under SSR that page comes from Astro, so the ways this fails are new ones.
+# A 200 is a SOFT 404 — a route rendering something for a slug that does not
+# exist, which a static build cannot do and the `[slug]` routes now guard
+# against by returning the site's 404 when rendered on demand. nginx's own page
+# means the request never reached Node at all, which is a 502 from a process
+# that is down. The version string nginx puts in its error pages is matched as
+# a negative assertion on purpose: it stays true whatever our 404 says.
+#
+# The semicolon case this check was first written for lives in check 8 now.
+# Preview has no `index` or `error_page` left to swallow.
+#
+# The empty-body guard is checked FIRST and is not padding. `grep -q` for that
+# marker also succeeds on an EMPTY string, so a fetch that failed outright would
+# report success — a check that goes green precisely when it cannot see anything.
+#
+# One request for both: the status is appended after a newline, and split back
+# off here, so the body the grep sees is exactly what the server sent.
+RESP="$(smoke -w '\n%{http_code}' "https://$PREVIEW_HOST/__smoke_check_missing__/" || true)"
+CODE="${RESP##*$'\n'}"
+BODY="${RESP%$'\n'*}"
+if [[ -z "$BODY" ]]; then
+  echo "!!! 404 probe returned an empty body — the server did not answer." >&2
+  exit 1
 fi
+if printf '%s' "$BODY" | grep -q '<hr><center>nginx/'; then
+  echo "!!! A missing URL got nginx's own page ($CODE), so it never reached the site." >&2
+  echo "!!! A 502 is the preview process being down — systemctl --user status afc-preview, as afc." >&2
+  exit 1
+fi
+if [[ "$CODE" != "404" ]]; then
+  echo "!!! A missing URL returned $CODE, not 404 — the site's page, with the wrong status." >&2
+  echo "!!! A 200 is a soft 404: some route is rendering for a slug that does not exist." >&2
+  exit 1
+fi
+echo "    2. 404 is the site's own page, with a 404 status"
+
+# X-Robots-Tag is one of the two things keeping preview out of search results —
+# with the robots meta, checked in 4 — and since basic auth came off and its
+# canonicals name this host, those two are all there is (see afc.conf). It is
+# easy to lose silently. It is set once at server level, and nginx REPLACES that
+# inherited set the moment a location declares an `add_header` of its own: give
+# a proxy location one and every page it serves loses the tag while `/.env`
+# keeps it (measured 2026-09-29). `/` goes through the rendering location, so
+# this catches it for pages.
+if ! smoke -D- -o /dev/null "https://$PREVIEW_HOST/" | grep -qi '^x-robots-tag: *noindex'; then
+  echo "!!! X-Robots-Tag: noindex is MISSING." >&2
+  echo "!!! Preview is indexable. See the add_header note in afc.conf." >&2
+  exit 1
+fi
+echo "    3. X-Robots-Tag present"
+
+# IT IS THE SSR PREVIEW BUILD answering, not merely something. Checks 1–3 pass
+# just as well against the old static staging build — and against the old
+# CONFIG, if this install had somehow not taken. The canonical is what
+# differs: the preview build's `site` is this host, while every static build
+# names the apex. BaseLayout writes the tag, with its attributes in this order.
+BODY="$(smoke "https://$PREVIEW_HOST/" || true)"
+if [[ -z "$BODY" ]]; then
+  echo "!!! / returned an empty body — nothing to check." >&2
+  exit 1
+fi
+#
+# A bash pattern match, NOT `printf | grep -q`, and that is a correctness fix:
+# the first draft of this check failed against the healthy build. `grep -q`
+# exits on its first match, `printf` is still writing a 225 KB page into the
+# pipe and dies of SIGPIPE (exit 141), and `pipefail` reports the whole
+# pipeline as failed — so a present canonical read as MISSING. Measured
+# 2026-09-29; `PIPESTATUS` read `141 0`. The other greps in this script are
+# piped the same way and survive only because a match there means a small
+# input: nginx's own error page, or a block of headers, both inside the pipe
+# buffer. Anything that has to FIND something in a real page matches this way.
+WANT="<link rel=\"canonical\" href=\"https://$PREVIEW_HOST/\">"
+if [[ "$BODY" != *"$WANT"* ]]; then
+  echo "!!! / does not carry $WANT" >&2
+  echo "!!! Something other than the SSR preview build is answering. A static build names the apex." >&2
+  exit 1
+fi
+
+# AND IT SAYS noindex IN ITS OWN MARKUP. The robots meta is preview's second
+# guard against indexing — config can drift, the meta travels with the HTML — so
+# it is asserted here, on the same body, for nothing.
+WANT_META='<meta name="robots" content="noindex, nofollow">'
+if [[ "$BODY" != *"$WANT_META"* ]]; then
+  echo "!!! / does not carry $WANT_META" >&2
+  echo "!!! The page itself no longer says noindex — see the robots meta in BaseLayout." >&2
+  exit 1
+fi
+echo "    4. the SSR preview build is answering (its canonical names $PREVIEW_HOST), noindex in the markup"
 
 # ── THE APEX: AT THE ORIGIN FIRST, THEN THROUGH CLOUDFLARE ────────────────
 #

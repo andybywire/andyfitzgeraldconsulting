@@ -22,7 +22,7 @@ name: Build & Deploy AFC Preview (SSR)
 # robots.txt set `prerender = true` and are files written at BUILD time, in this
 # build as in production's. On preview they are a snapshot from the last deploy
 # and lag behind the pages until the next push to `main`. Accepted (2026-09-29):
-# this host is noindex and behind basic auth, and visual editing is about pages.
+# this host is noindex, and visual editing is about pages.
 #
 # ── THE FIRST RUN IS THE MERGE, AND IT RETIRES THE STATIC STAGING BUILD ────
 #

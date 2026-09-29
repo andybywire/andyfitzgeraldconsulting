@@ -97,6 +97,7 @@ cutover: the Astro site and the Studio that feeds it.
 | `web/server/` | `contact.php` + `composer.json` — the mail endpoint, shipped beside the static build and never served |
 | `web/scripts/` | Hand-run tools, never the build: `parity.mjs`, `phrase-candidates.mjs`, `subset-fonts.sh` and its `font-sources/` |
 | `web/sanity.types.ts` | TypeGen output — written by `pnpm typegen`, committed, never edited |
+| `web/afc-preview.service` | The systemd **user** unit that runs the SSR preview on the droplet — installed by `deploy-preview.yml` on every deploy |
 | `studio/` | **Sanity Studio on the `production-26` dataset** — where the content model lives |
 | `studio/schemas/` | Content model — `documents/`, `objects/` |
 | `nginx/` | Server config, authored here and installed by `nginx/deploy.sh` — never edited on the droplet |
@@ -135,6 +136,13 @@ symlink at `/var/www/afc-production/html`. Triggered by pushes to `main` touchin
 Sanity `repository_dispatch` webhooks per document type. **nginx config is deployed separately and
 by hand**, with `nginx/deploy.sh` — its header says why that is not in CI. `build-prod.yml`, which
 deployed the 11ty site from `/var/www/afc`, was retired at the cutover.
+
+The preview is `.github/workflows/deploy-preview.yml` — builds the SSR site with its server
+dependencies bundled, runs the release from a directory with no `node_modules` against every sitemap
+URL before shipping it, then activates it under the `afc-preview` user unit on `127.0.0.1:8081`,
+health-checks it and rolls back if it is not serving. Triggered by pushes to `main` touching `web/**`
+and by `workflow_dispatch` on any ref — **no** `repository_dispatch`, since SSR reads drafts per
+request. A push to `main` touching `web/` therefore deploys BOTH hosts.
 
 ## Conventions and constraints
 
@@ -587,14 +595,47 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    Cloudflare and at the origin; real_ip logging visitors' own addresses; both certificates renewing
    by webroot; a real contact-form send; the Sanity webhook dispatching production builds for the
    first time since 2026-08-14. What each check was, and the rollback, live in `nginx/` beside the
-   config they test. **The SSR preview (stage D) is what remains of phase 6**; the plan is
-   [docs/cutover-kickoff.md](docs/cutover-kickoff.md).
+   config they test.
+
+   **THE SSR PREVIEW IS DONE (2026-09-29), AND WITH IT PHASE 6.** `preview.` is Astro's SSR build
+   behind an nginx proxy, and visual editing works end to end from the deployed Studio: overlays,
+   click-through to the document, reload on edit, navigation sync. The plan and what was measured
+   along the way are [docs/ssr-preview-kickoff.md](docs/ssr-preview-kickoff.md); where it departed
+   from ux-methods, and which departures apply back, is
+   [docs/ux-methods-notes.md](docs/ux-methods-notes.md). Five departures from that plan, each decided
+   with Andy and recorded beside the code it shaped:
+
+   - **No `node_modules` on the droplet.** `pnpm deploy --prod` measured 590 MB a release; the server
+     imports six packages, now bundled into `dist/server` (`bundleServerDependencies` in
+     `astro.config.mjs`). The droplet needs Node and nothing else.
+   - **A systemd user unit, not PM2** (`web/afc-preview.service`), after ux-methods' five weeks of
+     silent 502s. Node is NodeSource's system package at `/usr/bin/node`, not nvm.
+   - **Preview's contact form runs production's PHP** (`$afc_php` in `nginx/afc.conf`), so the preview
+     release carries no PHP and no Gmail secrets.
+   - **No basic auth.** Presentation's frame cannot authenticate against it — tested, not assumed.
+     `noindex` is now carried twice (header and meta, both checked by `deploy.sh`), and a per-address
+     render limit bounds what bots cost. **Drafts on preview are readable by anyone who finds the
+     host**, by Andy's call.
+   - **Memory limits from the droplet:** 148 MiB peak over every sitemap page, so `MemoryHigh=200M`
+     and `MemoryMax=256M` — read back from the running unit after the deploy that installed them
+     (`209715200` / `268435456`). Sized on Linux deliberately: macOS RSS for the same sweep read 180–370 MB
+     across runs, and a claim made from one macOS pair — that `NODE_ENV=production` halved memory —
+     had to be retracted the same day. See docs/ux-methods-notes.md.
+
+   Found on the way and fixed in production too: `ls -t` pruning could delete the live release,
+   because `tar` stamps a release with its artifact's build time. Now pruned by name.
+
+   **Not yet exercised: a reboot.** The unit is enabled and `afc` lingers, which should start it at
+   boot, but the droplet has not rebooted since. That test is now a **phase 7** item, together with
+   the pending kernel and package upgrades that make it worth doing (Andy, 2026-09-29).
 
    Open follow-ups, none blocking: delete `/var/www/afc` (~630 MB) once the rollback window closes;
    retitle or undeploy the old `af-consulting` Studio app; delete the `RECAPTCHA_SECRET`,
    `AFC_MAIL_USERNAME` and `AFC_MAIL_PASSWORD` GitHub secrets, which no workflow references since
    `build-prod.yml` retired (measured). All Andy's calls. `cms.` was repointed at the new Studio on
-   2026-09-29 — for `/` only; deeper paths still 522 unless the rule gains a wildcard.
+   2026-09-29 — for `/` only, and **left that way** (Andy): it is a convenience alias nobody links
+   to, so deeper paths returning 522 is accepted rather than fixed. Its redirect is a 302, not a
+   301, so the next time the Studio moves, browsers follow at once instead of a cached answer.
 
    **The rename is DONE (2026-09-28), and the archiving changed on the way.** The old pair left the
    tree rather than moving within it (Andy's call: git history keeps them, last at `06cd8e5`), and
@@ -631,6 +672,28 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      `services.njk` iterates singletons, and no query fetches either type. So they are adopted into
      the schema or deleted — the choice is editorial, not structural.
    - **Shrink `hiddenDocTypes`** in `sanity.config.ts` to whatever survives the above.
+   - **Upgrade the droplet and reboot it, deliberately** (added 2026-09-29). Two things are waiting
+     on it: a kernel update (running 6.8.0-71, installed 6.8.0-142) plus 69 package upgrades, and
+     the one part of the SSR preview never exercised — **coming back at boot with nobody touching
+     it.** The `afc-preview` unit is enabled and `afc` lingers, which should be enough; ux-methods'
+     five weeks of 502s are why "should" is not accepted here. It belongs in this phase because it
+     takes every site on the droplet down for a minute or so and nothing depends on it.
+
+     As root: `apt upgrade`, then `reboot`. Afterwards, **check before touching anything**, since
+     running a deploy first would restart the very things being tested:
+
+     ```bash
+     uname -r   # 6.8.0-142-generic
+     systemctl is-active nginx php8.3-fpm certbot.timer
+     sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user status afc-preview --no-pager | head -5
+     readlink /proc/$(sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user show -p MainPID --value afc-preview)/exe
+     ```
+
+     Expect `active`, three times; the unit active since boot; `/usr/bin/node`. Then from the Mac,
+     `AFC_SSH=do nginx/deploy.sh` for all nine checks across both hosts — it reinstalls identical
+     config, which is harmless. **`preview.uxmethods.org` gets its own first real boot test here
+     too**: its PM2 unit was proven with `pm2 kill` on 2026-09-21, never by a boot. A 200 from it is
+     the check, and a 502 is the old failure back.
    - **The serializer specimen is GONE, and this item is closed** (verified 2026-09-14).
      `specimen-serializers` on `production-26`, at `/insights/serializer-specimen/`, was a
      phase 4 test fixture holding one instance of every block style, inline mark, list shape
@@ -734,7 +797,7 @@ modes selected by environment:
 | | `ASTRO_OUTPUT` | Served by | Visual editing | Indexed |
 |---|---|---|---|---|
 | production | `static` | nginx, static files | off | yes |
-| preview | `server` | PM2 + Node on the same droplet | on | `noindex` |
+| preview | `server` | a systemd user unit + Node, behind an nginx proxy, on the same droplet | on | `noindex` |
 
 This is what makes visual editing possible **without giving up a static production site.** The
 official Astro visual-editing integration requires `output: "server"` because draft mode depends on
@@ -746,6 +809,11 @@ Copy the workflow pair from `ux-methods` rather than reinventing it, but **fix t
 workflows pin Node 22 and the preview deploy script does `nvm use 20` — use 24 throughout; both
 trigger on identical paths so every push builds twice; and the droplet gains a dependency on Node,
 pnpm and PM2 surviving reboots.
+
+**Built 2026-09-29, and it kept the shape but not the parts.** Node 24 throughout; the two workflows
+share triggers but build different artifacts for different hosts, which is the point rather than the
+duplication ux-methods has; and the reboot dependency shrank to Node and one lingering user unit —
+no pnpm and no PM2 on the droplet at all. See Phase 6 above for the five departures and why.
 
 **Rejected: local-only preview.** Requiring `pnpm dev` to edit content works against the goal of
 making publishing easier.
@@ -884,10 +952,10 @@ push to `main` IS a production deploy**, which is one more reason commit and pus
 - **`next`** — **retired at the cutover merge** (`0f8884e`). It was the integration branch while
   the Astro site was built beside the live 11ty one, and it deployed the static staging rehearsal.
   Don't build on it, or on `origin/dev` (Aug 2025), which was abandoned before it.
-- **The preview host tracks `main`** once the SSR preview lands (stage D of the cutover, in
-  progress), with `workflow_dispatch` on any ref to rehearse a branch before merging it (Andy,
-  2026-09-28). Until then `preview.` serves the last static staging build from `next`: stale, and
-  deployed from nowhere.
+- **The preview host tracks `main`** (since 2026-09-29): `deploy-preview.yml` deploys it on every
+  push to `main` touching `web/**`, with `workflow_dispatch` on any ref to rehearse a branch before
+  merging it (Andy, 2026-09-28). GitHub runs `workflow_dispatch` only for a workflow file that
+  exists on the default branch, which is why the first run was the merge.
 
 **nginx is deployed by hand**, with `nginx/deploy.sh` from a laptop, never by CI — its header says
 why. `validate-nginx.yml` runs `nginx -t` on a push to any branch touching `nginx/`, so a config

@@ -403,9 +403,14 @@ for now rather than a lag to fix.
 ## The SSR preview, built here — patterns that apply there, 2026-09-29
 
 This project's preview host flipped from a static build to SSR on the **same droplet**, which is the
-situation `ux-methods` has been in all along. Four of the choices made here differ from what
-`ux-methods` does, and three of them bear directly on memory on a 458 MB box. Each entry marks what
-was measured here and what would need checking there before adopting it.
+situation `ux-methods` has been in all along. Several of the choices made here differ from what
+`ux-methods` does, and three of them bear directly on memory on a 458 MB box: bundling, the systemd
+unit, and limits sized from a measurement. Each entry marks what was measured here and what would need
+checking there before adopting it.
+
+**It went live on 2026-09-29** and was verified end to end — Presentation from the deployed Studio,
+overlays, click-through, reload on edit, navigation sync — so the entries below describe a working
+system rather than a plan.
 
 ### Bundle the server's dependencies, and ship no `node_modules` — *measured here*, *inferred* there
 
@@ -450,7 +455,7 @@ If `pnpm deploy` is ever considered instead: since pnpm 10 it is lockfile-pinned
 command — and it copies the whole package directory, **including an untracked `.env`** if one is
 present locally.
 
-### A systemd user unit instead of PM2 — *adopted here*, being built
+### A systemd user unit instead of PM2 — *built and measured here*, 2026-09-29
 
 The five-week outage recorded above was PM2's own model failing: an empty in-memory process list,
 restored only at boot, on a machine that had not rebooted in 42 weeks. **An `enable`d systemd unit is
@@ -465,9 +470,37 @@ covers.
 - **The unit names `/usr/bin/node`** (see the next entry), so the "unit hardcodes the Node version in
   two places" trap above cannot occur.
 
-*To be completed when AFC's unit lands on the droplet*: the unit file, whether the kernel memory cap
-is available to user units there (it depends on the memory controller being delegated to them), and
-what the process actually measures on Linux.
+**On the droplet, as built** — the unit is `web/afc-preview.service`, installed by the deploy into
+`~/.config/systemd/user/` on every run, so the repo holds the definition:
+
+| | |
+|---|---|
+| lingering | `loginctl enable-linger afc` → `State=lingering`, `user@1001.service` active with nobody logged in |
+| memory controller delegated to the user manager | **yes** — `cgroup.controllers` reads `cpu memory pids`, so `MemoryMax` is enforced, not decorative |
+| after the deploy's health check (one render) | 106 MB RSS, on `/usr/bin/node` v24.21.0 |
+| after all 88 sitemap pages in a row | RSS 98 → 156 MB; `MemoryCurrent` 143 MiB, `MemoryPeak` 148 MiB; `NRestarts=0` |
+| droplet `available` with both Node apps up | 162 MB |
+
+Limits were then set from that: `MemoryHigh=200M`, `MemoryMax=256M`. The first guess, 300M from a
+macOS figure, would only have tripped once the whole box was swapping. **That is the number to size
+`uxm-preview` against too** — two processes of this shape fit, with ~160 MB to spare.
+
+Three things about user units that cost time here:
+
+- **`systemctl --user` needs `XDG_RUNTIME_DIR`.** An SSH login sets it; `sudo -iu afc` from root does
+  NOT, and fails with "Failed to connect to bus". Pass it through:
+  `sudo -iu afc XDG_RUNTIME_DIR=/run/user/$(id -u afc) systemctl --user status afc-preview`.
+- **Give it a start limit, and `reset-failed` before restarting.** `StartLimitBurst=5` in a minute
+  stops a revoked token from restarting the process every five seconds forever — and once tripped,
+  a plain `restart` is refused, which would also block a rollback. The deploy resets first.
+- **`systemd-analyze verify` passes an unknown key with exit 0**, printing only a warning. A
+  misspelled `MemoryMax` is silently ignored. Read the output, not the exit code.
+
+**Not yet tested: a reboot.** The unit is enabled and lingering, which should start it at boot, but
+the droplet has not rebooted since — a kernel update (6.8.0-71 → 6.8.0-142) is pending, and taking it
+deliberately is the test. After ux-methods' five weeks, "should" is the word worth removing. It is
+scheduled in this project's phase 7, and **it is `preview.uxmethods.org`'s first real boot test too**
+— its PM2 unit has only been proven with `pm2 kill`, never by a boot.
 
 ### System Node from NodeSource, not per-user nvm — *adopted here*
 
@@ -496,9 +529,11 @@ against that localhost origin and refuses a same-site form as cross-site. The fi
 ### One server-level `X-Robots-Tag` on a proxied host — *measured here*, *inferred* there
 
 On a host where nginx proxies everything and **no location declares an `add_header`**, a single
-server-level `add_header X-Robots-Tag … always` reaches every response — pages, assets, 404s, the auth
-challenge. The trap is relocated rather than gone: give the proxy location an `add_header` of its own
-and every page loses the tag while `/.env` keeps it. Reproduced in nginx 1.24 on 2026-09-29.
+server-level `add_header X-Robots-Tag … always` reaches every response — pages, assets, 404s, the
+rate limiter's 429s. The trap is relocated rather than gone: give the proxy location an `add_header` of
+its own and every page loses the tag while `/.env` keeps it. Reproduced in nginx 1.24 on 2026-09-29.
+`proxy_set_header` follows the same rule, which matters as soon as there are two proxy locations —
+see the rate-limit entry below.
 
 Worth checking for when `preview.uxmethods.org`'s config is brought into its repository — it exists
 only on the server today (see the nginx entry above), so its current shape is unknown from here.
@@ -510,3 +545,94 @@ missing once the body outgrows the pipe buffer: `grep` exits at its first match,
 writing and takes SIGPIPE (exit 141), and the pipeline fails. A 225 KB page did it; `PIPESTATUS` read
 `141 0`. Match with `[[ "$BODY" == *"$WANT"* ]]` instead. It matters there because the URL check the
 outage section says was missing is exactly the kind of script that would be written this way.
+
+### Basic auth and Presentation cannot coexist — *measured here*
+
+**Do not put basic auth on a host that Presentation previews.** Tested 2026-09-29 from the DEPLOYED
+Studio, in Vivaldi in a private window: Presentation's frame showed "401 Authorization Required" and
+the browser never offered a password prompt. A browser will not raise an HTTP auth dialog for a
+cross-site page inside a frame, so the frame has no way to authenticate. Vivaldi is Chromium, so
+Chrome and Edge very likely behave the same — inferred, not tested. With auth off, the same test
+passed end to end.
+
+Worth knowing how long this stayed open, because the lesson is about method. Auth was removed on
+2026-09-20 on the belief it would break Presentation, restored the same day when that belief turned
+out to be unverified — Sanity documents the problem for Vercel's SSO redirect, a different mechanism —
+and left in place until the SSR flip made it testable. The test took minutes. **It has to be run from
+the deployed Studio**: a local Studio previews localhost, where nothing is protected.
+
+Whether `preview.uxmethods.org` has basic auth is unknown from here — its nginx config lives only on
+the server. If it does, Presentation there is broken for the same reason; if it is added later, it
+will be. What replaced it here, each part doing one of auth's jobs:
+
+| auth's job | replaced by |
+|---|---|
+| keeping crawlers out of the index | `X-Robots-Tag: noindex, nofollow` from nginx, plus the same in a robots meta the preview build writes into every page — header is config that can drift, meta travels with the HTML. `ux-methods` already passes `PUBLIC_ROBOTS_NOINDEX` to its preview build (*read*), so it likely has the meta half |
+| making bots cheap | a per-address render limit in nginx — next entry |
+| keeping drafts private | **nothing.** Drafts are readable by anyone who finds the host. Here that was an explicit call (Andy: "nothing on preview will be secret"); there it would need making again |
+
+`Disallow: /` in robots.txt is still not an option: it blocks crawling, so a crawler never reads the
+`noindex` that keeps the page out of the index. Preview here serves `Allow: /` and simply omits the
+sitemap line.
+
+### Rate limit renders, not requests — *measured here*
+
+**Why a limit at all, once auth is gone:** behind auth a bot got a 401 that cost nginx nothing. On an
+open SSR host every request is a server render on a 1-vCPU box that also serves production, and each
+render makes authenticated Sanity API calls that count against the plan's quota. And bots WILL come:
+the host's certificate is in the public Certificate Transparency logs, which scanners walk for
+hostnames, whether or not anything links to it.
+
+**What to limit:** a cold load of an article here is **14 requests, and 13 of them are hashed
+`/_astro/` assets** that Node streams from disk for next to nothing. So `/_astro/` gets its own proxy
+location with no limit, and `location /` carries it — 1 render/s per address, burst 20, `nodelay`,
+answering 429. Measured in nginx 1.24: 40 rapid renders gave 21 × 200 and 19 × 429; 100 asset requests
+while the limiter was tripped all returned 200; the 429s still carried `X-Robots-Tag`. A person
+clicking through pages, or Presentation reloading after each edit — `@sanity/astro`'s default refresh
+is a full `location.reload()`, one render per edit — never comes near 20 at once.
+
+**The trap that comes with two proxy locations:** move `proxy_http_version` and the four
+`proxy_set_header` lines to server level so both share them — and then never add a `proxy_set_header`
+inside a location. nginx inherits that directive the same way it inherits `add_header`: a location that
+declares ONE loses all of the server's. Measured: a single `proxy_set_header X-Control 1;` added to
+`/_astro/` alone, and that location's requests arrived with `Host` reverted to the upstream's own
+address and no forwarded headers, while `/` kept all four.
+
+### macOS memory figures are noise; measure side by side, or on the droplet — *measured here*
+
+**A retraction first.** An earlier version of this entry was titled "`NODE_ENV=production` halves the
+process", on the strength of ONE pair of macOS runs: 179 MB RSS with it, 339 MB without. That was
+wrong. A controlled comparison the same day — four fresh processes swept side by side, `NODE_ENV` ×
+V8 heap cap — gave:
+
+| after two full sweeps | heap cap 128 | no cap |
+|---|---|---|
+| `NODE_ENV=production` | 291 → 260 MB | 334 → 305 MB |
+| `NODE_ENV` unset | 288 → 268 MB | 296 → 304 MB |
+
+No `NODE_ENV` effect; a modest one, 30–45 MB, from the heap cap. And a structural reason for the
+first: the site's only React component, the visual-editing island, is client-only, so the server
+barely runs React. `ux-methods` sets `NODE_ENV: "production"` (*read*); it is the right setting, but
+not a memory lever unless React is rendered on the server — check that before expecting one.
+
+**The lesson that transfers is about method.** macOS RSS after a sweep ranged 180–370 MB across
+configurations and runs that should have been comparable; it does not reclaim freed pages the way
+Linux does. The droplet measured 148 MiB peak for the same sweep. So: compare configurations as fresh
+processes swept side by side on the same machine, never one run against another taken minutes apart —
+and take numbers that size a droplet from the droplet.
+
+### Two deploy-script traps — *measured here*
+
+- **`systemctl reload nginx` returns before the new config is serving.** It returns once nginx has been
+  signaled; new workers start after. On the SSR flip, the smoke check's first request, a second later,
+  read the OLD config's 404. A re-run was green throughout. So a check that runs straight after a
+  reload should poll briefly before judging — `nginx/deploy.sh` check 1 retries for ten seconds — rather
+  than sleep for a guessed interval. Relevant the day `ux-methods` adopts repo-authored nginx with a
+  smoke check.
+- **Pruning releases with `ls -1t | tail -n +4` can delete the LIVE release.** `tar` restores the
+  archive's own `./` entry onto the directory it extracts into, so a release's mtime is when its
+  artifact was BUILT, not deployed. Re-running an older deploy job makes the release it just activated
+  the "oldest", and prunes it — reproduced with this project's production script: five deploys of one
+  artifact deleted the live release on the fourth and fifth, each exiting 0. Prune by release NAME (a
+  deploy-time timestamp) and exclude the live one by name. `ux-methods` has no release directories yet;
+  this belongs with the atomic-swap recommendation above, if that is adopted.

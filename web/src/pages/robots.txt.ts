@@ -32,12 +32,18 @@ import {PUBLIC_SITE_MODE} from 'astro:env/client'
  * is worse than none. Worth saying plainly: robots.txt is voluntary either way. It stops
  * the well-behaved and nobody else.
  *
- * ── WHAT THIS DOES NOT SOLVE, AND WHERE THAT LANDS ─────────────────────────
+ * ── WHAT THIS DOES NOT SOLVE, AND WHERE THAT LANDED ────────────────────────
  *
- * Preview is protected by `noindex` on every page and by a sitemap it does not advertise.
- * That is adequate, not strong. The strong answer is HTTP basic auth on the preview server
- * block, which is one line in an nginx config phase 6 is writing anyway — and unlike a
- * `Disallow: /`, it does not trade the noindex away to get it.
+ * Preview is kept out of the index by `noindex` twice over — nginx's `X-Robots-Tag` and a
+ * robots meta the preview build writes into every page — and by a sitemap it does not
+ * advertise. This comment used to call that "adequate, not strong" and name HTTP basic auth as
+ * the strong answer. Phase 6 built it, and then took it out (2026-09-29): Presentation's frame
+ * cannot authenticate against basic auth, so it broke visual editing, which is the only reason
+ * the preview host exists. See nginx/afc.conf for the evidence.
+ *
+ * So the host is open, and crawlable on purpose, for the same reason `/search/` is above: a
+ * crawler has to fetch a page to read its `noindex`. What basic auth ALSO did — make bots cheap
+ * — moved to a per-address render limit in nginx, not here.
  */
 export const prerender = true
 

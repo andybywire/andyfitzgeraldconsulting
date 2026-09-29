@@ -24,8 +24,10 @@
       "runtimeArgs": [
         "HOST=127.0.0.1",
         "PORT=8081",
+        "NODE_ENV=production",
         "node",
         "--env-file=web/.env",
+        "--max-old-space-size=128",
         "web/dist/server/entry.mjs"
       ],
       "port": 8081

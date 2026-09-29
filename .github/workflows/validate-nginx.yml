@@ -161,9 +161,10 @@ jobs:
 #   5. certbot certonly --webroot -w /var/www/certbot -d <host>
 #      (--dry-run first; it proves the challenge from Let's Encrypt's side and
 #      costs nothing against the rate limit)
-#   6. htpasswd -c /etc/nginx/afc-staging.htpasswd <user>   (needs apache2-utils)
+#   6. (retired 2026-09-29) an htpasswd for basic auth — the preview host no
+#      longer uses one, because Presentation cannot authenticate; see afc.conf
 #   7. let the content deploy run, so nginx has something to serve
-#   8. AFC_SSH=<host> AFC_STAGING_AUTH=<user:pass> nginx/deploy.sh
+#   8. AFC_SSH=<host> nginx/deploy.sh
 #   9. remove the temporary block from step 4 — afc.conf carries its own
 #      /.well-known/acme-challenge/ location, so renewals do not depend on it
 #
