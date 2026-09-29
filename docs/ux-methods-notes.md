@@ -498,7 +498,9 @@ Three things about user units that cost time here:
 
 **Not yet tested: a reboot.** The unit is enabled and lingering, which should start it at boot, but
 the droplet has not rebooted since — a kernel update (6.8.0-71 → 6.8.0-142) is pending, and taking it
-deliberately is the test. After ux-methods' five weeks, "should" is the word worth removing.
+deliberately is the test. After ux-methods' five weeks, "should" is the word worth removing. It is
+scheduled in this project's phase 7, and **it is `preview.uxmethods.org`'s first real boot test too**
+— its PM2 unit has only been proven with `pm2 kill`, never by a boot.
 
 ### System Node from NodeSource, not per-user nvm — *adopted here*
 
