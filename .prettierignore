@@ -3,15 +3,11 @@
 *.md
 .github/
 
-# Frozen generations — reformatting them would create noise against main
-web/
-studio/
-
 # Generated output
-web-next/dist/
-web-next/.astro/
-studio-next/dist/
-studio-next/schema.json
+web/dist/
+web/.astro/
+studio/dist/
+studio/schema.json
 
 # Lockfiles
 pnpm-lock.yaml

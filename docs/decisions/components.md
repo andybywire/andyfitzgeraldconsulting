@@ -131,7 +131,7 @@ two different ways. Three decisions, all Andy's:
 - **A style, not a quote object.** A style keeps authoring fluid, carries inline links (the credits
   link to `/reviews/#slug`), and needs no migration of existing quotes. The cost is that the tie to
   the quote is **positional**. The front end pairs an attribution with the Quote block(s) directly
-  above it (`web-next/src/components/prose/quotations.ts`), and an orphan renders as a plain
+  above it (`web/src/components/prose/quotations.ts`), and an orphan renders as a plain
   paragraph with a build warning.
 - **`<figure>` + `<figcaption>`, not a sibling paragraph.** A `<p class="attribution">` after the
   quote would look attached without being attached. The figure puts the pairing in the DOM, and it is

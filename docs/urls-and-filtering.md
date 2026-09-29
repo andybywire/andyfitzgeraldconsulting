@@ -17,6 +17,10 @@ Decided 2026-08-18 unless noted.
 Read from `web/_src/` before it is replaced, so the redirect inventory is grounded rather than
 remembered.
 
+> **Every `web/_src/` path in this document is the 11ty build's**, which left the tree at the
+> cutover rename (2026-09-28). Since then `web/` is the Astro site, so read these from history:
+> `git show 06cd8e5:web/_src/<file>`.
+
 | Pattern | Count | Fate |
 |---|---|---|
 | `/insights/{slug}/` | 42 | **unchanged** |
@@ -27,7 +31,7 @@ remembered.
 | `/feed.xml` | 1 | **must not move** |
 | `/insight-search.json` | 1 | superseded by the facet index; nothing links to it |
 
-> **Corrected 2026-09-18, measured against the 2024 archive and `web-next/dist`.** The table above
+> **Corrected 2026-09-18, measured against the 2024 archive and `web/dist`.** The table above
 > was read from `web/_src/` in phase 1 and is wrong in three places — enough that the phase 6 rewrite
 > would have been built on it.
 >
@@ -291,8 +295,8 @@ Two indexes, shipped separately:
 | **Card** | title, description, image | rendering "show more" / "show all" — later |
 
 The facet index is small: ~6 KB at 42 items, roughly 15 KB gzipped at 500.
-`web/_src/insight-search.json.njk` is most of the shape already, but its `tags` field is a
-comma-joined string of prefLabels and needs to become an array of slugs.
+The 11ty build's `web/_src/insight-search.json.njk` was most of the shape already, but its `tags`
+field was a comma-joined string of prefLabels and needs to become an array of slugs.
 
 ### Filtering does not work in the preview environment
 

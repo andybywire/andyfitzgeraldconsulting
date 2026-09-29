@@ -15,7 +15,7 @@ importers:
         specifier: ^0.14.1
         version: 0.14.1
 
-  studio-next:
+  studio:
     dependencies:
       '@sanity/code-input':
         specifier: ^7.3.5
@@ -55,7 +55,7 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  web-next:
+  web:
     dependencies:
       '@astrojs/node':
         specifier: ^11.1.2

@@ -10,8 +10,8 @@
   },
   "scripts": {
     "dev": "pnpm -r --parallel dev",
-    "typegen": "pnpm --filter studio-next typegen",
-    "parity": "pnpm --filter web-next parity",
+    "typegen": "pnpm --filter studio typegen",
+    "parity": "pnpm --filter web parity",
     "format": "prettier --write ."
   },
   "author": "Andy Fitzgerald",

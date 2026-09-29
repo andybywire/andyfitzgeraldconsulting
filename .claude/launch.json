@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "web-next",
+      "name": "web",
       "url": "http://localhost:4321",
       "port": 4321
     }

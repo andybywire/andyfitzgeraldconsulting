@@ -1,38 +1,34 @@
 import {GrDocumentText} from 'react-icons/gr'
+import {BODY_STYLES, PLAIN_STYLES, MARKS} from '../portableText'
+import {defineType, defineField} from 'sanity'
+import {uniqueBandTypes} from '../validation'
+import {slugField} from '../slug'
 
-export default {
+export default defineType({
   name: 'singleton',
   type: 'document',
   icon: GrDocumentText,
-  title: 'Singleton Pages',
+  title: 'Index Pages',
   fields: [
-    {
+    defineField({
       name: 'title',
       title: 'Page Title',
       type: 'string',
-    },
-    {
-      title: 'Slug',
-      name: 'slug',
-      type: 'slug',
-      options: {
-        source: 'title',
-        maxLength: 200, // will be ignored if slugify is set
-        slugify: (input: string) => input
-                             .toLowerCase()
-                             .replace(/\s+/g, '-')
-                             .slice(0, 200)
-      }
-    },
-    {
+    }),
+    slugField(),
+    defineField({
       name: 'heroCopy',
       title: 'Singleton Page Hero Copy',
       type: 'array',
       of: [
         {
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: PLAIN_STYLES,
           lists: [],
+          /* Keeps its OWN narrower decorator set rather than the shared MARKS —
+             strong and em only, no code and no strike. This field is a single
+             sentence of intro prose, not a document, so the shared set would be
+             offering tools with nowhere to be used. Deliberately not consolidated. */
           marks: {
             decorators: [
               {title: 'Strong', value: 'strong'},
@@ -41,8 +37,8 @@ export default {
           },
         },
       ],
-    },
-    {
+    }),
+    defineField({
       name: 'heroImg',
       title: 'Singleton Page Hero Image',
       type: 'image',
@@ -56,13 +52,17 @@ export default {
           title: 'Alt Text',
         },
       ],
-    },
-    {
+    }),
+    defineField({
       title: 'Body',
       name: 'bodyText',
       type: 'array',
       of: [
-        {type: 'block'},
+        {
+          type: 'block',
+          styles: BODY_STYLES,
+          marks: MARKS,
+        },
         {
           type: 'image',
           options: {
@@ -82,6 +82,15 @@ export default {
           ],
         },
       ],
-    },
+    }),
+    defineField({
+      name: 'customBands',
+      title: 'Custom Bands',
+      description:
+        'Custom bands provide category-specific overrides for default bands defined in Settings.',
+      type: 'array',
+      of: [{type: 'bandRss'}, {type: 'bandWorkWithMe'}, {type: 'bandGetInTouch'}],
+      validation: (rule) => rule.custom(uniqueBandTypes),
+    }),
   ],
-}
+})

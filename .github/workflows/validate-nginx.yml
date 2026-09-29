@@ -22,10 +22,12 @@ name: Validate nginx configuration
 #
 # ── THE PAYOFF, WHICH IS THE POINT ─────────────────────────────────────────
 #
-# `deploy-astro.yml` uses no sudo at all — it writes under /var/www/afc-preview
-# and gets its one privileged-looking operation, `chgrp www-data`, from group
-# membership. With nginx out of CI, **no key held by GitHub is root-equivalent on
-# the droplet.**
+# `deploy-astro.yml` uses no sudo at all — it writes under its own release base
+# in /var/www and gets its one privileged-looking operation, `chgrp www-data`,
+# from group membership. With nginx out of CI, **no key held by GitHub is
+# root-equivalent on the droplet.** Until 2026-09-28 that rested on a password,
+# since the deploy user was in `sudo`; it was removed from the group that day.
+# See nginx/deploy.sh.
 #
 # ── WHAT IS LOST, AND WHAT COVERS IT ───────────────────────────────────────
 #
@@ -37,11 +39,14 @@ name: Validate nginx configuration
 # far as being installed — the common failure, caught for free, before anyone is
 # at a terminal.
 
+# Every branch, not just `main`. This job is read-only and cheap, and nothing it
+# guards is deployed by CI any more — nginx/deploy.sh is run by hand, from
+# whatever is checked out. So the useful moment for it is on the BRANCH, before a
+# merge, not after. Pinning it to `main` would only confirm a config once it was
+# already on the branch everyone deploys from.
 on:
   workflow_dispatch:
   push:
-    branches:
-      - next
     paths:
       - "nginx/**"
       - ".github/workflows/validate-nginx.yml"
@@ -84,11 +89,10 @@ jobs:
           cp /repo/nginx/site-common.conf /etc/nginx/snippets/afc-common.conf
           cp /repo/nginx/redirects.conf   /etc/nginx/snippets/afc-redirects.conf
 
-          # afc-production.conf is validated here although nginx/deploy.sh does
-          # not install it — see its header. In this container there is no existing
-          # apex server block, so it loads cleanly alongside afc.conf. That is the
-          # point: the file cannot be exercised on the droplet until cutover, so
-          # this is the ONLY place it is checked at all until then.
+          # afc-production.conf is validated alongside afc.conf, as deploy.sh
+          # installs them. There is no 11ty apex block in this container to collide
+          # with — on the droplet, deploy.sh retires that one in the same install.
+          # Until cutover this job is the ONLY place the file is loaded at all.
           cp /repo/nginx/afc-production.conf /etc/nginx/conf.d/afc-production.conf
 
           for h in andyfitzgeraldconsulting.com preview.andyfitzgeraldconsulting.com; do
