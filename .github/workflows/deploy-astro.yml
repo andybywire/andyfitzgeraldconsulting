@@ -216,6 +216,13 @@ jobs:
       # deploy.sh refuses to install it unless `public/index.html` is there.
       # Change one and the other stops working — the site would 404 wholesale,
       # or worse, serve the PHP source.
+      #
+      # `server/` HAS TWO CONSUMERS since 2026-09-29. The preview host's
+      # `/api/contact` runs this copy of contact.php too — nginx/afc.conf points
+      # its `$afc_php` at /var/www/afc-production/html/server — so the SSR
+      # preview release carries no PHP of its own. Moving or renaming this half
+      # breaks the contact form on BOTH hosts, and deploy-preview.yml would not
+      # notice.
       - name: Assemble the release tree
         run: |
           set -e

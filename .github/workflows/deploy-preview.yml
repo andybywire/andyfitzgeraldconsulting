@@ -1,0 +1,428 @@
+name: Build & Deploy AFC Preview (SSR)
+
+# ── WHAT THIS DEPLOYS, AND WHERE ────────────────────────────────────────────
+#
+# Astro's SSR build, with visual editing and drafts, to /var/www/afc-preview on the
+# droplet. There it runs as the `afc-preview` systemd USER unit (web/afc-preview.service)
+# on 127.0.0.1:8081, and nginx proxies preview.andyfitzgeraldconsulting.com to it
+# (nginx/afc.conf). Tracks `main`, with `workflow_dispatch` to rehearse any ref
+# (Andy, 2026-09-28).
+#
+# Its sibling deploy-astro.yml builds the same commit STATIC for production. So a push
+# to `main` touching web/ runs both. That is two different artifacts for two hosts,
+# not the duplicate build ux-methods has — see docs/ux-methods-notes.md.
+#
+# ── NO repository_dispatch, AND WHAT THAT COSTS ────────────────────────────
+#
+# Production rebuilds on every Sanity publish. This does not need to: SSR reads
+# content per request, drafts included, so a publish or an edit is visible on the
+# next page load without a build.
+#
+# EXCEPT the prerendered routes. `/search.json`, the five feeds, the sitemap and
+# robots.txt set `prerender = true` and are files written at BUILD time, in this
+# build as in production's. On preview they are a snapshot from the last deploy
+# and lag behind the pages until the next push to `main`. Accepted (2026-09-29):
+# this host is noindex and behind basic auth, and visual editing is about pages.
+#
+# ── THE FIRST RUN IS THE MERGE, AND IT RETIRES THE STATIC STAGING BUILD ────
+#
+# `workflow_dispatch` "will only trigger a workflow run if the workflow file exists
+# on the default branch" (GitHub's docs, checked 2026-09-29). So no branch can be
+# rehearsed until this file is on `main`, and its first run is the push that puts
+# it there. The droplet has to be ready by then: Node at /usr/bin/node, and lingering
+# enabled for `afc`. The deploy checks both and says which is missing.
+#
+# That first run swaps `html` from the last static staging release to one with no
+# `public/`, so preview 404s until nginx/afc.conf's proxy block is installed with
+# nginx/deploy.sh — whose third interlock refuses exactly until this has deployed.
+# Accepted (Andy, 2026-09-29): the static build is stale and deployed from nowhere.
+#
+# ── THE RELEASE IS ONE DIRECTORY ───────────────────────────────────────────
+#
+#   release/
+#     app/
+#       dist/                  the build: dist/server runs, dist/client it serves
+#       afc-preview.service    the unit, installed into ~/.config/systemd/user/
+#
+# NO `node_modules`: the preview build bundles the server's dependencies (see
+# bundleServerDependencies in web/astro.config.mjs), so the droplet needs Node and
+# nothing else. And NO `server/`: preview's `/api/contact` runs PRODUCTION's
+# contact.php (decided 2026-09-29, see nginx/site-common.conf), so this workflow
+# carries no PHP build and no Gmail secrets at all.
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+    paths:
+      - "web/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/deploy-preview.yml"
+
+# Not secrets — all three are compiled into the client bundle, readable by anyone who
+# views source. The Studio URL is what stega's click-to-edit links point at, and it is
+# inlined at build time, so it has to be here rather than on the droplet.
+env:
+  PUBLIC_SANITY_PROJECT_ID: 7v0qvet6
+  PUBLIC_SANITY_DATASET: production-26
+  PUBLIC_SANITY_STUDIO_URL: https://afconsulting.sanity.studio
+
+# ── CONCURRENCY IS PER JOB, FOR THE REASON deploy-astro.yml GIVES ──────────
+#
+# Builds supersede freely — only the newest commit matters, and a cancelled build
+# touches nothing outside the runner. Deploys never cancel, because that is where a
+# release is half-extracted or a service half-restarted. The groups are this
+# workflow's own, so a preview deploy never queues behind a production one.
+jobs:
+  build:
+    name: Build the SSR preview
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: preview-build
+      cancel-in-progress: true
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          # Matches `packageManager` in the root package.json, as in deploy-astro.yml.
+          version: 11.22.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          # The same major as /usr/bin/node on the droplet, where this build runs.
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Production's workflow runs this on the same push, but not on a
+      # `workflow_dispatch` of a branch — and a rehearsed branch is where a type
+      # error is likeliest.
+      - name: Type-check
+        run: pnpm --filter web check
+
+      - name: Build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=2048"
+          # Read at CONFIG time, not only at runtime: astro.config.mjs refuses a preview
+          # build without it, and the prerendered routes query drafts during the build.
+          # The secret is named for its job in Sanity; the build wants its env name.
+          SANITY_API_READ_TOKEN: ${{ secrets.VISUAL_EDITING }}
+        run: pnpm --filter web build:preview
+
+      - name: Assemble the release
+        run: |
+          set -e
+          mkdir -p release/app
+          cp -R web/dist release/app/dist
+          cp web/afc-preview.service release/app/
+
+      # ── PROVE THE RELEASE RUNS ON ITS OWN, BEFORE IT SHIPS ─────────────────
+      #
+      # The bundling is what lets the droplet run without node_modules, and it can
+      # regress silently: a dependency that cannot be bundled leaves a bare import in
+      # ONE route's chunk, the build passes, and that route 500s on preview while every
+      # other page is fine. A health check on `/` would never see it. This is the only
+      # place it can be caught before the droplet.
+      #
+      # So the release is copied to /tmp — no node_modules in any directory above it,
+      # which is what the droplet looks like — started exactly as the unit starts it,
+      # and asked for EVERY URL in its own sitemap.
+      #
+      # Three guards that are easy to leave out, each learned the hard way:
+      #   - the URL list must be non-empty, or a failed sitemap fetch passes the loop
+      #     vacuously;
+      #   - a missing slug must 404, so a route that 200s for anything cannot pass;
+      #   - the canonical is matched with a bash pattern, not `printf | grep -q`,
+      #     which under pipefail reports a present match as missing on a large page
+      #     (see check 4 in nginx/deploy.sh).
+      - name: Prove the release runs with no node_modules
+        env:
+          SANITY_API_READ_TOKEN: ${{ secrets.VISUAL_EDITING }}
+          NODE_ENV: production
+          HOST: 127.0.0.1
+          PORT: "8081"
+        run: |
+          set -euo pipefail
+          SMOKE=/tmp/afc-preview-smoke
+          BASE="http://$HOST:$PORT"
+          rm -rf "$SMOKE" && cp -R release "$SMOKE"
+
+          cd "$SMOKE/app"
+          node --max-old-space-size=128 dist/server/entry.mjs > "$SMOKE/server.log" 2>&1 &
+          SERVER=$!
+          trap 'kill "$SERVER" 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 30); do
+            curl -s -o /dev/null "$BASE/" && break
+            sleep 1
+          done
+
+          mapfile -t URLS < <(curl -fsS "$BASE/sitemap.xml" \
+            | grep -oE '<loc>[^<]+</loc>' | sed -E 's#</?loc>##g; s#^https?://[^/]+##')
+          if [[ ${#URLS[@]} -eq 0 ]]; then
+            echo "::error::The sitemap listed no URLs — nothing was checked."
+            cat "$SMOKE/server.log"
+            exit 1
+          fi
+
+          # Four at a time: the runner has four cores, and a sequential sweep of every
+          # page takes about a minute because each one fetches drafts from Sanity.
+          printf '%s\n' "${URLS[@]}" \
+            | xargs -P 4 -I{} curl -s -o /dev/null -w '%{http_code} {}\n' "$BASE{}" \
+            > "$SMOKE/codes.txt"
+          BAD="$(grep -v '^200 ' "$SMOKE/codes.txt" || true)"
+          if [[ -n "$BAD" ]]; then
+            echo "::error::Pages that did not return 200 from the standalone release:"
+            echo "$BAD"
+            echo "--- server log"
+            cat "$SMOKE/server.log"
+            exit 1
+          fi
+          echo "All ${#URLS[@]} sitemap URLs returned 200."
+
+          CODE="$(curl -s -o /dev/null -w '%{http_code}' "$BASE/insights/__no_such_slug__/" || true)"
+          if [[ "$CODE" != "404" ]]; then
+            echo "::error::A missing slug returned $CODE, not 404."
+            exit 1
+          fi
+          echo "A missing slug returns 404."
+
+          HOME_PAGE="$(curl -fsS "$BASE/")"
+          WANT='<link rel="canonical" href="https://preview.andyfitzgeraldconsulting.com/">'
+          if [[ "$HOME_PAGE" != *"$WANT"* ]]; then
+            echo "::error::/ does not carry $WANT — this is not the preview-mode build."
+            exit 1
+          fi
+          echo "/ carries the preview canonical."
+
+      - name: Package the release
+        run: tar czf afc-preview.tar.gz -C release .
+
+      - name: Upload the release artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: afc-preview-release
+          path: afc-preview.tar.gz
+          retention-days: 7
+
+  deploy:
+    name: Deploy to preview
+    runs-on: ubuntu-latest
+    needs: build
+
+    concurrency:
+      group: preview-deploy
+      cancel-in-progress: false
+
+    env:
+      # A literal, for the reason deploy-astro.yml's header gives. It already exists
+      # and belongs to afc: it was the static staging host's base until the SSR flip.
+      DEPLOY_BASE: /var/www/afc-preview
+      AFC_PREVIEW_TOKEN: ${{ secrets.VISUAL_EDITING }}
+
+    steps:
+      - name: Download the release artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: afc-preview-release
+
+      - name: Copy the release to the droplet
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AFC_HOST }}
+          username: ${{ secrets.AFC_SSH_USER }}
+          key: ${{ secrets.AFC_SSH_KEY }}
+          port: 22
+          source: "afc-preview.tar.gz"
+          target: "/tmp"
+
+      - name: Install, restart, and roll back if it is not healthy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.AFC_HOST }}
+          username: ${{ secrets.AFC_SSH_USER }}
+          key: ${{ secrets.AFC_SSH_KEY }}
+          port: 22
+          envs: DEPLOY_BASE,AFC_PREVIEW_TOKEN
+          script: |
+            set -e
+
+            RELEASES="$DEPLOY_BASE/releases"
+            CURRENT="$DEPLOY_BASE/html"
+            ENV_FILE="$DEPLOY_BASE/preview.env"
+            UNIT=afc-preview
+            UNIT_DIR="$HOME/.config/systemd/user"
+
+            # Must match PORT in web/afc-preview.service and the proxy_pass in
+            # nginx/afc.conf. Three places, one number, and nothing checks them against
+            # each other except this health check failing.
+            HEALTH=http://127.0.0.1:8081/
+
+            # `systemctl --user` finds the user's service manager through this. An SSH
+            # login sets it, but saying so costs one line and removes a dependency on
+            # how appleboy's action opens its session.
+            export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
+            # ── WHAT THE DROPLET MUST ALREADY HAVE ───────────────────────────────
+            #
+            # Each is a one-time root step, so a failure here is a missing setup step,
+            # not a bad build — and it is reported as one, before anything is touched.
+            if ! /usr/bin/node -e 'process.exit(+process.versions.node.split(".")[0] >= 24 ? 0 : 1)' 2>/dev/null; then
+              echo "!!! /usr/bin/node is missing or older than 24 — install NodeSource's nodejs 24.x as root." >&2
+              exit 1
+            fi
+            if ! systemctl --user show-environment >/dev/null 2>&1; then
+              echo "!!! No user service manager for $(id -un) — run \`loginctl enable-linger $(id -un)\` as root." >&2
+              exit 1
+            fi
+            if [ -z "$AFC_PREVIEW_TOKEN" ]; then
+              echo "!!! The VISUAL_EDITING secret is empty; the server cannot read drafts. Nothing was changed." >&2
+              exit 1
+            fi
+
+            mkdir -p "$RELEASES"
+
+            # The same floor as production, for the same reason — see deploy-astro.yml.
+            # A release is ~17 MB; 500 MB free is where something else is wrong.
+            AVAIL_KB=$(df -Pk "$DEPLOY_BASE" | awk 'NR==2 {print $4}')
+            if [ "$AVAIL_KB" -lt 512000 ]; then
+              echo "!!! Only $((AVAIL_KB / 1024)) MB free on $DEPLOY_BASE; floor is 500 MB. Refusing to deploy." >&2
+              df -h "$DEPLOY_BASE" >&2
+              exit 1
+            fi
+
+            # Read BEFORE the swap: the release to fall back to. On the first run it is
+            # the last static staging release, which has no app/ — see rollback below.
+            PREVIOUS="$(readlink -f "$CURRENT" 2>/dev/null || true)"
+
+            NEW_RELEASE="$RELEASES/$(date +%Y%m%d%H%M%S)"
+            echo ">>> Extracting into $NEW_RELEASE"
+            mkdir "$NEW_RELEASE"
+            tar xzf /tmp/afc-preview.tar.gz -C "$NEW_RELEASE"
+            rm -f /tmp/afc-preview.tar.gz
+
+            # ── THE TOKEN, IN ONE FILE, NEVER WORLD-READABLE, NEVER HALF-WRITTEN ────
+            #
+            # Outside every release, so there is one copy on disk rather than one per
+            # kept release, and so a rollback reads the current token rather than a
+            # stale one. `mktemp` creates the file 0600 before anything is written into
+            # it — the lesson of the old `chmod 644` .env — and `mv` within one
+            # filesystem is atomic, so a process starting mid-deploy reads the old file
+            # or the new one, never a truncated one.
+            TMP_ENV="$(mktemp "$DEPLOY_BASE/.preview.env.XXXXXX")"
+            printf 'SANITY_API_READ_TOKEN=%s\n' "$AFC_PREVIEW_TOKEN" > "$TMP_ENV"
+            mv -f "$TMP_ENV" "$ENV_FILE"
+
+            # ── ACTIVATING A RELEASE: LINK, UNIT, RESTART ───────────────────────────
+            #
+            # The unit's WorkingDirectory goes through `html`, so relinking and
+            # restarting is the whole of switching releases. The unit file is copied
+            # from the release being activated, so a rollback also rolls back any change
+            # to the unit itself.
+            #
+            # `reset-failed` first: after five failed starts in a minute the unit stops
+            # trying (StartLimitBurst in the unit), and a plain restart is then refused.
+            # Without it, one bad release would also block the rollback.
+            #
+            # Returns 1 for a release with no app/ — a static one from before the flip.
+            activate() {
+              ln -sfn "$1" "$CURRENT"
+              [ -f "$1/app/afc-preview.service" ] || return 1
+              mkdir -p "$UNIT_DIR"
+              install -m 644 "$1/app/afc-preview.service" "$UNIT_DIR/$UNIT.service"
+              systemctl --user daemon-reload
+              systemctl --user enable "$UNIT" >/dev/null 2>&1
+              systemctl --user reset-failed "$UNIT" >/dev/null 2>&1 || true
+              systemctl --user restart "$UNIT"
+            }
+
+            # `restart` returns once the process is forked, not once it serves — a
+            # missing env file or a bad bundle fails a second later. So this polls
+            # `/` for 200: rendering the home page proves the token, the drafts
+            # perspective and the bundle together. Thirty seconds covers a cold start
+            # and a first Sanity fetch several times over.
+            healthy() {
+              CODE=000
+              for _ in $(seq 1 30); do
+                CODE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$HEALTH" || true)"
+                [ "$CODE" = 200 ] && return 0
+                sleep 1
+              done
+              echo "!!! $HEALTH last answered $CODE (000 is no answer at all)." >&2
+              return 1
+            }
+
+            echo ">>> Activating $NEW_RELEASE"
+            if activate "$NEW_RELEASE" && healthy; then
+              PID="$(systemctl --user show -p MainPID --value "$UNIT")"
+              echo ">>> Serving. PID $PID on $(readlink "/proc/$PID/exe") $(/usr/bin/node -v)," \
+                "$(( $(ps -o rss= -p "$PID") / 1024 )) MB RSS after the health check."
+            else
+              # ── ROLLBACK ─────────────────────────────────────────────────────
+              #
+              # The thing ux-methods' preview deploy cannot do, since it deletes the
+              # old build before it knows the new one works. Here the previous release
+              # is still on disk, untouched, and switching back is one call.
+              echo "!!! The new release is not healthy. Its last journal lines:" >&2
+              journalctl --user -u "$UNIT" -n 30 --no-pager >&2 || true
+
+              if [ -n "$PREVIOUS" ] && [ -d "$PREVIOUS" ] && [ "$PREVIOUS" != "$NEW_RELEASE" ]; then
+                if activate "$PREVIOUS"; then
+                  if healthy; then
+                    echo "!!! Rolled back to $PREVIOUS, which is serving." >&2
+                  else
+                    echo "!!! Rolled back to $PREVIOUS, AND IT IS NOT HEALTHY EITHER — look at the droplet." >&2
+                  fi
+                else
+                  # A static release: relinked, so a static nginx config serves it again.
+                  # Nothing of it can run, so stop the process left crash-looping on the
+                  # release about to be deleted.
+                  systemctl --user stop "$UNIT" || true
+                  echo "!!! Relinked the static release $PREVIOUS; the preview service is stopped." >&2
+                fi
+              else
+                systemctl --user stop "$UNIT" || true
+                echo "!!! No previous release to return to; the preview service is stopped." >&2
+              fi
+
+              rm -rf "$NEW_RELEASE"
+              exit 1
+            fi
+
+            # Three releases, as production keeps: the current one and two to roll back
+            # to. On the first runs this also clears out the static staging releases,
+            # whose names use the same timestamp format.
+            #
+            # ── BY NAME, NOT `ls -t` — THE LATTER DELETED THE LIVE RELEASE ──────────
+            #
+            # A release's NAME is when it was deployed. Its MTIME is not: `tar` restores
+            # the archive's own `./` entry onto the directory it extracts into, so the
+            # mtime is when the artifact was BUILT. Measured 2026-09-29 — extracted at
+            # 21:07, the directory read 21:03. So `ls -1t | tail -n +4`, the line
+            # deploy-astro.yml uses, sorts by build time, and re-running an older
+            # workflow's deploy job makes the release it just activated the "oldest"
+            # one, and prunes it out from under the running process. The deploy
+            # harness did exactly that: html pointed at a directory that no longer
+            # existed while the old process kept answering 200 from memory.
+            #
+            # The live release is also excluded by name, so no ordering mistake can
+            # ever select it.
+            echo ">>> Pruning old releases (keeping the 3 most recent)"
+            cd "$RELEASES"
+            ls -1 | sort -r | tail -n +4 | grep -vxF "$(basename "$NEW_RELEASE")" | xargs -r rm -rf
+
+            echo ">>> Done."

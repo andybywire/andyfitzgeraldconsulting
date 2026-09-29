@@ -1,0 +1,128 @@
+# ── ANDYFITZGERALDCONSULTING.COM — THE SSR PREVIEW, AS A systemd USER UNIT ──
+#
+# Runs Astro's standalone Node server for preview.andyfitzgeraldconsulting.com,
+# which nginx proxies to 127.0.0.1:8081 (nginx/afc.conf). Installed into
+# ~/.config/systemd/user/ for the deploy user, `afc`, by
+# .github/workflows/deploy-preview.yml on EVERY deploy — so this file is the
+# definition, not whatever is on the droplet. Edit it here.
+#
+# Logs go to the journal:   journalctl --user -u afc-preview
+# State:                    systemctl --user status afc-preview
+#
+# Both as afc, from an SSH login, which sets XDG_RUNTIME_DIR. A plain
+# `sudo -iu afc` from root does NOT, and `systemctl --user` then fails with
+# "Failed to connect to bus". From a root shell, pass it through:
+#
+#   sudo -iu afc XDG_RUNTIME_DIR=/run/user/$(id -u afc) systemctl --user status afc-preview
+#
+# ── WHY systemd AND NOT PM2 (decided 2026-09-29) ───────────────────────────
+#
+# PM2 was the plan, copied from ux-methods, and ux-methods is the reason it is
+# not used. preview.uxmethods.org returned 502 for about five weeks in 2026
+# with `pm2 startup` configured and a valid dump on disk: PM2's process list
+# lived in its daemon's memory, was lost, and is only restored at BOOT — on a
+# droplet that had not rebooted in 42 weeks. See docs/ux-methods-notes.md.
+#
+# An enabled unit has no list to lose. It is declarative: enabled means
+# started at boot, and `Restart=` below covers a process that dies. It also
+# drops PM2's per-user supervisor daemon (16–28 MB measured) on a 458 MB box,
+# and swaps PM2's polled memory restart for one the kernel enforces.
+#
+# ── WHY A USER UNIT ─────────────────────────────────────────────────────────
+#
+# `afc` is not in `sudo` (removed 2026-09-28) and has to stay out — nginx/
+# deploy.sh's header explains why no key GitHub holds may be root-equivalent.
+# A system unit would need root for the restart every deploy does. A user unit
+# belongs to afc, so `systemctl --user restart` needs no privilege at all.
+#
+# It needs ONE root step, ever: `loginctl enable-linger afc`. Without it the
+# user's service manager — and this service with it — runs only while afc has
+# a login session, so the deploy would start it and the end of the deploy's
+# SSH session would stop it again. Lingering is also what starts it at boot.
+#
+# ── NOTHING HERE CHANGES BETWEEN DEPLOYS, AND THAT IS THE DESIGN ────────────
+#
+# WorkingDirectory goes through the `html` symlink the deploy swaps, and it is
+# resolved when the process starts — so a restart runs whichever release the
+# link points at, and every line below stays constant. That is what makes
+# rollback "relink and restart" and nothing more. It is the fix for the other
+# ux-methods lesson, where PM2's stored copy of the app's config and the file in
+# the repo quietly became two different things.
+
+[Unit]
+Description=andyfitzgeraldconsulting.com preview (Astro SSR, visual editing)
+
+# ── A CRASH LOOP GIVES UP RATHER THAN SPINNING FOREVER ──────────────────────
+#
+# Five failed starts inside a minute and systemd stops trying, leaving the unit
+# `failed` until something resets it. With `RestartSec=5` below that is about
+# 25 seconds of attempts. Without a limit, a persistent fault — a revoked read
+# token — would restart the process every five seconds indefinitely on a
+# 1-vCPU box that serves four sites.
+#
+# The deploy runs `systemctl --user reset-failed` before it restarts, so hitting
+# this limit never blocks the NEXT deploy, or the rollback within a deploy.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/afc-preview/html/app
+
+# ── THE COMMAND ─────────────────────────────────────────────────────────────
+#
+# /usr/bin/node is NodeSource's system package (decided 2026-09-29), and
+# naming it absolutely is the point of choosing it over nvm: `apt` upgrades it
+# in place at the same path, so this line never goes stale. ux-methods' PM2 unit
+# names a versioned nvm directory in two places, and an upgrade left it running
+# a Node that was no longer the default — silently.
+#
+# --env-file holds SANITY_API_READ_TOKEN, and nothing else. The deploy writes it
+#   mode 0600, outside every release directory, so there is one copy of the
+#   secret on disk rather than one per kept release. Node reads it into the
+#   process's environment, so it never appears in this file, in `systemctl show`,
+#   or in the journal. A MISSING file makes Node exit at once, which is the
+#   intended failure: the deploy's health check sees it and rolls back.
+#
+# --max-old-space-size=128 caps V8's old generation. A full sweep of all 94 URLs
+#   under it, on macOS with NODE_ENV=production, finished with no heap-limit
+#   crash. What it guards against is growth, not the steady state.
+#
+# `dist/server/entry.mjs` is relative to WorkingDirectory. The server imports
+# nothing from node_modules — the preview build bundles its dependencies (see
+# bundleServerDependencies in astro.config.mjs) — so the release is just `dist/`.
+ExecStart=/usr/bin/node --env-file=/var/www/afc-preview/preview.env --max-old-space-size=128 dist/server/entry.mjs
+
+# The other end of nginx's `proxy_pass http://127.0.0.1:8081`. The loopback is
+# explicit so the process can never be reached around nginx — and so around its
+# basic auth and X-Robots-Tag. 8080 is preview.uxmethods.org's.
+Environment=HOST=127.0.0.1
+Environment=PORT=8081
+
+# ── NODE_ENV=production IS NOT DECORATION — IT HALVES THE MEMORY ────────────
+#
+# The bundled server carries BOTH of React's builds and picks one at runtime from
+# this variable. Unset, it runs React's development build. Measured 2026-09-29
+# over the same 94-URL sweep: 179 MB RSS with it, 339 MB without, and the HTML
+# byte-identical either way. So nothing looks wrong without it, and the process
+# costs twice what it should on a droplet with ~224 MB to spare.
+Environment=NODE_ENV=production
+
+Restart=always
+RestartSec=5
+
+# ── THE MEMORY CEILING: PROVISIONAL UNTIL MEASURED ON THE DROPLET ───────────
+#
+# Past this the kernel kills the process and `Restart=` brings it back. 300M is a
+# guess sized from the macOS figure above with room to spare; Linux reclaims
+# differently, so the real number comes from the droplet. Revise it then, and
+# record the measurement here.
+#
+# It only works if the memory controller is delegated to afc's user manager.
+# When it is not, systemd accepts the line and quietly enforces nothing — so
+# check `cat /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/cgroup.controllers`
+# includes `memory` before trusting it. The V8 cap above works either way.
+MemoryMax=300M
+
+[Install]
+WantedBy=default.target
