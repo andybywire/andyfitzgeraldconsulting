@@ -164,6 +164,51 @@ function contactEndpointStub() {
   }
 }
 
+/**
+ * ── BUNDLE THE SERVER'S DEPENDENCIES, SO THE DROPLET NEEDS NO node_modules ──────
+ *
+ * By default the server build leaves each package as a bare `import`, resolved from
+ * node_modules at runtime — so node_modules would ship with every release. Measured
+ * 2026-09-29, `pnpm deploy --prod` of this package is 590 MB and 53,891 files, because
+ * `dependencies` holds everything the BUILD needs: sanity, typescript, platform binaries.
+ * Three releases kept on the droplet would be 1.77 GB against ~1.7 GB free.
+ *
+ * The running server imports six packages. `ssr.noExternal: true` compiles them into
+ * dist/server instead — 15 MB, and it runs from a directory with no node_modules anywhere
+ * above it. Checked against the unbundled build over all 94 sitemap URLs plus 404 probes:
+ * identical bodies once asset hashes are masked, pages with Shiki-highlighted code included.
+ * Memory is the same, 80 vs 76 MB idle. And the droplet then needs Node and nothing else —
+ * no pnpm, and no install step on a 512 MB box.
+ *
+ * ── A PLUGIN WITH `apply: 'build'`, BECAUSE DEV CANNOT TAKE IT ──────────────────
+ *
+ * The first version set `vite.ssr.noExternal` directly, and `dev:preview` then failed to
+ * start: `module is not defined`, from react/index.js. `ssr.noExternal` applies to the dev
+ * server too, where it sends every dependency through Vite's module runner — which evaluates
+ * ES modules, not CommonJS, and React's entry is CommonJS. The Rollup build converts CommonJS
+ * as it bundles; the dev runner does not. So this is the contact stub's `apply` idiom turned
+ * round: that one exists only under `astro dev`, this one only under `astro build`.
+ *
+ * ── WHAT IT WOULD BREAK ─────────────────────────────────────────────────────────
+ *
+ * A runtime dependency that cannot be bundled, meaning a native addon. sharp is the one in
+ * the tree, reached only through Astro's on-demand `/_image` endpoint. Nothing here uses it —
+ * the one import from astro:assets is `<Font>` — but a page that rendered `<Image>` on
+ * demand would fail on preview at REQUEST time, not at build. That is the change to watch for.
+ *
+ * Preview only. Production is static: its server build exists only to prerender and is
+ * thrown away, so bundling there would buy nothing and could only change the output.
+ *
+ * @returns {import('vite').Plugin}
+ */
+function bundleServerDependencies() {
+  return {
+    name: 'afc:bundle-server-dependencies',
+    apply: 'build',
+    config: () => ({ssr: {noExternal: true}}),
+  }
+}
+
 export default defineConfig({
   site: isPreview
     ? 'https://preview.andyfitzgeraldconsulting.com'
@@ -249,7 +294,7 @@ export default defineConfig({
   ],
 
   vite: {
-    plugins: [contactEndpointStub()],
+    plugins: [contactEndpointStub(), ...(isPreview ? [bundleServerDependencies()] : [])],
 
     /**
      * ── PRE-BUNDLE THE VISUAL-EDITING ISLAND'S ENTRY, OR IT CANNOT HYDRATE IN DEV ──
