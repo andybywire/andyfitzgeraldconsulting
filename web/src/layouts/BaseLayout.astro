@@ -339,7 +339,7 @@ const PLAUSIBLE_INIT =
       `favicon-32x32.png` are retired and 404 deliberately: nothing outside this
       markup ever named them.
 
-      ── THREE TAGS, ONE PER KIND OF CLIENT ───────────────────────────────────
+      ── THREE TAGS, ONE PER KIND OF CLIENT ────────────────────────────────────
 
         - `icon.svg` is what current browsers use; Safari joined in 26. It carries
           its own dark version, which follows the BROWSER's color scheme rather
@@ -355,15 +355,43 @@ const PLAUSIBLE_INIT =
           because iOS fills transparency with black and applies its own
           rounded-square mask; 180 is 60pt at 3×.
 
-      `theme-color` is absent: the 11ty build hardcoded one value, and this build has
-      two themes and a toggle. A `media` attribute per scheme would follow the OS
-      and contradict the toggle whenever they disagree, so it is one per theme with
-      a script to switch them, or none.
+      `<meta name="theme-color">` is absent: the 11ty build hardcoded one value, and
+      this build has two themes and a toggle. A `media` attribute per scheme would
+      follow the OS and contradict the toggle whenever they disagree, so it is one
+      per theme with a script to switch them, or none.
+
+      ── THE MANIFEST, AND WHAT IT IS NOT ──────────────────────────────────────
+
+      `manifest.webmanifest` is what makes the site installable, and that no longer
+      takes a service worker: Chrome dropped the requirement, and Safari will install
+      any page. So this is NOT the phase 8 worker decision arriving early. There is
+      no offline support, and `/serviceworker.js` is a kill switch for the 11ty
+      build's worker, not a worker of ours.
+
+      JSON takes no comments, so the manifest's notes live here:
+
+        - `id: "/"` is the installed app's permanent identity; change it and every
+          existing install becomes a different app. The 11ty manifest had no `id`,
+          so its identity defaulted to its `start_url`, `/index.html`. Installs of
+          that one are a different app, and this manifest does not update them.
+        - `theme_color` is `#326e85`, `--blue-500`, the light theme's
+          `--color-accent`, and colors an installed app's title bar.
+          `background_color` is `#f9fafb`, `--neutral-100`, the light theme's
+          `--color-bg`, and is the launch screen before the page paints. A manifest
+          takes one of each with no dark variant, so an app launched in dark mode
+          flashes light first. If either token changes, change the manifest to
+          match; nothing checks it.
+        - the maskable icon is a separate file from the two `any` icons because it
+          is a different drawing: a full-bleed square with the mark inside the
+          safe zone, where the `any` icons are the round favicon on transparency.
+          One file for both purposes would either crop the disc or float it in
+          padding.
     */
     }
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
 
     {
       /*
