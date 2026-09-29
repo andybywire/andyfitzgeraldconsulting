@@ -73,6 +73,12 @@ on:
   # only, post to the current repo name, and carry `_type` as the event type.
   # Verify it by publishing a trivial edit and watching for a
   # `repository_dispatch` run here — nothing else proves the two halves meet.
+  #
+  # VERIFIED 2026-09-29, after Andy rebuilt the hook: two trivial `note`
+  # publishes each dispatched a run of this workflow on `main`. Both succeeded and
+  # each deployed a release to /var/www/afc-production. These are the first
+  # dispatch runs this workflow ever received, and the first delivery from the
+  # hook since 2026-08-14.
   repository_dispatch:
     types:
       - article
