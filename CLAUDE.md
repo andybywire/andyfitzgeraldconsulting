@@ -617,7 +617,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      render limit bounds what bots cost. **Drafts on preview are readable by anyone who finds the
      host**, by Andy's call.
    - **Memory limits from the droplet:** 148 MiB peak over every sitemap page, so `MemoryHigh=200M`
-     and `MemoryMax=256M`. Sized on Linux deliberately: macOS RSS for the same sweep read 180–370 MB
+     and `MemoryMax=256M` — read back from the running unit after the deploy that installed them
+     (`209715200` / `268435456`). Sized on Linux deliberately: macOS RSS for the same sweep read 180–370 MB
      across runs, and a claim made from one macOS pair — that `NODE_ENV=production` halved memory —
      had to be retracted the same day. See docs/ux-methods-notes.md.
 
@@ -625,15 +626,16 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    because `tar` stamps a release with its artifact's build time. Now pruned by name.
 
    **Not yet exercised: a reboot.** The unit is enabled and `afc` lingers, which should start it at
-   boot, but the droplet has not rebooted since. A kernel update is pending (6.8.0-71 → 6.8.0-142), as
-   are 69 package upgrades; taking the reboot deliberately is the test, and it touches every site on
-   the droplet, so its timing is Andy's.
+   boot, but the droplet has not rebooted since. That test is now a **phase 7** item, together with
+   the pending kernel and package upgrades that make it worth doing (Andy, 2026-09-29).
 
    Open follow-ups, none blocking: delete `/var/www/afc` (~630 MB) once the rollback window closes;
    retitle or undeploy the old `af-consulting` Studio app; delete the `RECAPTCHA_SECRET`,
    `AFC_MAIL_USERNAME` and `AFC_MAIL_PASSWORD` GitHub secrets, which no workflow references since
    `build-prod.yml` retired (measured). All Andy's calls. `cms.` was repointed at the new Studio on
-   2026-09-29 — for `/` only; deeper paths still 522 unless the rule gains a wildcard.
+   2026-09-29 — for `/` only, and **left that way** (Andy): it is a convenience alias nobody links
+   to, so deeper paths returning 522 is accepted rather than fixed. Its redirect is a 302, not a
+   301, so the next time the Studio moves, browsers follow at once instead of a cached answer.
 
    **The rename is DONE (2026-09-28), and the archiving changed on the way.** The old pair left the
    tree rather than moving within it (Andy's call: git history keeps them, last at `06cd8e5`), and
@@ -670,6 +672,28 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      `services.njk` iterates singletons, and no query fetches either type. So they are adopted into
      the schema or deleted — the choice is editorial, not structural.
    - **Shrink `hiddenDocTypes`** in `sanity.config.ts` to whatever survives the above.
+   - **Upgrade the droplet and reboot it, deliberately** (added 2026-09-29). Two things are waiting
+     on it: a kernel update (running 6.8.0-71, installed 6.8.0-142) plus 69 package upgrades, and
+     the one part of the SSR preview never exercised — **coming back at boot with nobody touching
+     it.** The `afc-preview` unit is enabled and `afc` lingers, which should be enough; ux-methods'
+     five weeks of 502s are why "should" is not accepted here. It belongs in this phase because it
+     takes every site on the droplet down for a minute or so and nothing depends on it.
+
+     As root: `apt upgrade`, then `reboot`. Afterwards, **check before touching anything**, since
+     running a deploy first would restart the very things being tested:
+
+     ```bash
+     uname -r   # 6.8.0-142-generic
+     systemctl is-active nginx php8.3-fpm certbot.timer
+     sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user status afc-preview --no-pager | head -5
+     readlink /proc/$(sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user show -p MainPID --value afc-preview)/exe
+     ```
+
+     Expect `active`, three times; the unit active since boot; `/usr/bin/node`. Then from the Mac,
+     `AFC_SSH=do nginx/deploy.sh` for all nine checks across both hosts — it reinstalls identical
+     config, which is harmless. **`preview.uxmethods.org` gets its own first real boot test here
+     too**: its PM2 unit was proven with `pm2 kill` on 2026-09-21, never by a boot. A 200 from it is
+     the check, and a 502 is the old failure back.
    - **The serializer specimen is GONE, and this item is closed** (verified 2026-09-14).
      `specimen-serializers` on `production-26`, at `/insights/serializer-specimen/`, was a
      phase 4 test fixture holding one instance of every block style, inline mark, list shape
