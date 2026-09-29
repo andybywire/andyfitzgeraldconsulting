@@ -315,7 +315,8 @@ becomes the live dataset.
 
 ### Phase sequence
 
-Each phase is a branch off `next`, merged back once verified. Do not run them in parallel.
+Each phase is a branch, merged back once verified — off `next` through the cutover, off `main` since
+(see Branching and verification). Do not run them in parallel.
 
 0. **Repo scaffolding.** `web-next/` (Astro) and `studio-next/` alongside the existing `web/` and
    `studio/`. pnpm workspace, one root lockfile, **Node 24 everywhere** — Node 20 is EOL as of April
@@ -578,6 +579,22 @@ Each phase is a branch off `next`, merged back once verified. Do not run them in
    than a form target with its own display pages, since mail forms now appear on several pages.
    Carry the Composer step into the new workflow. nginx, the 301 map, staging deploy. Then rename
    `web-next` → `web` and `studio-next` → `studio`, archiving the old alongside `__web_2022`.
+
+   **THE CUTOVER IS DONE (2026-09-28).** The apex serves the Astro build from
+   `/var/www/afc-production`, www 301s to it, and the 11ty site is retired — its release untouched
+   at `/var/www/afc` as the rollback target, its nginx config unlinked but kept in
+   `sites-available/`. Verified: all eight `deploy.sh` smoke checks; the 301 map 93/93 through
+   Cloudflare and at the origin; real_ip logging visitors' own addresses; both certificates renewing
+   by webroot; a real contact-form send; the Sanity webhook dispatching production builds for the
+   first time since 2026-08-14. What each check was, and the rollback, live in `nginx/` beside the
+   config they test. **The SSR preview (stage D) is what remains of phase 6**; the plan is
+   [docs/cutover-kickoff.md](docs/cutover-kickoff.md).
+
+   Open follow-ups, none blocking: delete `/var/www/afc` (~630 MB) once the rollback window closes;
+   retitle or undeploy the old `af-consulting` Studio app; delete the `RECAPTCHA_SECRET`,
+   `AFC_MAIL_USERNAME` and `AFC_MAIL_PASSWORD` GitHub secrets, which no workflow references since
+   `build-prod.yml` retired (measured). All Andy's calls. `cms.` was repointed at the new Studio on
+   2026-09-29 — for `/` only; deeper paths still 522 unless the rule gains a wildcard.
 
    **The rename is DONE (2026-09-28), and the archiving changed on the way.** The old pair left the
    tree rather than moving within it (Andy's call: git history keeps them, last at `06cd8e5`), and
@@ -857,36 +874,38 @@ removes both the attribute and the `localStorage` key, so there is no third stat
 
 ### Branching and verification
 
-**`main` is the live production site and is frozen and terminal.** CI deploys on any push to `main`
-touching `web/**`, so building in `web-next/` **cannot** trigger it — the deploy path stays inert
-until the phase 6 rename deliberately activates it.
+**`main` is the site** (since the phase 6 cutover, 2026-09-28). `deploy-astro.yml` deploys it to
+production on every push to `main` touching `web/**` and on every Sanity publish webhook — so **a
+push to `main` IS a production deploy**, which is one more reason commit and push are Andy's call.
 
-- **`main`** — current production. Hotfixes only.
-- **`next`** — integration branch where the new site accumulates. **Never auto-deploys to
-  production.** Since phase 6 it *does* auto-deploy to **staging**: `deploy-astro.yml` fires on
-  pushes touching `web-next/**` and on Sanity webhooks, and `deploy-nginx.yml` on pushes touching
-  `nginx/**`. Andy approved that on 2026-09-17 — `web-next` exists only here, so waiting for a
-  merge would forfeit the rehearsal the staging host exists to provide. Production stays untouched:
-  it is still the 11ty build deployed from `main` by `build-prod.yml`, and the two workflows share
-  no branch, no path and no directory on the droplet.
-- **Phase branches** — branch from `next`, merge back once verified. One per phase, each reviewable
-  on its own.
-- **One deliberate cutover merge** `next` → `main` at the end.
+- **`main`** — the only long-lived branch.
+- **Work branches** — branch from `main`, one coherent piece of work each, merged back once
+  verified. A merge leaves you on `main`, so check the branch when a new task starts.
+- **`next`** — **retired at the cutover merge** (`0f8884e`). It was the integration branch while
+  the Astro site was built beside the live 11ty one, and it deployed the static staging rehearsal.
+  Don't build on it, or on `origin/dev` (Aug 2025), which was abandoned before it.
+- **The preview host tracks `main`** once the SSR preview lands (stage D of the cutover, in
+  progress), with `workflow_dispatch` on any ref to rehearse a branch before merging it (Andy,
+  2026-09-28). Until then `preview.` serves the last static staging build from `next`: stale, and
+  deployed from nowhere.
 
-**Do not merge `main` → `next`.** The old rule existed so production hotfixes would propagate, but
-the two branches now share no front-end files — a fix to 11ty `web/` has nothing to propagate into
-Astro `web-next/`, and once `next` is on pnpm the merge only produces lockfile conflicts.
+**nginx is deployed by hand**, with `nginx/deploy.sh` from a laptop, never by CI — its header says
+why. `validate-nginx.yml` runs `nginx -t` on a push to any branch touching `nginx/`, so a config
+that cannot load is caught on the branch, before anything is installed.
 
 **Andy does the visual verification himself.** Get changes green and integration-verified, then hand
 him the specific eyeball steps rather than asking him to check things you could have checked.
 
-Nothing on `next` is ever deployed, so **nginx config, 301 redirects and CI build behavior cannot
-be verified locally.** The SSR preview environment closes part of this gap early; the rest needs a
-staging deploy before cutover.
+**The URL contract is verified against the live apex now**, not only against staging — through
+Cloudflare AND pinned to the origin with `--resolve`, because the two can differ. The method, and
+the 93-URL sweep that passed both ways at cutover, is recorded in `nginx/redirects.conf`.
 
 Branch names are plain kebab-case, no prefix (`type-foundations`, `add-php-mail-support`). Commit
 subjects use conventional-commit prefixes (`feat:`, `chore:`). **Commit and push only when asked.**
-`origin/dev` (Aug 2025) and `origin/staging` (Mar 2024) are abandoned — don't build on them.
+
+*The pre-cutover model — `main` frozen on the 11ty site, `next` as integration, phase branches off
+`next`, one deliberate `next` → `main` merge — ran from phase 0 to the cutover and is in git history.
+Its rule against merging `main` → `next` never came into play: `main` had no commits `next` lacked.*
 
 **Sequencing constraint from POSSE:** syndicated copies link to canonical permalinks permanently, so
 **URL design must land before notes go live** — which is why permalink design sits in phase 1 rather
