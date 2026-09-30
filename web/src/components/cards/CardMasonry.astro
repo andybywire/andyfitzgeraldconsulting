@@ -181,6 +181,40 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
      * which is what leaves the trailing 32 as the gap.
      */
     align-items: start;
+
+    /*
+     * A SCROLL TARGET, and base.css's rule for those: without a margin the first cards
+     * land flush against the viewport edge. scripts/card-index.ts scrolls here on a
+     * filtered arrival, and `scrollIntoView` honors this, so the offset lives in the
+     * cascade rather than as a number in the script. `--rhythm-band` is the value every
+     * other scroll target on the site takes. Inert on a page that never scrolls to it.
+     */
+    scroll-margin-block-start: var(--rhythm-band);
+  }
+
+  /*
+   * ── NO FOCUS RING ON THE GRID ───────────────────────────────────────────────
+   *
+   * (Andy, 2026-09-30.) scripts/card-index.ts focuses this element on a filtered arrival,
+   * and base.css's global `:focus-visible` ring then drew around the whole grid — seen in
+   * Chrome, Safari and Vivaldi, which reads as a bug rather than as a focus position. The
+   * grid is a landing point, not a control: it is `tabindex="-1"`, never in the tab
+   * order, and the next Tab lands on the first card, which draws its own ring.
+   *
+   * MEASURED WRONG FIRST: headless Chrome and the Browser pane both reported
+   * `:focus-visible` false after the programmatic focus, so this rule was at first judged
+   * unnecessary. Real browsers disagreed. Programmatic-focus heuristics vary by engine and
+   * by how the page was reached, which is also why this is written as `:focus` rather than
+   * `:focus-visible`: it holds whatever the heuristic decides. It also covers a CLICK in the
+   * gutters between cards, which focuses the grid now that it is focusable.
+   *
+   * Both properties, because both can draw a ring: base.css draws with `box-shadow` and
+   * clears `outline`, while a UA stylesheet draws with `outline`. Scoped, this is (0,3,0)
+   * against base.css's (0,1,0), so it wins without `!important`.
+   */
+  .card-masonry:focus {
+    outline: none;
+    box-shadow: none;
   }
 
   /*

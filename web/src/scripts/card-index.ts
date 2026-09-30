@@ -341,12 +341,17 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
   const isFiltered = (sel: Selection) => FACET_KEYS.some((key) => sel[key].length)
 
   /*
-   * ── ONE STRING, TWO CONSUMERS ────────────────────────────────────────────
+   * ── ONE STRING, THREE CONSUMERS ──────────────────────────────────────────
    *
    * The visible line and the announcement are the same sentence, built once. That is the
    * answer to "can the message that changes on screen be the message a screen reader
    * hears" — it can, and it is the same function; the two elements exist only because one
    * of them must not speak on load.
+   *
+   * The third is the card grid's accessible name, which is `aria-labelledby` the visible
+   * line — see "THE GRID IS A REGION" below. Nothing extra is written for it: a name
+   * computed by reference follows the referenced text, so every rewrite here renames the
+   * grid too.
    *
    * IT HAS TO BE SELF-SUFFICIENT. A live region is heard with no surrounding context, so
    * "14" would be meaningless — the sentence has to say what 14 is.
@@ -631,15 +636,124 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    *
    * This is the arrival state only. From here the disclosure is the visitor's — "See
    * fewer" collapses it and clearing the filter does not reopen it.
+   *
+   * THE OPENED GROUPS NOW SIT ABOVE THE LANDING POINT, since a filtered arrival scrolls
+   * to the cards (below). Still right: someone who scrolls back up to see what this is a
+   * filter OF is exactly who this was for, and they find it open.
    */
-  if (FACET_KEYS.some((key) => initial[key].length)) {
+  if (isFiltered(initial)) {
     for (const group of groups) {
       const list = group.querySelector<HTMLElement>('.facet-chips')
       if (list) list.dataset.expanded = 'true'
     }
   }
 
+  /*
+   * ── THE GRID IS A REGION, NAMED BY THE COUNT LINE ────────────────────────
+   *
+   * (Andy, 2026-09-30.) A filtered arrival moves focus to the grid, and a `<div>` has no
+   * role and so no name — focus would land on something a screen reader can only describe
+   * by reading into it. `aria-labelledby` the count line makes the landing announce
+   * "Displaying 8 matching insights, region", which is also the only thing on screen that
+   * says the list is filtered once the chips have scrolled away.
+   *
+   * ON EVERY ENHANCED LOAD, not only a filtered one, so the landmark does not come and go
+   * depending on how the visitor got here. Set by script rather than in <CardMasonry>'s
+   * markup because only script ever focuses it, and the name it points at is only
+   * rewritten by script — a no-JS page gains nothing from the stop.
+   *
+   * `tabIndex = -1` so it is focusable programmatically without joining the tab order;
+   * BaseLayout's skip link records the same reasoning for `<main>`. The id is read off the
+   * count line rather than restated, so <ResultsFooter> is the one place it is written —
+   * and no id, no name, which is why focus below is gated on this having happened.
+   */
+  const named = Boolean(countLine?.id)
+  if (countLine?.id) {
+    grid.setAttribute('role', 'region')
+    grid.setAttribute('aria-labelledby', countLine.id)
+    grid.tabIndex = -1
+  }
+
   applySelection(initial, false)
+
+  /*
+   * ── ARRIVING FILTERED LANDS ON THE CARDS ─────────────────────────────────
+   *
+   * (Andy, 2026-09-30.) A tag link asks for the matching cards, and the opened facet
+   * groups above push those below the fold — further on mobile, where the groups stack.
+   * So a filtered arrival scrolls the grid to the top of the viewport and focuses it.
+   *
+   * ONLY A FRESH NAVIGATION. On a reload or Back/Forward the browser restores the reader's
+   * own scroll position, and overriding it is the script fighting them — a reader who
+   * scrolled up to the chips and reloaded would be yanked back down. A bfcache restore
+   * never re-runs this module at all. An unavailable timing entry means no scroll, which
+   * is the page as it was before this existed.
+   *
+   * ONLY ARRIVAL. Never on a chip click, a reset or popstate: someone clicking a chip is
+   * looking at the chips, and scrolling them away would pull the control out from under
+   * the pointer. And only a URL that is STILL filtered once unknown values are dropped — a
+   * stale link that heals to the bare index stays at the top, like the bare index.
+   *
+   * ── THE MOTION IS THE CASCADE'S, AND IT IS THE WAYFINDING ────────────────
+   *
+   * (Andy, 2026-09-30.) `behavior: 'auto'` defers to base.css, which makes <html>
+   * `scroll-behavior: smooth` only under `prefers-reduced-motion: no-preference` — so the
+   * page visibly glides from the top to the cards, exactly as a heading anchor does on an
+   * article page, and a reader who asked for reduced motion gets the jump. The glide IS
+   * the affordance: it shows where on the page you landed and that the page moved you.
+   *
+   * TRIED FIRST AND REJECTED: `behavior: 'instant'`, on the grounds that motion on load
+   * was motion nobody asked for. They did ask — they clicked a tag — and the instant
+   * version made the page appear simply to LOAD at the grid, with no sense of what
+   * happened or of the chips above.
+   *
+   * No fragment id is needed for any of this, and none is added: the animation comes from
+   * the property, not the fragment, and a script scroll gets it the same way.
+   *
+   * ── IT WAITS FOR THE FONTS, BECAUSE A GLIDE CANNOT HIT A MOVING TARGET ───
+   *
+   * Measured: with the faces held back 1.5s, the swap grows everything above the Insights
+   * grid by 45px at 1024 wide. Chrome's scroll anchoring hid it; with anchoring off — which
+   * is Safari, which has none — the grid came to rest 45px low, a band of chips showing
+   * above the cards. A smooth scroll fixes its destination when it STARTS, so a swap
+   * mid-glide lands short in every engine.
+   *
+   * So the glide starts on `document.fonts.ready`, when the target has stopped moving.
+   * The facets' own re-fit is registered on the same promise in `wireFacets`, which runs
+   * before this, so it has already repacked the chip rows by the time this callback
+   * fires. The cost is that the page rests at the top until the faces arrive — which, with
+   * them preloaded, is the "page loads, then scrolls" sequence a heading anchor has anyway.
+   *
+   * This replaced a planned second pass that would have re-aligned AFTER the fonts. With
+   * a smooth scroll that pass would have had to detect the end of an animation first;
+   * starting late needs no guard beyond the one below.
+   *
+   * THE READER'S OWN MOVE WINS. A non-zero `scrollY` by then means they scrolled first —
+   * or the URL carried a fragment the browser has already honored. Either way, theirs.
+   *
+   * THE OFFSET IS IN THE CASCADE. `scrollIntoView` honors <CardMasonry>'s
+   * `scroll-margin-block-start`, so no number is restated here. Focus goes second, with
+   * `preventScroll`, because focus scrolls with its own "nearest" alignment and would
+   * ignore the `start` just asked for — and `preventScroll` means no scroll action, so it
+   * does not cancel the glide already under way.
+   *
+   * THE SILENT FIRST RENDER STILL HOLDS. `applySelection(initial, false)` above keeps the
+   * live region quiet on load, and this does not contradict it: the count is heard once,
+   * as the name of where focus landed, rather than spoken OVER the page load by a region.
+   *
+   * SEARCH NEVER REACHES THIS. It is excluded by construction, not by a route check:
+   * only <FacetFilters> boots this module, and `/search/` composes <SearchResults>.
+   */
+  const navigation = performance.getEntriesByType('navigation')[0] as
+    | PerformanceNavigationTiming
+    | undefined
+  if (isFiltered(initial) && navigation?.type === 'navigate') {
+    document.fonts.ready.then(() => {
+      if (scrollY !== 0) return
+      grid.scrollIntoView({block: 'start', behavior: 'auto'})
+      if (named) grid.focus({preventScroll: true})
+    })
+  }
 }
 
 /**

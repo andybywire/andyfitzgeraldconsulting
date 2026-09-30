@@ -79,9 +79,18 @@ const totalLabel = `Displaying all ${total} ${total === 1 ? noun.one : noun.many
     only makes the element focusable PROGRAMMATICALLY. It is here so focus has somewhere
     to land when "Show all" removes the button that was just pressed, which would
     otherwise drop focus to the body.
+
+    ── THE ID IS THE CARD GRID'S NAME ────────────────────────────────────────
+
+    scripts/card-index.ts names the grid `role="region"` + `aria-labelledby` pointing
+    here, so focus landing on a filtered arrival announces "Displaying 8 matching
+    insights" — the one thing a reader who was scrolled past the chips cannot otherwise
+    tell. The script reads this attribute rather than restating the value, so the id is
+    written once. A fixed id is safe while a page carries one of these, which both
+    indexes do.
   */
   }
-  <p class="result-count" tabindex="-1">{totalLabel}</p>
+  <p id="result-count" class="result-count" tabindex="-1">{totalLabel}</p>
 
   {
     /*
