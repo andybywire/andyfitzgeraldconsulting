@@ -350,12 +350,14 @@ const PLAUSIBLE_INIT =
           `/favicon.ico` directly. `sizes="32x32"` is load-bearing: with the older
           advice, `sizes="any"`, Chrome chose the ICO over the SVG and downloaded
           both.
-        - `apple-touch-icon.png` is the iOS Home Screen and the macOS Dock. WebKit
-          prefers it over the manifest's icons, which is what lets iOS have a
-          drawing of its own: square, with no alpha channel because iOS fills
-          transparency with black, and with bigger letters than the maskable icon,
-          because iOS rounds the corners rather than cropping to a circle. 180 is
-          60pt at 3×.
+        - `apple-touch-icon.png` is for iOS before 26, and for anything that
+          fetches the root path without reading this markup. CURRENT iOS DOES NOT
+          USE IT: Safari 26 takes the Home Screen icon from the manifest when there
+          is one, which in this manifest means the maskable icon — measured on
+          Andy's phone, 2026-09-30. So the two are rendered from the same square
+          drawing, and it does not matter which a platform picks. Square, with no
+          alpha channel because iOS fills transparency with black; 180 is 60pt
+          at 3×.
 
       `<meta name="theme-color">` is absent: the 11ty build hardcoded one value, and
       this build has two themes and a toggle. A `media` attribute per scheme would
@@ -384,10 +386,12 @@ const PLAUSIBLE_INIT =
           flashes light first. If either token changes, change the manifest to
           match; nothing checks it.
         - the maskable icon is a separate file from the two `any` icons because it
-          is a different drawing: a full-bleed square with the mark inside the
-          safe zone, where the `any` icons are the round favicon on transparency.
-          One file for both purposes would either crop the disc or float it in
-          padding.
+          is a different drawing: a full-bleed square, where the `any` icons are the
+          round favicon on transparency. One file for both purposes would either
+          crop the disc or float it in padding. It is ALSO the iOS Home Screen icon
+          (see `apple-touch-icon.png` above), which is why its letters are sized
+          for iOS and run past the maskable safe zone — a trade
+          `web/scripts/icon-sources/app-icon.svg` records.
     */
     }
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
