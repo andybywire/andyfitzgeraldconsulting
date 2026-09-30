@@ -42,6 +42,7 @@ import PageHeader from '../../components/PageHeader.astro'
 import ArticleCard from '../../components/cards/ArticleCard.astro'
 import NoteCard from '../../components/cards/NoteCard.astro'
 import CardMasonry from '../../components/cards/CardMasonry.astro'
+import CardResults from '../../components/CardResults.astro'
 import FacetFilters from '../../components/FacetFilters.astro'
 import ResultsFooter from '../../components/ResultsFooter.astro'
 import WorkWithMeBand from '../../components/bands/WorkWithMeBand.astro'
@@ -211,39 +212,47 @@ const jsonLd = [
           mean inventing upper-level divisions to compartmentalise the controls
           separately from the results, and that is more structure than this page
           needs.
+
+          ── WRAPPED IN <CardResults> ─────────────────────────────────────────
+
+          Which carries the single-tag label ("Interoperability Insights") bound
+          16 above the cards, and is where a filtered arrival scrolls to. It is the
+          grid item now, so the placement below moved from the masonry to it.
         */
         }
-        <CardMasonry class="masonry" truncate>
-          {
-            cards.map((card) =>
-              card.isNote ? (
-                <NoteCard
-                  as="h2"
-                  data-genre={card.genreSlug}
-                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
-                  href={card.href}
-                  title={card.title}
-                  genre={card.genre}
-                  date={card.date}
-                  description={card.description}
-                  sourceDomain={card.sourceDomain}
-                />
-              ) : (
-                <ArticleCard
-                  as="h2"
-                  data-genre={card.genreSlug}
-                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
-                  href={card.href}
-                  title={card.title}
-                  genre={card.genre}
-                  date={card.date}
-                  description={card.description}
-                  image={card.image}
-                />
-              ),
-            )
-          }
-        </CardMasonry>
+        <CardResults class="results">
+          <CardMasonry truncate>
+            {
+              cards.map((card) =>
+                card.isNote ? (
+                  <NoteCard
+                    as="h2"
+                    data-genre={card.genreSlug}
+                    data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                    href={card.href}
+                    title={card.title}
+                    genre={card.genre}
+                    date={card.date}
+                    description={card.description}
+                    sourceDomain={card.sourceDomain}
+                  />
+                ) : (
+                  <ArticleCard
+                    as="h2"
+                    data-genre={card.genreSlug}
+                    data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                    href={card.href}
+                    title={card.title}
+                    genre={card.genre}
+                    date={card.date}
+                    description={card.description}
+                    image={card.image}
+                  />
+                ),
+              )
+            }
+          </CardMasonry>
+        </CardResults>
 
         {
           /*
@@ -307,7 +316,7 @@ const jsonLd = [
     grid-column: var(--col-full);
   }
 
-  .masonry {
+  .results {
     grid-column: var(--col-full);
   }
 

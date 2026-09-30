@@ -181,15 +181,6 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
      * which is what leaves the trailing 32 as the gap.
      */
     align-items: start;
-
-    /*
-     * A SCROLL TARGET, and base.css's rule for those: without a margin the first cards
-     * land flush against the viewport edge. scripts/card-index.ts scrolls here on a
-     * filtered arrival, and `scrollIntoView` honors this, so the offset lives in the
-     * cascade rather than as a number in the script. `--rhythm-band` is the value every
-     * other scroll target on the site takes. Inert on a page that never scrolls to it.
-     */
-    scroll-margin-block-start: var(--rhythm-band);
   }
 
   /*

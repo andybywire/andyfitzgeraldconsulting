@@ -1101,6 +1101,45 @@ trade between them. The cost is that 21 of 45 positions differ from tab order, *
 slots**, with DOM order untouched so screen readers and `h-feed` stay chronological. Reversible in one
 word — see [docs/open-questions.md](docs/open-questions.md).
 
+#### A filtered arrival lands on the cards, and a single tag is named
+
+Decided 2026-09-30, for Insights and Presentations. Search does not do either: its topic list is
+short enough that the results are already in view.
+
+**Arriving on a filtered URL scrolls to the results.** A fresh navigation to a URL carrying any valid
+`?topic=` or `?genre=` glides to the results and focuses the card grid. Reload, Back/Forward, in-page
+chip clicks and a reader who has already scrolled are left alone.
+- **The motion is the wayfinding**, the same as following a heading anchor: it shows where on the page
+  the reader landed and that the page moved them. It is base.css's `scroll-behavior: smooth`, so
+  reduced motion gets a jump. `instant` was tried first and rejected for making the page appear simply
+  to load at the grid.
+- **It waits for the fonts.** The swap moves everything above the grid (45px measured at 1024), and a
+  smooth scroll fixes its destination when it starts.
+
+**The grid is a named region, and is never ringed.** `role="region"`, named by the results count line;
+`tabindex="-1"`, so it is a landing point rather than a tab stop. Its focus ring is suppressed, because
+a ring around the whole grid reads as a fault, and the next Tab lands on the first card, which draws
+its own.
+
+**A single-tag arrival is labeled above the cards**: "{concept} Insights", "{concept} Presentations" —
+"Interoperability Insights", "Case Study Insights", "Talk Presentations".
+- **`label` role in `text-muted`, `rhythm-heading-close` (16) above the cards, and not a link.**
+- **Exactly one tag across both groups**, counted after unknown values are dropped. Two topics, or a
+  topic and a genre, get no label. The case is someone following one topic tag or genre link from
+  another page; composing names for combinations is complexity spent on hand-built query strings.
+- **Shown only while the selection is still the arrival's.** Adding a tag hides it; removing that tag
+  again, or pressing Back, restores it. A chip clicked on the bare index never shows one.
+- **A `<p>`, not a heading** — a heading that comes and goes with the filter is a poor thing to
+  navigate by. It reaches assistive tech by joining the grid's accessible name while it is visible.
+- **Title case, as specified** — note that the Heading case table lists labels as sentence case. The
+  concept half is the vocabulary's prefLabel either way.
+
+**The label shares a grid item with the masonry, through `<CardResults>`.** `<Grid>`'s row gap is
+`rhythm-heading-major`, so as an item of its own the label would sit 64 from both neighbors and belong
+to neither; and it cannot go inside `<CardMasonry>`, whose children are the facet index. The wrapper is
+also what the arrival scrolls to, so the label lands in view when it shows and the cards do when it
+does not.
+
 ### Transitions — eased, not switched
 
 **Hover states ease.** Every hover in the build was binary until 2026-08-28, which reads as a state flip
