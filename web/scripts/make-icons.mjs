@@ -1,5 +1,5 @@
 /**
- * Build the site's icon set from the two masters in icon-sources/.
+ * Build the site's icon set from the three masters in icon-sources/.
  *
  * Run by hand, not by the build. The outputs are committed, so this only needs re-running when
  * a master changes. Paths resolve from this file, so it runs from anywhere:
@@ -8,11 +8,18 @@
  *
  * ── WHAT IT WRITES ───────────────────────────────────────────────────────────
  *
- *   favicon.svg   →  public/icons/icon.svg                 the tab favicon, comments stripped
- *                 →  public/favicon.ico                    16 + 32, for clients that never read HTML
- *                 →  public/icons/icon_x192.png, _x512     the manifest's `any` icons
- *   app-icon.svg  →  public/icons/maskable_icon_x512.png   the manifest's `maskable` icon
- *                 →  public/apple-touch-icon.png           180, iOS home screen and the macOS Dock
+ * Every output is under public/.
+ *
+ *   favicon.svg           →  icons/icon.svg                the tab favicon, comments stripped
+ *                         →  favicon.ico                   16 + 32, for clients that skip the HTML
+ *                         →  icons/icon_x192.png, _x512    the manifest's `any` icons
+ *   app-icon.svg          →  icons/maskable_icon_x512.png  the manifest's `maskable` icon
+ *   apple-touch-icon.svg  →  apple-touch-icon.png          180, iOS Home Screen and the macOS Dock
+ *
+ * The two square icons share their letters but not their size. Android may crop the maskable
+ * icon to a circle, so its letters must fit the safe zone; iOS only rounds the corners, so its
+ * letters are drawn ×1.15 bigger. apple-touch-icon.svg records why, and what it was measured
+ * against.
  *
  * Only two files sit at the root, and they are the two paths clients GUESS: feed readers, link
  * previews and bookmark tools ask for `/favicon.ico` and `/apple-touch-icon.png` without reading
@@ -42,9 +49,9 @@
  * PNG data verbatim. The container is a 6-byte header and one 16-byte directory entry per image,
  * followed by the PNGs themselves.
  *
- * ── THE APP ICON HAS NO ALPHA CHANNEL AT ALL ─────────────────────────────────
+ * ── THE SQUARE ICONS HAVE NO ALPHA CHANNEL AT ALL ────────────────────────────
  *
- * iOS fills transparent pixels with black. The master is a full-bleed square, so every pixel is
+ * iOS fills transparent pixels with black. Both square masters are full-bleed, so every pixel is
  * already opaque, but `removeAlpha()` drops the channel from the file entirely, so no platform is
  * left to decide what an alpha channel means.
  */
@@ -59,6 +66,7 @@ const VIEWBOX = 100
 
 const favicon = await readFile(new URL('favicon.svg', SOURCES))
 const appIcon = await readFile(new URL('app-icon.svg', SOURCES))
+const appleTouchIcon = await readFile(new URL('apple-touch-icon.svg', SOURCES))
 
 const render = (svg, size) => sharp(svg, {density: (72 * size) / VIEWBOX}).resize(size, size)
 const png = (svg, size) => render(svg, size).png({compressionLevel: 9}).toBuffer()
@@ -102,7 +110,7 @@ const outputs = {
   'icons/icon_x192.png': await png(favicon, 192),
   'icons/icon_x512.png': await png(favicon, 512),
   'icons/maskable_icon_x512.png': await opaquePng(appIcon, 512),
-  'apple-touch-icon.png': await opaquePng(appIcon, 180),
+  'apple-touch-icon.png': await opaquePng(appleTouchIcon, 180),
 }
 
 for (const [path, data] of Object.entries(outputs)) {

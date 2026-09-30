@@ -1,14 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <!--
     APP ICON MASTER — Figma: 🖼️ Assets → pwa-icon-mask (2860:1904), with the frame's gray
-    background dropped. make-icons.mjs rasterizes it, opaque, for /apple-touch-icon.png and the
-    manifest's maskable icon.
+    background dropped. make-icons.mjs rasterizes it, opaque, for the manifest's maskable icon.
 
-    One square serves both because of the maskable SAFE ZONE: a centered circle of radius 40,
-    the only part a launcher promises to show. Any shape a platform crops to — Android's
-    circle, iOS's rounded square — contains it. Measured from the path, the farthest point is
-    the F's top-right corner at 38.44 from center: inside, with 1.56 to spare. That is thin; if
-    the letters are ever made bigger, re-measure.
+    Its size is set by the maskable SAFE ZONE: a centered circle of radius 40, the only part a
+    launcher promises to show, whatever shape it crops to. Measured from the path, the farthest
+    point is the F's top-right corner at 38.44 from center: inside, with 1.56 to spare. That is
+    thin; if the letters are ever made bigger, re-measure.
+
+    This file used to make /apple-touch-icon.png too, on the grounds that anything inside the
+    circle also survives iOS's rounded square. That was true, but iOS never crops to a circle,
+    so it paid for a constraint it does not have, and the letters read small on a Home Screen.
+    apple-touch-icon.svg now draws the same letters ×1.15 for iOS alone.
 
     Colors: the light theme's `color-accent` (blue-500) and `color-text-on-accent` (white).
     There is no dark variant — this only ever reaches a platform as a rasterized image, which

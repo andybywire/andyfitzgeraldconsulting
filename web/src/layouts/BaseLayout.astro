@@ -350,10 +350,12 @@ const PLAUSIBLE_INIT =
           `/favicon.ico` directly. `sizes="32x32"` is load-bearing: with the older
           advice, `sizes="any"`, Chrome chose the ICO over the SVG and downloaded
           both.
-        - `apple-touch-icon.png` is the iOS home screen and the macOS Dock, which
-          read neither of the others. It is square and has no alpha channel,
-          because iOS fills transparency with black and applies its own
-          rounded-square mask; 180 is 60pt at 3×.
+        - `apple-touch-icon.png` is the iOS Home Screen and the macOS Dock. WebKit
+          prefers it over the manifest's icons, which is what lets iOS have a
+          drawing of its own: square, with no alpha channel because iOS fills
+          transparency with black, and with bigger letters than the maskable icon,
+          because iOS rounds the corners rather than cropping to a circle. 180 is
+          60pt at 3×.
 
       `<meta name="theme-color">` is absent: the 11ty build hardcoded one value, and
       this build has two themes and a toggle. A `media` attribute per scheme would
