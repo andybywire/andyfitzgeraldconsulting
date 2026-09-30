@@ -205,6 +205,8 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
   const groups = Array.from(nav.querySelectorAll<HTMLElement>('.facet-group'))
   const footer = document.querySelector<HTMLElement>('[data-results-footer]')
   const countLine = document.querySelector<HTMLElement>('.result-count')
+  const results = document.querySelector<HTMLElement>('[data-card-results]')
+  const resultsLabel = document.querySelector<HTMLElement>('[data-results-label]')
   const status = document.querySelector<HTMLElement>('.result-status')
   const showMore = document.querySelector<HTMLButtonElement>('.show-more')
   const showAll = document.querySelector<HTMLButtonElement>('.show-all')
@@ -400,11 +402,17 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * ── THE ONE WRITER ───────────────────────────────────────────────────────
    *
    * Everything derived from the selection is written here and nowhere else: which cards
-   * are visible, every chip's count, state, name and href, and each group's reset
-   * control. State goes in, the whole page comes out — so there is no incremental update
-   * to get out of step with the URL.
+   * are visible, every chip's count, state, name and href, each group's reset control,
+   * the results label and the grid's accessible name. State goes in, the whole page comes
+   * out — so there is no incremental update to get out of step with the URL.
    */
   let current = empty()
+
+  /* The single-tag selection the page LOADED with, as its canonical URL — or null when it
+     loaded with none or with several. Set once, in the initial-state block; see "A
+     SINGLE-TAG ARRIVAL IS NAMED" there. A URL rather than a Selection because `urlFor`
+     already normalizes, so comparing two of them IS selection equality. */
+  let arrivalUrl: string | null = null
 
   /* False for exactly one call — the initial render — because the region must not read a
      shared `?topic=` link's count out over the page load. Back and Forward DO announce:
@@ -500,6 +508,18 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
       if (!reset) continue
       reset.hidden = sel[key].length === 0
       reset.setAttribute('href', urlFor(withGroup(sel, key, [])))
+    }
+
+    /* The results label shows only while the selection IS the arrival — so adding a tag
+       hides it and taking that tag away again, or pressing Back, brings it back. The
+       grid's name follows it, joined ahead of the count line: `aria-labelledby` reads
+       referenced text even while it is hidden, so the label's id is only in the list
+       while the label is on screen. */
+    const labelled = arrivalUrl !== null && urlFor(sel) === arrivalUrl
+    if (resultsLabel) resultsLabel.hidden = !labelled
+    if (countLine?.id) {
+      const names = labelled && resultsLabel?.id ? [resultsLabel.id, countLine.id] : [countLine.id]
+      grid.setAttribute('aria-labelledby', names.join(' '))
     }
 
     const message = describe(sel, shown)
@@ -666,12 +686,49 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * BaseLayout's skip link records the same reasoning for `<main>`. The id is read off the
    * count line rather than restated, so <ResultsFooter> is the one place it is written —
    * and no id, no name, which is why focus below is gated on this having happened.
+   *
+   * `aria-labelledby` itself is written by `applySelection`, not here, because since the
+   * results label arrived it depends on the selection: the label joins the name while it
+   * shows. That makes the one writer the only place the name is decided.
    */
   const named = Boolean(countLine?.id)
   if (countLine?.id) {
     grid.setAttribute('role', 'region')
-    grid.setAttribute('aria-labelledby', countLine.id)
     grid.tabIndex = -1
+  }
+
+  /*
+   * ── A SINGLE-TAG ARRIVAL IS NAMED ────────────────────────────────────────
+   *
+   * (Andy, 2026-09-30.) Once the arrival scroll has taken the chips out of view, nothing
+   * on screen says the list is filtered — worst on mobile, where the groups stack and sit
+   * furthest above. So a page LOADED with exactly one tag names it over the cards:
+   * "Interoperability Insights", "Case Study Insights", "Talk Presentations".
+   *
+   * EXACTLY ONE, across both groups. The case this serves is someone following a topic
+   * tag or a genre link from another page, which is common and which always carries one.
+   * `?topic=a,b` or a topic plus a genre gets no label — deliberately, not as an
+   * omission: composing a sentence for every combination is complexity spent on people
+   * hand-building query strings, and the chips already say what those are.
+   *
+   * COUNTED AFTER CLEANING, like everything else here, so `?topic=a,not-a-slug` heals to
+   * one tag and is labelled. Any navigation type counts — a reload or Back to a one-tag
+   * URL is still a page loaded with one tag — unlike the scroll below, which is about
+   * position rather than description.
+   *
+   * THE LABEL IS THE CHIP'S OWN TEXT, found by the chip's data attributes rather than by
+   * a selector built from the slug, and the noun is <ResultsFooter>'s, capitalized — so
+   * neither the concept's name nor the page's word is written a second time.
+   */
+  const tags = FACET_KEYS.flatMap((key) => initial[key].map((slug) => ({key, slug})))
+  if (tags.length === 1 && resultsLabel) {
+    const [{key, slug}] = tags
+    const chip = chips.find((c) => c.dataset.facet === key && c.dataset.slug === slug)
+    const tag = chip?.querySelector('.chip-label')?.textContent?.trim()
+    if (tag) {
+      resultsLabel.textContent = `${tag} ${NOUN.many.charAt(0).toUpperCase()}${NOUN.many.slice(1)}`
+      arrivalUrl = canonical
+    }
   }
 
   applySelection(initial, false)
@@ -731,7 +788,13 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * THE READER'S OWN MOVE WINS. A non-zero `scrollY` by then means they scrolled first —
    * or the URL carried a fragment the browser has already honored. Either way, theirs.
    *
-   * THE OFFSET IS IN THE CASCADE. `scrollIntoView` honors <CardMasonry>'s
+   * THE TARGET IS <CardResults>, NOT THE GRID. When a single-tag arrival shows its label,
+   * the label is what should land in view, with the cards under it; when it does not
+   * show, `hidden` takes it out of layout and the wrapper's top is the grid's. So one
+   * target is right either way, and focus still goes to the grid, which is the region.
+   * Falls back to the grid on a page without the wrapper.
+   *
+   * THE OFFSET IS IN THE CASCADE. `scrollIntoView` honors <CardResults>'s
    * `scroll-margin-block-start`, so no number is restated here. Focus goes second, with
    * `preventScroll`, because focus scrolls with its own "nearest" alignment and would
    * ignore the `start` just asked for — and `preventScroll` means no scroll action, so it
@@ -745,12 +808,12 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * only <FacetFilters> boots this module, and `/search/` composes <SearchResults>.
    */
   const navigation = performance.getEntriesByType('navigation')[0] as
-    | PerformanceNavigationTiming
-    | undefined
+    PerformanceNavigationTiming | undefined
   if (isFiltered(initial) && navigation?.type === 'navigate') {
     document.fonts.ready.then(() => {
       if (scrollY !== 0) return
-      grid.scrollIntoView({block: 'start', behavior: 'auto'})
+      const target = results ?? grid
+      target.scrollIntoView({block: 'start', behavior: 'auto'})
       if (named) grid.focus({preventScroll: true})
     })
   }

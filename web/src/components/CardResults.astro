@@ -1,0 +1,97 @@
+---
+/**
+ * The results block on a masonry index: an optional label bound to the card grid below
+ * it. Composed by the Insights and Presentations indexes, around their <CardMasonry>.
+ *
+ * ── WHY A WRAPPER EXISTS AT ALL ──────────────────────────────────────────────
+ *
+ * (Andy, 2026-09-30.) The label sits `rhythm-heading-close` above the cards, bound to
+ * them the way a heading is bound to its paragraph. As its own item in the page <Grid>
+ * it could not be: the grid's row gap is `rhythm-heading-major`, so the label would
+ * float 64 from the chips above AND 64 from the cards below and belong to neither.
+ * Undoing that gap with a negative margin was the alternative, and it is exactly the
+ * "nothing here undoes anything" the masthead's breakpoints argue against.
+ *
+ * It cannot go INSIDE <CardMasonry> either. That element's children are the facet
+ * index — scripts/card-index.ts treats every one as a card, and the column ladder
+ * counts them with `nth-child` — so a label there would be filtered, counted and laid
+ * out as the first card.
+ *
+ * So this is one grid item holding both, and the page places it where it used to place
+ * the masonry. <CardMasonry> stays what it was: independent of filtering, and slotted.
+ *
+ * ── THE LABEL IS THE SCRIPT'S ────────────────────────────────────────────────
+ *
+ * It ships `hidden` and empty, because it only ever describes a client-side filter —
+ * with no JavaScript there is no filter to name. scripts/card-index.ts fills and reveals
+ * it on a single-tag arrival ("Interoperability Insights"), and hides it again the
+ * moment the selection moves away from the one the page loaded with. The rule and its
+ * reasoning live there, beside the selection state it reads.
+ *
+ * `<p>`, not a heading (Andy, 2026-09-30): a heading that comes and goes with the filter
+ * is a poor thing to navigate by, and it would join the card titles' flat run of h2s.
+ * What it says reaches assistive tech another way — the script adds this id to the
+ * grid's `aria-labelledby` while the label shows, so focus landing on the grid announces
+ * it. The id comes OFF when the label hides: `aria-labelledby` reads referenced text
+ * even when it is hidden, so leaving it would name the grid after a label nobody sees.
+ *
+ * A fixed id, like <ResultsFooter>'s `result-count`, is safe while a page carries one
+ * of these.
+ */
+interface Props {
+  class?: string
+  /* Forwarded to the root — grid placement from the page, and the scope attribute that
+     lets a page style this component at all. */
+  [key: string]: unknown
+}
+
+const {class: className, ...rest}: Props = Astro.props
+---
+
+<div class:list={['card-results', className]} data-card-results {...rest}>
+  <p id="results-label" class="results-label" data-results-label hidden></p>
+  <slot />
+</div>
+
+<style>
+  /*
+   * ── THE SCROLL TARGET ───────────────────────────────────────────────────────
+   *
+   * A filtered arrival scrolls HERE rather than to the grid, so a label that shows lands
+   * in view with the cards under it, and a label that does not show changes nothing —
+   * `hidden` takes it out of layout, and this element's top is then the grid's. Moved
+   * from <CardMasonry>, which was the target until this existed.
+   *
+   * base.css's rule for scroll targets: without a margin the content lands flush against
+   * the viewport edge. `--rhythm-band` is the value every other scroll target on the site
+   * takes, and `scrollIntoView` honors it, so no number is restated in the script.
+   */
+  .card-results {
+    scroll-margin-block-start: var(--rhythm-band);
+  }
+
+  /*
+   * ── DESIGN.md's `label` ROLE ────────────────────────────────────────────────
+   *
+   * Lato 700 at the 16px step with +2% tracking, in `text-muted` — declared here because
+   * base.css leaves `label` to the component that owns one. This makes it the fifth
+   * such component (the eyebrow, the results count line, the case study's project label
+   * and the contact form's field labels are the others). Promotion is not the answer
+   * that count suggests: base.css's roles are ELEMENT-level, and `label` is a class of
+   * text rather than an element, so promoting it would mean a global component layer
+   * this project deliberately does not have.
+   *
+   * The space BELOW is the bind — `rhythm-heading-close`, 16 — and it lives on the
+   * label rather than as a gap on the wrapper so that it disappears with it: `hidden` is
+   * `display: none`, and a margin on a box that does not render does not exist.
+   */
+  .results-label {
+    color: var(--color-text-muted);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-1);
+    font-weight: 700;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    margin-block-end: var(--rhythm-heading-close);
+  }
+</style>

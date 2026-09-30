@@ -53,6 +53,7 @@ import PageHeader from '../../components/PageHeader.astro'
 import PresentationCard from '../../components/cards/PresentationCard.astro'
 import {presentationTags, presentationVenueLine} from '../../components/cards/presentationCard'
 import CardMasonry from '../../components/cards/CardMasonry.astro'
+import CardResults from '../../components/CardResults.astro'
 import FacetFilters from '../../components/FacetFilters.astro'
 import ResultsFooter from '../../components/ResultsFooter.astro'
 import RssBand from '../../components/bands/RssBand.astro'
@@ -211,26 +212,32 @@ const jsonLd = [
           attribute is what the pre-paint rule keys on, and it is correct the day the
           corpus passes 24 rather than something to remember to add then. It is inert
           until then — `nth-child(n + 25)` matches nothing at four cards.
+
+          Wrapped in <CardResults> for the same reason as the Insights index: it
+          carries the single-tag label ("Talk Presentations") and is the arrival
+          scroll's target, so it is the grid item and takes the placement below.
         */
         }
-        <CardMasonry class="masonry" truncate>
-          {
-            cards.map((card) => (
-              <PresentationCard
-                as="h2"
-                data-genre={card.genreSlug}
-                data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
-                href={card.href}
-                title={card.title}
-                genre={card.genre}
-                date={card.date}
-                venue={card.venue}
-                poster={card.poster}
-                tags={card.tags}
-              />
-            ))
-          }
-        </CardMasonry>
+        <CardResults class="results">
+          <CardMasonry truncate>
+            {
+              cards.map((card) => (
+                <PresentationCard
+                  as="h2"
+                  data-genre={card.genreSlug}
+                  data-topics={card.topicSlugs.length ? card.topicSlugs.join(' ') : undefined}
+                  href={card.href}
+                  title={card.title}
+                  genre={card.genre}
+                  date={card.date}
+                  venue={card.venue}
+                  poster={card.poster}
+                  tags={card.tags}
+                />
+              ))
+            }
+          </CardMasonry>
+        </CardResults>
 
         {
           /*
@@ -324,9 +331,10 @@ const jsonLd = [
    *
    * Placement stays here for the reason it stays on every page: where a thing sits on
    * the grid is a fact about the PAGE. Reaching the component's root through the scope
-   * attribute Astro passes down.
+   * attribute Astro passes down. The root is <CardResults> now, which holds the masonry
+   * and its label as one grid item — the masonry itself is no longer on the page grid.
    */
-  .masonry {
+  .results {
     grid-column: var(--col-full);
   }
 
