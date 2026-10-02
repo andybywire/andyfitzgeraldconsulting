@@ -55,17 +55,29 @@ import {ATTRIBUTION_DASH, groupQuotations, type Quotation} from '../components/p
 /**
  * Every `href` is resolved against the entry's own permalink before it ships.
  *
- * ── THIS IS A GUARD, AND TODAY IT IS A NO-OP ───────────────────────────────────
+ * ── LOAD-BEARING SINCE 2026-10-02. IT WAS WRITTEN AS A NO-OP ───────────────────
  *
- * All 42 insights were checked: every `markDefs[].href` in the corpus is already
- * absolute, none relative, none a bare fragment. So this changes nothing right now
- * and the honest thing is to say so rather than imply it is load-bearing.
+ * When this landed, all 42 insights were checked and every `markDefs[].href` was
+ * absolute — none relative, none a bare fragment — and this comment said so. That
+ * stopped being true when Moz reported redirect chains. The cause was hand-typed links
+ * to the site's own legacy addresses, `https://www.andyfitzgeraldconsulting.com/
+ * writing/…`: one hop for `www.`, then one or two for the path. All 45 such links,
+ * across 17 articles, were rewritten as ROOT-RELATIVE paths pointing at their final
+ * address — `/insights/…`, `/projects/#ux-methods`, a `?topic=` URL, and one bare
+ * `#fragment` for a link from an article to its own section.
  *
- * It stays because the failure it prevents is invisible. A relative `href` in a feed
- * resolves against the READER'S origin, so it would 404 inside someone's reader
- * while working perfectly on the site and in every local check. `new URL(href, base)`
- * is idempotent on an absolute URL, so the guard costs one allocation per link and
- * removes a whole class of "works here, broken there".
+ * Root-relative rather than absolute on the apex was Andy's call: a path cannot pick
+ * up a host hop again, and on the preview host it keeps a reviewer on preview instead
+ * of sending them to production. It is what makes this function necessary. Every
+ * link within the site now arrives here relative and has to leave absolute.
+ *
+ * The failure it prevents is invisible. A relative `href` in a feed resolves against
+ * the READER'S origin, so it would 404 inside someone's reader while working perfectly
+ * on the site and in every local check. Preview cannot show a feed change either: the
+ * feeds are prerendered in both builds (see feed-entries.ts), so preview's feeds carry
+ * content as of its last deploy, not the current drafts. Check the live feed after a
+ * publish. `new URL(href, base)` is idempotent on an absolute URL, so external links
+ * pass through unchanged.
  *
  * `uriLooksSafe` comes from the library and is what its own default link component
  * uses — it rejects `javascript:` and friends. Kept, because the content model lets
