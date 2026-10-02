@@ -722,6 +722,17 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
    watch-mode generation is off and `pnpm typegen` is run by hand.
 
+   **And for enforcing trailing slashes on internal links** (deferred here by Andy, 2026-10-02).
+   Every link to a page should end in `/`: Astro builds `consulting/index.html`, so `/consulting`
+   is a 301 to `/consulting/` on every click. Two template links had drifted — Learn more's
+   `/consulting` and the home hero's `/about` — and were fixed by hand, with nothing to stop the
+   next. Two candidate guards: `trailingSlash: 'always'` in `astro.config.mjs`, which makes the
+   dev server 404 on a slashless path so the mistake shows while building (check what it does to
+   the SSR preview first), or a rule in the link check above. That link check should also flag
+   **hrefs to the site's own domain** — absolute, or to a legacy scheme like `www.` or
+   `/writing/`. 45 of those in article bodies were what Moz's redirect-chain report found, and
+   they were fixed by hand too.
+
    **The microformats remainder lands here, and it is a short list because most of mf2 is already
    built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,
    `u-url`/`u-uid`, `u-photo` and `p-category` (2026-08-26). What is left needs either a schema field

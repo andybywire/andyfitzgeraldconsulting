@@ -259,9 +259,9 @@ const VisualEditing =
  *
  * NOT A SECRET, and worth saying so because an opaque token in a URL looks like one. It
  * ships in the HTML of every page by design; anyone can read it and the worst they can do
- * is send Andy's dashboard junk pageviews. The credential that IS real is the Stats API
- * token for the 404's popular-pages list — build-time only, and never a `PUBLIC_` variable,
- * since those are inlined into the client bundle.
+ * is send Andy's dashboard junk pageviews. A Stats API token WOULD be real — build-time
+ * only, and never a `PUBLIC_` variable, since those are inlined into the client bundle —
+ * but there is none: the Stats API is Business-plan only and was declined (2026-10-02).
  *
  * Taken verbatim from the dashboard on 2026-09-13. If the two ever disagree, the dashboard
  * is right — this is generated configuration rather than something to reason out.
@@ -281,6 +281,27 @@ const PLAUSIBLE_SRC = 'https://plausible.io/js/pa-AnHKBDixooI1l5rz0moo0.js'
  * outbound links, file downloads and form submissions all stay OFF. Those record what a
  * visitor clicked TOWARD, a step from measuring pages toward measuring people, and that is
  * the step choosing Plausible was avoiding.
+ *
+ * ── NAMED GOALS ARE THE DELIBERATE EXCEPTION ────────────────────────────────
+ *
+ * Andy, 2026-10-02: a few specific controls are counted, so that publishing beyond the site
+ * (POSSE) can be checked against something. That is a small, chosen version of the step
+ * above — sitewide totals per control, no identity, no per-visitor path — and it stays
+ * small by being opt-in per element. The built-in options stay off. Add a goal here only
+ * for something there is a decided reason to know.
+ *
+ * Each goal is a class, `plausible-event-name=Name+With+Spaces`, on the element (the
+ * script counts clicks on it) or a `plausible('Name')` call. Plausible DISCARDS an event
+ * with no matching goal, so each needs a "Custom event" goal in the dashboard spelled
+ * exactly as below:
+ *
+ *   `RSS Subscribe`             RssBand's button — interest, not subscriptions
+ *   `Work With Me Learn More`   WorkWithMeBand's button
+ *   `404`                       404.astro, fired by the page itself
+ *
+ * Custom PROPERTIES are Business-plan only, so a goal carries no detail beyond its name.
+ * Each event still records the page it fired on, which is why one goal per control is
+ * enough to say WHERE a click happened.
  */
 const PLAUSIBLE_INIT =
   'window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},' +
@@ -636,12 +657,12 @@ const PLAUSIBLE_INIT =
       to a config being written anyway. Worth knowing now, because it changes `src` and the
       `endpoint` option and nothing else.
 
-      ── AND IT IS WHAT THE 404's POPULAR-PAGES LIST WAITS ON ─────────────────
+      ── THE 404's POPULAR-PAGES LIST NO LONGER WAITS ON IT ────────────────────
 
-      Andy's plan is to generate that list from Plausible's Stats API at build. That needs
-      data to accumulate first, which is the real reason this lands now rather than at
-      launch. See `404.astro` for the fallback that has to survive it: an analytics outage
-      must not fail a build.
+      The plan was to generate that list from Plausible's Stats API at build, which is part
+      of why this landed before launch: the data had to accumulate first. The Stats API
+      turned out to be Business-plan only, and Andy declined that plan (2026-10-02), so the
+      list stays hand-curated in `404.astro` and its future source is open.
     */
     }
     {

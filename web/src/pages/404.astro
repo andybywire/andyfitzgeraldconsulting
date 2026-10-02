@@ -57,10 +57,11 @@ import {
  * The four the live 404 names, carried across unchanged — all four still resolve, checked
  * against the built output rather than assumed.
  *
- * Andy's intent is to generate this from Plausible once analytics is running. When that
- * lands it will be a BUILD-TIME fetch of the Stats API, and this list is what it falls
- * back to: an analytics outage must not fail a build, and a 404 page that 404s because a
- * third party was down is a bad joke. So this stays even after the pipeline exists.
+ * The plan was to generate this from Plausible's Stats API at build. THE STATS API IS A
+ * BUSINESS-PLAN FEATURE, and Andy declined that plan (2026-10-02), so the list stays
+ * hand-curated and where it comes from instead is open. Whatever replaces it, this list
+ * stays as the fallback: an analytics outage must not fail a build, and a 404 page that
+ * 404s because a third party was down is a bad joke.
  *
  * Titles are written here rather than fetched. They are display copy on a page that must
  * render when everything else has gone wrong, and four strings are cheaper to keep true
@@ -195,6 +196,31 @@ const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map(
       </Grid>
     </Band>
   </main>
+
+  {
+    /*
+    ── THE `404` GOAL ───────────────────────────────────────────────────────
+
+    Plausible's documented 404 tracking, and the one goal with no click behind it: the
+    page reports itself. nginx serves this file through `error_page` AT THE MISSING URL,
+    so the event carries the address that failed — as does the pageview the script records
+    anyway. The `404` goal is what separates those from real pages, and its Sources show
+    who links to them. No custom property is needed, which is why this works below the
+    Business plan where Plausible's older docs reached for a `path` prop.
+
+    So it is the live version of Moz's Top Pages check, and better in one way: it only
+    hears from browsers that run the script, so the bot probes that fill a server log's
+    404s — `/wp-login.php` and kin — never reach it.
+
+    Called through the queue stub BaseLayout defines in <head>, so it needs no load-order
+    care. `?.` because the stub only exists where analytics is on — not in dev, not on
+    preview — and there the call does nothing rather than throwing. `is:inline` so Astro
+    emits it as written rather than bundling one line into a module.
+  */
+  }
+  <script is:inline>
+    window.plausible?.('404')
+  </script>
 
   <Footer />
 </BaseLayout>
