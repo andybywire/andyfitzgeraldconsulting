@@ -18,7 +18,7 @@
  * The heading and the button's destination are not content (Andy, 2026-09-01). `bandRss`
  * carries a `title` because its heading genuinely varies — "Follow along with RSS" on an
  * article against "Follow presentations with RSS" — where this one never does. Same for
- * /consulting: there is one consulting page. A field per invariant is a field that can
+ * /consulting/: there is one consulting page. A field per invariant is a field that can
  * be set wrong.
  */
 import type {TypedObject} from 'astro-portabletext/types'
@@ -135,7 +135,20 @@ const logos = (clientLogos ?? []).filter((client) => client?.image?.asset)
       with what is on screen either way.
     */
     }
-    <Button href="/consulting" class="work-cta">Learn more</Button>
+    {
+      /*
+      `/consulting/` WITH the slash. Astro builds `consulting/index.html`, so the page's
+      address — the one its canonical tag names — ends in one, and `/consulting` was a 301
+      to here on every click until 2026-10-02.
+
+      `plausible-event-name=…` is a Plausible GOAL, not styling: the script counts clicks
+      on any element carrying it, as the event `Work With Me Learn More` (`+` is a space).
+      BaseLayout lists every goal and says why there are any.
+    */
+    }
+    <Button href="/consulting/" class="work-cta plausible-event-name=Work+With+Me+Learn+More">
+      Learn more
+    </Button>
   </Grid>
 </Band>
 
