@@ -16,7 +16,7 @@ import {FEEDS, type FeedMeta} from '../lib/feeds'
 import {PUBLIC_SITE_MODE} from 'astro:env/client'
 import SearchResults from '../components/SearchResults.astro'
 import {SITE_FACTS, serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
-import {shareImageAttrs, type SanityImageSource} from '../sanity/image'
+import {feedImageAttrs, type SanityImageSource} from '../sanity/image'
 
 import '../styles/tokens.css'
 import '../styles/base.css'
@@ -123,9 +123,29 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).href
 if (!Astro.site) throw new Error('[BaseLayout] `site` is unset in astro.config.mjs')
 const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
 
-/* The link-preview card's image: the page's own, cropped to the card's shape, or the
-   site icon at its real size. See LINK-PREVIEW CARDS in the head for the rule. */
-const shareImage = image ? shareImageAttrs(image) : null
+/**
+ * The link-preview card's image: the page's own, cropped to the card's shape, or the
+ * site icon at its real size. See LINK-PREVIEW CARDS in the head for which pages get
+ * which.
+ *
+ * ── 1200/630, BECAUSE THAT IS THE FRAME THE CARD IS DRAWN IN ────────────────────
+ *
+ * 1200 x 630 is the size LinkedIn and Facebook ask for, and most platforms draw a
+ * large card at about that shape. Whatever does not fit is cropped by the PLATFORM,
+ * from the centre, knowing nothing about the subject. The heroes here are mostly wider
+ * than that (1300 x 500 is common), so leaving the crop to the platform puts the
+ * decision in the one place that cannot see the hotspot. Cropping here hands it back
+ * to the editor.
+ *
+ * The 1200 width is a ceiling, not a demand: a 1300 x 500 hero cannot fill 1200 x 630
+ * without upscaling, so it is served at 952 x 500. The platforms' minimum for a large
+ * card is around 600 wide, so that is still well clear.
+ *
+ * `feedImageAttrs` because it is the module's one-URL builder, not because this is a
+ * feed — see its note on `aspect`. A null return (no usable asset ref) falls through
+ * to the icon.
+ */
+const shareImage = image ? feedImageAttrs(image, {aspect: '1200/630'}) : null
 const card = shareImage
   ? {...shareImage, alt: image?.altText ?? ''}
   : {
@@ -506,7 +526,7 @@ const PLAUSIBLE_INIT =
 
       THE LARGE CARD NEEDS A REAL IMAGE. `summary_large_image` only when the page has
       its own hero or poster, cropped to the card's shape by its hotspot (see
-      `shareImageAttrs`). Everything else gets the 512px square icon on a small
+      `shareImage` above). Everything else gets the 512px square icon on a small
       `summary` card. Putting the icon in a large card would stretch a 512px square
       across a 1200px frame, which is worse than the small card.
 
