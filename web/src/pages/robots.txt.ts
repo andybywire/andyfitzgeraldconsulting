@@ -12,7 +12,7 @@ import {PUBLIC_SITE_MODE} from 'astro:env/client'
  * for the SearchAction target, and it is the only thing that makes the preview case
  * expressible at all.
  *
- * ── ALLOW EVERYTHING, INCLUDING `/search/`, AND THAT IS NOT AN OVERSIGHT ────
+ * ── `/search/` STAYS CRAWLABLE, AND THAT IS NOT AN OVERSIGHT ───────────────
  *
  * The tempting line is `Disallow: /search/`, and it would be actively harmful.
  * `Disallow` blocks CRAWLING, not indexing — so a crawler never fetches the page and
@@ -22,6 +22,35 @@ import {PUBLIC_SITE_MODE} from 'astro:env/client'
  *
  * So the pages that should stay out of the index say so themselves, in a meta tag, and
  * this file keeps them crawlable so that the tag can be read. Same for `/404.html`.
+ *
+ * ── FILTER COMBINATIONS ARE THE ONE DISALLOW ───────────────────────────────
+ *
+ * Added 2026-10-02, after Googlebot fell into the index filters. `card-index.ts` rewrites
+ * every chip's href to "the current selection, toggled", and Google renders JavaScript —
+ * so each filtered page it fetched handed it dozens of new combinations, each of which
+ * handed it dozens more. It began 2026-09-29, the day after cutover, and roughly doubled
+ * daily: 417,000 requests on 2026-10-02, nearly all 200s for distinct
+ * `/insights/?topic=a,b,c&genre=x,y` URLs, every one a copy of the index. They were
+ * filling the droplet's shared access log on a disk at 85%.
+ *
+ * `/*,` matches a comma anywhere — one facet holding several values. `/*&` matches an
+ * ampersand — more than one facet. No page URL on the site contains either. SINGLE-facet
+ * URLs stay crawlable, which matters: they are what the server-rendered chips link to, and
+ * where the 67 old tag pages redirect (nginx/redirects.conf).
+ *
+ * This is not the `/search/` mistake above. That page's own `noindex` had to be readable.
+ * These carry only a canonical to `/insights/`, and Google's faceted-navigation guidance
+ * names robots.txt as THE way to stop this crawl — a canonical "may, over time, decrease
+ * the crawl volume", which is too slow at a doubling rate. A blocked URL could in principle
+ * be indexed bare from inbound links, but nothing links to these except the page's own
+ * script.
+ *
+ * Google applies the LONGEST matching rule, so `Disallow: /*,` outranks `Allow: /` for the
+ * URLs it matches, and `Allow: /` stays true of everything else. Both builds carry it:
+ * preview renders each combination on demand in Node, so a crawl costs more there, not
+ * less. Google re-reads this file within about a day. The check that it worked is the
+ * access log: Googlebot requests for `/insights/?` URLs containing a comma, per day,
+ * falling to zero.
  *
  * ── AI CRAWLERS: NO SPECIAL RULES, DELIBERATELY ────────────────────────────
  *
@@ -66,6 +95,8 @@ export const GET: APIRoute = ({site}) => {
   const lines = [
     'User-agent: *',
     'Allow: /',
+    'Disallow: /*,',
+    'Disallow: /*&',
     ...(isPreview ? [] : ['', `Sitemap: ${new URL('/sitemap.xml', site).href}`]),
     '',
   ]
