@@ -66,6 +66,10 @@ const FEED_LIMIT = '20'
  *
  * `defined(pubDate)` is in the filter because the ordering and both Atom timestamps
  * depend on it. 35 of 35 articles and notes carry one today — a guard, not a fix.
+ *
+ * `heroImage` is the OBJECT, through `IMAGE`, for the reason `fragments.ts` gives at
+ * length: `asset->url` would render and silently drop the crop and hotspot, and the
+ * feed crops the hero to 16:9 by exactly those (Andy, 2026-10-02).
  */
 export const FEED_ARTICLES_QUERY = defineQuery(`
 	*[_type == "article" && defined(slug.current) && defined(pubDate)]
@@ -75,6 +79,7 @@ export const FEED_ARTICLES_QUERY = defineQuery(`
 			pubDate,
 			title,
 			shortDescription,
+			heroImage { ${IMAGE} },
 			lede,
 			bodyText
 		}
@@ -154,6 +159,11 @@ const RECORDING = /* groq */ `
  * the feed, which is exactly what read badly and got deleted. The entry links to the
  * page; the page is where a venue list and a player belong.
  *
+ * `poster` IS IN, and it opens the entry (Andy, 2026-10-02). It is the presentation's
+ * own image rather than a recording's, so it is the one that stands for the work, as a
+ * hero stands for an article. It is the OBJECT, through `IMAGE`, because the feed crops
+ * it to 16:9 by its hotspot, as the page does.
+ *
  * `description` is the meta-description string and goes to `<summary>`, not to
  * content — `presentation` has no `shortDescription`, so it plays the card-copy role
  * here that `shortDescription` plays for articles and notes.
@@ -166,6 +176,7 @@ export const FEED_PRESENTATIONS_QUERY = defineQuery(`
 			pubDate,
 			title,
 			description,
+			poster { ${IMAGE} },
 			bodyText,
 			highlights,
 			${RECORDING}

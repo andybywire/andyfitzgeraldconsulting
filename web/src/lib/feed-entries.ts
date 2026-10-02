@@ -6,7 +6,7 @@ import type {
   FEED_PRESENTATIONS_QUERY_RESULT,
 } from '../../sanity.types'
 import {atomFeed, escapeXml, toRfc3339, type AtomEntry} from './atom'
-import {feedImageAttrs} from '../sanity/image'
+import {feedImageAttrs, type SanityImageSource} from '../sanity/image'
 import {highlightsHeading} from './presentation'
 import {recordingHeading, recordingVerb, sourceLabelFor, youtubeId} from './recording'
 import {toFeedHtml} from './feed-html'
@@ -106,6 +106,60 @@ const usable = <T extends Base>(
 ): row is T & {slug: string; title: string; pubDate: string} =>
   Boolean(row.slug && row.title && row.pubDate)
 
+/**
+ * The image an entry OPENS with — an article's hero, a presentation's poster.
+ *
+ * ── THE QUESTION THAT WAS DECIDED BY OMISSION, NOW DECIDED ───────────────────
+ *
+ * The feeds shipped (2026-09-13) without heroes, and docs/feeds-kickoff.md recorded
+ * that as never having been a decision. Andy made it one on 2026-10-02: entries
+ * looked spare in a reader, so the image the page leads with now leads the entry
+ * too. Notes have no hero, and case studies are not in any feed, so this reaches
+ * articles and presentations only.
+ *
+ * ── 16:9 FOR BOTH, BECAUSE THE PAGE DRAWS BOTH AT 16:9 ───────────────────────
+ *
+ * <SanityHero> crops an article's hero to 16:9 by its hotspot, and the presentation
+ * page draws its poster through <SanityImage> with `aspect="16/9"`. So the feed asks
+ * for the same shape and gets the same picture, cropped where the editor said.
+ *
+ * Posters were briefly served at their STORED shape, on the reasoning that cropping a
+ * slide cuts off its text. That was wrong on the facts: the page already crops them,
+ * and the hotspot and crop are set so it works (Andy, 2026-10-02). It also mattered,
+ * because the stored shapes vary widely — 3 of the 8 posters in the window were
+ * 1920 x 1080 when this landed, and the rest ran from a square session card to 2.6:1.
+ *
+ * Whether 16:9 is too much vertical space in a reader is open, pending Andy's look at
+ * the published feed. If it changes, the `'16/9'` below is the one place to change it.
+ *
+ * ── NOT A LINK, AND NOT A SECOND COPY OF A RECORDING'S POSTER ────────────────
+ *
+ * Unlinked, like a body figure. The entry's title already links to the page, and an
+ * image link gives a screen reader nothing but the alt text to announce as its name.
+ *
+ * A presentation can also show a RECORDING'S poster, from `recordingHtml`, when it
+ * has no YouTube embed. Nothing in the window carries both today: every presentation
+ * whose entry shows a recording poster has no poster of its own. If one ever does,
+ * the entry shows two images, which is honest: they are different fields, and
+ * deduplicating would mean guessing that two different pictures are the same thing.
+ *
+ * Alt falls back to '' for the reason `feed-html.ts` gives for figures: decorative
+ * is wrong but honest, and there is nothing truer to say.
+ */
+function leadImage(
+  image: SanityImageSource | null | undefined,
+  options: {aspect?: string} = {},
+): string {
+  const img = image ? feedImageAttrs(image, options) : null
+  if (!img) return ''
+  const alt = escapeXml(image?.altText ?? '')
+  return (
+    `<figure>` +
+    `<img src="${escapeXml(img.src)}" width="${img.width}" height="${img.height}" alt="${alt}" />` +
+    `</figure>`
+  )
+}
+
 export function articleEntries(rows: FEED_ARTICLES_QUERY_RESULT, site: URL): AtomEntry[] {
   return rows.filter(usable).map((row) => {
     const url = new URL(`/insights/${row.slug}/`, site).href
@@ -116,10 +170,13 @@ export function articleEntries(rows: FEED_ARTICLES_QUERY_RESULT, site: URL): Ato
       summary: row.shortDescription,
       categories: categories(row.genre, row.topics),
       ...dates(row.pubDate),
-      /* `lede` then `bodyText`, matching the page: the lede is the standfirst and reads
-         as the article's opening, not as metadata. `shortDescription` is card copy and
-         goes to <summary> instead — a different field for a different job. */
-      content: toFeedHtml([...(row.lede ?? []), ...(row.bodyText ?? [])], {permalink: url}),
+      /* Hero, `lede`, then `bodyText`, matching the page: the hero sits in the entry
+         header above the lede, and the lede is the standfirst — it reads as the
+         article's opening, not as metadata. `shortDescription` is card copy and goes to
+         <summary> instead, a different field for a different job. */
+      content:
+        leadImage(row.heroImage, {aspect: '16/9'}) +
+        toFeedHtml([...(row.lede ?? []), ...(row.bodyText ?? [])], {permalink: url}),
     }
   })
 }
@@ -325,13 +382,15 @@ export function presentationEntries(rows: FEED_PRESENTATIONS_QUERY_RESULT, site:
          Portable Text block, and inventing a custom type for one feed would put a
          rendering concern into the content vocabulary. */
       content:
+        leadImage(row.poster, {aspect: '16/9'}) +
         toFeedHtml(
           [
             ...(row.bodyText ?? []),
             ...(highlights.length > 0 ? [highlightsHeadingBlock(row.genre), ...highlights] : []),
           ],
           {permalink: url},
-        ) + recordingHtml(row.recording, row.genre),
+        ) +
+        recordingHtml(row.recording, row.genre),
     }
   })
 }
