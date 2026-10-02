@@ -313,6 +313,9 @@ const jsonLd = [
   description={insight.description ?? insight.shortDescription ?? undefined}
   canonical={insight.canonical ?? undefined}
   jsonLd={jsonLd}
+  cardDescription={insight.shortDescription}
+  image={insight.heroImage}
+  article={{published: insight.pubDate, modified: insight._updatedAt}}
 >
   <Masthead />
 
