@@ -684,16 +684,36 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 
      ```bash
      uname -r   # 6.8.0-142-generic
-     systemctl is-active nginx php8.3-fpm certbot.timer
+     systemctl is-active nginx php8.3-fpm certbot.timer do-agent
      sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user status afc-preview --no-pager | head -5
      readlink /proc/$(sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user show -p MainPID --value afc-preview)/exe
      ```
 
-     Expect `active`, three times; the unit active since boot; `/usr/bin/node`. Then from the Mac,
+     Expect `active`, four times — `do-agent` is DigitalOcean's metrics agent, installed
+     2026-10-02 because the disk and memory alerts need it, measured at 12.5 MB; the unit active
+     since boot; `/usr/bin/node`. Then from the Mac,
      `AFC_SSH=do nginx/deploy.sh` for all nine checks across both hosts — it reinstalls identical
      config, which is harmless. **`preview.uxmethods.org` gets its own first real boot test here
      too**: its PM2 unit was proven with `pm2 kill` on 2026-09-21, never by a boot. A 200 from it is
      the check, and a 502 is the old failure back.
+
+     **Shrink swap from 2 GB to 1 GB in the same window** (added 2026-10-02). `/swapfile` is 2 GB on
+     an 8.7 GB disk with ~250 MB in use, so 1 GB is still four times what is used. **Not by
+     `swapoff` first:** that pulls the swapped pages back into RAM, and with ~245 MB available on a
+     458 MB droplet it can wake the OOM killer. Bring the new swap up before taking the old one
+     down, so pages move swap to swap. Then reboot, since `/etc/fstab` names `/swapfile`:
+
+     ```bash
+     fallocate -l 1G /swapfile.new && chmod 600 /swapfile.new && mkswap /swapfile.new && swapon /swapfile.new
+     swapoff /swapfile && rm /swapfile && mv /swapfile.new /swapfile
+     ```
+
+     After the reboot, `swapon --show` should list `/swapfile` at `1024M`.
+
+     **The journal is capped at 100 MB, on the droplet rather than in the repo** (2026-10-02). It
+     had reached 332 MB with the disk at 85%; `/etc/systemd/journald.conf.d/size.conf` sets
+     `SystemMaxUse=100M`, and the file carries its own comment. Nothing to do in the window — this
+     line is the record that it exists, the way the systemd unit's record is the unit file itself.
    - **The serializer specimen is GONE, and this item is closed** (verified 2026-09-14).
      `specimen-serializers` on `production-26`, at `/insights/serializer-specimen/`, was a
      phase 4 test fixture holding one instance of every block style, inline mark, list shape
