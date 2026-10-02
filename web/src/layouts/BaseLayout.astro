@@ -16,6 +16,7 @@ import {FEEDS, type FeedMeta} from '../lib/feeds'
 import {PUBLIC_SITE_MODE} from 'astro:env/client'
 import SearchResults from '../components/SearchResults.astro'
 import {SITE_FACTS, serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
+import {shareImageAttrs, type SanityImageSource} from '../sanity/image'
 
 import '../styles/tokens.css'
 import '../styles/base.css'
@@ -78,9 +79,32 @@ interface Props {
    * Readers that do present a picker show both, which is why `title` is set on each.
    */
   feeds?: FeedMeta[]
+  /**
+   * Card copy for link previews, where the page's type has some: `shortDescription` on
+   * the Document branch. Falls back to `description`. See LINK-PREVIEW CARDS below for
+   * why the two are kept apart.
+   */
+  cardDescription?: string | null
+  /**
+   * The page's own image, a hero or a poster, as the image OBJECT so its crop and
+   * hotspot can shape the card. Absent, the page gets the small card.
+   */
+  image?: SanityImageSource | null
+  /** Document-branch pages only: `og:type` becomes `article`, carrying these dates. */
+  article?: {published?: string | null; modified?: string | null}
 }
 
-const {title, description, canonical, jsonLd, noindex = false, feeds = []} = Astro.props
+const {
+  title,
+  description,
+  canonical,
+  jsonLd,
+  noindex = false,
+  feeds = [],
+  cardDescription,
+  image,
+  article,
+} = Astro.props
 
 /**
  * `Astro.url.pathname`, never `Astro.url` itself.
@@ -98,6 +122,20 @@ const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).href
    `undefined#person` would validate as a set of unrelated nodes rather than fail. */
 if (!Astro.site) throw new Error('[BaseLayout] `site` is unset in astro.config.mjs')
 const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
+
+/* The link-preview card's image: the page's own, cropped to the card's shape, or the
+   site icon at its real size. See LINK-PREVIEW CARDS in the head for the rule. */
+const shareImage = image ? shareImageAttrs(image) : null
+const card = shareImage
+  ? {...shareImage, alt: image?.altText ?? ''}
+  : {
+      src: new URL('/icons/icon_x512.png', Astro.site).href,
+      width: 512,
+      height: 512,
+      /* The Organization's logo caption in the graph, for the same image. */
+      alt: SITE_FACTS.siteName,
+    }
+const cardText = cardDescription || description
 
 /**
  * ── ANALYTICS SHIPS IN A PRODUCTION BUILD AND NOWHERE ELSE ─────────────────
@@ -441,6 +479,59 @@ const PLAUSIBLE_INIT =
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={canonicalUrl} />
     {robots && <meta name="robots" content={robots} />}
+
+    {
+      /*
+      ── LINK-PREVIEW CARDS: OPEN GRAPH, PLUS ONE TWITTER TAG ─────────────────
+
+      What LinkedIn, Bluesky, Mastodon, Slack and iMessage read to draw the card when
+      someone shares a link. The 11ty build emitted five of these and the rebuild emitted
+      none, so from the cutover (2026-09-28) until this landed (2026-10-02) every shared
+      link was left to the platform's own guess. Nothing errors when they are missing:
+      the card just looks worse.
+
+      ONE `twitter:` TAG, NOT FOUR. X reads `twitter:card` to choose the layout and falls
+      back to `og:` for the title, description and image, so `twitter:title` and the rest
+      would only repeat the values below and give them a second place to drift.
+
+      `og:description` IS CARD COPY FIRST (Andy, 2026-10-02). `description` is written
+      for a search snippet and `shortDescription` for a card. A share preview is a card,
+      so it gets the card copy where the type has some. That is the same split
+      `documentNode` makes when it reads `shortDescription` for `abstract`.
+
+      `og:url` IS THE CANONICAL, CROSS-POSTS INCLUDED (Andy, 2026-10-02). The Open Graph
+      spec defines it as the object's canonical URL, so on the two articles first
+      published elsewhere it names the original, matching `rel="canonical"`. Expect some
+      platforms to build those two cards from the original page.
+
+      THE LARGE CARD NEEDS A REAL IMAGE. `summary_large_image` only when the page has
+      its own hero or poster, cropped to the card's shape by its hotspot (see
+      `shareImageAttrs`). Everything else gets the 512px square icon on a small
+      `summary` card. Putting the icon in a large card would stretch a 512px square
+      across a 1200px frame, which is worse than the small card.
+
+      `og:site_name` IS `personName`, as the tab suffix and the wordmark are: it is the
+      label a reader sees on the card, and the reader-facing name is the person. The
+      LLC's name stays in the JSON-LD's WebSite node.
+
+      IF A CARD DOES NOT RENDER, LOOK AT CLOUDFLARE FIRST. These are fetched by
+      platform bots, not browsers, and a challenged fetch does not error, it just never
+      arrives. That is the risk CLAUDE.md records against POSSE.
+    */
+    }
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:site_name" content={SITE_FACTS.personName} />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content={title} />
+    {cardText && <meta property="og:description" content={cardText} />}
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={card.src} />
+    <meta property="og:image:width" content={String(card.width)} />
+    <meta property="og:image:height" content={String(card.height)} />
+    {card.alt && <meta property="og:image:alt" content={card.alt} />}
+    {article?.published && <meta property="article:published_time" content={article.published} />}
+    {article?.modified && <meta property="article:modified_time" content={article.modified} />}
+    <meta name="twitter:card" content={shareImage ? 'summary_large_image' : 'summary'} />
 
     {
       /*
