@@ -95,7 +95,8 @@ export default defineConfig({
         return S.list()
           .title('Content')
           .items([
-            ...S.documentTypeListItems().filter(hiddenDocTypes),
+            // @ts-expect-error — showCount() appears not yet to be in the published shape
+            ...S.documentTypeListItems().filter(hiddenDocTypes).map((item) => item.showCount()),
             S.divider(),
             S.listItem()
               .title('Settings')
