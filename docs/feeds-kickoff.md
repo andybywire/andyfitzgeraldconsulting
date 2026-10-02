@@ -132,7 +132,17 @@ shape, and getting those right on one feed makes the other four mechanical.
 4. **`<link rel="alternate">` discovery** in `BaseLayout` — see below.
 5. **The RSS Feeds page is ANDY'S**, hand-authored, not a template. Do not build it.
 
-## Open: heroes are not in the feeds
+## Settled: heroes and posters lead the entry
+
+**Decided 2026-10-02 (Andy): entries looked spare in a reader.** An article opens with its hero and
+a presentation with its own `poster`, both cropped to 16:9 by their hotspots, the shape the page
+draws each at. Notes have no hero and case studies are not in any feed. The reasoning is in
+`leadImage` in `web/src/lib/feed-entries.ts`.
+
+**Still open: whether 16:9 is too much vertical space in a reader.** Andy is checking it in a
+reader once the feed publishes; the aspect is one argument per call site in `leadImage`'s callers.
+
+The original note follows, kept as the record of what the question was.
 
 **Never surfaced as a decision, which is the point of recording it.** The entry builders project
 `lede` + `bodyText` for an article and `bodyText` for a note; `heroImage` is not projected and not

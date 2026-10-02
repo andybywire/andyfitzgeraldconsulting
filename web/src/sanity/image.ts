@@ -366,10 +366,18 @@ export function imageAttrs(
  * wiring, plus a reimplementation of the crop arithmetic in `maxRenderableWidth` —
  * the duplication this module exists to prevent. One export is the smaller change.
  *
- * No `aspect` parameter, deliberately: `<Figure>` passes none either, so a body
- * figure keeps its source shape in the feed exactly as it does on the page. That
- * also leaves the hotspot inert, which is correct — nothing is being discarded for
- * it to protect.
+ * ── `aspect` IS OPTIONAL, AND ABSENT IS THE COMMON CASE ─────────────────────────
+ *
+ * Body figures pass none, as `<Figure>` passes none on the page, so a figure keeps
+ * its source shape in the feed exactly as it does there. That leaves the hotspot
+ * inert, which is correct: nothing is being discarded for it to protect.
+ *
+ * An article's HERO and a presentation's POSTER pass `'16/9'`, because that is the
+ * shape the page draws both at — the feed shows the picture the page shows, cropped
+ * by the same hotspot.
+ * This read "No `aspect` parameter, deliberately" until the heroes came into the
+ * feeds (2026-10-02); the reasoning for figures is unchanged, there is just now a
+ * second kind of image with a different answer.
  *
  * `width` is a CEILING, not a demand. An image narrower than the target is served at
  * its own width rather than upscaled, per `maxRenderableWidth`.
@@ -379,12 +387,23 @@ export function imageAttrs(
  */
 export function feedImageAttrs(
   image: SanityImageSource,
-  width = 1200,
+  {width = 1200, aspect}: {width?: number; aspect?: string | null} = {},
 ): {src: string; width: number; height: number} | null {
-  const bounds = maxRenderableWidth(image?.asset?._ref, image?.crop, null)
+  const ratio = parseAspect(aspect)
+  const bounds = maxRenderableWidth(image?.asset?._ref, image?.crop, ratio)
   if (!bounds) return null
 
   const w = Math.min(width, bounds.width)
+  /* Height forces the crop, so it is passed only when a shape was asked for — the
+     same rule `imageAttrs` follows, and `fit('crop')` stated for the same reason. */
+  if (ratio) {
+    const h = Math.round(w / ratio)
+    return {
+      src: builder.image(image).width(w).height(h).fit('crop').auto('format').url(),
+      width: w,
+      height: h,
+    }
+  }
   return {
     src: builder.image(image).width(w).auto('format').url(),
     width: w,

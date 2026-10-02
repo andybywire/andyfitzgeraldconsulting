@@ -527,9 +527,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      that part of the earlier shrinkage was not alt-text work at all: three slugs left the
      list by leaving the article corpus, when the mis-typed presentations were re-typed.*
 
-     *One thing this does NOT cover: hero images do not appear in the Atom feeds at all —
-     entries carry `lede` + `bodyText` and the hero is not projected. That was never
-     surfaced as a decision when the feeds were built (2026-09-13) and is open.*
+     *Heroes reached the Atom feeds on 2026-10-02 (Andy): an article entry opens with its
+     hero and a presentation entry with its poster, both cropped to 16:9 by their
+     hotspots. See docs/feeds-kickoff.md → Settled: heroes and posters lead the entry.*
 
    - **`h5` residue: NONE. Question closed** (2026-09-09). Phase 1 dropped the style from `article`,
      `caseStudy` and `singleton`, and dropping it from a schema does not remove it from published
