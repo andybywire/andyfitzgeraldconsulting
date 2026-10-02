@@ -51,7 +51,7 @@ export default defineCliConfig({
 
   studioHost: 'afconsulting',
   deployment: {
-    autoUpdates: false,
+    autoUpdates: true,
     // Issued by the first `sanity deploy`. Never 'nzdgq8jqulaft9768ud9xxk9' — see above.
     appId: 'g1jo20nnopb0mtoyt45zqakx',
   },
