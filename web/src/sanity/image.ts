@@ -344,7 +344,9 @@ export function imageAttrs(
 }
 
 /**
- * One image, one URL, and dimensions that describe THAT url — for the Atom feeds.
+ * One image, one URL, and dimensions that describe THAT url — for the Atom feeds and
+ * for link-preview cards (`og:image`), the two places an image leaves the page without
+ * a srcset.
  *
  * ── WHY `imageAttrs` CANNOT BE USED HERE, WHICH IS THE WHOLE REASON THIS EXISTS ─
  *
@@ -366,18 +368,22 @@ export function imageAttrs(
  * wiring, plus a reimplementation of the crop arithmetic in `maxRenderableWidth` —
  * the duplication this module exists to prevent. One export is the smaller change.
  *
- * ── `aspect` IS OPTIONAL, AND ABSENT IS THE COMMON CASE ─────────────────────────
+ * ── `aspect` IS OPTIONAL, AND EACH CONSUMER'S ANSWER IS ITS OWN ─────────────────
  *
- * Body figures pass none, as `<Figure>` passes none on the page, so a figure keeps
- * its source shape in the feed exactly as it does there. That leaves the hotspot
- * inert, which is correct: nothing is being discarded for it to protect.
+ *   body figure      none     `<Figure>` passes none on the page either, so a figure
+ *                             keeps its source shape and the hotspot stays inert —
+ *                             nothing is being discarded for it to protect.
+ *   hero, poster     16/9     the shape the page draws both at, so the feed shows the
+ *                             picture the page shows, cropped by the same hotspot.
+ *   share card       1200/630 the card frame; the reason is beside the call in
+ *                             <BaseLayout>.
  *
- * An article's HERO and a presentation's POSTER pass `'16/9'`, because that is the
- * shape the page draws both at — the feed shows the picture the page shows, cropped
- * by the same hotspot.
  * This read "No `aspect` parameter, deliberately" until the heroes came into the
- * feeds (2026-10-02); the reasoning for figures is unchanged, there is just now a
- * second kind of image with a different answer.
+ * feeds (2026-10-02). The share card had its own sibling, `shareImageAttrs`, on the
+ * argument that it differed from this in exactly one parameter. Once `aspect` became
+ * an option, that argument made it a call rather than a function, and it was folded
+ * in the same day — the arithmetic was identical, and the built `og:image` tags were
+ * diffed to prove it.
  *
  * `width` is a CEILING, not a demand. An image narrower than the target is served at
  * its own width rather than upscaled, per `maxRenderableWidth`.
@@ -408,49 +414,5 @@ export function feedImageAttrs(
     src: builder.image(image).width(w).auto('format').url(),
     width: w,
     height: Math.round(w / bounds.sourceAspect),
-  }
-}
-
-/**
- * One cropped URL for a link-preview card — `og:image` — and dimensions that describe it.
- *
- * ── 1.91:1, BECAUSE THAT IS THE SHAPE EVERY CARD IS ─────────────────────────────
- *
- * 1200 x 630 is the size LinkedIn and Facebook ask for, and the frame most platforms
- * draw a large card in is about that shape. Whatever does not fit is cropped by the
- * platform — from the CENTRE, knowing nothing about the subject. The heroes here are mostly wider than that (1300 x 500 is
- * common), so leaving the crop to the platform puts the decision in the one place that
- * cannot see the hotspot. Cropping here hands it back to the editor, through the same
- * builder path `imageAttrs` uses for a forced aspect.
- *
- * ── WHY NOT `feedImageAttrs` ─────────────────────────────────────────────────────
- *
- * Same contract — one URL, honest dimensions — and the opposite brief on shape. A feed
- * keeps the source's shape because the reader lays it out; a card has a fixed frame, so
- * an image that arrives the wrong shape gets cropped by someone else. The two differ in
- * exactly the parameter that matters, which is why this is a sibling, not an option.
- *
- * `width` is a ceiling, as in `feedImageAttrs`: a 1300 x 500 hero cannot fill 1200 x 630
- * without upscaling, so it is served at 952 x 500 instead. Every platform's minimum for a
- * large card is around 600 wide, so that is still well clear.
- *
- * Returns null on a missing or malformed asset ref, and the layout falls back to the
- * site icon — see `<BaseLayout>`.
- */
-const SHARE_ASPECT = 1200 / 630
-
-export function shareImageAttrs(
-  image: SanityImageSource,
-  width = 1200,
-): {src: string; width: number; height: number} | null {
-  const bounds = maxRenderableWidth(image?.asset?._ref, image?.crop, SHARE_ASPECT)
-  if (!bounds) return null
-
-  const w = Math.min(width, bounds.width)
-  const h = Math.round(w / SHARE_ASPECT)
-  return {
-    src: builder.image(image).width(w).height(h).fit('crop').auto('format').url(),
-    width: w,
-    height: h,
   }
 }
