@@ -76,9 +76,7 @@ const previewUrlFor = (studioOrigin: string) =>
 
 export default defineConfig({
   name: 'default',
-  // Titled for the dataset, not the business: two studios against two datasets is how you edit
-  // the wrong one. studio/ stays "AF Consulting" on `production`.
-  title: 'AF Consulting — 2026 build',
+  title: 'AF Consulting',
 
   projectId: '7v0qvet6',
   dataset: 'production-26',
