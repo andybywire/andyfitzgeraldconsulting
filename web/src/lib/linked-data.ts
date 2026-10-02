@@ -516,6 +516,32 @@ export interface PresentationGraphInput {
  * `workPerformed` and `recordedAt` are both real schema.org properties and both point
  * the way the facts do, so nothing here is a workaround.
  *
+ * ── `Event` IS RIGHT, AND GOOGLE'S EVENT REPORT GRADES SOMETHING ELSE ───────
+ *
+ * Search Console flagged these nodes in October 2026 (Events: missing `offers`,
+ * `organizer`, `eventStatus`, `image`, `location.name`), which read at first as "the
+ * mapping is wrong". It is not. schema.org's Event is "an event happening at a certain
+ * time and location, such as a concert, lecture, or festival" — a lecture by name.
+ *
+ * The report is measuring eligibility for Google's EVENT LISTINGS, a product built for
+ * events the public can book, held at a physical place. Nothing here can ever qualify:
+ * every delivery is in the past, and Google's guidelines rule out virtual-only events in
+ * so many words. So the report is a checklist for a feature these pages are not
+ * competing for, and is NOT the measure of whether this graph is correct.
+ *
+ * What the report DID surface is an omission, and it was the important one: nothing
+ * said who performed. `performer` is schema.org's counterpart to `workPerformed`, and
+ * without it the graph said a talk was given at the IA Summit and never said by whom.
+ * That, `eventStatus`, `image` and `description` were added because they are TRUE; that
+ * they also clear some warnings is a side effect. See the per-property notes below.
+ *
+ * `name` stays the event document's own name — the conference, podcast or meetup — even
+ * though the node identifies the DELIVERY, not the conference. Naming the node after the
+ * talk and moving the conference into `superEvent` would be more precise, but the
+ * `event` field holds conferences, podcast series, organizers and meetup groups, and
+ * `superEvent` would declare all of them Events. That needs the model to say what the
+ * field names first (Andy, 2026-10-02). See docs/open-questions.md.
+ *
  * ── FRAGMENT `@id`s, AND WHY THEY ARE NOT SANITY IDS ────────────────────────
  *
  * Events have no pages, so their identifiers have to be fragments on the presentation
@@ -579,10 +605,27 @@ export function presentationGraph(input: PresentationGraphInput): GraphNode[] {
       '@id': eventId,
       '@type': 'Event',
       workPerformed: {'@id': workId},
+      /* Andy, always. Panels included: there he is one of several performers, and the
+         property is still true of him. Resolves against the Person `siteGraph` puts on
+         every page. */
+      performer: {'@id': nodeId(site, 'person')},
+      /* "The event is taking place or has taken place on the startDate as scheduled" —
+         schema.org's own definition, and it is what an event document records. The model
+         has no field for a cancellation, so this is the only status it can express, and
+         it is the true one for every delivery entered. */
+      eventStatus: 'https://schema.org/EventScheduled',
     }
     if (delivery.name) event.name = delivery.name
+    /* The work's description, as the recordings below reuse it: a delivery has no
+       description of its own, and what was delivered is what the work describes. */
+    if (input.description) event.description = input.description
     if (delivery.date) event.startDate = delivery.date
     if (delivery.link) event.url = delivery.link
+    /* The poster, as a reference to the ImageObject the work already declares — one node
+       for one image, linked rather than repeated, the way this graph links everything.
+       No poster, no image, and Search Console's `image` warning stays on those pages:
+       13 of 29 presentations, interviews and panels among them (measured 2026-10-02). */
+    if (poster) event.image = {'@id': `${permalink}#primaryimage`}
 
     /*
      * ONLINE IS READ FIRST, the same rule `formatLocation` follows and for the same
@@ -617,6 +660,25 @@ export function presentationGraph(input: PresentationGraphInput): GraphNode[] {
         },
       }
     }
+
+    /*
+     * ── THREE WARNINGS THAT STAY, DELIBERATELY ─────────────────────────────────
+     *
+     * Search Console will keep reporting these. Each could be "cleared" only by asserting
+     * something the data does not hold, which is worse than leaving it out:
+     *
+     *   `offers`         An Offer is a price, a currency and an availability, sold by
+     *                    someone. Andy does not sell the tickets and the model records no
+     *                    price, so any Offer here would be invented.
+     *   `organizer`      Not in the model. The event's name is not its organizer: a
+     *                    conference's name does not say who ran it, and a podcast's name
+     *                    is not its host.
+     *   `location.name`  The venue, which the model does not record. See NO `name` ON THE
+     *                    PLACE above: the conference's name is not the building's.
+     *
+     * Do not fill these in to quiet the report. If they ever matter, `organizer` and a
+     * venue are fields to add to `event`. That is a content-model change, and Andy's.
+     */
 
     nodes.push(event)
 
