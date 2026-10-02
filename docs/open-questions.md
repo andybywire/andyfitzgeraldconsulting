@@ -54,6 +54,40 @@ diffability the two systems are built for, so it deserves a decision rather than
 
 ---
 
+## What the model cannot yet say
+
+**What does `event.event` name?** (raised 2026-10-02, when Search Console flagged the Event
+JSON-LD). The field is labelled "Event Name", but the corpus uses it for four kinds of thing:
+conferences (*Information Architecture Summit*, *Taxonomy Boot Camp*), podcast series (*The
+Informed Life*, *APQC Podcast*), organizers or platforms (*Button Events*, *UIE's All You Can
+Learn*) and meetup groups (*Seattle UX Meetup*). So the JSON-LD names each delivery after its
+**context** rather than after itself. That is imprecise rather than wrong, and it was kept on purpose
+— see `presentationGraph` in `web/src/lib/linked-data.ts`.
+
+The precise shape is the one schema.org already has for this. The delivery is the session, named
+after the work. The conference becomes the session's `superEvent`. Andy stays the `performer`, and
+the presentation stays the `workPerformed`. That shape is only true for the conferences and meetups,
+though: `superEvent` declares its value to be an Event, and a podcast series or an organizer is not
+one. Building it means the model has to say what kind of context each event names first (a field,
+or a reference to a context document), rather than having the builder guess from `online`.
+
+Two things to carry with it:
+
+- **Google may treat a nested `superEvent` as an Event in its own right**, and one carrying only a
+  name would fail its required `startDate` and `location`, turning today's warnings into errors.
+  Test it in the Rich Results Test before shipping. Nobody has checked.
+- **For podcasts, `date` is the publication date**: each matches its episode's URL. So the Event's
+  `startDate` is really the date the episode went out, not the date of the conversation, and a
+  recording's `recordedAt` points at that date. A podcast delivery may want to be the episode's
+  publication rather than an Event, and that is the same question again.
+
+**Two fields Google asks for and the model does not hold**: `organizer`, and a venue (which would
+become `location.name`). Both are accepted as standing Search Console warnings for now, together with
+`offers`, which no data could honestly supply. Add them to `event` only if the warnings ever start to
+matter, and never fill them from the event's name.
+
+---
+
 ## Search — deferred to a second pass
 
 Built in phase 4 and deliberately not finished. Both of these are **design** questions before
