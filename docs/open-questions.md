@@ -52,6 +52,43 @@ in a variable, and overriding it on a node severs the text style along with its 
 likely answer is to leave Figma at 1.8 and express the correction only in CSS. **But that breaks the
 diffability the two systems are built for, so it deserves a decision rather than a drift.**
 
+**Zero-hit chips still carry an `href`, and only crawlers follow it** (raised 2026-10-06). A zero-hit
+chip is `aria-disabled`, takes no pointer events, and has Enter prevented, so the empty state is
+**unreachable from the UI** — which [urls-and-filtering.md](urls-and-filtering.md) relies on twice:
+AND is safe only because of it, and the empty state needs no guard because of it. But the chip keeps
+its `href` so that it stays focusable, and `card-index.ts` writes that `href` as "the current
+selection, toggled" — a state with no results, from which every chip is zero-hit and every link leads
+deeper.
+
+**That is how the post-cutover crawl became unbounded.** Measured on 2026-10-05: 99.98% of Meta's
+filter-combination requests, and 99.1% of a browser fleet's, were for states with no results. The
+multi-value states that do have results number about 1,650 across both indexes (1,385 Insights, 271
+Presentations). A Cloudflare rule now challenges every combination at the edge (see
+`nginx/afc-production.conf`), so nothing is on fire. But the link graph that fed the crawl is
+unchanged: the next crawler to ignore robots.txt finds it again, and so does any crawler on the
+preview host, which the rule does not cover.
+
+The options, none decided:
+
+- **Point a zero-hit chip's `href` at the current selection.** A self-link: still an anchor, still
+  focusable, still announced as unavailable, and a crawler finds nothing new, so the reachable space
+  stops at the ~1,650 states with results. The cost is that the `href` no longer describes what the
+  chip would do — though while it is disabled, it does nothing.
+- **Drop the `href`** and keep focus with `tabindex="0"`. An anchor without an `href` has no link
+  role, so it would need `role="link"` to stay announced as one: ARIA replacing what HTML gave for
+  free.
+- **`rel="nofollow"` on zero-hit chips.** The cheapest, and only a hint. A crawler that ignores
+  robots.txt has no reason to honor it.
+
+*Leaning, not decided: the first.* It changes a URL and nothing about the element, so the
+accessibility decision already made stands untouched.
+
+**One human route to the empty state does exist, and it is probably a bug** (read, not tested). The
+click handler returns early for modified clicks *before* it checks `aria-disabled`, so cmd- or
+ctrl-Enter on a focused zero-hit chip would open the empty state that the design calls unreachable.
+The first option above would make that harmless as a side effect, since the link would lead back to
+the current view.
+
 ---
 
 ## What the model cannot yet say

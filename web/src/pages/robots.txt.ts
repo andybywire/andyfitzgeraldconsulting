@@ -33,6 +33,14 @@ import {PUBLIC_SITE_MODE} from 'astro:env/client'
  * `/insights/?topic=a,b,c&genre=x,y` URLs, every one a copy of the index. They were
  * filling the droplet's shared access log on a disk at 85%.
  *
+ * NEARLY ALL OF IT WAS EMPTY PAGES, and the reason is worth knowing. A zero-count chip keeps
+ * its href — `aria-disabled` rather than no link, so that it stays focusable — and from an
+ * empty state every chip is zero-count, so a crawl only ever goes deeper. Measured on
+ * 2026-10-05: 99.98% of Meta's combination requests and 99.1% of a browser fleet's were
+ * filter states with no results, while the states that DO have results number about 1,650
+ * across both indexes. Bounding the crawl there is an accessibility decision about those
+ * chips, and it is open. Nothing below depends on it.
+ *
  * `/*,` matches a comma anywhere — one facet holding several values. `/*&` matches an
  * ampersand — more than one facet. No page URL on the site contains either. SINGLE-facet
  * URLs stay crawlable, which matters: they are what the server-rendered chips link to, and
@@ -48,9 +56,21 @@ import {PUBLIC_SITE_MODE} from 'astro:env/client'
  * Google applies the LONGEST matching rule, so `Disallow: /*,` outranks `Allow: /` for the
  * URLs it matches, and `Allow: /` stays true of everything else. Both builds carry it:
  * preview renders each combination on demand in Node, so a crawl costs more there, not
- * less. Google re-reads this file within about a day. The check that it worked is the
- * access log: Googlebot requests for `/insights/?` URLs containing a comma, per day,
- * falling to zero.
+ * less. Google re-reads this file within about a day.
+ *
+ * ── IT WORKED FOR GOOGLE AND NOT FOR META, SO IT IS ENFORCED AT THE EDGE ────
+ *
+ * The check named here was Googlebot's combination requests falling to zero, and they did:
+ * 396,658 on 2026-10-02, none from 2026-10-04 on. `meta-externalagent` never stopped — 46,685
+ * on 2026-10-05, every one disallowed — and never fetched this file at all, though Meta's
+ * link-preview fetcher reads it daily and Meta documents the crawler as honoring it. A fleet
+ * presenting a browser user agent followed, one request per address from 50,008 addresses.
+ *
+ * So since 2026-10-06 a Cloudflare custom rule challenges these URLs at the edge, before
+ * they reach the droplet. nginx/afc-production.conf records it: the expression, why a
+ * Managed Challenge, and the check to repeat. THE RULE MIRRORS THE TWO DISALLOW LINES BELOW,
+ * more narrowly, and the two must change together. The lines still earn their place: they
+ * are what the rule enforces, and a crawler that honors them never meets it.
  *
  * ── AI CRAWLERS: NO SPECIAL RULES, DELIBERATELY ────────────────────────────
  *
@@ -59,7 +79,9 @@ import {PUBLIC_SITE_MODE} from 'astro:env/client'
  * assistants people now ask questions of is continuous with why the site exists — CLAUDE.md's
  * "drawing more people into that network" — and the bot list churns, so a stale blocklist
  * is worse than none. Worth saying plainly: robots.txt is voluntary either way. It stops
- * the well-behaved and nobody else.
+ * the well-behaved and nobody else — shown on 2026-10-06, above. The Cloudflare rule that
+ * followed is not an AI-crawler rule: it applies to every client alike, and only to URLs
+ * this file already disallows.
  *
  * ── WHAT THIS DOES NOT SOLVE, AND WHERE THAT LANDED ────────────────────────
  *

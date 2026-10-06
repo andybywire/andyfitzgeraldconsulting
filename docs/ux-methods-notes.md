@@ -636,3 +636,41 @@ and take numbers that size a droplet from the droplet.
   artifact deleted the live release on the fourth and fifth, each exiting 0. Prune by release NAME (a
   deploy-time timestamp) and exclude the live one by name. `ux-methods` has no release directories yet;
   this belongs with the atomic-swap recommendation above, if that is adopted.
+
+## Crawlers, robots.txt and filter URLs — *measured here* and *there*, 2026-10-06
+
+After cutover, the index filters here became a crawl trap: origin traffic went from roughly 12k
+requests a day to 430k at its peak on 2026-10-02. A robots.txt disallow stopped Google within two
+days. It did not stop Meta, and a Cloudflare custom rule now does. The full record sits beside the
+rule in `nginx/afc-production.conf`, and the robots.txt side is in `web/src/pages/robots.txt.ts`.
+Three findings carry over.
+
+**`meta-externalagent` does not read robots.txt — on either site.** Here it made 46,685 requests on
+2026-10-05, every one to a disallowed URL, and fetched `/robots.txt` zero times from 09-22 to 10-06.
+Meta's documentation says the crawler honors the file within a day. On `uxmethods.org`, across the
+same window, it made 11–77 requests a day and **also never fetched `/robots.txt`** (measured, from
+`uxmethods.org.access.log` on the droplet). That is harmless there today, because
+`astro/public/robots.txt` disallows nothing (*read*). But it means any `Disallow` added there later
+will bind Google and not Meta.
+
+**A filter UI that links "the current selection, toggled" mints a URL space no crawler finishes.**
+Here, `card-index.ts` rewrites every chip's `href` after each change, so every filtered page a
+JavaScript-rendering crawler fetched handed it dozens of new combinations. Zero-count chips keep
+their `href` too, deliberately, so that they stay focusable, and from an empty state every chip is
+zero-count. So the crawl only went deeper: 99.98% of Meta's requests on 10-05 were filter states
+with no results, while the states that do have results number about 1,650. `ux-methods` has no
+query-string state today (*read*: no `URLSearchParams` or `pushState` anywhere in its source). If it
+gains filtering — methods by phase or category is the obvious candidate — settle two things before
+it ships rather than after: whether combination URLs appear in `href`s at all, and whether a
+zero-result option is a link. And disallow combinations in robots.txt on the first day, since it does
+work for the crawlers that read it.
+
+**Enforce at the edge with a rule shaped like the URLs, not like the clients.** The second crawler
+here presented one browser user agent from 50,008 distinct addresses, one request each, so no IP,
+ASN or user-agent rule could tell it from a person. The rule that worked challenges every request
+for a URL robots.txt disallows, whoever sends it, with a Managed Challenge rather than a Block so
+that a person opening a shared filter link still gets through. Because it matches only URLs that
+feed readers and IndieWeb clients never fetch, it stays clear of the silent failure that
+Cloudflare challenges otherwise cause for them. `uxmethods.org` is proxied through Cloudflare too
+(measured: `server: cloudflare`, `cf-ray` present), so the same tool is available there. Custom
+rules are per zone, though, so nothing configured here covers it.
