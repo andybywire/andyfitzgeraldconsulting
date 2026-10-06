@@ -278,7 +278,7 @@ floor and do not certify either site.
 | JSON-LD | every page: Organization, Person, WebSite, Article | every page; adds BreadcrumbList, page types, CreativeWork, Event, VideoObject, SearchAction |
 | Microformats | none | `h-entry` on 71 pages, `h-card` on home |
 | Color schemes | light only | light and dark, system default, with a toggle |
-| Service worker | precached 2.8 MB, including a 1 MB italic no tested page used | none yet (phase 8) |
+| Service worker | precached 2.8 MB, including a 1 MB italic no tested page used | none registered (phase 8); `/serviceworker.js` is a kill switch that unregisters the old one |
 | robots.txt | never served: its passthrough line in `.eleventy.js` was commented out | served, with facet combinations disallowed |
 | Analytics | none | Plausible, 3 KB |
 | Preview | none | SSR with visual editing at `preview.` |
