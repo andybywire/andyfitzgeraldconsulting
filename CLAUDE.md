@@ -597,6 +597,11 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    first time since 2026-08-14. What each check was, and the rollback, live in `nginx/` beside the
    config they test.
 
+   **How the two generations compare is [docs/eleventy-astro-comparison.md](docs/eleventy-astro-comparison.md)**
+   (measured 2026-10-06): code, page weight, droplet resources and accessibility, and how to rebuild
+   the old site to measure it again. Start there before quoting any before-and-after figure. The
+   11ty release no longer exists on the droplet, so its numbers can only come from a rebuild.
+
    **THE SSR PREVIEW IS DONE (2026-09-29), AND WITH IT PHASE 6.** `preview.` is Astro's SSR build
    behind an nginx proxy, and visual editing works end to end from the deployed Studio: overlays,
    click-through to the document, reload on edit, navigation sync. The plan and what was measured
@@ -629,8 +634,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    boot, but the droplet has not rebooted since. That test is now a **phase 7** item, together with
    the pending kernel and package upgrades that make it worth doing (Andy, 2026-09-29).
 
-   Open follow-ups, none blocking: delete `/var/www/afc` (~630 MB) once the rollback window closes;
-   retitle or undeploy the old `af-consulting` Studio app; delete the `RECAPTCHA_SECRET`,
+   Open follow-ups, none blocking: ~~delete `/var/www/afc` (~630 MB) once the rollback window
+   closes~~ **DONE: already gone when checked on 2026-10-06**, so rolling back to 11ty now means
+   rebuilding `06cd8e5`; retitle or undeploy the old `af-consulting` Studio app; delete the `RECAPTCHA_SECRET`,
    `AFC_MAIL_USERNAME` and `AFC_MAIL_PASSWORD` GitHub secrets, which no workflow references since
    `build-prod.yml` retired (measured). All Andy's calls. `cms.` was repointed at the new Studio on
    2026-09-29 — for `/` only, and **left that way** (Andy): it is a convenience alias nobody links
