@@ -39,6 +39,25 @@ name: Code checks
 # started rather than before. The alternative was for deploy-astro.yml to call
 # this workflow and `needs:` it on pushes, at about a minute per push to `main`.
 # Revisit if a red `main` ever ships something.
+#
+# ── PROVEN 2026-10-08, ON THE RUNNER ───────────────────────────────────────
+#
+# A gate is not known to work until it has failed, so this one was made to.
+# Two runs, about a minute each:
+#
+#   clean tree       All four green, and TypeGen regenerated 42 queries with
+#                    ZERO diff. That was the precondition for trusting the drift
+#                    check at all: studio/sanity.cli.ts records two Prettier
+#                    resolutions formatting identical types 827 and 901 lines
+#                    long. The runner and a Mac agree.
+#
+#   one violation    A field added to a query without running typegen, a type
+#   per gate         error in web, a type error in the Studio, a double-quoted
+#                    string. All four steps failed in ONE run, each naming only
+#                    its own file — which also proves they run independently.
+#
+# The violations were on a scratch branch, `ci-code-checks-proof`. To re-prove a
+# gate after changing it, do the same: break it on purpose and watch it go red.
 
 # Every branch, as validate-nginx.yml does: the useful moment is before a merge.
 #
