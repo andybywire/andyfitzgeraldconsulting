@@ -8,13 +8,23 @@ import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemas'
 import {codeInput} from '@sanity/code-input'
 import {RiSettings4Line} from 'react-icons/ri'
-import { GoGlobe } from "react-icons/go";
+import {GoGlobe} from 'react-icons/go'
 
 /**
- * Carried over verbatim from studio/ so the starting point is the current model, not a redesign.
- * `service` and `collection` are in this list despite having no schema file — they are orphan
- * types with live documents (4 and 2), and hiding them is how that has been managed. Whether they
- * are adopted or retired is a phase 1 decision, not something to change while copying.
+ * Types the generated list must not show. Three are placed by hand further down — Settings as a
+ * singleton, the two SKOS types below a divider — and one is a workaround, explained below.
+ *
+ * ── AN ENTRY FOR A TYPE WITH NO SCHEMA DOES NOTHING ───────────────────────────────────────
+ *
+ * `documentTypeListItems()` builds the list from `schema.getTypeNames()`, filtered to document
+ * types, so a type the schema does not declare can never appear in it, whatever the dataset
+ * holds. Read out of sanity 6.18.0's structure tool (2026-10-08).
+ *
+ * So `service`, `collection` and `media.tag` — orphan types with live documents and no schema,
+ * listed here until phase 7 — were never hidden BY this list. They were invisible without it,
+ * which is the more dangerous property: an orphan type does not show up anywhere in the Studio,
+ * and a GROQ count over `_type` is the only way to find one. All three are gone from
+ * `production-26` (verified 2026-10-08).
  *
  * ── `sanity.videoAsset` IS SANITY'S BUG, NOT OURS (found 2026-09-15) ────────────────────
  *
@@ -27,7 +37,7 @@ import { GoGlobe } from "react-icons/go";
  *
  * `isBundledDocType()` is what keeps the other two asset types out of `documentTypeListItems()`,
  * and the video asset type is simply missing from it. Read out of sanity 6.9.2's own bundle
- * rather than inferred from behaviour.
+ * rather than inferred from behavior, and re-read in 6.18.0 (2026-10-08): still missing.
  *
  * It is registered by `mediaLibrary` below and by nothing else — measured by toggling
  * `enabled` and re-running `sanity schemas extract`: off, the type is absent from schema.json
@@ -40,13 +50,7 @@ import { GoGlobe } from "react-icons/go";
  * which is that a raw asset list is not content.
  */
 const hiddenDocTypes = (listItem: any) =>
-  ![
-    'media.tag',
-    'sanity.videoAsset',
-    'settings',
-    'skosConcept',
-    'skosConceptScheme',
-  ].includes(listItem.getId())
+  !['sanity.videoAsset', 'settings', 'skosConcept', 'skosConceptScheme'].includes(listItem.getId())
 
 /**
  * ── WHERE PRESENTATION POINTS: DECIDED BY WHERE THE STUDIO IS RUNNING ─────────────────────
@@ -95,12 +99,14 @@ export default defineConfig({
         return S.list()
           .title('Content')
           .items([
-            ...S.documentTypeListItems().filter(hiddenDocTypes).map((item) => item.showCount()),
+            ...S.documentTypeListItems()
+              .filter(hiddenDocTypes)
+              .map((item) => item.showCount()),
             S.divider(),
             S.listItem()
-            .title('Settings')
-            .icon(RiSettings4Line)
-            .child(S.document().schemaType('settings').documentId('settings')),
+              .title('Settings')
+              .icon(RiSettings4Line)
+              .child(S.document().schemaType('settings').documentId('settings')),
             S.divider(),
             S.documentTypeListItem('skosConceptScheme').title('Taxonomy Schemes').showCount(),
             S.documentTypeListItem('skosConcept').title('Concepts').showCount(),
