@@ -486,9 +486,10 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 
    **Consulting is a `page` for now and will likely become a singleton** — an index drawing together
    positions, methods and case studies per service. `page` buys room to work out the positioning
-   first. Note the 4 orphan `service` documents (Structured Content Design, Information Architecture,
-   Content Strategy, Knowledge Graph Engineering) are the obvious content for that, which is why
-   phase 7's "adopt or delete" call is really Consulting's call.
+   first. The 4 orphan `service` documents (Structured Content Design, Information Architecture,
+   Content Strategy, Knowledge Graph Engineering) were the obvious content for that. **Phase 7
+   deleted them from `production-26`; the old `production` dataset still holds all four**
+   (checked 2026-10-08), so that is where to read them when Consulting's positioning is worked out.
 
    **`note` is ONE type, and the vocabulary decided that** — Note is a *branch* with Clipping and Book
    Note beneath it, so `genre` discriminates the three. Built 2026-08-26 with two optional objects
@@ -636,12 +637,16 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 
    Open follow-ups, none blocking: ~~delete `/var/www/afc` (~630 MB) once the rollback window
    closes~~ **DONE: already gone when checked on 2026-10-06**, so rolling back to 11ty now means
-   rebuilding `06cd8e5`; retitle or undeploy the old `af-consulting` Studio app; delete the `RECAPTCHA_SECRET`,
-   `AFC_MAIL_USERNAME` and `AFC_MAIL_PASSWORD` GitHub secrets, which no workflow references since
-   `build-prod.yml` retired (measured). All Andy's calls. `cms.` was repointed at the new Studio on
-   2026-09-29 — for `/` only, and **left that way** (Andy): it is a convenience alias nobody links
-   to, so deeper paths returning 522 is accepted rather than fixed. Its redirect is a 302, not a
-   301, so the next time the Studio moves, browsers follow at once instead of a cached answer.
+   rebuilding `06cd8e5`; ~~retitle or undeploy the old `af-consulting` Studio app~~ **DONE: the
+   project's only Studio app is now `g1jo20nnopb0mtoyt45zqakx`**; ~~delete the `RECAPTCHA_SECRET`,
+   `AFC_MAIL_USERNAME` and `AFC_MAIL_PASSWORD` GitHub secrets~~ **DONE: none of the three is listed,
+   and every secret that remains is referenced by a workflow.** Both checked 2026-10-08, which
+   leaves **nothing from phase 6 outstanding** but the reboot test, moved to phase 7.
+
+   `cms.` was repointed at the new Studio on 2026-09-29 — for `/` only, and **left that way**
+   (Andy): it is a convenience alias nobody links to, so deeper paths returning 522 is accepted
+   rather than fixed. Its redirect is a 302, not a 301, so the next time the Studio moves, browsers
+   follow at once instead of a cached answer.
 
    **The rename is DONE (2026-09-28), and the archiving changed on the way.** The old pair left the
    tree rather than moving within it (Andy's call: git history keeps them, last at `06cd8e5`), and
@@ -669,15 +674,33 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 7. **Cleanup.** Deliberately after the site is live, so none of it can destabilize a launch, and
    before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
    still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:
-   - **Remove the deprecated `insightType` field** from `article` and `caseStudy`, and unset the
-     data. `genre` replaced it in phase 1 and both fields reference the same concepts.
-   - **Retire the two deprecated schemes** — `Insight Type [DEPRECATED]` and `Topic [DEPRECATED]` —
-     and any concepts left unreferenced with them.
-   - **Resolve the orphan types**, `service` (4 documents) and `collection` (2). They have live
-     documents and no schema file, which is why `hiddenDocTypes` exists. **Nothing renders them:**
-     `services.njk` iterates singletons, and no query fetches either type. So they are adopted into
-     the schema or deleted — the choice is editorial, not structural.
-   - **Shrink `hiddenDocTypes`** in `sanity.config.ts` to whatever survives the above.
+   - ~~**Remove the deprecated `insightType` field** from `article` and `caseStudy`, and unset the
+     data~~ **DONE** — the field in `854962c` and `5385867`, the data on 2026-10-08. `genre`
+     replaced it in phase 1 and both fields referenced the same concepts.
+   - ~~**Retire the two deprecated schemes**~~ **DONE.** Only Genre (12 concepts) and Topic (55)
+     remain, and no concept sits outside a scheme (verified 2026-10-08).
+   - ~~**Resolve the orphan types**, `service` (4 documents) and `collection` (2)~~ **DONE: deleted,
+     not adopted** — though the old `production` dataset still has both; see Consulting under
+     phase 4. **A third orphan turned up while checking:** `media.tag`, one "banner" tag left by the
+     old `sanity-plugin-media`, weakly referenced by 8 old 5088×800 banner assets that no document
+     used. Tag and assets were deleted on 2026-10-08.
+   - ~~**Shrink `hiddenDocTypes`**~~ **DONE** — down to `sanity.videoAsset`, a workaround for a
+     Sanity bug, and the three types the structure places by hand. **The orphan entries had never
+     done anything:** the structure tool lists only types the schema declares, so an orphan is
+     invisible without the list rather than hidden by it. `sanity.config.ts` records the detail.
+
+   **What these four taught: removing a field from the schema leaves its data in place** — the h5
+   lesson under Known debt again, for fields rather than block styles. When the schema changes had
+   shipped, `insightType` was still set on 10 documents and `heroImage.adjBright`, removed in the
+   same pass, on 12; `sanity.types.ts` still declared all seven removed fields, because typegen
+   had not been re-run. So **a field removal is three steps**: the schema, an `unset` on published
+   documents AND drafts, and `pnpm typegen`. The pass's other removals — event `title` and `type`,
+   `podcastId` — had no data to unset, which was checked rather than assumed.
+
+   *How the unset ran, for next time:* the Sanity MCP patch tool writes drafts only, so on a
+   published document it is patch then publish, and each publish fires the deploy webhook. 16
+   publishes produced 15 superseded builds and one deploy — the concurrency brake in
+   `deploy-astro.yml` doing its job.
    - **Upgrade the droplet and reboot it, deliberately** (added 2026-09-29). Two things are waiting
      on it: a kernel update (running 6.8.0-71, installed 6.8.0-142) plus 69 package upgrades, and
      the one part of the SSR preview never exercised — **coming back at boot with nobody touching
@@ -1070,19 +1093,14 @@ comments, the ungoverned grays, the shipped contrast failures. None of it surviv
 starts from DESIGN.md, and keeping it would only invite someone to "migrate" the thing we are
 deliberately not migrating. **If you want to know how the old CSS worked, read the git history.**
 
-What remains is infrastructure, content-model constraints, and one measured input.
+What remains is content-model constraints and one measured input.
 
-**Carries into the new CI (phase 6):**
-
-- **The deploy writes `.env` as `chmod 644`** — world-readable on the droplet, containing the Google
-  OAuth client secret and refresh token. `640` owned by the web group is tighter. **This is a live
-  security issue on the running site, not just a migration note**, and it should be fixed in the new
-  workflow rather than reproduced.
-- **The droplet keeps 3 releases, not 5.** Commit `5e9fac8` deliberately changed `tail -n +6` to
-  `+4`; only the comment still says five. Preserve the retention behavior in the new workflow and
-  write the comment to match.
-- **`mailhandler.php` needs the Composer step.** PHP deps are installed in CI and shipped with the
-  tar. Easy to lose in a JavaScript migration — see phase 6.
+**The three CI carry-forwards from the 11ty deploy are resolved**, verified 2026-10-08 in
+`deploy-astro.yml` and on the droplet. The `.env` is created `640 afc:www-data` by `install -m 640`,
+so it is never world-readable even briefly; it was `644` under `build-prod.yml`, which made it a
+live security issue rather than a migration note. Three releases are kept, pruned by name. And the
+Composer step ships the PHP dependencies with the release. Each is commented in the workflow where
+it lives.
 
 **Content-model constraints the new front end inherits:**
 
