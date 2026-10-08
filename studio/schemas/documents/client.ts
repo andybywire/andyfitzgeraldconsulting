@@ -19,15 +19,15 @@ export default defineType({
     defineField({
       name: 'relationship',
       type: 'string',
-      validation: rule => rule.required(),
+      validation: (rule) => rule.required(),
       options: {
         list: [
           {title: 'Direct Client', value: 'Direct Client'},
           {title: 'Agency Partner', value: 'Agency Partner'},
           {title: 'Former Employer', value: 'Coworker'},
           {title: 'Teaching Institution', value: 'Student'},
-        ]
-      }
+        ],
+      },
     }),
     defineField({
       name: 'role',
@@ -38,8 +38,8 @@ export default defineType({
     defineField({
       name: 'engagementDates',
       title: 'Engagement Dates',
-      type:'array',
-      validation: rule => rule.required(),
+      type: 'array',
+      validation: (rule) => rule.required(),
       of: [
         defineField({
           name: 'engagement',
@@ -49,26 +49,26 @@ export default defineType({
             defineField({
               name: 'startDate',
               type: 'date',
-              validation: rule => rule.required(),
+              validation: (rule) => rule.required(),
             }),
             defineField({
               name: 'endDate',
               type: 'date',
-              validation: rule => rule.required(),
+              validation: (rule) => rule.required(),
             }),
           ],
           preview: {
             select: {
-              date: 'startDate'
+              date: 'startDate',
             },
             prepare(selection) {
               return {
-                title: `Beginning ${selection.date}`
+                title: `Beginning ${selection.date}`,
               }
-            }
-          }
+            },
+          },
         }),
-      ]
+      ],
     }),
     defineField({
       name: 'logo',
