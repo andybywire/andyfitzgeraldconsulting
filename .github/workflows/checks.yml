@@ -1,28 +1,38 @@
-name: Code checks
+name: Checks
 
-# ── WHAT THIS CHECKS, AND WHAT IT DOES NOT ─────────────────────────────────
+# ── WHAT THIS CHECKS, AND WHERE ────────────────────────────────────────────
 #
-# The CODE gates: four checks that read the repository and never need a build.
 # Phase 8 splits the quality gates in two (Andy, 2026-10-08):
 #
 #   code gates   TypeGen drift, `astro check`, the Studio's `tsc`, Prettier.
 #                They test the repo, and no content edit can change a result.
-#   site gates   links, HTML validation, accessibility, budgets. They test the
-#                BUILT site, and content is exactly what breaks them — an
-#                author's dead link, a missing alt.
+#   site gates   The link check today; HTML validation, accessibility and
+#                budgets to come. They test the BUILT site, and content is
+#                exactly what breaks them — an author's dead link, a missing alt.
 #
-# The site gates do not belong here. They need `dist/`, so they live beside the
-# build, and they raise a question these do not: what a webhook-triggered build
-# does when one fails. That is decided when the link check lands.
+# On a branch this runs both, BEFORE a merge: the `code` job, and the `site` job,
+# which builds the site in order to check it. On `main` it runs `code` only. The
+# production build checks the site there itself, in deploy-astro.yml, against
+# the build it actually ships — beside the deploy, never holding it. The account
+# of that decision is in web/scripts/check-links.mjs → WHERE IT RUNS.
+#
+# Until 2026-10-08 this paragraph said the site gates did not belong here at
+# all. They do on a branch, because nothing else builds one: without a build
+# here, a template change that breaks links would first be checked after it had
+# shipped.
 #
 # ── NO repository_dispatch ─────────────────────────────────────────────────
 #
-# A Sanity publish changes content and nothing else, so it cannot change any
-# result below. Listening for it would spend a minute per publish proving that
+# A Sanity publish changes content and nothing else, so it cannot change a code
+# gate's result. Listening for it would spend a minute per publish proving that
 # again — and would put a repo-hygiene failure in the path of a content publish,
 # where the author cannot fix it from the Studio.
 #
-# ── THE DEPLOYS DO NOT WAIT FOR THIS ──────────────────────────────────────
+# A publish CAN change a site gate's result. That is covered without this
+# workflow: deploy-astro.yml rebuilds on every publish and runs the site gates
+# on the build it ships.
+#
+# ── THE DEPLOYS DO NOT WAIT FOR THE CODE GATES ────────────────────────────
 #
 # Decided 2026-10-08 (Andy). A failure marks the commit red: on a branch, before
 # the merge, which is where it is useful; on `main` if something gets through.
@@ -40,10 +50,10 @@ name: Code checks
 # this workflow and `needs:` it on pushes, at about a minute per push to `main`.
 # Revisit if a red `main` ever ships something.
 #
-# ── PROVEN 2026-10-08, ON THE RUNNER ───────────────────────────────────────
+# ── THE CODE GATES, PROVEN 2026-10-08, ON THE RUNNER ───────────────────────
 #
-# A gate is not known to work until it has failed, so this one was made to.
-# Two runs, about a minute each:
+# A gate is not known to work until it has failed, so these were made to. Two
+# runs, about a minute each:
 #
 #   clean tree       All four green, and TypeGen regenerated 42 queries with
 #                    ZERO diff. That was the precondition for trusting the drift
@@ -90,7 +100,7 @@ env:
   PUBLIC_SANITY_DATASET: production-26
 
 jobs:
-  checks:
+  code:
     name: Types, drift and formatting
     runs-on: ubuntu-latest
 
@@ -167,3 +177,52 @@ jobs:
       - name: Prettier
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm exec prettier --check .
+
+  # ── THE SITE GATES, ON BRANCHES ONLY ──────────────────────────────────────
+  #
+  # A full production build, then the site gates against it. Skipped on `main`,
+  # where deploy-astro.yml builds the same site and runs the same gates — a second
+  # build here would check the same thing, later.
+  #
+  # Side by side with `code`, not after it, so it costs no wall-clock time: the
+  # build is the slow part, and the two share nothing but the checkout.
+  #
+  # It builds against PUBLISHED content, as production does, so a branch can go
+  # red for a link published from the Studio rather than for anything on the
+  # branch. The report names the pages carrying each link, and one found on every
+  # page is almost certainly in a template.
+  site:
+    name: Build and check the site
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 11.22.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The production build exactly — the package script sets
+      # PUBLIC_SITE_MODE=production — with the heap deploy-astro.yml gives it.
+      - name: Build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=2048"
+        run: pnpm --filter web build
+
+      - name: Link check
+        run: pnpm links
