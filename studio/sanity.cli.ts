@@ -28,17 +28,18 @@ import {defineCliConfig} from 'sanity/cli'
  * workspace inserted. So stega's edit links can name this host. The deploy did NOT add it to
  * CORS; the Studio runs on Sanity's own origin, so that is expected rather than missing.
  *
- * ── `autoUpdates: false`, PINNED FOR LAUNCH (Andy, 2026-09-28) ───────────────────────────
+ * ── `autoUpdates: true` SINCE 2026-10-01, AFTER A LAUNCH PIN ─────────────────────────────
  *
- * The old app auto-updates, and this started out matching it. `sanity build` then showed what
- * that would mean here: the deployed Studio would run `sanity` 6.16.0 while this workspace — and
- * everything written against it — is on 6.9.2. Seven minors, arriving on the same day as the
- * cutover, and the first run of 6.16 against this schema and its plugins would be in production.
- * Some of this code is version-specific: the `sanity.videoAsset` workaround in sanity.config.ts
- * was read out of 6.9.2's own bundle.
+ * It shipped `false` for the cutover (Andy, 2026-09-28). `sanity build` had shown that with
+ * auto-updates on, the deployed Studio would run `sanity` 6.16.0 against a workspace written on
+ * 6.9.2 — seven minors arriving on launch day, first exercised in production. The pin was always
+ * meant to come off as its own piece of work, and did in `dc13a70`.
  *
- * So the Studio ships exactly the version in the lockfile. Upgrading is its own piece of work:
- * bump `sanity`, test locally, redeploy — and turn auto-updates on then, if wanted.
+ * What it means now: the deployed Studio loads the latest `sanity` in this major from Sanity's
+ * CDN, so it can run AHEAD of the lockfile, which records only what was last tested locally.
+ * Version-specific code is where that bites. The `sanity.videoAsset` workaround in
+ * sanity.config.ts was read out of one release's bundle — 6.9.2, re-read in 6.18.0 — and nothing
+ * announces when a later release makes it dead, so re-read it when upgrading.
  *
  * Presentation and stega's click-to-edit links point at this host — `PUBLIC_SANITY_STUDIO_URL`
  * in the preview build.

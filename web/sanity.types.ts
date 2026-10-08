@@ -538,8 +538,6 @@ export type Event = {
     } & Recording
   >
   link?: string
-  title?: string
-  type?: 'talk' | 'keynote' | 'workshop' | 'panel' | 'podcast'
 }
 
 export type ReviewReference = {
@@ -557,7 +555,6 @@ export type CaseStudy = {
   _rev: string
   title?: string
   genre?: SkosConceptReference
-  insightType?: SkosConceptReference
   slug?: Slug
   pubDate?: string
   heroImage?: {
@@ -567,7 +564,6 @@ export type CaseStudy = {
     crop?: SanityImageCrop
     caption?: string
     altText?: string
-    adjBright?: boolean
     _type: 'image'
   }
   topic?: Array<
@@ -805,17 +801,14 @@ export type Article = {
     crop?: SanityImageCrop
     caption?: string
     altText?: string
-    adjBright?: boolean
     _type: 'image'
   }
-  podcastId?: string
   topic?: Array<
     {
       _key: string
     } & SkosConceptReference
   >
   genre?: SkosConceptReference
-  insightType?: SkosConceptReference
   shortDescription?: string
   description?: string
   lede?: Array<{

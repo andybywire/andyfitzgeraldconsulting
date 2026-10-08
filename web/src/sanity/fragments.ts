@@ -51,9 +51,8 @@ export const DATES = /* groq */ `
  * ── FIVE FIELDS, BECAUSE FIVE IS WHAT IS UNIVERSAL ───────────────────────────
  *
  * Every image field in this schema carries these. The presentational flags do NOT
- * generalize — `adjBright` is on both heroImages, `outline` on `figure` and
- * `afterImage`, `floatLeft` on the article's inline body image — so they belong at
- * the call site rather than here. Adding one would return null on most consumers
+ * generalize — `outline` is on `figure` and `afterImage`, `thumbnail` on `figure`
+ * alone — so they belong at the call site rather than here. Adding one would return null on most consumers
  * and read as a field that stopped working.
  *
  * ── DO NOT REACH FOR THIS ON A PORTABLE TEXT BODY ────────────────────────────
