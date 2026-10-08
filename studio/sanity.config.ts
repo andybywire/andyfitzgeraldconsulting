@@ -8,6 +8,7 @@ import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemas'
 import {codeInput} from '@sanity/code-input'
 import {RiSettings4Line} from 'react-icons/ri'
+import {StudioIcon} from './icon'
 
 /**
  * Carried over verbatim from studio/ so the starting point is the current model, not a redesign.
@@ -75,6 +76,7 @@ const previewUrlFor = (studioOrigin: string) =>
 export default defineConfig({
   name: 'default',
   title: 'AF Consulting',
+  icon: StudioIcon,
 
   projectId: '7v0qvet6',
   dataset: 'production-26',
