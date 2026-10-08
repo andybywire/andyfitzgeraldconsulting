@@ -87,6 +87,25 @@
  * link published from the Studio rather than for anything on the branch. The report names the
  * pages carrying each link, and a link found on every page is almost certainly a template's.
  *
+ * ── PROVEN 2026-10-08 ───────────────────────────────────────────────────────
+ *
+ * A gate is not known to work until it has failed, so this one was made to:
+ *
+ *   by hand          A fake site holding one of each fault, plus the traps above — a `>` in a
+ *                    quoted title, links inside a `<script>` and a comment, a protocol-relative
+ *                    own-domain link, a percent-escaped fragment. Every fault was reported, and
+ *                    none of the traps.
+ *   on the runner    checks.yml on the `link-check` branch: green, at 84 pages and 2,849 links,
+ *                    the same as on a Mac. Then a scratch branch, `link-check-proof`, with three
+ *                    faults in the footer: a missing slash, an own-domain link and a missing
+ *                    fragment. The site job went red with all three, each "on every page (84) —
+ *                    likely a template", while the code job stayed green.
+ *   unproven when    deploy-astro.yml's `links` job, which runs only from `main` — its first run
+ *   this was written is the merge. And red-after-deploy from a Sanity publish, which only a real
+ *                    broken link will exercise, or a deliberate one published and taken back.
+ *
+ * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
+ *
  * ── EXIT CODES ──────────────────────────────────────────────────────────────
  *
  *   0  every on-site link resolves
