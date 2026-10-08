@@ -38,8 +38,9 @@ import {PUBLIC_SITE_MODE} from 'astro:env/client'
  * empty state every chip is zero-count, so a crawl only ever goes deeper. Measured on
  * 2026-10-05: 99.98% of Meta's combination requests and 99.1% of a browser fleet's were
  * filter states with no results, while the states that DO have results number about 1,650
- * across both indexes. Bounding the crawl there is an accessibility decision about those
- * chips, and it is open. Nothing below depends on it.
+ * across both indexes. SINCE 2026-10-08 A ZERO-HIT CHIP LINKS TO THE VIEW IT IS ON, which
+ * bounds the crawl at those states — see card-index.ts. Nothing below depends on it: these
+ * lines and the edge rule still stop the crawl from the URLs already discovered.
  *
  * `/*,` matches a comma anywhere — one facet holding several values. `/*&` matches an
  * ampersand — more than one facet. No page URL on the site contains either. SINGLE-facet

@@ -665,6 +665,12 @@ it ships rather than after: whether combination URLs appear in `href`s at all, a
 zero-result option is a link. And disallow combinations in robots.txt on the first day, since it does
 work for the crawlers that read it.
 
+*What was chosen here, 2026-10-08:* a zero-result chip keeps its `href`, but it points at the
+current view rather than at the empty state the chip would add. It is still a focusable anchor with
+the same accessible name, and a crawler finds nothing new behind it. Also check the click handler's
+order there: a modified click must not get past a disabled chip, or cmd-Enter opens the empty state.
+That happened here.
+
 **Enforce at the edge with a rule shaped like the URLs, not like the clients.** The second crawler
 here presented one browser user agent from 50,008 distinct addresses, one request each, so no IP,
 ASN or user-agent rule could tell it from a person. The rule that worked challenges every request

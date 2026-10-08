@@ -461,15 +461,34 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
          one shows the current result count, since adding what is already there changes
          nothing — the honest number either way. */
       const count = countFor(selected ? selector : matcher(next))
+      const zeroHit = count === 0 && !selected
 
-      chip.setAttribute('href', urlFor(next))
+      /*
+       * A ZERO-HIT CHIP LINKS TO THE VIEW IT IS ON, not to the empty state it would add.
+       *
+       * The empty state is unreachable from the UI by design — docs/urls-and-filtering.md
+       * leans on that twice — and this href was the one way in. Nothing a person does
+       * follows it (see the listener below), so its only readers were crawlers, and from an
+       * empty state every chip is zero-hit, so every href led one level deeper. That is how
+       * the post-cutover crawl became unbounded: on 2026-10-05, 99.98% of Meta's 46,685
+       * filter requests were for states with no results, against about 1,650 states that
+       * have any. A link back to the current view hands a crawler nothing new, so the
+       * reachable space stops at the states with results.
+       *
+       * The element is otherwise untouched — still an anchor, still focusable, still
+       * announced as unavailable (below). Rejected: dropping the href, which takes the link
+       * role with it and needs `tabindex` plus `role="link"` to rebuild what HTML gave for
+       * free; and `rel="nofollow"`, a hint the crawler that caused this had already shown it
+       * ignores. Andy's call, 2026-10-08.
+       */
+      chip.setAttribute('href', urlFor(zeroHit ? sel : next))
 
       /* The count is still written even when it will not be shown, so the chip has
          something to reveal the moment the intersection opens up again. `is-zero` drops it
          and widens the chip to fill the space it left — see the rule. */
       const countEl = chip.querySelector<HTMLElement>('.chip-count')
       if (countEl) countEl.textContent = String(count)
-      chip.classList.toggle('is-zero', count === 0 && !selected)
+      chip.classList.toggle('is-zero', zeroHit)
       const label = chip.querySelector('.chip-label')?.textContent ?? ''
 
       /*
@@ -481,7 +500,7 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
        * `aria-current`, never `aria-pressed`, which is button-only — and it draws the
        * selected pill too, since DESIGN.md has the attribute carry the fact.
        * `aria-disabled` rather than dropping `href`, so a zero-hit chip stays focusable
-       * and discoverable.
+       * and discoverable — with the href pointing at the current view, per above.
        */
       if (selected) {
         chip.setAttribute('aria-current', 'true')
@@ -562,24 +581,33 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    *
    * MODIFIED CLICKS ARE LEFT ALONE. Middle-click, cmd-click and shift-click all navigate
    * to the filtered URL for real, which is the whole reason these are anchors: a filtered
-   * view is meant to be a shareable artifact.
+   * view is meant to be a shareable artifact. The one exception is a disabled chip, which
+   * refuses them too — see below.
    */
   nav.addEventListener('click', (event) => {
     if (event.defaultPrevented) return
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-      return
-    }
 
     const target = (event.target as Element | null)?.closest<HTMLElement>(
       '.chip[data-facet], .facet-reset',
     )
     if (!target) return
 
-    /* `pointer-events: none` already stops the mouse reaching a disabled chip, but it
-       stays in the tab order by design, and Enter on a focused anchor still fires a
-       click. */
+    /*
+     * A DISABLED CHIP IS REFUSED BEFORE A MODIFIED CLICK IS LET THROUGH, whatever the
+     * modifier. `pointer-events: none` already stops the mouse reaching one, but it stays in
+     * the tab order by design, and Enter on a focused anchor still fires a click — carrying
+     * its modifiers. Until 2026-10-08 this check sat BELOW the modified-click return, so
+     * cmd-Enter on a zero-hit chip skipped it and opened the empty state in a new tab
+     * (confirmed by Andy). Its href is now the current view, so that would only open a
+     * duplicate; the order matters anyway, so that "unavailable" means the same thing
+     * however the chip is activated.
+     */
     if (target.getAttribute('aria-disabled') === 'true') {
       event.preventDefault()
+      return
+    }
+
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
       return
     }
 
