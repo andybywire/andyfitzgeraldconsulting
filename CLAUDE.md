@@ -789,6 +789,14 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    IndieWeb-shaped does not work, Cloudflare is the first place to look, not the last. Keeping the
    proxy thin is recorded as a cutover checklist in `nginx/afc-production.conf`.
 
+   **One custom rule does challenge requests, and it is scoped so that it cannot be this failure**
+   (2026-10-06). It is a Managed Challenge on filter combinations — `/insights/` and
+   `/presentations/` with a comma or ampersand in the facet query — which robots.txt disallows and
+   Meta's crawler fetched anyway, 46,685 times in one day. It matches URLs, not clients, and no
+   IndieWeb client fetches those URLs, so it is a suspect only when the URL that fails is one of
+   them. The rule and its reasoning are recorded beside the checklist in
+   `nginx/afc-production.conf`.
+
    **Not phase 8: the author `h-card`.** It lands with the **home page** (phase 4 item 3) as the
    site's *representative* h-card, because that is where a `rel=author` lookup resolves. The detail
    pages already emit `<link rel="author" href="/">` and it is **inert until that card exists** — the
