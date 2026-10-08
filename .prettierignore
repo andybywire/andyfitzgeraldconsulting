@@ -9,6 +9,15 @@ web/.astro/
 studio/dist/
 studio/schema.json
 
+# Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
+# .gitignore, never a nested one — so a local `prettier --check .` failed on it while CI, which
+# never has the directory, would not.
+studio/.sanity/
+
+# Composer writes this file too, on `composer require`, by its own rules. Two writers of one file
+# is the churn studio/sanity.cli.ts records for TypeGen, and Composer is the one that owns it.
+web/server/composer.json
+
 # Lockfiles
 pnpm-lock.yaml
 package-lock.json
