@@ -128,7 +128,12 @@ pnpm --filter web dev        # Astro dev server
 pnpm --filter studio dev     # Sanity Studio on the production-26 dataset, :3030
 pnpm typegen                 # regenerate web/sanity.types.ts — after any schema or query change
 pnpm parity                  # render-every-document check — after `pnpm --filter web build`
+pnpm format                  # Prettier, repo-wide — fixes what the Prettier check reports
 ```
+
+The code checks in `.github/workflows/checks.yml` run on every branch push, and each one runs
+locally as it does in CI: `pnpm typegen` then `git diff --exit-code web/sanity.types.ts`,
+`pnpm --filter web check`, `pnpm --filter studio typecheck`, `pnpm exec prettier --check .`.
 
 Deploy is `.github/workflows/deploy-astro.yml` — builds the static site and the PHP dependencies,
 tars a two-directory release (`public/` + `server/`), scps it to the droplet and swaps an atomic
@@ -796,8 +801,25 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    carry-forwards: nginx must serve the feeds as `application/atom+xml`, and the YouTube
    embed loads a player on view where the page uses click-to-load.
 
-   Also the natural home for a **TypeGen drift check** — regenerate and fail on a diff — since
-   watch-mode generation is off and `pnpm typegen` is run by hand.
+   **THE CODE GATES ARE BUILT (2026-10-08)**, and with them the **TypeGen drift check** this
+   entry used to anticipate. `.github/workflows/checks.yml` runs four on a push to any branch:
+   TypeGen drift, `astro check`, the Studio's `tsc` and Prettier. **Phase 8 splits the gates in
+   two, and the split decides where each one runs** (Andy, 2026-10-08):
+
+   - **Code gates test the repository**, so no content publish can change a result. They never
+     run on `repository_dispatch`, and **neither deploy waits for them**: a failure marks the
+     commit red, on the branch before a merge. `astro check` alone also blocks inside both
+     deploys, as it did before this phase — it is the one that can catch a defect that ships.
+   - **Site gates test the BUILT site** — links, HTML validation, accessibility, budgets — and
+     content is exactly what breaks them: an author's dead link, a missing alt. They need `dist/`,
+     so they live beside the build. **What a webhook-triggered build does when one fails is still
+     open**, and is decided when the link check lands.
+
+   The workflow's header records the reasoning, the gap it accepts (a merge commit is a tree no
+   branch run has seen), and how each gate was proven: a clean-tree run with zero TypeGen diff
+   on the runner, then one deliberate violation per gate, all four red in a single run. **The
+   drift check keys on `git diff --exit-code`, not on typegen**, whose exit status is 0 even when
+   it reports errors. Prove any new gate the same way — it is not known to work until it fails.
 
    **And for enforcing trailing slashes on internal links** (deferred here by Andy, 2026-10-02).
    Every link to a page should end in `/`: Astro builds `consulting/index.html`, so `/consulting`
@@ -966,6 +988,9 @@ forty page files — which is what people adopt Content Layer to escape. Prevent
   constructs a client.
 - **Queries in their own module**, named and exported, built with `defineQuery` from `groq` so
   TypeGen can see them. Shared **projection fragments** composed into queries, not repeated.
+  **Enforced since 2026-10-08:** TypeGen's `path` covers `web/src/sanity/` only, so a query
+  defined anywhere else gets no type at all. Widen the path rather than let one live elsewhere —
+  see `studio/sanity.cli.ts`.
 - **TypeGen runs against those query files**, so results are typed from the real projections.
 
 **Reference: [`andybywire/ux-methods`](https://github.com/andybywire/ux-methods), `astro/src/sanity/`**
@@ -1055,7 +1080,9 @@ push to `main` IS a production deploy**, which is one more reason commit and pus
 
 **nginx is deployed by hand**, with `nginx/deploy.sh` from a laptop, never by CI — its header says
 why. `validate-nginx.yml` runs `nginx -t` on a push to any branch touching `nginx/`, so a config
-that cannot load is caught on the branch, before anything is installed.
+that cannot load is caught on the branch, before anything is installed. **`checks.yml` follows the
+same pattern for code** (2026-10-08): every branch push, deploys nothing, gates nothing — a red
+run says not to merge. See phase 8.
 
 **Andy does the visual verification himself.** Get changes green and integration-verified, then hand
 him the specific eyeball steps rather than asking him to check things you could have checked.
