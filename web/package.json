@@ -15,6 +15,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "parity": "node scripts/parity.mjs",
+    "links": "node scripts/check-links.mjs",
     "astro": "astro"
   },
   "author": "Andy Fitzgerald",
