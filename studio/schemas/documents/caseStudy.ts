@@ -56,32 +56,8 @@ export default defineType({
           type: 'string',
           title: 'Alt Text',
         },
-        {
-          name: 'adjBright',
-          title: 'Adjust Brightness',
-          description:
-            'Lower the brightness on this image by .05% so that it displays more distinctly on a white background.',
-          type: 'boolean',
-          /* `initialValue`, not `default` — Sanity has no `default` property, so the
-             value this carried was silently ignored until defineField() flagged it
-             (2026-08-26). Harmless in practice, since undefined and false are both
-             falsy to every consumer, but it read as live configuration. */
-          initialValue: false,
-        },
       ],
     }),
-    // {
-    //   name: 'genre',
-    //   title: 'Genre',
-    //   type: 'reference',
-    //   to: [{type: 'skosConcept'}],
-    //   initialValue: {_ref: '89d6c3022255ade8c6f5867ca3b2354a'},
-    //   options: {
-    //     filter: schemeFilter({schemeId: 'sjEhF9', expanded: true}),
-    //     disableNew: true,
-    //   },
-    //   components: {field: ReferenceHierarchyInput},
-    // },
     defineField({
       name: 'topic',
       title: 'Topics',
