@@ -187,13 +187,15 @@ same discipline `fragments.ts` prescribes for GROQ.
 
 ## Archives — done, and outside the repo
 
-Captured 2026-09-17, before cutover destroys the 2024 site. In `~/Archives/afc/`:
+Captured 2026-09-17, before cutover destroys the 2024 site, plus the first site mined from git on
+2026-10-04. In `~/Archives/afc/`:
 
 | archive | pages | files | size | broken images |
 |---|---|---|---|---|
 | `2024-live-2026-09-17` | 191 | 1,038 | 155 MB | 0 |
 | `2022-11ty-2026-09-17` | 68 | 476 | 31 MB | 0 |
 | `2020-jekyll-2026-09-17` | 58 | 1,781 | 263 MB | 0 |
+| `2017-jekyll-2026-10-04` | 43 | 235 | 41 MB | 1, from 2017 |
 
 Each verified by resolving every `src`/`srcset` reference to a file on disk, then serving it and
 fetching a page, an image and a stylesheet over HTTP. **2022 is fully self-contained** — its 424
@@ -205,6 +207,46 @@ origin-neutralized source directory instead. Its 569 unresolved references are p
 original build and are all missing `card368w` responsive widths — zero `<img src>` fallbacks are
 missing, so pages render. Publishing these as no-index subdomains is a later phase; 16 of the 2024
 archive's links are Cloudflare `/cdn-cgi/l/email-protection` rewrites and are dead outside Cloudflare.
+
+**2017 came out of git, not off a server, and it is the bytes that shipped.** Its source is
+[`andybywire/andyfitzgeraldconsulting-V1`](https://github.com/andybywire/andyfitzgeraldconsulting-V1),
+whose `afc16` branch is the original design's whole life: 2017-08-06 to 2019-12-29, then an
+ancestor of `master` as `master` became the 2020 redesign. That repo commits `_site/` at every
+commit, in step with the source, so nothing was rebuilt. **Nothing earlier exists on record:** the
+first commit is 2017-08-06, the footer reads © 2017, and the Wayback Machine's first capture of
+either host is 2017-09-02. The served home page differs from that capture by one line, the
+canonical. The control was the 09-29 typo fix, which differs by exactly its own line.
+
+It is **`87dd9281`, the end of launch day**, rather than the initial commit `e6b557e2` from the
+same morning, which still had a broken speaking-calendar script path and contact form action. One
+modification was made: 43 canonicals were rewritten from `//<path>` to `/<path>`. An empty `url:`
+plus `baseurl: "/"` had made them protocol-relative to a bogus host. The 43 `//feed.xml` alternates
+were left alone, since the feed never existed. The one broken image is also original: `/404/` links
+`img/raccoon.gif` relatively. That was fixed 2017-10-13, and the link resolves anyway when the page
+is served as the error document. To reproduce it from a clone of V1:
+
+```bash
+git archive 87dd9281 _site | tar -x --strip-components=1 -C ~/Archives/afc/2017-jekyll-2026-10-04
+perl -pi -e 's{(<link rel="canonical" href=")//}{$1/}g'   # over every *.html and *.php in it
+```
+
+Its third parties are Google Fonts, `code.jquery.com` and three SlideShare embeds, all serving on
+2026-10-04. The speaking page's Google Calendar call carries an API key and was not exercised, so
+its events list may render empty. **Disqus is inert and always was:** `js/disqus.js` opens with a
+literal `<script>` tag, a syntax error, so comments never loaded and nothing calls Disqus now.
+
+**Two carry-forwards for publishing, both shared by the Jekyll archives:**
+
+- **The 2020 `robots.txt` allows everything.** It is the single line `User-agent: * Disallow: /`,
+  which a parser reads as a user-agent value with no rule. Measured with Python's
+  `urllib.robotparser`: Googlebot may fetch, and a correct two-line control blocks it. **Do not
+  correct it, though; delete it.** `Disallow: /` stops crawlers from fetching the pages, so they
+  never see a `noindex`, and a linked URL can still be indexed by address alone. No-index belongs in
+  nginx, as `X-Robots-Tag` on the archive hosts, the way `preview.` does it in `nginx/afc.conf`.
+  2017 deliberately ships no `robots.txt`.
+- **Both have a `contact/index.php` with an inline `mail()`.** Archive hosts must never pass `.php`
+  to FPM, and what those pages should render as instead is undecided. 2017's form posts to
+  `http://andyfitzgeraldconsulting.com/contact/index.php`, which no longer exists.
 
 ## Smaller things left open
 
