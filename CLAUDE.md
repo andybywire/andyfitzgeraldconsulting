@@ -631,9 +631,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    Found on the way and fixed in production too: `ls -t` pruning could delete the live release,
    because `tar` stamps a release with its artifact's build time. Now pruned by name.
 
-   **Not yet exercised: a reboot.** The unit is enabled and `afc` lingers, which should start it at
-   boot, but the droplet has not rebooted since. That test is now a **phase 7** item, together with
-   the pending kernel and package upgrades that make it worth doing (Andy, 2026-09-29).
+   **A reboot was the one thing not exercised here**, and it was moved to phase 7 with the pending
+   kernel and package upgrades that made it worth doing (Andy, 2026-09-29). **Exercised 2026-10-08
+   and passed:** `afc-preview` came up on its own, 14 seconds after boot. See phase 7.
 
    Open follow-ups, none blocking: ~~delete `/var/www/afc` (~630 MB) once the rollback window
    closes~~ **DONE: already gone when checked on 2026-10-06**, so rolling back to 11ty now means
@@ -641,7 +641,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    project's only Studio app is now `g1jo20nnopb0mtoyt45zqakx`**; ~~delete the `RECAPTCHA_SECRET`,
    `AFC_MAIL_USERNAME` and `AFC_MAIL_PASSWORD` GitHub secrets~~ **DONE: none of the three is listed,
    and every secret that remains is referenced by a workflow.** Both checked 2026-10-08, which
-   leaves **nothing from phase 6 outstanding** but the reboot test, moved to phase 7.
+   leaves **nothing from phase 6 outstanding** — the reboot test, moved to phase 7, passed the
+   same day.
 
    `cms.` was repointed at the new Studio on 2026-09-29 — for `/` only, and **left that way**
    (Andy): it is a convenience alias nobody links to, so deeper paths returning 522 is accepted
@@ -673,7 +674,10 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    gzipped, measured) affordable, and nothing else about that decision has changed.
 7. **Cleanup.** Deliberately after the site is live, so none of it can destabilize a launch, and
    before phase 8, so per-taxonomy feeds are built against the final vocabulary rather than one
-   still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed:
+   still carrying deprecated schemes. Nothing here blocks earlier phases — verified, not assumed.
+
+   **PHASE 7 IS DONE (2026-10-08)**: every item below is closed, and phase 8 is next.
+
    - ~~**Remove the deprecated `insightType` field** from `article` and `caseStudy`, and unset the
      data~~ **DONE** — the field in `854962c` and `5385867`, the data on 2026-10-08. `genre`
      replaced it in phase 1 and both fields referenced the same concepts.
@@ -701,43 +705,67 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    published document it is patch then publish, and each publish fires the deploy webhook. 16
    publishes produced 15 superseded builds and one deploy — the concurrency brake in
    `deploy-astro.yml` doing its job.
-   - **Upgrade the droplet and reboot it, deliberately** (added 2026-09-29). Two things are waiting
-     on it: a kernel update (running 6.8.0-71, installed 6.8.0-142) plus 69 package upgrades, and
-     the one part of the SSR preview never exercised — **coming back at boot with nobody touching
-     it.** The `afc-preview` unit is enabled and `afc` lingers, which should be enough; ux-methods'
-     five weeks of 502s are why "should" is not accepted here. It belongs in this phase because it
-     takes every site on the droplet down for a minute or so and nothing depends on it.
+   - ~~**Upgrade the droplet and reboot it, deliberately**~~ **DONE 2026-10-08, and everything came
+     back at boot with nobody touching it.** It was waiting on pending kernel and package upgrades,
+     and on the one part of the SSR preview never exercised: **coming back at boot unattended.** The
+     unit was enabled and `afc` lingered, which should have been enough; ux-methods' five weeks of
+     502s are why "should" was not accepted. What the window found, measured rather than expected:
 
-     As root: `apt upgrade`, then `reboot`. Afterwards, **check before touching anything**, since
-     running a deploy first would restart the very things being tested:
+     - **The droplet had been up 45 weeks**, so this was the first cold start since the cutover for
+       everything on it, not only the preview.
+     - **71 upgrades, and a newer kernel than recorded.** 6.8.0-146 had landed since 142 was noted,
+       and 146 is what booted. `apt autoremove` then took 6.8.0-71 and kept 142 as the boot
+       fallback. `open-iscsi` and `libopeniscsiusr` were deferred by Ubuntu's phased rollout and
+       will arrive with a later upgrade. The only modified config file among the upgrades was
+       `/etc/default/motd-news`.
+     - **After the reboot,** nginx, php8.3-fpm, certbot.timer, do-agent and pm2-uxm were all
+       `active`, with no failed units. `afc-preview` was active 14 seconds after boot, on
+       `/usr/bin/node`. All four hosts returned 200 from outside the droplet —
+       **`preview.uxmethods.org` included, passing its first real boot test** (its PM2 unit had
+       only been proven with `pm2 kill`) — and `nginx/deploy.sh` passed 9/9.
+     - **Disk went from 77% to 64% used** (2.1 → 3.2 GB free), from the swap shrink and the old
+       kernel.
+
+     **For the next reboot, check before touching anything**, since a deploy restarts the very
+     things being tested. As root on the droplet:
 
      ```bash
-     uname -r   # 6.8.0-142-generic
-     systemctl is-active nginx php8.3-fpm certbot.timer do-agent
+     uname -r
+     systemctl is-active nginx php8.3-fpm certbot.timer do-agent pm2-uxm
+     systemctl --failed --no-legend
      sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user status afc-preview --no-pager | head -5
      readlink /proc/$(sudo -iu afc XDG_RUNTIME_DIR=/run/user/1001 systemctl --user show -p MainPID --value afc-preview)/exe
+     swapon --show
      ```
 
-     Expect `active`, four times — `do-agent` is DigitalOcean's metrics agent, installed
-     2026-10-02 because the disk and memory alerts need it, measured at 12.5 MB; the unit active
-     since boot; `/usr/bin/node`. Then from the Mac,
-     `AFC_SSH=do nginx/deploy.sh` for all nine checks across both hosts — it reinstalls identical
-     config, which is harmless. **`preview.uxmethods.org` gets its own first real boot test here
-     too**: its PM2 unit was proven with `pm2 kill` on 2026-09-21, never by a boot. A 200 from it is
-     the check, and a 502 is the old failure back.
+     Expect `active` five times — `do-agent` is DigitalOcean's metrics agent, installed 2026-10-02
+     because the disk and memory alerts need it, measured at 12.5 MB; no failed units; the unit
+     active since boot; `/usr/bin/node`. Then **from the Mac**, since the script SSHes in itself,
+     `AFC_SSH=do nginx/deploy.sh`; it reinstalls identical config, which is harmless. Curl the four
+     hosts from the Mac too: from the droplet, a request to its own non-Cloudflare names never
+     leaves the box, so it cannot show that anyone else can get in.
 
-     **Shrink swap from 2 GB to 1 GB in the same window** (added 2026-10-02). `/swapfile` is 2 GB on
-     an 8.7 GB disk with ~250 MB in use, so 1 GB is still four times what is used. **Not by
-     `swapoff` first:** that pulls the swapped pages back into RAM, and with ~245 MB available on a
-     458 MB droplet it can wake the OOM killer. Bring the new swap up before taking the old one
-     down, so pages move swap to swap. Then reboot, since `/etc/fstab` names `/swapfile`:
+     ~~**Shrink swap from 2 GB to 1 GB in the same window**~~ **DONE, and the recorded recipe was
+     wrong.** `/swapfile` was 2 GB with ~250 MB in use. **Not by `swapoff` first:** that pulls the
+     swapped pages back into RAM, and with ~245 MB available on a 458 MB droplet it can wake the OOM
+     killer — so the new swap comes up before the old goes down. The recipe recorded here ended
+     `mv /swapfile.new /swapfile`, and **that fails with "Operation not permitted"**: the kernel
+     refuses to rename or delete a file while it is active swap, the same protection that let
+     `rm /swapfile` succeed only after its `swapoff`. Because the new file must end up with the old
+     one's name, it goes through a temporary name and the swap-to-swap move happens twice:
 
      ```bash
      fallocate -l 1G /swapfile.new && chmod 600 /swapfile.new && mkswap /swapfile.new && swapon /swapfile.new
-     swapoff /swapfile && rm /swapfile && mv /swapfile.new /swapfile
+     swapoff /swapfile && rm /swapfile
+     fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+     swapoff /swapfile.new && rm /swapfile.new
      ```
 
-     After the reboot, `swapon --show` should list `/swapfile` at `1024M`.
+     Run `swapon --show` between lines, and `swapoff` a file only once the other is listed. **Do not
+     reboot partway through:** between the second and third lines, `/etc/fstab` names a file that
+     does not exist. And "pages move swap to swap" was only half true. `swapoff` reads pages back
+     into RAM and some stayed there (148 MB in use fell to 79), which ~175 MB available absorbed
+     easily.
 
      **The journal is capped at 100 MB, on the droplet rather than in the repo** (2026-10-02). It
      had reached 332 MB with the disk at 85%; `/etc/systemd/journald.conf.d/size.conf` sets
