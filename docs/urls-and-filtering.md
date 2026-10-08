@@ -367,6 +367,10 @@ Three consequences that do follow from the element choice:
   shipped. This was written expecting the state to surface only inside "See all topics"; with chip
   order fixed at build time it is the **ordinary** appearance of an excluded facet, in the visible
   row, which makes "stays focusable and discoverable" load-bearing rather than merely tidier.
+  **A disabled chip's `href` is the current view** (Andy, 2026-10-08), the one exception to "the
+  state after that click". A disabled chip has no "after", and the state it would add has no
+  results. Linking to that state left crawlers an unbounded graph of empty pages to walk; see
+  `card-index.ts` and [open-questions.md](open-questions.md) → Settled after cutover.
 - **The selected state cannot use `aria-pressed`**, which is button-only. `aria-current="true"` is the
   link equivalent.
 - **The accessible name has to differ by state**, and this is an improvement rather than a workaround.
