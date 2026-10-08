@@ -45,8 +45,6 @@ const hiddenDocTypes = (listItem: any) =>
     'settings',
     'skosConcept',
     'skosConceptScheme',
-    'service',
-    'collection',
   ].includes(listItem.getId())
 
 /**
