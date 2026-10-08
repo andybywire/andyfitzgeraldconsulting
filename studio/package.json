@@ -18,12 +18,12 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@sanity/code-input": "^7.3.9",
-    "@sanity/vision": "^6.17.0",
+    "@sanity/vision": "^6.18.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-icons": "^5.7.0",
     "rxjs": "^7.8.2",
-    "sanity": "^6.17.0",
+    "sanity": "^6.18.0",
     "sanity-plugin-mermaid-content-model": "^2.0.0",
     "sanity-plugin-taxonomy-manager": "^6.0.0",
     "styled-components": "^6.5.3"
