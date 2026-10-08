@@ -32,20 +32,6 @@ export default defineType({
       },
       components: {field: ReferenceHierarchyInput},
     }),
-    defineField({
-      name: 'insightType',
-      deprecated: {
-        reason: 'Use "Genre" for the 2026 rebuild instead.',
-      },
-      title: 'Insight Type',
-      type: 'reference',
-      to: [{type: 'skosConcept'}],
-      options: {
-        filter: schemeFilter({schemeId: 'c88ca3'}),
-        disableNew: true,
-      },
-      components: {field: ReferenceHierarchyInput},
-    }),
     slugField(),
     defineField({
       title: 'Date Published',
