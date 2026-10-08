@@ -128,19 +128,23 @@ pnpm --filter web dev        # Astro dev server
 pnpm --filter studio dev     # Sanity Studio on the production-26 dataset, :3030
 pnpm typegen                 # regenerate web/sanity.types.ts — after any schema or query change
 pnpm parity                  # render-every-document check — after `pnpm --filter web build`
+pnpm links                   # link check over the build — after `pnpm --filter web build`
 pnpm format                  # Prettier, repo-wide — fixes what the Prettier check reports
 ```
 
 The code checks in `.github/workflows/checks.yml` run on every branch push, and each one runs
 locally as it does in CI: `pnpm typegen` then `git diff --exit-code web/sanity.types.ts`,
 `pnpm --filter web check`, `pnpm --filter studio typecheck`, `pnpm exec prettier --check .`.
+On a branch it also builds the site and runs `pnpm links`.
 
 Deploy is `.github/workflows/deploy-astro.yml` — builds the static site and the PHP dependencies,
 tars a two-directory release (`public/` + `server/`), scps it to the droplet and swaps an atomic
 symlink at `/var/www/afc-production/html`. Triggered by pushes to `main` touching `web/**` and by
-Sanity `repository_dispatch` webhooks per document type. **nginx config is deployed separately and
-by hand**, with `nginx/deploy.sh` — its header says why that is not in CI. `build-prod.yml`, which
-deployed the 11ty site from `/var/www/afc`, was retired at the cutover.
+Sanity `repository_dispatch` webhooks per document type. A `links` job checks the same release
+**beside** the deploy, so a failure turns the run red without holding the site — see phase 8.
+**nginx config is deployed separately and by hand**, with `nginx/deploy.sh` — its header says why
+that is not in CI. `build-prod.yml`, which deployed the 11ty site from `/var/www/afc`, was retired
+at the cutover.
 
 The preview is `.github/workflows/deploy-preview.yml` — builds the SSR site with its server
 dependencies bundled, runs the release from a directory with no `node_modules` against every sitemap
@@ -811,9 +815,13 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      commit red, on the branch before a merge. `astro check` alone also blocks inside both
      deploys, as it did before this phase — it is the one that can catch a defect that ships.
    - **Site gates test the BUILT site** — links, HTML validation, accessibility, budgets — and
-     content is exactly what breaks them: an author's dead link, a missing alt. They need `dist/`,
-     so they live beside the build. **What a webhook-triggered build does when one fails is still
-     open**, and is decided when the link check lands.
+     content is exactly what breaks them: an author's dead link, a missing alt. They run in two
+     places: `checks.yml` builds the site on a branch push, so a template regression is red
+     before the merge, and `deploy-astro.yml` checks the release it ships. **There they run
+     BESIDE the deploy and never hold it** (Andy, 2026-10-08): a failure turns the run red once
+     the site is live. Production rebuilds on every Sanity publish, and the deciding case is an
+     **unpublish** — a blocking check would keep a withdrawn article live until every link to it
+     was fixed. Do not add a site gate to the deploy job's `needs:`.
 
    The workflow's header records the reasoning, the gap it accepts (a merge commit is a tree no
    branch run has seen), and how each gate was proven: a clean-tree run with zero TypeGen diff
@@ -821,16 +829,25 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    drift check keys on `git diff --exit-code`, not on typegen**, whose exit status is 0 even when
    it reports errors. Prove any new gate the same way — it is not known to work until it fails.
 
-   **And for enforcing trailing slashes on internal links** (deferred here by Andy, 2026-10-02).
-   Every link to a page should end in `/`: Astro builds `consulting/index.html`, so `/consulting`
-   is a 301 to `/consulting/` on every click. Two template links had drifted — Learn more's
-   `/consulting` and the home hero's `/about` — and were fixed by hand, with nothing to stop the
-   next. Two candidate guards: `trailingSlash: 'always'` in `astro.config.mjs`, which makes the
-   dev server 404 on a slashless path so the mistake shows while building (check what it does to
-   the SSR preview first), or a rule in the link check above. That link check should also flag
-   **hrefs to the site's own domain** — absolute, or to a legacy scheme like `www.` or
-   `/writing/`. 45 of those in article bodies were what Moz's redirect-chain report found, and
-   they were fixed by hand too.
+   **THE LINK CHECK IS BUILT (2026-10-08)**, the first site gate: `web/scripts/check-links.mjs`,
+   run with `pnpm links` after a build. It reads the built site with no network and no
+   dependencies, and fails on four kinds of on-site link: **no page** at the path (old paths
+   like `/writing/` included), **no trailing slash**, an **absolute href to the site's own
+   domain** (apex, `www.` or `preview.`), and a **fragment with no matching `id`**. All four
+   stood at zero across 84 pages and 2,849 links, so it started green. Its header records what
+   it deliberately does not check, why it uses patterns rather than an HTML parser and what
+   that misses, and how it was proven.
+
+   This closes the **trailing-slash and own-domain items** deferred here on 2026-10-02 — Learn
+   more's `/consulting` and the home hero's `/about` drifted, and Moz found 45 own-domain hrefs
+   in article bodies, all fixed by hand with nothing to stop the next. **`trailingSlash:
+   'always'` was passed over**: it catches template links only, only in the dev server, and only
+   when someone follows one, where the link check also reads article bodies.
+
+   **External links are deferred to their own warning-only piece** — 325 URLs on 132 hosts
+   (2026-10-08). Another site's outage is not a defect here, and checking them well needs
+   retries, rate limits and a tool built for it; lychee is the likely one. A `schedule:` trigger
+   has the 60-day catch noted under `u-syndication` below.
 
    **The microformats remainder lands here, and it is a short list because most of mf2 is already
    built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,
@@ -1081,8 +1098,8 @@ push to `main` IS a production deploy**, which is one more reason commit and pus
 **nginx is deployed by hand**, with `nginx/deploy.sh` from a laptop, never by CI — its header says
 why. `validate-nginx.yml` runs `nginx -t` on a push to any branch touching `nginx/`, so a config
 that cannot load is caught on the branch, before anything is installed. **`checks.yml` follows the
-same pattern for code** (2026-10-08): every branch push, deploys nothing, gates nothing — a red
-run says not to merge. See phase 8.
+same pattern for code and the built site** (2026-10-08): every branch push, deploys nothing,
+gates nothing — a red run says not to merge. See phase 8.
 
 **Andy does the visual verification himself.** Get changes green and integration-verified, then hand
 him the specific eyeball steps rather than asking him to check things you could have checked.

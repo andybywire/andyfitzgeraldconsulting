@@ -275,6 +275,55 @@ jobs:
           path: afc-astro.tar.gz
           retention-days: 7
 
+  # ── THE SITE GATES RUN BESIDE THE DEPLOY, NEVER IN FRONT OF IT ────────────
+  #
+  # Decided 2026-10-08 (Andy). This job and `deploy` each need only `build`, so
+  # they run side by side and nothing here can hold a release. A failure turns the
+  # run red once the site has shipped, and the report lands on the run's summary
+  # page. DO NOT add `links` to deploy's `needs:` — that one line is the whole
+  # difference between this and a blocking gate.
+  #
+  # Why never block, though this workflow also runs on code pushes: it rebuilds
+  # on every Sanity publish, and the deciding case is an UNPUBLISH. Take down an
+  # article other pages link to, and a blocking check would keep it live until
+  # every link to it was fixed. Template regressions are caught earlier, on the
+  # branch, by checks.yml. web/scripts/check-links.mjs has the full account.
+  #
+  # It reads the SAME tarball the deploy ships rather than rebuilding, so what it
+  # checks is exactly what went live. The script needs Node and nothing else, so
+  # there is no install.
+  links:
+    name: Link check (never holds the deploy)
+    runs-on: ubuntu-latest
+    needs: build
+
+    # Superseded freely, as builds are: only the newest content matters, and a
+    # cancelled check touches nothing.
+    concurrency:
+      group: astro-links
+      cancel-in-progress: true
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Download the release artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: afc-astro-release
+
+      # `public/` only — the web root, as nginx serves it. `server/` holds no pages.
+      - name: Unpack the site
+        run: mkdir site && tar xzf afc-astro.tar.gz -C site ./public
+
+      - name: Link check
+        run: node web/scripts/check-links.mjs site/public
+
   deploy:
     name: Deploy to production
     runs-on: ubuntu-latest

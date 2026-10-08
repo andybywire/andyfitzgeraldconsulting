@@ -12,6 +12,7 @@
     "dev": "pnpm -r --parallel dev",
     "typegen": "pnpm --filter studio typegen",
     "parity": "pnpm --filter web parity",
+    "links": "pnpm --filter web links",
     "format": "prettier --write ."
   },
   "author": "Andy Fitzgerald",
