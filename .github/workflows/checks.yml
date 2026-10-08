@@ -1,0 +1,169 @@
+name: Code checks
+
+# ── WHAT THIS CHECKS, AND WHAT IT DOES NOT ─────────────────────────────────
+#
+# The CODE gates: four checks that read the repository and never need a build.
+# Phase 8 splits the quality gates in two (Andy, 2026-10-08):
+#
+#   code gates   TypeGen drift, `astro check`, the Studio's `tsc`, Prettier.
+#                They test the repo, and no content edit can change a result.
+#   site gates   links, HTML validation, accessibility, budgets. They test the
+#                BUILT site, and content is exactly what breaks them — an
+#                author's dead link, a missing alt.
+#
+# The site gates do not belong here. They need `dist/`, so they live beside the
+# build, and they raise a question these do not: what a webhook-triggered build
+# does when one fails. That is decided when the link check lands.
+#
+# ── NO repository_dispatch ─────────────────────────────────────────────────
+#
+# A Sanity publish changes content and nothing else, so it cannot change any
+# result below. Listening for it would spend a minute per publish proving that
+# again — and would put a repo-hygiene failure in the path of a content publish,
+# where the author cannot fix it from the Studio.
+#
+# ── THE DEPLOYS DO NOT WAIT FOR THIS ──────────────────────────────────────
+#
+# Decided 2026-10-08 (Andy). A failure marks the commit red: on a branch, before
+# the merge, which is where it is useful; on `main` if something gets through.
+# Neither deploy-astro.yml nor deploy-preview.yml waits for it.
+#
+# Because none of these changes the site. A formatting slip or a stale generated
+# file is a problem with the repository; holding a production deploy on one
+# protects no visitor and holds up a hotfix. `astro check` is the one that CAN
+# catch a defect that ships, which is why both deploys also run it themselves
+# and still block on it.
+#
+# What that leaves open, knowingly: a merge commit is a tree no branch run has
+# seen. This workflow's run on `main` still reports it — after the deploy has
+# started rather than before. The alternative was for deploy-astro.yml to call
+# this workflow and `needs:` it on pushes, at about a minute per push to `main`.
+# Revisit if a red `main` ever ships something.
+#
+# ── PROVEN 2026-10-08, ON THE RUNNER ───────────────────────────────────────
+#
+# A gate is not known to work until it has failed, so this one was made to.
+# Two runs, about a minute each:
+#
+#   clean tree       All four green, and TypeGen regenerated 42 queries with
+#                    ZERO diff. That was the precondition for trusting the drift
+#                    check at all: studio/sanity.cli.ts records two Prettier
+#                    resolutions formatting identical types 827 and 901 lines
+#                    long. The runner and a Mac agree.
+#
+#   one violation    A field added to a query without running typegen, a type
+#   per gate         error in web, a type error in the Studio, a double-quoted
+#                    string. All four steps failed in ONE run, each naming only
+#                    its own file — which also proves they run independently.
+#
+# The violations were on a scratch branch, `ci-code-checks-proof`. To re-prove a
+# gate after changing it, do the same: break it on purpose and watch it go red.
+
+# Every branch, as validate-nginx.yml does: the useful moment is before a merge.
+#
+# The path filter names what CANNOT affect a result, rather than what can. An
+# allow-list (`web/**`, `studio/**`, the root config) fails open: the next file
+# Prettier reads outside those — `.vscode/settings.json` is one today — would
+# change without a run. A deny-list fails closed, since anything it does not
+# name runs the checks. It names what Prettier ignores or cannot parse and no
+# other step reads: Markdown, `docs/`, and `nginx/`, whose `.conf` and `.sh`
+# files have their own workflow.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "!nginx/**"
+
+# Read-only and idempotent, so a newer push supersedes an older run freely — as
+# in validate-nginx.yml, and unlike the deploys.
+concurrency:
+  group: code-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+# The same two values the deploys set, for the same reason: astro.config.mjs
+# reads them at config time, and `astro check` loads the config. Not secrets.
+env:
+  PUBLIC_SANITY_PROJECT_ID: 7v0qvet6
+  PUBLIC_SANITY_DATASET: production-26
+
+jobs:
+  checks:
+    name: Types, drift and formatting
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          # Matches `packageManager` in the root package.json, as in the deploys.
+          version: 11.22.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+
+      - name: Install dependencies
+        id: install
+        run: pnpm install --frozen-lockfile
+
+      # ── EACH CHECK RUNS WHATEVER THE OTHERS DID ───────────────────────────
+      #
+      # Steps normally stop at the first failure, which would make a red run
+      # report ONE problem and hide the rest until that one was fixed and pushed.
+      # These four are independent, so each runs as long as the install
+      # succeeded, and a run lists every failure at once. Gating on the install's
+      # outcome rather than on `always()` is what stops a failed install from
+      # producing four misleading failures of its own.
+
+      # ── TYPEGEN DRIFT: KEYED ON THE DIFF, NOT ON TYPEGEN ──────────────────
+      #
+      # `pnpm typegen` exits 0 even when it reports errors — measured 2026-10-08,
+      # while it was still warning about three files it could not parse — so its
+      # status says nothing about drift. What does is whether regenerating changed
+      # the committed file, and a failure prints that diff. A `-` line is a type the
+      # queries no longer produce: phase 7 removed seven schema fields, and
+      # sanity.types.ts declared all of them until someone ran typegen by hand. The
+      # fix is `pnpm typegen` locally, then commit the result.
+      #
+      # It leaves the REGENERATED file in the working tree, which the next step
+      # relies on.
+      - name: TypeGen drift
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          pnpm typegen
+          git diff --exit-code web/sanity.types.ts
+
+      # Runs after the drift step, so it checks the code against types regenerated
+      # from the queries as they are now, not against whatever was committed. That
+      # matters on exactly the run where the two differ: stale types can hide a
+      # type error — code reading a removed field type-checks against a declaration
+      # that no longer describes the query. This way the step above reports the
+      # stale file and this one reports what it was hiding.
+      - name: astro check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm --filter web check
+
+      # The Studio had no type check anywhere until this step. It covers 24 files,
+      # every schema among them, in about a second — cold as well as warm, measured
+      # 2026-10-08 with `--incremental false` — so it costs nothing to run here.
+      - name: Studio type-check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm --filter studio typecheck
+
+      # The whole repo, minus .prettierignore. One style repo-wide has been a
+      # CLAUDE.md rule since phase 0; this is the first thing that enforces it. A
+      # failure lists the files, and `pnpm format` rewrites them.
+      - name: Prettier
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pnpm exec prettier --check .

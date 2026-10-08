@@ -66,8 +66,19 @@ export default defineCliConfig({
    * the CLI's, so the two produce identical types in different formats (827 lines against 901).
    * Whichever ran last won, and `sanity.types.ts` churned by ~900 lines between them. One writer,
    * invoked deliberately, is worth losing live regeneration for: run `pnpm typegen` from the root
-   * after changing the schema or a query. Phase 7 should add a CI check that regenerates and fails
-   * on a diff, which catches forgetting.
+   * after changing the schema or a query. `.github/workflows/checks.yml` regenerates on every push
+   * and fails on a diff, which catches forgetting (phase 8, 2026-10-08).
+   *
+   * `path` covers `web/src/sanity/` only (Andy, 2026-10-08). It used to cover all of `web/src`,
+   * and every run printed "⚠ Encountered errors in 3 files": the three `[slug].astro` pages have a
+   * top-level `return Astro.rewrite('/404')`, which Astro's frontmatter allows and a module parser
+   * rejects. No query lived in any of them, so nothing was lost — but a warning on every run is
+   * how a real one gets missed.
+   *
+   * Narrowing it has a second effect, and that is the one that matters: a query defined anywhere
+   * else is now INVISIBLE to TypeGen and gets no result type. So "queries live in their own
+   * module" is enforced by the tool rather than by habit. If a query ever has to live elsewhere,
+   * widen this — don't let it sit where TypeGen cannot see it.
    *
    * No `--enforce-required-fields`: the preview environment reads drafts, and a draft can sit in
    * an invalid state, so a field marked required in the schema can still arrive undefined. Types
@@ -75,7 +86,7 @@ export default defineCliConfig({
    */
   typegen: {
     enabled: false,
-    path: '../web/src/**/*.{ts,tsx,js,jsx,astro}',
+    path: '../web/src/sanity/**/*.ts',
     schema: 'schema.json',
     generates: '../web/sanity.types.ts',
     overloadClientMethods: true,
