@@ -47,13 +47,6 @@ export default defineType({
       ],
     }),
     defineField({
-      name: 'podcastId',
-      title: 'Podcast Id',
-      description:
-        'Embed link ID for podcast interviews. Currently supports Apple podcasts links. Grab the url after `/us/podcast/`.',
-      type: 'string',
-    }),
-    defineField({
       name: 'topic',
       title: 'Topics',
       type: 'array',
