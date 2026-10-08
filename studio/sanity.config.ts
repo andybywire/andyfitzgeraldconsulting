@@ -95,7 +95,6 @@ export default defineConfig({
         return S.list()
           .title('Content')
           .items([
-            // @ts-expect-error — showCount() appears not yet to be in the published shape
             ...S.documentTypeListItems().filter(hiddenDocTypes).map((item) => item.showCount()),
             S.divider(),
             S.listItem()
@@ -103,9 +102,7 @@ export default defineConfig({
             .icon(RiSettings4Line)
             .child(S.document().schemaType('settings').documentId('settings')),
             S.divider(),
-            // @ts-expect-error — showCount() appears not yet to be in the published shape
             S.documentTypeListItem('skosConceptScheme').title('Taxonomy Schemes').showCount(),
-            // @ts-expect-error — showCount() appears not yet to be in the published shape
             S.documentTypeListItem('skosConcept').title('Concepts').showCount(),
           ])
       },
