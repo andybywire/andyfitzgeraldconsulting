@@ -82,37 +82,6 @@ export default defineType({
       description: 'If available, provide a link to the event detail page.',
       type: 'url',
     }),
-    defineField({
-      name: 'title',
-      title: 'Presentation Title',
-      type: 'string',
-      deprecated: {
-        reason: 'As of the 2026 redesign, Presentation Title is carried by Presentation.',
-      },
-    }),
-    /* Overlaps the Genre scheme's Presentation branch — Keynote, Talk, Workshop,
-       Panel — without being it. `podcast` here has no Genre counterpart and
-       `interview` is the Genre term for what it describes. Reconcile when
-       `presentation` lands; a string list and a SKOS scheme should not both be
-       classifying the same thing. */
-    defineField({
-      name: 'type',
-      title: 'Presentation Type',
-      type: 'string',
-      options: {
-        list: [
-          {title: 'Talk', value: 'talk'},
-          {title: 'Keynote', value: 'keynote'},
-          {title: 'Workshop', value: 'workshop'},
-          {title: 'Panel', value: 'panel'},
-          {title: 'Podcast', value: 'podcast'},
-        ],
-      },
-      initialValue: 'talk',
-      deprecated: {
-        reason: 'As of the 2026 redesign, Presentation Type is carried by Presentation.',
-      },
-    }),
   ],
   preview: {
     select: {
