@@ -356,6 +356,10 @@ jobs:
         if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
         run: node web/scripts/validate-html.mjs site/public
 
+      - name: Budgets
+        if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
+        run: node web/scripts/check-budgets.mjs site/public
+
       - name: Accessibility
         if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
         run: node web/scripts/check-a11y.mjs site/public

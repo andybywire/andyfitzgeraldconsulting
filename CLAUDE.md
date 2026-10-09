@@ -131,13 +131,15 @@ pnpm parity                  # render-every-document check — after `pnpm --fil
 pnpm links                   # link check over the build — after `pnpm --filter web build`
 pnpm validate                # HTML validation over the build — needs Java 11+ (Temurin 21 here)
 pnpm a11y                    # accessibility (axe) over the build — needs Google Chrome
+pnpm budgets                 # byte budgets over the build — the numbers live in the script
 pnpm format                  # Prettier, repo-wide — fixes what the Prettier check reports
 ```
 
 The code checks in `.github/workflows/checks.yml` run on every branch push, and each one runs
 locally as it does in CI: `pnpm typegen` then `git diff --exit-code web/sanity.types.ts`,
 `pnpm --filter web check`, `pnpm --filter studio typecheck`, `pnpm exec prettier --check .`.
-On a branch it also builds the site and runs `pnpm links`, `pnpm validate` and `pnpm a11y`.
+On a branch it also builds the site and runs `pnpm links`, `pnpm validate`, `pnpm budgets` and
+`pnpm a11y`.
 
 **Java is a local dependency now**, for the HTML validator only: Temurin 21, installed with
 `brew install --cask temurin@21` (2026-10-08). Not the plain `temurin` cask, which tracks the
@@ -914,6 +916,34 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    **close-search button**, whose visible text is "esc", is now named "Close search, esc", for
    voice-control users who say what they see. The check takes about 125s on the runner against
    45s on a Mac, the slowest gate by far; beside the deploy, that delays only the report.
+
+   **BYTE BUDGETS ARE BUILT (2026-10-09)**, the fourth site gate, and with them **the quality
+   gates are complete**: `web/scripts/check-budgets.mjs`, run with `pnpm budgets` after a build.
+   It weighs the build in brotli-compressed bytes against six budgets, and **the numbers live in
+   the script** (Andy, 2026-10-09) — a value with one consumer is not a token, and the reason for
+   each sits beside it. Its header records the reasoning; what is worth not re-deriving:
+
+   - **Bytes, not timings or scores** (Andy, 2026-10-09). Bytes are deterministic — the runner and
+     a Mac measured identically, to the tenth of a KB. LCP sat at 1.8–2.4s against Google's 2.5s
+     line, so a timing gate would fail at random, and a Lighthouse score does not say what got
+     worse. Timings are still measured by hand; docs/eleventy-astro-comparison.md says how.
+   - **HTML has two budgets**, because its size follows what was written: the **median** page,
+     which moves only when the template grows on every page, and a generous **ceiling** on the
+     heaviest, for the pathological. One budget on the heaviest page would fail on long writing.
+   - **The rest:** CSS and JavaScript on the heaviest page — scripts followed through their
+     imports — fonts site-wide, and `/search.json`. The fonts budget is deliberately tight, since
+     fonts were 96% of the old site's weight; the search index budget is the point at which the
+     decision about its stable filename says to revisit.
+   - **Not weighed: images** — served from Sanity's CDN at runtime, and what grows most as a page
+     is scrolled — **nor Plausible, nor files no page loads**, like the 191 KB React chunk.
+   - **Content can trip two of them**, the search index and the HTML ceiling, after a publish.
+     Like every site gate, this never holds a deploy, so red there means "revisit". Set each
+     budget at today's measurement plus headroom, lower it when the site gets lighter, and raise
+     one only on purpose, in a commit that says why.
+
+   **What is left in phase 8 is not quality gates:** per-concept feeds, POSSE and the mf2
+   remainder below, the service worker decision, and the warning-only external link check
+   deferred above.
 
    **The microformats remainder lands here, and it is a short list because most of mf2 is already
    built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,

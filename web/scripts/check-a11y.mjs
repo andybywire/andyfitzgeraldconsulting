@@ -82,8 +82,10 @@
  *                    namespaces it uses, and no flag turned out to be needed. With the button
  *                    renamed it went green: 84 pages × 5 configurations in 125s, against about
  *                    45s on a Mac. Every page reached its theme on both machines.
- *   unproven when    deploy-astro.yml's step, which runs only from `main` — its first run is the
- *   this was written merge. And red-after-deploy from a Sanity publish, as for the other gates.
+ *   in production    deploy-astro.yml's step, on the merge (2026-10-08): green, and still running
+ *                    two minutes after the deploy beside it had finished — the arrangement
+ *                    doing its job.
+ *   still unproven   Red-after-deploy from a Sanity publish, as for the other gates.
  *
  * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
  *
