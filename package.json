@@ -14,6 +14,7 @@
     "parity": "pnpm --filter web parity",
     "links": "pnpm --filter web links",
     "validate": "pnpm --filter web validate",
+    "a11y": "pnpm --filter web a11y",
     "format": "prettier --write ."
   },
   "author": "Andy Fitzgerald",
