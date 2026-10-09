@@ -79,45 +79,75 @@ const INDEX = [
 
 /**
  * Brand marks. NOT Lucide, and not ours to restyle — DESIGN.md carves them out of
- * the icon system for exactly that reason. GitHub, LinkedIn and Medium are copied
- * from web/_includes/icons/; Bluesky is the official butterfly, fetched
- * 2026-08-24 from bsky.social/about/support/icons, which offers it in blue, white
- * and black. The four color variants are geometrically identical — diffed — so
- * `currentColor` renders it white on the light band and near-black on the dark
- * one, which are their two approved mono variants, reached without shipping two
- * files.
+ * the icon system for exactly that reason. GitHub and LinkedIn are copied from the
+ * 11ty build's web/_includes/icons/, in git history at 06cd8e5; Bluesky is the
+ * official butterfly, fetched 2026-08-24 from bsky.social/about/support/icons,
+ * which offers it in blue, white and black. The four color variants are
+ * geometrically identical — diffed — so `currentColor` renders it white on the
+ * light band and near-black on the dark one, which are their two approved mono
+ * variants, reached without shipping two files. Mastodon replaced Medium on
+ * 2026-10-08, on its own 217x233 artboard, NOT normalized to 100 units.
  *
- * The path here is NO LONGER that asset. Andy redrew and rescaled it in Figma onto
- * a 100-unit artboard to match the other three, which also retired a real problem
- * the official file had: path length scales with the viewBox, so on its native
- * 568x501 board the outline measured 2593 units and drew four times faster than
- * everything else in the same 0.33s. On 100x88 it measures 456, in the same range
- * as 564, 597 and 791.
+ * The Bluesky path here is NO LONGER that asset. Andy redrew and rescaled it in
+ * Figma onto a 100-unit artboard to match the others of the time, which also
+ * retired a real problem the official file had: path length scales with the
+ * viewBox, so on its native 568x501 board the outline measured 2593 units and
+ * drew four times faster than everything else in the same 0.33s.
  *
- * `length` IS A TUNED VALUE, NOT A MEASUREMENT — worth stating plainly, because
- * it looks like one and the live site's equivalents were meant to be.
+ * THAT DOES NOT HOLD FOR THIS CSS, whatever produced it then — git cannot say,
+ * since the footer and every comment here landed in one commit. With
+ * `non-scaling-stroke` on the path the dash is measured in screen pixels (below),
+ * so the artboard has no bearing on the draw. Mastodon is the evidence: a
+ * 1640-unit path on an unnormalized board, drawing at the same pace as the rest.
+ *
+ * ── `length` IS THE LONGEST SUBPATH, IN SCREEN PIXELS ───────────────────────
  *
  * It sets `stroke-dasharray`, and the hover animates `stroke-dashoffset` from
- * `length` to twice it. So one dash of `length` travels around the path by its
- * own length. Set it to the path's TRUE length and the outline draws on once and
- * closes; set it lower and you get an arc that sweeps around instead, its
- * leading edge advancing while its tail retreats. These are all the second
- * thing, eyeballed per mark:
+ * `length` to twice it: at rest the outline sits in the gap of the pattern, and
+ * the hover slides a dash of `length` into its place. A dash at least as long as
+ * the outline draws it on and closes it; a shorter one leaves part of it still in
+ * the gap when the hover ends.
  *
- *              declared   true   inked
- *     GitHub        270    564    48%
- *     LinkedIn      170    597    28%
- *     Bluesky       219    456    48%
- *     Medium        325    791    41%
+ * Two facts decide what "as long as the outline" means, both measured:
  *
- * LinkedIn is the outlier because it is THREE subpaths — the dot, the stem and
- * the n — where the others are one. A dash pattern walks them in sequence rather
- * than around a single perimeter, so the same fraction reads as more motion and
- * it wants a shorter dash. Worth knowing before tuning a new mark.
+ *   - THE DASH IS IN SCREEN PIXELS, not user units. `non-scaling-stroke` takes
+ *     the dash pattern out of user space along with the width. A 135 dash on
+ *     GitHub covers HALF its 271px outline, not a quarter of its 564 user units.
+ *   - THE PATTERN RESTARTS AT EVERY SUBPATH. Each one draws at once, the shorter
+ *     ones starting later so that all finish together. So the dash must cover the
+ *     LONGEST subpath, not their sum.
  *
- * To add one: measure the true length as the ceiling, then come down by eye.
+ * Every value was tuned by eye, and every one landed on that measurement:
  *
- *     document.querySelector('.social path').getTotalLength()
+ *              declared   longest subpath   subpaths
+ *     GitHub        270               271   1
+ *     LinkedIn      170               169   3 — dot, stem, n
+ *     Bluesky       219               219   1
+ *     Mastodon      192               192   2 — outline, m
+ *
+ * THIS SAID THE OPPOSITE UNTIL 2026-10-09: that `length` was a tuned value well
+ * short of the true path — 28 to 48% "inked" — producing an arc that sweeps
+ * around rather than an outline that closes, and that LinkedIn wanted the
+ * shortest dash because a pattern walks subpaths in sequence. It had measured
+ * `getTotalLength()`, which returns USER units, against a dash that is not in
+ * user units, and summed the subpaths. In the right units, every mark closes.
+ *
+ * So a new mark's `length` is a measurement, not a tune. Select its <path> in
+ * devtools and run:
+ *
+ *     const svg = $0.ownerSVGElement, vb = svg.viewBox.baseVal, d = $0.getAttribute('d')
+ *     const scale = svg.getBoundingClientRect().width / Math.max(vb.width, vb.height)
+ *     const probe = svg.appendChild($0.cloneNode())
+ *     const ends = [...d.matchAll(/z/gi)].map((m) => m.index + 1)
+ *     const upTo = (n) => (probe.setAttribute('d', d.slice(0, n)), probe.getTotalLength())
+ *     const sums = ends.map(upTo)
+ *     probe.remove()
+ *     Math.round(Math.max(...sums.map((s, i) => s - (sums[i - 1] ?? 0))) * scale)
+ *
+ * It measures each subpath as the difference between successive prefixes of `d`
+ * cut at each `Z`, because a relative `m` after a `Z` cannot be measured alone.
+ * It assumes every subpath closes, which all four do. It reads the live render
+ * scale, so it is only right while the marks are 3rem.
  *
  * ── THE `href`s COME FROM lib/social.ts; EVERYTHING ELSE HERE IS LOCAL ───────
  *
@@ -143,17 +173,16 @@ const SOCIAL = [
   {
     name: 'Bluesky',
     href: SOCIAL_URLS.bluesky,
-
     viewBox: '0 0 100 88',
     length: 219,
     d: 'M21.6762 5.92342C33.141 14.5259 45.472 31.9684 50 41.328C54.528 31.9684 66.859 14.5259 78.3238 5.92342C86.5961 -0.283614 100 -5.08633 100 10.1962C100 13.2482 98.2491 35.8356 97.2222 39.5029C93.6526 52.2516 80.6456 55.5034 69.0752 53.5353C89.2996 56.9754 94.4444 68.3705 83.3333 79.7656C62.2312 101.407 53.0037 74.3357 50.6393 67.399C50.2058 66.1274 50.003 65.5325 50 66.0384C49.997 65.5325 49.7942 66.1274 49.3607 67.399C46.9963 74.3357 37.7688 101.407 16.6667 79.7656C5.55556 68.3705 10.7003 56.9754 30.9248 53.5353C19.3544 55.5034 6.34745 52.2516 2.77778 39.5029C1.75092 35.8356 0 13.2482 0 10.1962C0 -5.08633 13.404 -0.283614 21.6762 5.92342Z',
   },
   {
-    name: 'Medium',
-    href: SOCIAL_URLS.medium,
-    viewBox: '0 0 117 94',
-    length: 325,
-    d: 'M5.06783 0L15.2035 12.9311V74.3726L0 93.9653H35.4748L20.2713 74.3726V19.6819L53.2122 93.9653L53.2072 94L83.6191 19.1611V83.8069L73.4835 93.9653H116.56L106.424 83.8069L106.355 11.4381L116.214 0.0347211H85.7621L62.3481 57.7611L36.7318 0H5.06783Z',
+    name: 'Mastodon',
+    href: SOCIAL_URLS.mastodon,
+    viewBox: '0 0 217 233',
+    length: 192,
+    d: 'M108.608 0C138.308 0.200025 166.808 3.50062 183.408 11.1006C183.502 11.1429 216.408 25.9723 216.408 76.2002C216.408 76.3002 216.807 113.4 211.807 139.2C208.607 155.6 183.308 173.5 154.208 176.9C139.008 178.7 124.108 180.401 108.208 179.601C82.2685 178.403 61.704 173.424 61.6083 173.4C61.6083 175.9 61.8083 178.301 62.1083 180.601C65.5083 206.3 87.6078 207.801 108.508 208.501C129.608 209.201 148.408 203.301 148.408 203.301L149.307 222.4C149.236 222.438 134.444 230.304 108.208 231.801C93.7079 232.601 75.7079 231.4 54.7079 225.9C9.20792 213.9 1.40787 165.301 0.207863 116.101C-0.192137 101.501 0.108254 87.7002 0.108254 76.2002C0.10838 25.9004 33.1083 11.1006 33.1083 11.1006C49.7083 3.50068 78.3082 0.299998 107.908 0H108.608ZM142.208 39.4004C129.808 39.4004 120.507 44.1006 114.307 53.6006L108.307 63.7002L102.307 53.6006C96.1075 44.1008 86.8079 39.4004 74.4081 39.4004C63.8081 39.4004 55.2083 43.201 48.6083 50.501C42.3083 57.8009 39.1083 67.7004 39.1083 80.2002V141.101H63.2079V81.9004C63.2079 69.4006 68.4081 63.1006 78.9081 63.1006C90.5079 63.1007 96.3075 70.7011 96.3075 85.501V117.9H120.307V85.501C120.307 70.601 126.108 63.1006 137.708 63.1006C148.208 63.1006 153.408 69.4006 153.408 81.9004V141.101H177.508V80.2002C177.508 67.7006 174.308 57.8009 168.108 50.501C161.508 43.201 152.908 39.4004 142.208 39.4004Z',
   },
 ]
 ---
@@ -274,12 +303,12 @@ const SOCIAL = [
     display: flex;
     justify-content: center; /* -> start at lg */
 
-    /* The four marks are not the same height — 48 square for GitHub and LinkedIn,
-       48x42 for Bluesky, 48x39 for Medium, because each brand's artboard is its
-       own shape. Flex's default `stretch` leaves the shorter two hanging from the
-       top of the row, so they read as sitting higher than the other two. Optical
-       centering is the only alignment that works across four unrelated artboards;
-       there is no shared baseline to hang them from. */
+    /* Centering across four unrelated artboards, with no shared baseline to hang
+       them from. Since every <svg> became a 3rem square (see `block-size` below)
+       the boxes are all the same height and SVG centers each drawing inside its
+       own box, so this no longer does visible work. It stays because it is the
+       right rule for this row, and the first mark given a box of its own size
+       would otherwise hang from the top of it. */
     align-items: center;
     gap: var(--space-5);
     padding: 0;
@@ -292,8 +321,29 @@ const SOCIAL = [
   }
 
   .social svg {
+    /*
+     * ── EVERY MARK FITS A 3rem SQUARE ──────────────────────────────────────
+     *
+     * Both dimensions, not just the width. This was `inline-size: 3rem` with
+     * `block-size: auto`, which fixes the WIDTH and lets each artboard's
+     * proportions set the height. That held while every mark was square or
+     * wider than tall — 48x48, 48x48, 48x42, 48x39 — but Mastodon's artboard is
+     * 217x233, taller than wide, so it rendered 48x51.5 and stood out of the row.
+     *
+     * With both set, the <svg> box is a fixed square and the drawing is fitted
+     * into it by SVG's default `preserveAspectRatio="xMidYMid meet"`: scaled
+     * until its LONGER side fills the box, then centered on the shorter one.
+     * Bluesky comes out exactly as before, 48x42 centered vertically; Mastodon
+     * becomes 45x48, centered horizontally. Wide or tall, no mark can exceed 3rem
+     * on either axis, and a new one needs no rule of its own.
+     *
+     * Fitting the bounding box is a GEOMETRIC equalizer, not an optical one: a
+     * blocky mark still reads heavier than a circle the same height. If one ever
+     * needs nudging by eye, shrink that mark's own box — `align-items: center`
+     * on `.social` is already there to keep it on the row's center line.
+     */
     inline-size: 3rem;
-    block-size: auto;
+    block-size: 3rem;
 
     /*
      * ── WHY THE VIEWPORT MUST NOT CLIP ──────────────────────────────────────
@@ -306,29 +356,33 @@ const SOCIAL = [
      * It is not one mark's problem, it is all four: no artboard leaves room for a
      * stroke, because none was drawn expecting one.
      *
-     * The slack an artboard needs is HALF THE SCREEN STROKE DIVIDED BY THE RENDER
-     * SCALE, because `non-scaling-stroke` fixes the width in screen px while the
-     * viewBox is in user units. At `stroke-width: 1px` and 3rem that is 1.04 user
-     * units for the 100-unit boards and 1.22 for Medium's 117. What each would
-     * lose at its tightest edge without `overflow: visible`, in rendered pixels:
+     * The room a mark needs is HALF THE STROKE — 0.5px at `stroke-width: 1px`,
+     * screen-fixed by `non-scaling-stroke` — between its ink and the edge of its
+     * <svg> BOX. The box, not the viewBox: since every mark became a 3rem square,
+     * a non-square artboard leaves room on its short axis — 2.9px above and below
+     * Bluesky, 1.7px beside Mastodon — and none on its long one, where artboard
+     * and box meet. What each would lose without `overflow: visible`, measured in
+     * rendered pixels:
      *
-     *     GitHub    0        slack 1.50u — clears it
-     *     LinkedIn  0.02     slack 1.00u, at the bottom only
-     *     Bluesky   0.50     slack 0 on every edge
-     *     Medium    0.50     slack 0 on three edges
+     *               tightest edge          clipped
+     *     GitHub    0.72 left and right    0
+     *     LinkedIn  0.48 bottom            0.02
+     *     Bluesky   0 left and right       0.50
+     *     Mastodon  0 top, 0.2 bottom      0.50 and 0.30
      *
      * THE STROKE HAS MOVED THREE TIMES — 1.5, then 3, then 2, now 1 — and every
      * number above moves with it, since the requirement is half the stroke. Which
      * is the argument for the rule rather than for padding four artboards to fit
      * one weight: two of the four still clip at the lightest stroke tried.
      *
-     * Bluesky reads worst because its wing tips sit in the exact corners of its
-     * box AND its outline runs parallel to the edge there, so the clip shows as a
-     * flat cut rather than a softened corner.
+     * Bluesky and Mastodon would read worst, because each meets its box where its
+     * outline runs parallel to the edge — the butterfly's wing tips at the sides,
+     * the crown of Mastodon's bubble at the top — so the clip shows as a flat cut
+     * rather than a softened corner.
      *
      * `overflow: visible` rather than padding each viewBox, for three reasons: the
-     * padding differs per artboard; it would need recomputing if `inline-size`
-     * ever changed, because the stroke is screen-fixed so the user-unit padding
+     * padding differs per artboard; it would need recomputing if the 3rem ever
+     * changed, because the stroke is screen-fixed so the user-unit padding
      * depends on the render scale; and growing a viewBox shrinks the drawing
      * inside the same box, so all four optical sizes would shift. One declaration
      * here is independent of both artboard and size.
@@ -351,24 +405,27 @@ const SOCIAL = [
      * stays correct in dark mode and would survive the band changing fill —
      * where a hardcoded blue would quietly stop matching.
      *
-     * The stroke is hidden by offsetting a single dash the full length of the
-     * path, then animated to twice that length to walk it around. `--mark-length`
-     * comes from the element, measured per mark; see the SOCIAL note above for
-     * why it cannot be one shared number.
+     * The stroke is hidden by offsetting a single dash the length of the mark's
+     * longest subpath, then animated to twice that length to draw it on.
+     * `--mark-length` comes from the element, measured per mark; see the SOCIAL
+     * note above for what it measures and why it cannot be one shared number.
      *
      * STROKE WIDTH IS IN USER UNITS, so it is scaled by the viewBox — the same
-     * fact tokens.css records about Lucide. The artboards are 100, 100, 100 and
-     * 117 units wide, so at a shared 3rem one `stroke-width: 1px` would render
-     * 0.48, 0.48, 0.48 and 0.41px, leaving Medium ~15% light.
+     * fact tokens.css records about Lucide. The artboards' longer sides are 100,
+     * 100, 100 and 233 units, so in a shared 3rem square one `stroke-width: 1px`
+     * would render 0.48, 0.48, 0.48 and 0.21px, leaving Mastodon at less than
+     * half the weight of the rest.
      *
-     * That gap used to be far worse, which is worth remembering: Bluesky first
-     * arrived on its official 568-unit artboard and rendered 0.25px — nearly six
-     * times thinner than GitHub, with nothing at the call site to suggest why.
-     * Normalizing the artboard fixed that instance; this property is what stops
-     * the next one.
+     * Bluesky did the same first, which is worth remembering: it arrived on its
+     * official 568-unit artboard and rendered 0.25px — nearly six times thinner
+     * than GitHub, with nothing at the call site to suggest why. Normalizing the
+     * artboard fixed that instance; this property is what stops the next one.
+     * Mastodon WAS the next one, and was never normalized: this property is the
+     * only reason it strokes at the same weight as the rest.
      *
-     * `vector-effect: non-scaling-stroke` fixes that by taking the width out of
-     * user space — but it is NOT AN INHERITED PROPERTY, so it has to sit on the
+     * `vector-effect: non-scaling-stroke` fixes that by taking the width — and
+     * the dash pattern with it — out of user space. But it is NOT AN INHERITED
+     * PROPERTY, so it has to sit on the
      * element that draws the stroke. Declared here on the <svg> it computed to
      * `none` on every path, silently, while `stroke` and `stroke-width` inherited
      * down as expected and got scaled. See the `path` rule below.
@@ -384,9 +441,10 @@ const SOCIAL = [
   }
 
   /* On the PATH, deliberately. `vector-effect` does not inherit, so this is the
-     only place it can do its job — and it is what lets four brand artboards of
-     three different scales read as one stroke weight. Any future mark works
-     without its viewBox being normalized first. */
+     only place it can do its job — and it is what lets four brand artboards at
+     two different render scales read as one stroke weight, and what puts
+     `--mark-length` in screen pixels. Any future mark works without its viewBox
+     being normalized first. */
   .social svg path {
     vector-effect: non-scaling-stroke;
   }

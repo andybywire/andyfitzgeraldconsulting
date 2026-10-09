@@ -42,5 +42,6 @@ export const SOCIAL_URLS = {
   gitHub: 'https://github.com/andybywire',
   linkedIn: 'https://www.linkedin.com/in/andyfitzgerald',
   bluesky: `https://bsky.app/profile/${BLUESKY_HANDLE}`,
+  mastodon: 'https://mastodon.social/@andyfitz',
   medium: 'https://medium.com/@andybywire',
 } as const
