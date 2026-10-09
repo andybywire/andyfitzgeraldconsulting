@@ -295,7 +295,8 @@ jobs:
   # This job was `links` until 2026-10-08, when HTML validation joined it. The
   # validator brought the install and the Java runtime — `vnu-jar` comes from
   # node_modules — and since this job runs beside the deploy, the minute that
-  # costs delays only the report, never the release.
+  # costs delays only the report, never the release. Accessibility joined the
+  # same day; it uses the runner's preinstalled Chrome, so it added no setup.
   site:
     name: Site checks (never hold the deploy)
     runs-on: ubuntu-latest
@@ -346,7 +347,7 @@ jobs:
         id: unpack
         run: mkdir site && tar xzf afc-astro.tar.gz -C site ./public
 
-      # Each runs whatever the other did, so a red run lists every failure at once.
+      # Each runs whatever the others did, so a red run lists every failure at once.
       - name: Link check
         if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
         run: node web/scripts/check-links.mjs site/public
@@ -354,6 +355,10 @@ jobs:
       - name: HTML validation
         if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
         run: node web/scripts/validate-html.mjs site/public
+
+      - name: Accessibility
+        if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
+        run: node web/scripts/check-a11y.mjs site/public
 
   deploy:
     name: Deploy to production

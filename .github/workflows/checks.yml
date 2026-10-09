@@ -6,7 +6,7 @@ name: Checks
 #
 #   code gates   TypeGen drift, `astro check`, the Studio's `tsc`, Prettier.
 #                They test the repo, and no content edit can change a result.
-#   site gates   The link check and HTML validation today; accessibility and
+#   site gates   The link check, HTML validation and accessibility today;
 #                budgets to come. They test the BUILT site, and content is
 #                exactly what breaks them — an author's dead link, a missing alt.
 #
@@ -236,7 +236,7 @@ jobs:
 
       # Each site gate runs whatever the other did, as the code gates do: a red
       # run lists every failure at once. Gated on the BUILD, not on `always()`, so a
-      # failed build does not also produce two failures that only mean "no site".
+      # failed build does not also fail every gate, each only to say "no site".
       - name: Link check
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm links
@@ -244,3 +244,9 @@ jobs:
       - name: HTML validation
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm validate
+
+      # Uses the Google Chrome the runner image preinstalls — check-a11y.mjs finds
+      # it on the PATH. Nothing to set up, and nothing downloaded per run.
+      - name: Accessibility
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: pnpm a11y
