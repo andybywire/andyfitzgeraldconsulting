@@ -269,13 +269,16 @@ const hasCard = Boolean(sourceCard?.href && sourceCard.title)
         asking for one. The rail form it never reaches is the same component in a
         231px column.
 
-        AN <h2>, WHERE THE ARTICLE'S RAIL PASSES <h3>. The rail's headings are inside
-        an <aside>, which signals apparatus; this one is a bare sibling of the body,
-        and a Book Note's body already carries h2 sections. An h3 after them would
-        read to a screen reader as a SUBSECTION of the last one — "Impressions >
+        AN <h2>. A Book Note's body already carries h2 sections, and an h3 after them
+        would read to a screen reader as a SUBSECTION of the last one — "Impressions >
         Topics" — which is false. h2 makes it a sibling instead: still apparatus
         rather than content, but navigationally honest. `as` costs nothing visually;
         TopicList pins the type either way.
+
+        This note once contrasted itself with the article rail, which passed <h3> on
+        the grounds that an <aside> signals apparatus. That reasoning did not survive
+        the HTML validator (2026-10-08): no browser lets an <aside> reset heading
+        levels, so the rail moved to <h2> on this note's argument. See RailNav.astro.
 
         The `note-` prefix on the id namespaces it against the body's own h2 ids,
         which are slugified from heading text — a note titled "Topics" would collide.
