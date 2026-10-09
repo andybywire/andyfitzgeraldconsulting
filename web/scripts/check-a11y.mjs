@@ -69,6 +69,24 @@
  * runs it on every branch push, and deploy-astro.yml runs it beside the production deploy, never
  * in front of it. See check-links.mjs → WHERE IT RUNS.
  *
+ * ── PROVEN 2026-10-08 ───────────────────────────────────────────────────────
+ *
+ * A gate is not known to work until it has failed, so this one was made to:
+ *
+ *   by hand          A build from before the chip fix failed on 20 elements — 19 chips and the
+ *                    close-search button — in every configuration; the build after it, on the
+ *                    button alone. The button's wordings were then tried inside the real
+ *                    /search/ page, because in isolation axe passes even the failing one.
+ *   on the runner    The `accessibility-check` branch went red on exactly that button, with the
+ *                    runner's Chrome starting under its sandbox — Ubuntu 24.04 restricts the
+ *                    namespaces it uses, and no flag turned out to be needed. With the button
+ *                    renamed it went green: 84 pages × 5 configurations in 125s, against about
+ *                    45s on a Mac. Every page reached its theme on both machines.
+ *   unproven when    deploy-astro.yml's step, which runs only from `main` — its first run is the
+ *   this was written merge. And red-after-deploy from a Sanity publish, as for the other gates.
+ *
+ * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
+ *
  * ── EXIT CODES ──────────────────────────────────────────────────────────────
  *
  *   0  no violations
