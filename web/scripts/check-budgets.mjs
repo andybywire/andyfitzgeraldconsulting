@@ -74,6 +74,26 @@
  * Exactly where the other site gates run, on the same terms: checks.yml builds and runs it on every
  * branch push, and deploy-astro.yml runs it beside the production deploy, never in front of it.
  *
+ * ── PROVEN 2026-10-09 ───────────────────────────────────────────────────────
+ *
+ * A gate is not known to work until it has failed, so this one was made to:
+ *
+ *   by hand          A copy of the build with one fault per budget failed all six, each for its
+ *                    own reason. The JavaScript fault was a new chunk reachable only through an
+ *                    `import`, which proves the import-following: without it, that page would
+ *                    have read 10.1 KB and passed. A build with no fonts directory, and no build
+ *                    at all, each exit 2.
+ *   on the runner    The `performance-budgets` branch went green with every figure identical to a
+ *                    Mac's, to the tenth of a KB — brotli is deterministic, which is the point.
+ *                    A scratch branch, `performance-budgets-proof`, then put an incompressible
+ *                    string in the masthead script and a hidden attribute in BaseLayout: the
+ *                    Budgets step went red on exactly those two, and every other gate stayed
+ *                    green.
+ *   unproven when    deploy-astro.yml's step, which runs only from `main` — its first run is the
+ *   this was written merge. And red-after-deploy from a Sanity publish, as for the other gates.
+ *
+ * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
+ *
  * ── EXIT CODES ──────────────────────────────────────────────────────────────
  *
  *   0  everything is within budget
