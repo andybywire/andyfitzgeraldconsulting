@@ -606,14 +606,14 @@ differ only in leading.
 **h4 has no size step left** — it differentiates by family + weight + tracking. If it reads as bold
 body text the levers are uppercase, small caps, color or a rule, **not** a smaller size.
 
-### Heading case — title case for h2 and rail h3
+### Heading case — title case for h2, rail headings included
 
 **Decided 2026-09-03**, after being carried as an open question for some time.
 
 | | Case | Examples |
 |---|---|---|
 | **h2, anywhere** | **Title Case** | "Direct Clients", "Work With Me", "Related Insights" |
-| **Rail h3** — the rail's own group headings | **Title Case** | "On This Page", "Topics" |
+| **Rail headings** — the rail's own group headings, h2 since 2026-10-08 | **Title Case** | "On This Page", "Topics" |
 | **h3 and h4 in Portable Text** — authored body headings | sentence case | "Grooming selected concepts" |
 | `nav`, buttons, chips, labels | sentence case | "Work with me", "Show more" |
 
@@ -623,8 +623,9 @@ boards read that way.
 
 **The split is by authorship, not by level.** Anything the front end writes is a label, and labels
 are title case; anything an editor writes in a body is prose, and prose headings are sentence case.
-That is why an h3 in the rail and an h3 in an article body differ — and why nothing in code needs to
-inspect a heading's level to know its case.
+That is why a rail heading and an h3 in an article body differ — and why nothing in code needs to
+inspect a heading's level to know its case. (Until 2026-10-08 the rail's were h3s too, which made
+this the sharper example: same level, different case.)
 
 Sentence-case h2s in *existing published Portable Text* are content, not a build concern.
 

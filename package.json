@@ -13,6 +13,7 @@
     "typegen": "pnpm --filter studio typegen",
     "parity": "pnpm --filter web parity",
     "links": "pnpm --filter web links",
+    "validate": "pnpm --filter web validate",
     "format": "prettier --write ."
   },
   "author": "Andy Fitzgerald",

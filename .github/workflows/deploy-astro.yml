@@ -279,8 +279,8 @@ jobs:
   #
   # Decided 2026-10-08 (Andy). This job and `deploy` each need only `build`, so
   # they run side by side and nothing here can hold a release. A failure turns the
-  # run red once the site has shipped, and the report lands on the run's summary
-  # page. DO NOT add `links` to deploy's `needs:` — that one line is the whole
+  # run red once the site has shipped, and each report lands on the run's summary
+  # page. DO NOT add `site` to deploy's `needs:` — that one line is the whole
   # difference between this and a blocking gate.
   #
   # Why never block, though this workflow also runs on code pushes: it rebuilds
@@ -290,27 +290,51 @@ jobs:
   # branch, by checks.yml. web/scripts/check-links.mjs has the full account.
   #
   # It reads the SAME tarball the deploy ships rather than rebuilding, so what it
-  # checks is exactly what went live. The script needs Node and nothing else, so
-  # there is no install.
-  links:
-    name: Link check (never holds the deploy)
+  # checks is exactly what went live.
+  #
+  # This job was `links` until 2026-10-08, when HTML validation joined it. The
+  # validator brought the install and the Java runtime — `vnu-jar` comes from
+  # node_modules — and since this job runs beside the deploy, the minute that
+  # costs delays only the report, never the release.
+  site:
+    name: Site checks (never hold the deploy)
     runs-on: ubuntu-latest
     needs: build
 
     # Superseded freely, as builds are: only the newest content matters, and a
     # cancelled check touches nothing.
     concurrency:
-      group: astro-links
+      group: astro-site-checks
       cancel-in-progress: true
 
     steps:
       - name: Check out the repository
         uses: actions/checkout@v6
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 11.22.0
+
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
           node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Pinned to 21, as in checks.yml. setup-java sets JAVA_HOME, which
+      # validate-html.mjs prefers over the PATH.
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
 
       - name: Download the release artifact
         uses: actions/download-artifact@v8
@@ -319,10 +343,17 @@ jobs:
 
       # `public/` only — the web root, as nginx serves it. `server/` holds no pages.
       - name: Unpack the site
+        id: unpack
         run: mkdir site && tar xzf afc-astro.tar.gz -C site ./public
 
+      # Each runs whatever the other did, so a red run lists every failure at once.
       - name: Link check
+        if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
         run: node web/scripts/check-links.mjs site/public
+
+      - name: HTML validation
+        if: ${{ !cancelled() && steps.unpack.outcome == 'success' }}
+        run: node web/scripts/validate-html.mjs site/public
 
   deploy:
     name: Deploy to production

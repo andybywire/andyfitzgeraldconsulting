@@ -236,9 +236,10 @@ const jsonLd = [
 
             Built from `groups`, so it lists exactly the sections that rendered.
 
-            An <h3> rather than an <h2>, matching the article page's rail. It is inside a
-            `complementary` landmark, so its level is not carrying page structure, and
-            the board gives it the same size as a client name — which is the h3 role.
+            Its heading is an <h2>, as on the article page's rail, and draws at the h3
+            role — the size the board gives a client name. It was an <h3> until
+            2026-10-08, on the grounds that a `complementary` landmark keeps its level
+            out of the page's structure; no browser treats it that way. See RailNav.astro.
 
             "Reviews — Mobile" (2487:12185) has no rail at all: its content frame holds
             the prose column and nothing else. So this is `display: none` below md rather

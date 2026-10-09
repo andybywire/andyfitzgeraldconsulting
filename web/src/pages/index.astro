@@ -38,7 +38,9 @@ import Grid from '../components/Grid.astro'
 import ConceptList from '../components/ConceptList.astro'
 import Masthead from '../components/Masthead.astro'
 import Footer from '../components/Footer.astro'
-import Prose from '../components/prose/Prose.astro'
+import {PortableText} from 'astro-portabletext'
+import BareBlock from '../components/prose/BareBlock.astro'
+import {MARK_COMPONENTS} from '../components/prose/marks'
 import Button from '../components/Button.astro'
 import ArticleCard from '../components/cards/ArticleCard.astro'
 import NoteCard from '../components/cards/NoteCard.astro'
@@ -264,12 +266,30 @@ const jsonLd = [
               block for what that costs. Figma binds this node to the `Display` text
               style, which is the confirmation that it is a role and not a one-off.
 
-              <Prose> renders it because `heroCopy` is Portable Text and may carry a
-              mark. It emits a <p>, so the h1 wraps it rather than replacing it — the
-              alternative is a serializer override for one block on one page.
+              ── NO <p> INSIDE IT ───────────────────────────────────────────
+
+              `heroCopy` is Portable Text, so it may carry a mark, and <Prose> would
+              render its block as a <p>. Until 2026-10-08 the h1 wrapped that <p>, on the
+              grounds that the alternative was a serializer override for one block on one
+              page. The HTML validator settled it: an h1 permits phrasing content only,
+              and <p> is not phrasing content, so `<h1><p>…</p></h1>` is invalid.
+
+              The override already existed. <BareBlock> renders a block's content with
+              no element around it — Quotation.astro's attribution, for the same reason:
+              the element is already there. This is its second consumer.
+
+              IT ASSUMES ONE BLOCK. The schema describes the field as a single sentence
+              but does not limit it to one, and a second block would run straight on
+              from the first with no space — inside the h1, where a paragraph break
+              cannot exist anyway. The page renders one today.
             */
           }
-          <h1 class="hero-statement"><Prose value={page?.heroCopy} /></h1>
+          <h1 class="hero-statement">
+            <PortableText
+              value={page?.heroCopy ?? []}
+              components={{block: {normal: BareBlock}, mark: MARK_COMPONENTS}}
+            />
+          </h1>
 
           {
             /* `primary` is the BASE state, which mobile-first makes the right default:

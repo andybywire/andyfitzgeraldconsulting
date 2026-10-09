@@ -10,3 +10,10 @@ packages:
 # decision, not a blanket opt-in.
 allowBuilds:
   esbuild: true
+  # NOT allowed (2026-10-08). Its postinstall looks for Java 11+ and, failing that,
+  # downloads a Temurin 17 runtime from GitHub into its own cache — a network fetch on
+  # every install of a machine without Java, and a quieter Java version than the one
+  # this repo chose. Java is supplied instead: Temurin 21 locally, setup-java in CI.
+  # web/scripts/validate-html.mjs runs the jar with that `java` and never calls the
+  # package's own `check()`, which would trigger the same download at run time.
+  vnu-jar: false

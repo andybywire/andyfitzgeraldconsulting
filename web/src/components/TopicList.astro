@@ -84,7 +84,7 @@ const {
   topics,
   id,
   basePath,
-  as: Heading = 'h3',
+  as: Heading = 'h2',
   microformats = false,
   class: className,
   ...rest
@@ -171,10 +171,14 @@ const {
   /*
    * ── THE COMPONENT OWNS ITS TYPE; `as` OWNS ONLY THE OUTLINE LEVEL ──────────
    *
-   * The cards' rule, and it earns its place here twice over: the note passes `as="h2"`
-   * and the article rail `as="h3"`, and base.css gives those two different sizes AND
-   * different tracking. Without pinning all three properties the same list would draw
-   * at 28.125/35.16 with -1.5% tracking on one page and 22.5/29.25 on the other.
+   * The cards' rule. It was written when the note passed `as="h2"` and the article rail
+   * `as="h3"`, and base.css gives those two different sizes AND different tracking.
+   * Without pinning all three properties the same list would draw at 28.125/35.16 with
+   * -1.5% tracking on one page and 22.5/29.25 on the other.
+   *
+   * Every caller passes `h2` since 2026-10-08, when the rails moved up a level — see
+   * RailNav.astro for why an h3 in a rail was the wrong structure. The default moved
+   * with them. The pin stays, because it is what leaves the next caller free to choose.
    *
    * `letter-spacing: normal` is the one that hides: h3 carries none, so the article
    * page never needed it and the note did. Stated unconditionally so the level a

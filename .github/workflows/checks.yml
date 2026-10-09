@@ -6,7 +6,7 @@ name: Checks
 #
 #   code gates   TypeGen drift, `astro check`, the Studio's `tsc`, Prettier.
 #                They test the repo, and no content edit can change a result.
-#   site gates   The link check today; HTML validation, accessibility and
+#   site gates   The link check and HTML validation today; accessibility and
 #                budgets to come. They test the BUILT site, and content is
 #                exactly what breaks them — an author's dead link, a missing alt.
 #
@@ -217,12 +217,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # For the HTML validator, which is a Java program. Pinned to 21, the version
+      # used locally, rather than whatever the runner image happens to default to.
+      # setup-java sets JAVA_HOME, which validate-html.mjs prefers over the PATH.
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
       # The production build exactly — the package script sets
       # PUBLIC_SITE_MODE=production — with the heap deploy-astro.yml gives it.
       - name: Build
+        id: build
         env:
           NODE_OPTIONS: "--max-old-space-size=2048"
         run: pnpm --filter web build
 
+      # Each site gate runs whatever the other did, as the code gates do: a red
+      # run lists every failure at once. Gated on the BUILD, not on `always()`, so a
+      # failed build does not also produce two failures that only mean "no site".
       - name: Link check
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm links
+
+      - name: HTML validation
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: pnpm validate

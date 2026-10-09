@@ -37,10 +37,24 @@ export interface DeckAsset {
  * Returns null when the asset has no URL, so a caller renders no link rather than one
  * pointing at `null?dl=…`. The filename falls back rather than being asserted: it is
  * optional on the asset document, and a missing one should still download.
+ *
+ * ── THE FILENAME IS ENCODED, BECAUSE IT IS UNTRUSTED TEXT IN A QUERY STRING ──
+ *
+ * It went in raw until 2026-10-08, when the HTML validator reported a space in the href
+ * on all six decks: `?dl=Orchestrating the Mundane.pdf` is not a valid URL. For spaces
+ * that was cosmetic — a browser encodes them before sending, so the request was
+ * byte-identical either way (measured). The real exposure was the characters it does
+ * NOT fix for you: a `#` in a filename would cut the query off as a fragment, and an `&`
+ * or `+` would split or alter it. `originalFilename` is whatever the uploader's file was
+ * called, so this is the one place it can be made safe.
+ *
+ * Sanity echoes the name back percent-encoded — `filename="Orchestrating%20the%20Mundane.pdf"`
+ * — with or without this change. How a browser turns that into a saved name is its own
+ * business, and untouched here.
  */
 export function deckUrl(deck: DeckAsset | null | undefined): string | null {
   if (!deck?.url) return null
-  return `${deck.url}?dl=${deck.originalFilename ?? 'presentation.pdf'}`
+  return `${deck.url}?dl=${encodeURIComponent(deck.originalFilename ?? 'presentation.pdf')}`
 }
 
 /**
