@@ -680,3 +680,30 @@ feed readers and IndieWeb clients never fetch, it stays clear of the silent fail
 Cloudflare challenges otherwise cause for them. `uxmethods.org` is proxied through Cloudflare too
 (measured: `server: cloudflare`, `cf-ray` present), so the same tool is available there. Custom
 rules are per zone, though, so nothing configured here covers it.
+
+## The service worker — *read*, 2026-10-09
+
+Read while deciding whether this site should have one; it declined (see CLAUDE.md, phase 8). The
+worker is `astro/public/serviceworker.template.js`, stamped with a build id by
+`astro/scripts/stamp-sw.js` and registered from `Head.astro` outside dev. Its shape is sound —
+network-first for pages, cache-first for assets, one cache per build, old ones deleted on activate
+— but three things in it are worth fixing there, and none was copied here.
+
+**Offline, an unvisited page falls back to the home page, under the URL that was asked for.**
+`networkFirst` ends with `caches.match("/index.html")`, so a visitor offline who follows a link they
+have not read before sees the home page with the other page's address in the bar. That reads as the
+site being broken rather than the network being down. The fix is the commented-out line beside it:
+a small precached offline page that says so, ideally listing the pages that *are* cached.
+
+**The page cache never evicts.** Every page a visitor reads is stored in `PAGE_CACHE` and kept until
+the next build changes the cache name. On a site with hundreds of methods, a thorough reader
+accumulates hundreds of pages per build. Cap it — keep the most recent N entries, trimming on each
+`put` — or cache only pages that were visited twice.
+
+**Cache-first on assets duplicates the HTTP cache, and covers files that are not hashed.** Astro's
+`_astro/` files are content-hashed, so `Cache-Control: immutable` on them already answers a repeat
+visit without a request — measured here, where nginx sends exactly that. Cache-first adds a second
+copy in Cache Storage for no gain. And because it applies to every same-origin `GET` that is not a
+navigation, it also catches unhashed files — a JSON index, an image in `public/` — which then stay
+stale until the next build's worker activates. Restrict cache-first to `/_astro/`, or drop it and
+let the HTTP cache do that job.

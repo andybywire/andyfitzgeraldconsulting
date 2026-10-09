@@ -944,9 +944,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      budget at today's measurement plus headroom, lower it when the site gets lighter, and raise
      one only on purpose, in a commit that says why.
 
-   **What is left in phase 8 is not quality gates:** the service worker decision, and the
-   warning-only external link check deferred above. Per-concept feeds were evaluated and set
-   aside; see the top of this entry.
+   **What is left in phase 8 is the warning-only external link check** deferred above. Per-concept
+   feeds were evaluated and set aside (see the top of this entry), and the service worker was
+   declined (see below).
 
    **POSSE IS DEFERRED (Andy, 2026-10-09)** — to after more writing on the new site. It was
    researched and planned, and nothing was built:
@@ -1010,9 +1010,24 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    waiting. Note the property collision that is not one: `u-photo` on an `h-entry` is an image *of the
    post* — the hero, already built — while `u-photo` on an `h-card` is the person's avatar.
 
-   **The service worker decision lands here** (deferred from phase 2, 2026-08-21). Andy has shipped
-   service workers on Jekyll and 11ty sites and runs one on `ux-methods`, which is also Astro, so
-   read that one first rather than starting cold. Four things shape the decision:
+   **THE SERVICE WORKER IS DECLINED (Andy, 2026-10-09)**, on the same warrant-first terms as
+   per-concept feeds: revisit if offline reading becomes something someone wants. Measured against
+   what exists, a worker would add little. The nginx config already makes hashed `_astro/` assets
+   `immutable` for a year and revalidates HTML, the search index and the feeds, so repeat visits are
+   covered. The site is installable without a worker (BaseLayout records why). What a worker would
+   add is **offline reading** — and the risk this site has already paid for once: the 11ty worker
+   downloaded an extra 1–1.3 MB on a first visit, served installed copies a stale home page, and
+   needed a kill switch to remove.
+
+   **`/serviceworker.js` stays, and it is not a worker of ours** — it is that kill switch, removing
+   the 11ty worker from returning visitors. Keep it indefinitely, per its own header. ux-methods'
+   worker was read for the decision; three things in it are not worth copying, recorded in
+   docs/ux-methods-notes.md. **If a worker is ever wanted**, the lowest-risk shape considered was an
+   *offline page only*: one cached page, the network for everything else, answering a navigation
+   only when the network fails — so it can never serve stale content. It would take the kill
+   switch's URL and its cache cleanup, with the kill switch kept as its documented off switch.
+
+   The four constraints that shaped the decision, kept for a revisit:
    - **Astro hashes asset filenames at build**, so a hand-written worker with a hardcoded precache
      list goes stale every build. Either do runtime caching only — cache-first for fonts, network-
      first for HTML, no manifest — or use `@vite-pwa/astro`/Workbox to generate the manifest. This is
