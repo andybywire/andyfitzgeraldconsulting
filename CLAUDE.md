@@ -944,9 +944,18 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      budget at today's measurement plus headroom, lower it when the site gets lighter, and raise
      one only on purpose, in a commit that says why.
 
-   **What is left in phase 8 is not quality gates:** POSSE and the mf2 remainder below, the
-   service worker decision, and the warning-only external link check deferred above.
-   Per-concept feeds were evaluated and set aside; see the top of this entry.
+   **What is left in phase 8 is not quality gates:** the service worker decision, and the
+   warning-only external link check deferred above. Per-concept feeds were evaluated and set
+   aside; see the top of this entry.
+
+   **POSSE IS DEFERRED (Andy, 2026-10-09)** — to after more writing on the new site. It was
+   researched and planned, and nothing was built:
+   **[docs/future-work/posse-and-syndication.md](docs/future-work/posse-and-syndication.md) is the
+   pickup point**, with what is settled (manual full-article LinkedIn copies with a copy tool;
+   webmentions received and held; Bluesky and Mastodon through Bridgy, chosen at publish time and
+   posted by CI), the open questions, and the research behind them. Two findings worth knowing before then: **no API publishes a native
+   LinkedIn Article, and Bridgy does not support LinkedIn at all.** The mf2 remainder and the
+   Cloudflare warning below stay here as context for that work.
 
    **The microformats remainder lands here, and it is a short list because most of mf2 is already
    built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,
@@ -1022,6 +1031,16 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    while the `@font-face` rules were hand-written; adopting Astro's Fonts API brought it for free, via
    `optimizedFallbacks`. `font-display: swap` still accepts FOUT by design and preload only narrows
    the window — but the reflow when the swap happens is now matched rather than raw.
+
+**Two homes for planning notes** (Andy, 2026-10-09):
+
+- **`docs/future-work/`** holds follow-on work that was planned and deliberately deferred, each
+  file written so a later session can pick it up cold. It starts with
+  `posse-and-syndication.md`.
+- **`docs/astro-migration/`** is where the phase kickoffs and planning notes in `docs/` — the
+  `*-kickoff.md` files and their kin — move **once every phase is confirmed closed**. Not before,
+  and not phase by phase: they cross-reference each other and CLAUDE.md, so the move is one pass
+  that updates the links with it.
 
 ### Deploy shape — static production, SSR preview, one droplet
 
