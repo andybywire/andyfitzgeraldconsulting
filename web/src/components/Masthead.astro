@@ -344,10 +344,24 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
       be tappable, which makes a <button> the honest element and <kbd> the honest thing
       inside it.
 
-      `aria-label` overrides the visible "esc" deliberately, and this is the case
-      ThemeToggle's rule allows: the visible text is a KEY NAME, not a description of what
-      the control does. A screen-reader user gets "Close search"; nobody needs to be told
-      the glyph says E-S-C.
+      ── ITS NAME IS "Close search, esc" — THE ACTION, THEN WHAT IT SAYS ON IT ─────
+
+      `aria-label` names the action, because the visible text is a KEY NAME rather than a
+      description of what the control does. Until 2026-10-08 the name was "Close search"
+      alone, on the grounds that no screen-reader user needs to be told the glyph says
+      E-S-C. That reasoning considered screen readers only.
+
+      WCAG 2.5.3, Label in Name, is for a different user: someone using VOICE CONTROL,
+      who says what they see. On the 375 board this is a tap target drawn as "esc", so
+      "tap esc" is the natural command — and with the name "Close search", nothing
+      answers it. The accessibility gate reports it, at level A.
+
+      So the name keeps the action and adds the label: a screen reader hears what the
+      button does first, and the visible text is in the name for anyone who speaks it.
+      Measured against axe inside the real /search/ page, because in isolation it passes
+      even the old name: "Close search, esc" and "Esc, close search" pass; "Close search
+      (Esc)" and "Close search, Escape" do not — axe matches whole words, so "Escape" is
+      not "esc", and parentheses defeat it where a comma does not.
     */
     }
     <form class="search-field" id="masthead-search" role="search" action="/search/" method="get">
@@ -384,7 +398,7 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
       }
       <button class="search-submit" type="submit">Search</button>
 
-      <button class="search-dismiss" type="button" aria-label="Close search">
+      <button class="search-dismiss" type="button" aria-label="Close search, esc">
         <kbd aria-hidden="true">esc</kbd>
       </button>
     </form>
