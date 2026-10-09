@@ -17,6 +17,7 @@
     "parity": "node scripts/parity.mjs",
     "links": "node scripts/check-links.mjs",
     "validate": "node scripts/validate-html.mjs",
+    "a11y": "node scripts/check-a11y.mjs",
     "astro": "astro"
   },
   "author": "Andy Fitzgerald",
@@ -45,6 +46,7 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "axe-core": "4.14.0",
     "prettier-plugin-astro": "^0.14.1",
     "sharp": "^0.35.3",
     "typescript": "^6.0.3",

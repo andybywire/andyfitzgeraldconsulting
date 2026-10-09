@@ -130,17 +130,22 @@ pnpm typegen                 # regenerate web/sanity.types.ts — after any sche
 pnpm parity                  # render-every-document check — after `pnpm --filter web build`
 pnpm links                   # link check over the build — after `pnpm --filter web build`
 pnpm validate                # HTML validation over the build — needs Java 11+ (Temurin 21 here)
+pnpm a11y                    # accessibility (axe) over the build — needs Google Chrome
 pnpm format                  # Prettier, repo-wide — fixes what the Prettier check reports
 ```
 
 The code checks in `.github/workflows/checks.yml` run on every branch push, and each one runs
 locally as it does in CI: `pnpm typegen` then `git diff --exit-code web/sanity.types.ts`,
 `pnpm --filter web check`, `pnpm --filter studio typecheck`, `pnpm exec prettier --check .`.
-On a branch it also builds the site and runs `pnpm links` and `pnpm validate`.
+On a branch it also builds the site and runs `pnpm links`, `pnpm validate` and `pnpm a11y`.
 
 **Java is a local dependency now**, for the HTML validator only: Temurin 21, installed with
 `brew install --cask temurin@21` (2026-10-08). Not the plain `temurin` cask, which tracks the
 newest release rather than a long-term-support one; CI pins 21 with `actions/setup-java`.
+
+**So is Google Chrome**, for the accessibility check: the installed one, in `/Applications` or on
+the PATH, with `CHROME_PATH` to override. Nothing is downloaded. CI uses the Chrome that GitHub's
+runner image preinstalls.
 
 Deploy is `.github/workflows/deploy-astro.yml` — builds the static site and the PHP dependencies,
 tars a two-directory release (`public/` + `server/`), scps it to the droplet and swaps an atomic
@@ -864,8 +869,10 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    - **The Nu checker over html-validate**, measured over the same 84 pages: the reference found
      all four real defects and html-validate two, under ~1,800 findings that were template
      skeletons, Shiki's inline styles and its own opinions. html-validate's real extras — a
-     `<fieldset>` with no `<legend>`, unnamed `<nav>` landmarks — are accessibility findings,
-     **left for that gate to catch**.
+     `<fieldset>` with no `<legend>`, unnamed `<nav>` landmarks — looked like accessibility
+     findings and were left for that gate. **It found neither, because neither was real**: the
+     theme toggle's fieldset is named by `aria-label`, and the `<nav>` was inside an inert
+     `<template>`.
    - **It does not check CSS.** Every `CSS:` message is filtered: the Nu checker's CSS checker
      does not know `@container style()` or `container-type`, which were 543 of its 565 errors.
      Warnings are off too — almost all deliberate `role="list"` and `aria-disabled`.
@@ -881,6 +888,32 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    "How Does it Scale?" h3s in `structured-content-design-22`. The code defects it found — `<p>`
    inside the home h1, unencoded spaces in the deck download URL, and the rail levels — were
    fixed alongside it.
+
+   **ACCESSIBILITY IS BUILT (2026-10-08)**, the third site gate: `web/scripts/check-a11y.mjs`,
+   run with `pnpm a11y` after a build. It loads every page in headless Chrome over the DevTools
+   protocol and runs **axe-core** — pinned exactly, and the only new dependency: no Playwright,
+   no downloaded browser — failing on any of axe's default rules, which are WCAG 2.0–2.2 at A and
+   AA plus best practice. Its header records the reasoning; what is worth not re-deriving:
+
+   - **Five configurations**: desktop in light, OS dark and toggle dark — the three CSS blocks a
+     token can be wrong in — and phone in light and dark. Every page is checked to have reached
+     the theme it claims, so a configuration cannot pass by scanning the wrong one.
+   - **Reduced motion is on, and it waits for animations to finish.** Without that, 1 run in 10
+     caught links partway through base.css's 0.15s color transition and reported a contrast
+     failure in colors that were no token. A harness artifact: a real page load starts none.
+   - **Test an accessibility fix inside the real page, not in a bare test file.** axe passed the
+     close-search button's failing name in isolation and failed it in `/search/`, with the
+     page's own CSS applied.
+   - **A pass is a floor.** Automated checks find roughly a third of WCAG failures. Keyboard use,
+     focus order, what a screen reader announces, whether alt text is any good, and interactive
+     states — search open, the mobile menu expanded — are not tested at all.
+
+   It found two real failures, both WCAG 2.5.3, Label in Name. The **facet chips** read
+   "Structured Content11", because Astro's HTML compression dropped the whitespace between two
+   spans — not the comma that `docs/eleventy-astro-comparison.md` had blamed. And the
+   **close-search button**, whose visible text is "esc", is now named "Close search, esc", for
+   voice-control users who say what they see. The check takes about 125s on the runner against
+   45s on a Mac, the slowest gate by far; beside the deploy, that delays only the report.
 
    **The microformats remainder lands here, and it is a short list because most of mf2 is already
    built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,
