@@ -87,6 +87,17 @@ const {facets, basePath, label}: Props = Astro.props
 
                 `aria-disabled`, not `disabled`, which anchors do not have. The href
                 stays so the URL contract is inspectable from view-source.
+
+                ── THE `{' '}` BETWEEN THE SPANS IS LOAD-BEARING ──────────────────
+
+                Without it the chip's text is "Structured Content15" — Astro's HTML
+                compression drops the newline between the tags, and the pill's gap is
+                layout, not text. That failed WCAG 2.5.3, Label in Name (axe,
+                2026-10-08): the visible text must appear in the accessible name, and
+                "Content15" appears in no name. With the space it reads "Structured
+                Content 15", which the aria-label contains once punctuation is set
+                aside — the wording above was never the problem, though it was blamed
+                for it at first. The pill is inline-flex, so the space draws nothing.
               */}
               <Chip
                 href={`${basePath}?${group.key}=${facet.slug}`}
@@ -95,7 +106,7 @@ const {facets, basePath, label}: Props = Astro.props
                 aria-disabled="true"
                 aria-label={`${facet.label}, ${facet.count} results`}
               >
-                <span class="chip-label">{facet.label}</span>
+                <span class="chip-label">{facet.label}</span>{' '}
                 <span class="chip-count">{facet.count}</span>
               </Chip>
             </li>

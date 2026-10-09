@@ -261,8 +261,15 @@ floor and do not certify either site.
   is "Structured Content, 11 results", plus ", add filter" once the script runs. The name begins
   with the visible label, so speaking the label still works, but the comma breaks axe's contiguous
   match. Lighthouse weights this audit at zero.
+
+  **Corrected 2026-10-08: the comma was not the cause, and this is fixed.** Five variants tested
+  against axe showed it sets punctuation aside. The real cause was the two spans rendering with no
+  space between them, so the visible text was "Structured Content11". One `{' '}` in
+  `FacetFilters.astro` fixed it, with the name unchanged. The phase 8 accessibility gate found it.
 - **The rail's "Contents" heading** is an `h3` that skips a level on About and Consulting. The rail
   shows only at desktop widths, which is why those pages score 99 on desktop and 100 on mobile.
+  **Fixed 2026-10-08:** the rail headings are h2 now, after the phase 8 HTML validator reported the
+  skip as an error. See `RailNav.astro`.
 
 ---
 
