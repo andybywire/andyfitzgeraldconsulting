@@ -129,19 +129,25 @@ pnpm --filter studio dev     # Sanity Studio on the production-26 dataset, :3030
 pnpm typegen                 # regenerate web/sanity.types.ts — after any schema or query change
 pnpm parity                  # render-every-document check — after `pnpm --filter web build`
 pnpm links                   # link check over the build — after `pnpm --filter web build`
+pnpm validate                # HTML validation over the build — needs Java 11+ (Temurin 21 here)
 pnpm format                  # Prettier, repo-wide — fixes what the Prettier check reports
 ```
 
 The code checks in `.github/workflows/checks.yml` run on every branch push, and each one runs
 locally as it does in CI: `pnpm typegen` then `git diff --exit-code web/sanity.types.ts`,
 `pnpm --filter web check`, `pnpm --filter studio typecheck`, `pnpm exec prettier --check .`.
-On a branch it also builds the site and runs `pnpm links`.
+On a branch it also builds the site and runs `pnpm links` and `pnpm validate`.
+
+**Java is a local dependency now**, for the HTML validator only: Temurin 21, installed with
+`brew install --cask temurin@21` (2026-10-08). Not the plain `temurin` cask, which tracks the
+newest release rather than a long-term-support one; CI pins 21 with `actions/setup-java`.
 
 Deploy is `.github/workflows/deploy-astro.yml` — builds the static site and the PHP dependencies,
 tars a two-directory release (`public/` + `server/`), scps it to the droplet and swaps an atomic
 symlink at `/var/www/afc-production/html`. Triggered by pushes to `main` touching `web/**` and by
-Sanity `repository_dispatch` webhooks per document type. A `links` job checks the same release
-**beside** the deploy, so a failure turns the run red without holding the site — see phase 8.
+Sanity `repository_dispatch` webhooks per document type. A `site` job runs the site gates against
+the same release **beside** the deploy, so a failure turns the run red without holding the site —
+see phase 8.
 **nginx config is deployed separately and by hand**, with `nginx/deploy.sh` — its header says why
 that is not in CI. `build-prod.yml`, which deployed the 11ty site from `/var/www/afc`, was retired
 at the cutover.
@@ -848,6 +854,33 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    (2026-10-08). Another site's outage is not a defect here, and checking them well needs
    retries, rate limits and a tool built for it; lychee is the likely one. A `schedule:` trigger
    has the 60-day catch noted under `u-syndication` below.
+
+   **HTML VALIDATION IS BUILT (2026-10-08)**, the second site gate:
+   `web/scripts/validate-html.mjs`, run with `pnpm validate` after a build. It runs the **W3C Nu
+   Html Checker** (`vnu-jar`, pinned exactly) and fails on any error, where it runs and on the
+   same terms as the link check. Its header records the reasoning; four points are worth not
+   re-deriving:
+
+   - **The Nu checker over html-validate**, measured over the same 84 pages: the reference found
+     all four real defects and html-validate two, under ~1,800 findings that were template
+     skeletons, Shiki's inline styles and its own opinions. html-validate's real extras — a
+     `<fieldset>` with no `<legend>`, unnamed `<nav>` landmarks — are accessibility findings,
+     **left for that gate to catch**.
+   - **It does not check CSS.** Every `CSS:` message is filtered: the Nu checker's CSS checker
+     does not know `@container style()` or `container-type`, which were 543 of its 565 errors.
+     Warnings are off too — almost all deliberate `role="list"` and `aria-disabled`.
+   - **A skipped heading level fails** (Andy, 2026-10-08). That is what moved the rail headings
+     — "On This Page", "Topics" — from h3 to h2; see `RailNav.astro`, which records why an
+     `<aside>` never kept their level out of the page's structure. A **duplicate id** fails too,
+     which is where `headingId.ts` said one would surface. Both can come from content.
+   - **`vnu-jar`'s postinstall is not allowed** (`pnpm-workspace.yaml`): it would download a
+     Java 17 runtime on a machine without Java. Java is supplied instead.
+
+   It started RED, on content alone: two articles whose bodies open with an h3
+   (`designing-with-code`, `language-meaning-user-experience-architecture`), and four
+   "How Does it Scale?" h3s in `structured-content-design-22`. The code defects it found — `<p>`
+   inside the home h1, unencoded spaces in the deck download URL, and the rail levels — were
+   fixed alongside it.
 
    **The microformats remainder lands here, and it is a short list because most of mf2 is already
    built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,
