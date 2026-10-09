@@ -809,11 +809,14 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 8. **Quality gates + POSSE.** Performance budgets, accessibility checks, link checking, HTML
    validation; per-taxonomy RSS feeds; **POSSE** (https://indieweb.org/POSSE) syndication to
    LinkedIn, Bluesky, Mastodon. "Automated quality gates" is Andy's preferred framing over "TDD."
-   **"per-taxonomy RSS feeds" means feeds per CONCEPT, and is still outstanding.** Five feeds
-   shipped 2026-09-13 — `/feed.xml`, `/insights/feed.xml`, `/insights/feed-articles.xml`,
-   `/insights/feed-notes.xml`, `/presentations/feed.xml` — but those are section and type
+   **"per-taxonomy RSS feeds" means feeds per CONCEPT — EVALUATED, NOT BUILT (Andy,
+   2026-10-09).** There is no user warrant for them yet; build them if one emerges. The
+   measurements and a ready recommendation are in docs/feeds-kickoff.md → *Per-concept feeds*,
+   so a revisit starts there rather than from scratch. Five feeds shipped 2026-09-13 —
+   `/feed.xml`, `/insights/feed.xml`, `/insights/feed-articles.xml`,
+   `/insights/feed-notes.xml`, `/presentations/feed.xml` — and those are section and type
    feeds, not taxonomy ones. `RssBand`'s `buttonTarget` is content precisely so a page can
-   point at a per-taxonomy feed without a code change when they arrive. See
+   point at a per-taxonomy feed without a code change if they arrive. See
    [docs/feeds-kickoff.md](docs/feeds-kickoff.md), which also carries two live
    carry-forwards: nginx must serve the feeds as `application/atom+xml`, and the YouTube
    embed loads a player on view where the page uses click-to-load.
@@ -941,9 +944,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      budget at today's measurement plus headroom, lower it when the site gets lighter, and raise
      one only on purpose, in a commit that says why.
 
-   **What is left in phase 8 is not quality gates:** per-concept feeds, POSSE and the mf2
-   remainder below, the service worker decision, and the warning-only external link check
-   deferred above.
+   **What is left in phase 8 is not quality gates:** POSSE and the mf2 remainder below, the
+   service worker decision, and the warning-only external link check deferred above.
+   Per-concept feeds were evaluated and set aside; see the top of this entry.
 
    **The microformats remainder lands here, and it is a short list because most of mf2 is already
    built.** The article page carries `h-entry` with `p-name`, `dt-published`, `e-content`,

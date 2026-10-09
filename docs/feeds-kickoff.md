@@ -313,6 +313,53 @@ because it generalizes: **a prerendered endpoint's response headers are build-ti
 `/search.json` has the same property — it happens to be fine, since `.json` already maps to
 `application/json`.
 
+## Per-concept feeds — evaluated 2026-10-09, not built
+
+**Andy's call: there is no user warrant for them yet.** Phase 8 listed "per-taxonomy RSS feeds",
+meaning one feed per concept. The corpus was measured and a full recommendation drafted, then set
+aside because nobody has asked to follow a single topic. Build it if a warrant emerges — someone
+asking for a topic feed, say, or subscriber counts
+([issue #6](https://github.com/andybywire/andyfitzgeraldconsulting/issues/6)) large enough that
+splitting them by subject would serve someone.
+
+**What a concept feed would have held**, measured 2026-10-09 against `production-26` — re-measure
+before quoting:
+
+- **55 Topic concepts** below the four top concepts, which are never tagged. **38** tag at least
+  one feed-eligible document: an article, note or presentation. Case studies are in no feed.
+- **The largest is Structured Content, at 17 items** — under the 20-entry cap, so every concept
+  feed would carry everything. 11 concepts have five or more items; 12 have exactly one.
+- **Topics cross sections.** Taxonomy is 6 articles and 9 presentations; Mental Models is 3
+  articles, a note and 7 presentations.
+
+**The recommendation, ready to pick up.** Six decisions, none of them made:
+
+1. **Scope:** one feed per Topic concept, site-wide, across articles, notes and presentations. A
+   reader follows a subject, not a section.
+2. **URL:** `/feed-topic-{slug}.xml`, at the root — the existing `feed-` naming, at the root
+   because it spans sections, with `topic` matching the index's `?topic=`. Not
+   `/feed.xml?topic=…`: a static file cannot vary by query string, and if the nginx rule mapping
+   it were ever lost, every topic feed would silently become the full feed. Not
+   `/feeds/topic/{slug}.xml`: folders that are not pages, the objection that already ruled out
+   `/insights/articles/feed.xml`.
+3. **Key:** readable prefLabel slugs, as `?topic=` uses, plus a copy of each feed under every
+   altLabel slug. The filter decision's trade lands differently here: rename a concept and its
+   old `?topic=` link heals, because unknown values are dropped, but its feed URL simply stops
+   existing, and the subscriber's reader goes quiet without saying so. Keeping the old label as an
+   altLabel would keep old subscriptions alive. The alternative is `conceptId` (`wzP4Wd`):
+   permanent, but meaningless to anyone reading it.
+4. **Which concepts:** all 55, so the set changes only when the vocabulary does. Feeds for only
+   the 38 in use would vanish whenever a last item was retagged. An empty Atom feed is valid.
+5. **Direct tags only**, so a topic feed holds exactly what `/insights/?topic=…` shows — and no
+   top-concept feeds. Feeds that roll up a branch would be additions.
+6. **Topics only.** Genre is format rather than subject, the Note branch already has
+   `feed-notes.xml`, and Case Study is in no feed.
+
+**The question it left open is discovery.** There are no topic pages, and a filtered index view
+cannot advertise its topic's feed to a reader, because the filter runs in the browser and feed
+readers run no scripts. So concept feeds would be listed on the RSS Feeds page, or offered through
+a "subscribe to this topic" control — a design question in its own right.
+
 ## How to work together
 
 Unchanged, and it worked well:
