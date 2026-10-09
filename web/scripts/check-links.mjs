@@ -100,9 +100,11 @@
  *                    faults in the footer: a missing slash, an own-domain link and a missing
  *                    fragment. The site job went red with all three, each "on every page (84) —
  *                    likely a template", while the code job stayed green.
- *   unproven when    deploy-astro.yml's `links` job, which runs only from `main` — its first run
- *   this was written is the merge. And red-after-deploy from a Sanity publish, which only a real
- *                    broken link will exercise, or a deliberate one published and taken back.
+ *   in production    deploy-astro.yml's job, on the merge (2026-10-08): green, and it started in
+ *                    the same second as the deploy, which is the arrangement working — nothing
+ *                    waited on it. It was `links` then and is `site` now, beside HTML validation.
+ *   still unproven   Red-after-deploy from a Sanity publish, which only a real broken link will
+ *                    exercise, or a deliberate one published and taken back.
  *
  * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
  *
