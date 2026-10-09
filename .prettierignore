@@ -14,6 +14,11 @@ studio/schema.json
 # never has the directory, would not.
 studio/.sanity/
 
+# Claude Code worktrees: whole checkouts of this repo, nested inside it. Git ignores them through
+# .git/info/exclude, which Prettier does not read — so without this, `pnpm format` in the main
+# checkout would rewrite files in a worktree someone else is in the middle of editing.
+.claude/worktrees/
+
 # Composer writes this file too, on `composer require`, by its own rules. Two writers of one file
 # is the churn studio/sanity.cli.ts records for TypeGen, and Composer is the one that owns it.
 web/server/composer.json
