@@ -6,8 +6,8 @@ name: Checks
 #
 #   code gates   TypeGen drift, `astro check`, the Studio's `tsc`, Prettier.
 #                They test the repo, and no content edit can change a result.
-#   site gates   The link check, HTML validation and accessibility today;
-#                budgets to come. They test the BUILT site, and content is
+#   site gates   The link check, HTML validation, byte budgets and
+#                accessibility. They test the BUILT site, and content is
 #                exactly what breaks them — an author's dead link, a missing alt.
 #
 # On a branch this runs both, BEFORE a merge: the `code` job, and the `site` job,
@@ -244,6 +244,10 @@ jobs:
       - name: HTML validation
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm validate
+
+      - name: Budgets
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: pnpm budgets
 
       # Uses the Google Chrome the runner image preinstalls — check-a11y.mjs finds
       # it on the PATH. Nothing to set up, and nothing downloaded per run.
