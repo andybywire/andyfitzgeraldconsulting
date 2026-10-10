@@ -89,8 +89,9 @@
  *                    string in the masthead script and a hidden attribute in BaseLayout: the
  *                    Budgets step went red on exactly those two, and every other gate stayed
  *                    green.
- *   unproven when    deploy-astro.yml's step, which runs only from `main` — its first run is the
- *   this was written merge. And red-after-deploy from a Sanity publish, as for the other gates.
+ *   in production    deploy-astro.yml's step, on the merge `f49f572` (2026-10-09): green, beside a
+ *                    deploy that finished first — nothing waited on it.
+ *   still unproven   Red-after-deploy from a Sanity publish, as for the other gates.
  *
  * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
  *

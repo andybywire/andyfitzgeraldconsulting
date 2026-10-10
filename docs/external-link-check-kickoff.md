@@ -24,7 +24,8 @@ closes, phase 8 closes.
 
 1. **When it runs: monthly on a schedule, plus `workflow_dispatch`.** Never on deploys, branch
    builds or Sanity webhooks: a run makes roughly 800 requests to other people's sites, and every
-   publish would repeat them. **Caveat:** GitHub disables scheduled workflows after 60 days with no
+   publish would repeat them. *(Corrected 2026-10-10: 323 distinct URLs. lychee requests each URL
+   once, however many pages carry it; 800 counted every appearance.)* **Caveat:** GitHub disables scheduled workflows after 60 days with no
    commits; the manual button covers the gap. Consider also triggering on a push that touches the
    workflow, its config or its script, so a change to the check can be proven on a branch —
    `workflow_dispatch` only runs workflow files that already exist on `main`.

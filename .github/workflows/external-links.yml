@@ -1,0 +1,179 @@
+name: External links
+
+# ── WHAT THIS CHECKS ───────────────────────────────────────────────────────
+#
+# Whether this site's links to OTHER sites still lead somewhere. The link check
+# in checks.yml covers links within the site, against the build, with no network.
+# This one asks the network, about 290 URLs on 135 hosts (2026-10-10), and that
+# is why it lives in its own workflow on its own schedule.
+#
+# Two steps: lychee requests every external link and writes JSON (web/lychee.toml
+# says how), then web/scripts/check-external-links.mjs decides what each failure
+# means and sets the exit code. Read that script's header for what fails, what is
+# only listed, and the traps measured on the way.
+#
+# ── WHEN IT RUNS, AND WHEN IT NEVER DOES ───────────────────────────────────
+#
+# Decided 2026-10-09 (Andy): monthly, on demand, and on a push that changes the
+# check itself. NEVER on a deploy, a branch build or a Sanity publish.
+#
+# Every one of those is about a change HERE, and an external link breaks because
+# something changed THERE, on a schedule nobody here controls. Production
+# rebuilds on every publish; running this beside it would repeat ~290 requests to
+# other people's sites each time and learn nothing new. Links rot slowly: the
+# first run found 13 dead pages accumulated over years. Monthly keeps up.
+#
+#   schedule            15:00 UTC on the 1st — 8am Pacific in summer, 7am in
+#                       winter, so the report is waiting at the start of a day.
+#   workflow_dispatch   The Run workflow button, for after fixing links in the
+#                       Studio. GitHub runs it only for a workflow file that is
+#                       already on `main`.
+#   push                Only a push that touches the workflow, the lychee config
+#                       or the classifier. That is how a change to the check is
+#                       proven on a branch, before `main`, where the button does
+#                       not yet exist for it.
+#
+# ── TWO GITHUB RULES THAT CAN STOP THE SCHEDULE QUIETLY ────────────────────
+#
+# GitHub DISABLES a scheduled workflow in a public repository after 60 days with
+# no repository activity, and this repository is public. A Sanity publish is not
+# a commit, so two quiet months of writing could do it. The Actions tab shows it
+# disabled, and one command turns it back on:
+#
+#   gh workflow enable external-links.yml
+#
+# And a scheduled run's failure email goes to whoever LAST EDITED THE CRON LINE
+# below — not to the repository's owner. Change that line yourself, or the email
+# goes to whoever did.
+#
+# ── WHAT A RED RUN MEANS ───────────────────────────────────────────────────
+#
+# At least one link is clearly broken: a 404, a 410, or a host that does not
+# exist. Nothing else turns it red. GitHub's failure email is the notification,
+# and the run's summary page is the report, with a link into the Studio for each
+# document that holds a broken URL. Blocked, TLS and the rest are listed there to
+# check by hand.
+#
+# Like checks.yml's site job, it builds against PUBLISHED content. It cannot
+# reuse a production build instead: deploy-astro.yml keeps its artifact for seven
+# days, and this runs monthly.
+#
+# ── PROVEN 2026-10-10, ON THE RUNNER ───────────────────────────────────────
+#
+# A gate is not known to work until it has failed, and this one had real broken
+# links to fail on, left unfixed for the purpose:
+#
+#   red      The push of the `external-link-check` branch: the Judge step failed
+#            on 15 broken links — 13 404s and two dead hosts — and the lychee
+#            step beside it passed, as designed. About a minute and a half, the
+#            build 40s of it and lychee 15s.
+#   green    Andy fixed all 15 in the Studio, from the summary's links, and a
+#            re-run of the same commit rebuilt from the new content: nothing
+#            broken, 36 to check by hand.
+#   pending  The schedule. Its first run is 2026-11-01.
+#
+# To re-prove it after changing it, break it on purpose — a template link to a
+# `.invalid` host is a dead host that cannot come back — and watch it go red.
+
+on:
+  schedule:
+    - cron: "0 15 1 * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/external-links.yml
+      - web/lychee.toml
+      - web/scripts/check-external-links.mjs
+
+# Read-only. The first workflow here to say so, and the first to hand the token
+# to a third-party action: lychee-action passes it to lychee, which documents it
+# as avoiding GitHub's rate limits on github.com links. Reading public
+# repositories is all that needs. It does NOT stop GitHub's 503s: one run with it
+# had all seven of Andy's notebook links at 503 — see the classifier's TRAPS.
+permissions:
+  contents: read
+
+# Read-only and idempotent, as in checks.yml: a newer run supersedes an older one.
+concurrency:
+  group: external-links-${{ github.ref }}
+  cancel-in-progress: true
+
+# The same two values the deploys set. The build reads them, and so does the
+# classifier, to find the documents that hold each URL. Not secrets: production
+# reads published content anonymously.
+env:
+  PUBLIC_SANITY_PROJECT_ID: 7v0qvet6
+  PUBLIC_SANITY_DATASET: production-26
+
+jobs:
+  links:
+    name: Check external links
+    runs-on: ubuntu-latest
+    # About a minute on a Mac, build included. A hung request should not hold a
+    # runner for the default six hours.
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v6
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          # Matches `packageManager` in the root package.json, as in the deploys.
+          version: 11.22.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The production build exactly, with the heap deploy-astro.yml gives it.
+      - name: Build
+        env:
+          NODE_OPTIONS: "--max-old-space-size=2048"
+        run: pnpm --filter web build
+
+      # ── LYCHEE COLLECTS ─────────────────────────────────────────────────
+      #
+      # Pinned twice over. The action by commit, because it is a third-party
+      # action handed a token and a tag can be moved; the comment names the tag.
+      # And lychee itself by `lycheeVersion`, which must match the Docker tag in
+      # web/package.json, so a run here and a run on a Mac are the same lychee.
+      #
+      # Every input that would let the action judge is turned off, because the
+      # classifier judges:
+      #   fail          lychee exits non-zero for a LinkedIn refusal as readily
+      #                 as for a 404, so its exit code means nothing here.
+      #   failIfEmpty   Works by grepping Markdown output for a zero total, so
+      #                 with JSON it never fires. The classifier's own empty-run
+      #                 check covers that, and exits 2.
+      #   jobSummary    Markdown only. The classifier writes the summary.
+      #   checkbox      Adds `--mode task`, a Markdown display mode.
+      - name: Collect with lychee
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          lycheeVersion: v0.24.2
+          args: --config web/lychee.toml 'web/dist/**/*.html'
+          format: json
+          output: ${{ runner.temp }}/lychee.json
+          fail: false
+          failIfEmpty: false
+          jobSummary: false
+          checkbox: false
+
+      # ── THE CLASSIFIER JUDGES ───────────────────────────────────────────
+      #
+      # Exit 1 is a broken link, and turns the run red. Exit 2 means there was
+      # nothing to judge — lychee wrote no report, or checked no pages — which is
+      # red too, because a check that did not run must not look like one that
+      # passed.
+      - name: Judge the results
+        run: node web/scripts/check-external-links.mjs "$RUNNER_TEMP/lychee.json"
