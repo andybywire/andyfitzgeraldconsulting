@@ -16,6 +16,7 @@
     "validate": "pnpm --filter web validate",
     "a11y": "pnpm --filter web a11y",
     "budgets": "pnpm --filter web budgets",
+    "external-links": "pnpm --filter web external-links",
     "format": "prettier --write ."
   },
   "author": "Andy Fitzgerald",
