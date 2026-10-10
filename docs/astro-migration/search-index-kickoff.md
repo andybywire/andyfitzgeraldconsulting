@@ -45,7 +45,7 @@ Search works end to end. Five of the seven planned steps, plus one dropped.
 | `components/Masthead.astro` | the field, the esc cap, the toggle's ships-hidden fix |
 
 **Recents were dropped** (Andy, 2026-09-12) and the board is marked DEFERRED. See
-[open-questions.md](open-questions.md) → *Search — deferred to a second pass*.
+[open-questions.md](../open-questions.md) → *Search — deferred to a second pass*.
 
 ## The job
 
@@ -185,7 +185,7 @@ field.
 - **DESIGN.md's `lead` role has a second consumer outside `<PageHeader>`** — `search.astro`'s
   invitation — which is this project's stated trigger for promotion. Left local, flagged.
 - **A custom `⌘ K` tooltip** and **recent searches** are both recorded in
-  [open-questions.md](open-questions.md) → *Search — deferred to a second pass*.
+  [open-questions.md](../open-questions.md) → *Search — deferred to a second pass*.
 - **Phase 5 is next after this**, and its list is in CLAUDE.md — 13 heroes with no `altText` being
   the enumerable part.
 

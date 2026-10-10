@@ -18,7 +18,7 @@ import {FEEDS} from '../../lib/feeds'
  * fields out and the scaffolding has to be rebuilt by whatever lifts them. That was
  * built, it worked, and it still read as a flattened form rather than as something
  * written. `FEED_CASE_STUDIES_QUERY` and the `labelled()` helper are deleted, not
- * disabled; see `docs/feeds-kickoff.md` for the full record.
+ * disabled; see `docs/astro-migration/feeds-kickoff.md` for the full record.
  *
  * ── SO THIS FEED IS EXACTLY ITS TWO SIBLINGS ADDED TOGETHER ───────────────────
  *

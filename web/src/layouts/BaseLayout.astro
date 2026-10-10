@@ -685,9 +685,9 @@ const PLAUSIBLE_INIT =
         fudged — a reader filters on it. Note that is a claim about the LINK, not about
         what the server sends: these are prerendered `.xml` files, typed by whatever serves
         them. Production's nginx sends `application/atom+xml` — the phase 6 change recorded
-        in docs/feeds-kickoff.md, verified on the live apex 2026-09-29 — so there the two
-        agree. The SSR preview's Node server sends `application/xml`. Readers sniff, and
-        nothing subscribes to a noindex host, so that one is left alone.
+        in docs/astro-migration/feeds-kickoff.md, verified on the live apex 2026-09-29 — so
+        there the two agree. The SSR preview's Node server sends `application/xml`. Readers
+        sniff, and nothing subscribes to a noindex host, so that one is left alone.
 
         Root-relative hrefs so the preview deploy advertises its own feeds rather than
         production's.

@@ -41,8 +41,9 @@
  * It was wrong within the hour. Re-measured 2026-09-13 after the build surfaced an
  * "Interview Highlights" heading nobody expected: **ten** presentations, six with
  * highlights, and `knowledge-graphs-and-ia` is an Interview that carries them. Andy is
- * publishing into `production-26` while this is built — `docs/feeds-kickoff.md` opens by
- * warning that the corpus moves under you — so all five genres are live.
+ * publishing into `production-26` while this is built —
+ * `docs/astro-migration/feeds-kickoff.md` opens by warning that the corpus moves under
+ * you — so all five genres are live.
  *
  * The lesson is the general one rather than the document: a count in a comment is a
  * reading, dated, and a branch justified by "no content does this yet" is a branch waiting

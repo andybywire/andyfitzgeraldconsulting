@@ -19,7 +19,7 @@ Building it also closes a live loose end: the case study testimonial band links 
 attribution to **`/reviews/#{review-slug}`**, which 404s on five case studies today. That
 URL shape was an inference from Reviews being a singleton — one page holding every review,
 so a fragment addresses one of them. **Confirm it before relying on it**;
-[docs/urls-and-filtering.md](urls-and-filtering.md) says nothing about `/reviews/`.
+[docs/urls-and-filtering.md](../urls-and-filtering.md) says nothing about `/reviews/`.
 
 As of the last session there were 22 `review` documents carrying `author`, `title` (the
 person's job title), `employer` (a reference to `client`), `slug`, `body`, and uneven
@@ -48,7 +48,7 @@ at all.
 ## Figma — read this before opening it
 
 **The file has FIVE pages and `get_metadata` with no `nodeId` reports TWO.** There is no
-hint of truncation. [docs/figma-notes.md](figma-notes.md) leads with this. The ids:
+hint of truncation. [docs/figma-notes.md](../figma-notes.md) leads with this. The ids:
 
 | page | id |
 | --- | --- |
@@ -178,7 +178,7 @@ papering over them.
 - **A lone "Next" chip sits at the right edge** in `GenreNav` — an inference, not the
   board's, affecting 10 of 41 navs. Andy may want it at the left.
 - **`grid-auto-flow: dense` on the Insights masonry stands** (Andy likes it); its measured
-  figures predate the ladder change. See [docs/open-questions.md](open-questions.md).
+  figures predate the ladder change. See [docs/open-questions.md](../open-questions.md).
 - **The serializer specimen is still published and on the Insights index.** Phase 7's
   "delete or exclude" call, deliberately deferred — and increasingly looking unnecessary.
 - **`adjBright`** is a live `heroImage` field with no renderer anywhere in the build.
