@@ -96,9 +96,9 @@ name: Build & Deploy AFC Astro Site
 #
 #   gh api 'repos/OWNER/REPO/tags?per_page=100' --jq '.[] | select(.commit.sha == "SHA") | .name'
 #
-# deploy-preview.yml pins the same pnpm and appleboy actions, and checks.yml the
-# same pnpm. Move a pin in every file at once: one moved in this deploy and not
-# the preview's ships the two hosts by different code.
+# deploy-preview.yml pins the same pnpm and appleboy actions, and checks.yml and
+# external-links.yml the same pnpm. Move a pin in every file at once: one moved
+# in this deploy and not the preview's ships the two hosts by different code.
 
 on:
   workflow_dispatch:
@@ -188,6 +188,11 @@ on:
 # actions use it only to read public files from GitHub without being
 # rate-limited. Artifacts and the pnpm cache never use this token; the runner
 # has its own for those.
+#
+# One of those setup actions is third-party. setup-php takes the token by
+# default, through its `github-token` input, so until this block every run of
+# `build` handed a READ-WRITE token to an action outside GitHub. That is the
+# plainest case for the block, and one more reason setup-php is pinned.
 #
 # `deploy` narrows it to nothing — see `permissions: {}` there.
 permissions:
