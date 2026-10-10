@@ -71,9 +71,11 @@
  *                   The repeats read "Error (cached)": they keep an HTTP code but lose a network
  *                   failure's detail. So results are grouped by URL and judged on the first full
  *                   entry; the rest are only more pages.
- *   GitHub          Answers some requests 503 and not others. The same ux-methods link was a 404
- *                   in one run and a 503 in the next, so a broken GitHub link can spend a run in
- *                   "other" before it shows as broken.
+ *   GitHub          Answers some requests 503 and not others, notebook pages (`.ipynb`) most of
+ *                   all. The same ux-methods link was a 404 in one run and a 503 in the next, so a
+ *                   broken GitHub link can spend a run in "other" before it shows as broken. The
+ *                   workflow's token does not prevent it: two runner runs, both with the token,
+ *                   had none of Andy's seven notebook links at 503, then all seven.
  *   root-relative   lychee reports every `/insights/…` link as an error unless it can resolve
  *                   it. lychee.toml's `base_url` handles that; anything that is not http(s) is
  *                   dropped here too, so losing the setting costs noise, not a false failure.
@@ -103,11 +105,11 @@
  *                    check by hand, 31 not checked.
  *   on the runner    external-links.yml on the `external-link-check` branch: RED, on the same 15,
  *                    each with its Studio link, and the lychee step green beside it, as designed.
- *                    None of the five ux-methods 404s came back 503 there — lychee checks
- *                    github.com through the API when it has the workflow's token. The runner was
- *                    blocked more than a Mac (Gartner, ISO, Udemy), and infotoday reset the
- *                    connection rather than failing TLS: 39 to check by hand, none failing. Andy
- *                    fixed the 15 in the Studio, and a re-run went GREEN with nothing broken.
+ *                    The runner was blocked more than a Mac (Gartner, ISO, Udemy), and infotoday
+ *                    reset the connection rather than failing TLS: 39 to check by hand, none
+ *                    failing. Andy fixed the 15 in the Studio, and a re-run went GREEN with
+ *                    nothing broken. The next push was green too, with seven GitHub notebook
+ *                    links at 503 under "other" — see TRAPS → GitHub.
  *   still unproven   The monthly schedule, whose first run is 2026-11-01.
  *
  * To re-prove it after changing it, do the same: break it on purpose and watch it go red.

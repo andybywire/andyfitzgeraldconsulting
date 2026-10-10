@@ -86,9 +86,10 @@ on:
       - web/scripts/check-external-links.mjs
 
 # Read-only. The first workflow here to say so, and the first to hand the token
-# to a third-party action: lychee-action passes it to lychee, which uses it to
-# check github.com links through GitHub's API instead of being rate-limited as an
-# anonymous client. Reading public repositories is all that needs.
+# to a third-party action: lychee-action passes it to lychee, which documents it
+# as avoiding GitHub's rate limits on github.com links. Reading public
+# repositories is all that needs. It does NOT stop GitHub's 503s: one run with it
+# had all seven of Andy's notebook links at 503 — see the classifier's TRAPS.
 permissions:
   contents: read
 

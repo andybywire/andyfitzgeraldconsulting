@@ -989,8 +989,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    It started RED on the runner, on 15 real broken links — 13 404s and two dead hosts — and went
    green on a re-run once Andy had fixed them in the Studio. A run requests **323 distinct URLs
    on 135 hosts**, not the ~800 the kickoff estimated: lychee requests each URL once, however
-   many pages carry it. The workflow's token, which lychee uses for github.com links, cleared
-   the 503s that had hidden real GitHub 404s on a Mac.
+   many pages carry it. GitHub answers some requests 503 — its notebook pages most of all, with
+   the workflow's token or without — so a broken GitHub link can sit under "other" for a run
+   before it shows as broken.
 
    **POSSE IS DEFERRED (Andy, 2026-10-09)** — to after more writing on the new site. It was
    researched and planned, and nothing was built:
