@@ -172,6 +172,27 @@ on:
       - "pnpm-workspace.yaml"
       - ".github/workflows/deploy-astro.yml"
 
+# ── THE TOKEN READS, AND THE DEPLOY JOB'S CAN DO NOTHING ───────────────────
+#
+# Decided 2026-10-10 (Andy). Without this block a run gets the repository's
+# default token, and that default was READ-WRITE when this was written. A push
+# made with that token starts no workflow, but `repository_dispatch` is the
+# exception GitHub makes, and it is the event a Sanity publish sends. So one
+# compromised step in any job could commit to `main` and then dispatch the
+# deploy of it — no SSH key needed. Even without the dispatch, the next real
+# publish would ship that commit.
+#
+# A block that names any permission sets every one it does not name to none, so
+# `contents: read` is the whole grant, whatever the repository default becomes.
+# Reading is all `build` and `site` need: checkout clones with it, and the setup
+# actions use it only to read public files from GitHub without being
+# rate-limited. Artifacts and the pnpm cache never use this token; the runner
+# has its own for those.
+#
+# `deploy` narrows it to nothing — see `permissions: {}` there.
+permissions:
+  contents: read
+
 # Neither value is a secret: both are compiled into the client bundle and are
 # readable by anyone who views source. Keeping them here rather than in repository
 # variables removes a setup step and makes the dataset visible in the diff when it
@@ -437,6 +458,13 @@ jobs:
     name: Deploy to production
     runs-on: ubuntu-latest
     needs: build
+
+    # No token at all. This is the job holding the SSH key and the Gmail
+    # secrets, and it uses the token for nothing: downloading an artifact from
+    # its own run goes through the runner's token, and appleboy's actions never
+    # read this one. So a step that goes wrong here can reach the droplet, but
+    # not the repository.
+    permissions: {}
 
     # Never cancelled. This job extracts a tarball and swaps a symlink on a real
     # machine; interrupting it is how a half-applied release happens. Queuing is

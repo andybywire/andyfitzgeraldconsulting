@@ -75,6 +75,13 @@ on:
       - "pnpm-workspace.yaml"
       - ".github/workflows/deploy-preview.yml"
 
+# Read-only, and nothing at all on `deploy`, for the reasons deploy-astro.yml
+# gives beside its own block. This workflow has no `repository_dispatch`, but a
+# write token could still dispatch the production one, so the reasoning carries
+# over whole. `build` reads with it, for checkout and setup-node.
+permissions:
+  contents: read
+
 # Not secrets — all three are compiled into the client bundle, readable by anyone who
 # views source. The Studio URL is what stega's click-to-edit links point at, and it is
 # inlined at build time, so it has to be here rather than on the droplet.
@@ -236,6 +243,10 @@ jobs:
     name: Deploy to preview
     runs-on: ubuntu-latest
     needs: build
+
+    # No token, as on production's deploy job: this one holds the SSH key and
+    # the VISUAL_EDITING token, and uses GitHub's for nothing.
+    permissions: {}
 
     concurrency:
       group: preview-deploy

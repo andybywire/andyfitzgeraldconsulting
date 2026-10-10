@@ -87,6 +87,12 @@ on:
       - "!docs/**"
       - "!nginx/**"
 
+# Read-only, as in the deploys; deploy-astro.yml gives the reasoning beside its
+# own block. Every gate here reads the repository and reports through its exit
+# code and the step summary, and neither of those needs the token.
+permissions:
+  contents: read
+
 # Read-only and idempotent, so a newer push supersedes an older run freely — as
 # in validate-nginx.yml, and unlike the deploys.
 concurrency:

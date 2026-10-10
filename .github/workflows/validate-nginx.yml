@@ -51,6 +51,12 @@ on:
       - "nginx/**"
       - ".github/workflows/validate-nginx.yml"
 
+# Read-only, as in the deploys; deploy-astro.yml gives the reasoning beside its
+# own block. The job only checks out the repository, and the nginx image it runs
+# comes from Docker Hub without the token.
+permissions:
+  contents: read
+
 # Validation is read-only and idempotent, so superseding an in-flight run is fine
 # — unlike the deploy this replaced, where cancelling mid-run was the hazard.
 concurrency:
