@@ -304,7 +304,7 @@ honest; say why in the comment rather than looking like the rule was ignored.
 - **A lone "Next" chip sits at the right edge** in `GenreNav` — an inference, not the board's,
   affecting 10 of 41 navs.
 - **`grid-auto-flow: dense` on the Insights masonry stands.** See
-  [docs/open-questions.md](open-questions.md).
+  [docs/open-questions.md](../open-questions.md).
 - **`adjBright`** is a live `heroImage` field with no renderer anywhere. Legacy.
 - The serializer specimen is **unpublished** as of 2026-09-04, so phase 7's "delete or
   exclude" call is resolved in practice.

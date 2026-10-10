@@ -19,7 +19,8 @@
  *   timings   LCP, CLS, INP — what a visitor experiences, and the better thing to care about.
  *             But they are measured in a simulated lab, and noisy on shared CI machines. LCP sat
  *             at 1.8–2.4s against Google's 2.5s "good" line on 2026-10-06, so as a gate it would
- *             fail at random. Measure them by hand; docs/eleventy-astro-comparison.md says how.
+ *             fail at random. Measure them by hand;
+ *             docs/astro-migration/eleventy-astro-comparison.md says how.
  *   scores    "Lighthouse ≥ 90" blends several timings, and the blend changes between Lighthouse
  *             versions. A failure would not even say what got worse.
  *
@@ -89,8 +90,9 @@
  *                    string in the masthead script and a hidden attribute in BaseLayout: the
  *                    Budgets step went red on exactly those two, and every other gate stayed
  *                    green.
- *   unproven when    deploy-astro.yml's step, which runs only from `main` — its first run is the
- *   this was written merge. And red-after-deploy from a Sanity publish, as for the other gates.
+ *   in production    deploy-astro.yml's step, on the merge `f49f572` (2026-10-09): green, beside a
+ *                    deploy that finished first — nothing waited on it.
+ *   still unproven   Red-after-deploy from a Sanity publish, as for the other gates.
  *
  * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
  *

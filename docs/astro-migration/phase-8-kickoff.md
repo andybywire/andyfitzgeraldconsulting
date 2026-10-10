@@ -6,8 +6,8 @@ what the phase 7 close-out found that bears on this phase.
 ---
 
 CLAUDE.md is loaded. **Read the phase 8 entry under `## Current direction`, then "Deploy shape"
-and "Branching and verification".** Read `docs/feeds-kickoff.md` and `docs/urls-and-filtering.md`
-when the feeds work starts, not before. This prompt covers what those don't.
+and "Branching and verification".** Read `docs/astro-migration/feeds-kickoff.md` and
+`docs/urls-and-filtering.md` when the feeds work starts, not before. This prompt covers what those don't.
 
 **Do not write code in the first turn.** Propose the order of work and the shape of the first
 piece, put the seams that block it to Andy, and stop.

@@ -8,7 +8,7 @@ import {visionTool} from '@sanity/vision'
 import {schemaTypes} from './schemas'
 import {codeInput} from '@sanity/code-input'
 import {RiSettings4Line} from 'react-icons/ri'
-import {GoGlobe} from 'react-icons/go'
+import {StudioIcon} from './icon'
 
 /**
  * Types the generated list must not show. Three are placed by hand further down — Settings as a
@@ -80,7 +80,7 @@ const previewUrlFor = (studioOrigin: string) =>
 export default defineConfig({
   name: 'default',
   title: 'AF Consulting',
-  icon: GoGlobe,
+  icon: StudioIcon,
 
   projectId: '7v0qvet6',
   dataset: 'production-26',

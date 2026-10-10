@@ -1,6 +1,6 @@
 # Phase 4 — Note detail pages
 
-CLAUDE.md is loaded. Read [docs/urls-and-filtering.md](urls-and-filtering.md) only if URL or
+CLAUDE.md is loaded. Read [docs/urls-and-filtering.md](../urls-and-filtering.md) only if URL or
 filtering behavior comes up; it is settled. **Read the Figma section below before opening Figma** —
 it will save you two wrong conclusions that have already cost two sessions.
 
@@ -32,7 +32,7 @@ consistent** (CLAUDE.md). The data currently is: each document has exactly one o
 
 **The file has FIVE pages and `get_metadata` with no `nodeId` reports TWO.** It prints a list headed
 "Top-level pages of the document" showing only `💻 Desktop` and `⚒️ Components`, with no hint of
-truncation. [docs/figma-notes.md](figma-notes.md) now leads with this; the short version:
+truncation. [docs/figma-notes.md](../figma-notes.md) now leads with this; the short version:
 
 ```
 0:1        💻 Desktop      949:4649  📱 Mobile      949:4650  ⚒️ Components
@@ -118,7 +118,7 @@ The band takes `noun="Notes"` already — `[slug].astro` passes it based on the 
 - **Three note cards on the Insights index currently 404.** Fixing the route fixes them.
 - **The serializer specimen** is still published and on the index (phase 7 decision deferred).
 - **`grid-auto-flow: dense`** on the masonry stands; its measured figures predate the ladder change
-  and would need re-measuring if revisited. See [docs/open-questions.md](open-questions.md).
+  and would need re-measuring if revisited. See [docs/open-questions.md](../open-questions.md).
 
 ## How to work
 

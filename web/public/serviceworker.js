@@ -39,8 +39,10 @@
  * ── HOW LONG IT STAYS ────────────────────────────────────────────────────────
  *
  * Indefinitely. It costs nothing — only a browser still holding the old registration ever
- * requests it — and there is no way to know when the last one has come back. If phase 8 ships a
- * real worker, it can live at this URL and replace this file in the same motion.
+ * requests it — and there is no way to know when the last one has come back. Phase 8 declined a
+ * real worker (2026-10-09). If one is ever wanted, the shape CLAUDE.md records is an offline page
+ * only, and it would live at this URL, take over this file's cache cleanup, and keep this file
+ * as its documented off switch.
  */
 
 self.addEventListener('install', () => self.skipWaiting())

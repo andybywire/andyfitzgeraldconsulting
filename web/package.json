@@ -19,6 +19,7 @@
     "validate": "node scripts/validate-html.mjs",
     "a11y": "node scripts/check-a11y.mjs",
     "budgets": "node scripts/check-budgets.mjs",
+    "external-links": "mkdir -p node_modules/.cache && docker run --rm --mount \"type=bind,src=$PWD/dist,dst=/input,readonly\" --mount \"type=bind,src=$PWD/lychee.toml,dst=/lychee.toml,readonly\" lycheeverse/lychee:0.24.2 --config /lychee.toml '/input/**/*.html' > node_modules/.cache/lychee.json; node scripts/check-external-links.mjs node_modules/.cache/lychee.json",
     "astro": "astro"
   },
   "author": "Andy Fitzgerald",

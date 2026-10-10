@@ -1,0 +1,102 @@
+# lychee — configuration for the external link check
+#
+# ── LYCHEE COLLECTS; IT DOES NOT JUDGE ──────────────────────────────────────
+#
+# lychee requests every external link in the built site and writes what came back as JSON.
+# scripts/check-external-links.mjs reads that JSON, sorts each failure into a category and sets
+# the exit code. Only the clearly broken fail the run: a 404, a 410, a host that does not exist
+# (Andy, 2026-10-09). Everything else — a 403, a TLS failure, a server error — is listed in the
+# run's summary as "check by hand".
+#
+# That third answer is why lychee does not judge. Its `accept` list can only make a status pass
+# or fail; it cannot make "blocked" visible without making it red. So NOTHING HERE DECIDES WHAT
+# FAILS. Do not add `accept` codes to quiet a result: a code accepted here never reaches the
+# classifier at all, and a 404 accepted by mistake would pass silently, forever.
+#
+# ── RUN IT AGAINST A BUILD ──────────────────────────────────────────────────
+#
+#   pnpm --filter web build && pnpm external-links
+#
+# Locally lychee runs in Docker, so the Mac gains no install. CI runs lycheeverse/lychee-action
+# instead, in .github/workflows/external-links.yml. Both read this file.
+#
+# The script mounts the build with `--mount`, not `-v`, on purpose. Given a path that does not
+# exist, `-v` CREATES it as an empty directory, so running before a build would leave an empty
+# `dist/` behind; `--mount` refuses, lychee writes no report, and the classifier exits 2. A `dist/`
+# with no pages in it is caught too: lychee exits 0 having checked nothing, and the classifier
+# exits 2 on that as well.
+#
+# THE VERSION IS PINNED IN TWO PLACES, and they must move together: the Docker tag in
+# web/package.json's `external-links` script, and the workflow's `lycheeVersion`. Both are 0.24.2,
+# pinned 2026-10-10.
+
+# ── WHAT IS CHECKED ─────────────────────────────────────────────────────────
+
+# http and https only. A mailto: or tel: link names no page to fetch.
+scheme = ["https", "http"]
+
+# Root-relative links, like `/insights/…`, resolve against this site and are then dropped by the
+# exclusion below. They belong to check-links.mjs, which checks them against the build with no
+# network at all.
+#
+# Without it lychee cannot resolve them, and reports every one as an error: 3,956 of them on
+# 2026-10-10, burying the 62 real failures in its own counts. The trap recorded in the kickoff was
+# `root_dir`, which would make lychee CHECK them, as files, a second time. This makes it skip them.
+base_url = "https://andyfitzgeraldconsulting.com/"
+
+exclude = [
+  # This site, on any of its hosts. check-links.mjs owns these, and fails an absolute one anyway.
+  # The canonical link, the feeds and the og: tags are absolute by design: 82 on 2026-10-10.
+  '^https?://([a-z]+\.)?andyfitzgeraldconsulting\.com([/:?#]|$)',
+
+  # Images and files on Sanity's CDN: 10,783 on 2026-10-10, more than every other URL in the
+  # build put together, since every image carries a srcset. A missing asset is a dangling
+  # reference in the dataset, which is what parity.mjs is for.
+  '^https://cdn\.sanity\.io/',
+
+  # ── EVERY EXCLUSION BELOW THIS LINE IS REPORTED ──
+  #
+  # The two above belong to other checks, and the classifier skips them silently — it carries
+  # the same two patterns, so change them in both places. It lists every other excluded URL by
+  # name, as "not checked". An exclusion here makes a link unchecked, never invisible.
+
+  # LinkedIn answers automated requests with 999, its own refusal, and escalates against an
+  # address that keeps asking: 13 of 31 profiles refused in one run on 2026-10-10, 27 in the
+  # next, minutes later — then every request, from lychee's user agent and ours alike. A 999
+  # cannot tell a removed profile from a live one, so the requests bought nothing, and run from
+  # a laptop they spend the goodwill of a home IP address. Excluded (Andy, 2026-10-10).
+  '^https?://([a-z]+\.)?linkedin\.com([/:?#]|$)',
+]
+
+# A URL inside `<pre>` or `<code>` is text about a link, not a link. This is lychee's default,
+# written down so nobody flips it in the name of thoroughness.
+include_verbatim = false
+
+# ── HOW IT ASKS ─────────────────────────────────────────────────────────────
+
+# Who is asking, and where to say so. lychee's default, `lychee/0.24.2`, is honest but anonymous.
+# A browser's string would get past more bot walls by misrepresenting the client. This names the
+# site, so an operator who finds it in a log can find out why.
+user_agent = "afc-link-check (+https://andyfitzgeraldconsulting.com/contact/)"
+
+max_concurrency = 8
+
+# At most two requests at once to any one host, where lychee's default is ten. Politeness, at almost
+# no cost: a run requests 323 distinct URLs on 135 hosts (2026-10-10), and only four hosts carry
+# more than a dozen — LinkedIn 31, GitHub 23, Amazon 17 and one conference site 17. lychee requests
+# a URL once however many pages carry it, so a footer link costs one request, not 84.
+host_concurrency = 2
+
+# Seconds, from connecting to the last byte. Generous, because a slow server is not a broken one.
+timeout = 20
+max_retries = 2
+
+# ── OUTPUT ──────────────────────────────────────────────────────────────────
+
+format = "json"
+no_progress = true
+
+# No request cache. lychee can keep answers in `.lycheecache` between runs, which suits a check run
+# many times a day. This one runs monthly, CI starts every run without the file anyway, and a
+# cached answer would be last month's.
+cache = false
