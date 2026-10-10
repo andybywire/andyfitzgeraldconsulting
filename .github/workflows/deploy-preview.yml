@@ -49,6 +49,19 @@ name: Build & Deploy AFC Preview (SSR)
 # nothing else. And NO `server/`: preview's `/api/contact` runs PRODUCTION's
 # contact.php (decided 2026-09-29, see nginx/site-common.conf), so this workflow
 # carries no PHP build and no Gmail secrets at all.
+#
+# ── ACTIONS ARE PINNED AS IN deploy-astro.yml ──────────────────────────────
+#
+# Every action that is not GitHub's own is pinned by commit, with its release as
+# a trailing comment (Andy, 2026-10-10). deploy-astro.yml's header holds the
+# reasoning, what the pins do not cover, and how to move one. The same three run
+# here — pnpm/action-setup in the build, both appleboy actions in the deploy —
+# and they move with that file's, or the two hosts are deployed by different
+# code.
+#
+# What the pins do not cover applies here unchanged. The appleboy actions still
+# fetch their real code at run time and never check the droplet's host key, and
+# what this deploy hands them is the SSH key and the VISUAL_EDITING token.
 
 on:
   workflow_dispatch:
@@ -90,7 +103,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           # Matches `packageManager` in the root package.json, as in deploy-astro.yml.
           version: 11.22.0
@@ -241,7 +254,7 @@ jobs:
           name: afc-preview-release
 
       - name: Copy the release to the droplet
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
         with:
           host: ${{ secrets.AFC_HOST }}
           username: ${{ secrets.AFC_SSH_USER }}
@@ -251,7 +264,7 @@ jobs:
           target: "/tmp"
 
       - name: Install, restart, and roll back if it is not healthy
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
         with:
           host: ${{ secrets.AFC_HOST }}
           username: ${{ secrets.AFC_SSH_USER }}
