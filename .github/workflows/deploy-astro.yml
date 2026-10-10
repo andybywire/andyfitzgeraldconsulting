@@ -30,6 +30,75 @@ name: Build & Deploy AFC Astro Site
 # target is the kind of cleverness that eventually deploys to the wrong one, and
 # the failure is a live site serving a staging build. One value, changed once,
 # reviewed in a diff.
+#
+# ── EVERY ACTION THAT IS NOT GITHUB'S OWN IS PINNED BY COMMIT ──────────────
+#
+# Decided 2026-10-10 (Andy). A tag is a pointer, and whoever controls an
+# action's repository can move it: every run that resolves it afterward runs the
+# new code, with this workflow's secrets in reach. That is the route the 2025
+# tj-actions/changed-files compromise took — its tags were moved to a commit
+# that printed secrets into build logs. A full commit SHA cannot be moved. The
+# trailing comment names the release the SHA was taken from, and names it
+# exactly: setup-php's says 2.40.0, not v2, because v2 is a tag that moves with
+# every 2.x release and the pin has frozen it at one.
+#
+# The line falls at the PLATFORM, not at "third-party":
+#
+#   actions/*           Major tags. GitHub's own, and this workflow already runs
+#                       on GitHub's runner with GitHub's token, so trusting its
+#                       tags adds no party that is not trusted already.
+#   pnpm/action-setup   Pinned, though it is pnpm's own action. It is not
+#                       GitHub's, and it runs in every build job.
+#   everything else     Pinned: appleboy's two, and setup-php.
+#
+# THE BUILD JOB MATTERS AS MUCH AS THE DEPLOY. The appleboy actions hold the SSH
+# key, but the tarball `build` produces ships unchanged — contact.php and
+# vendor/ with it, which run on the droplet beside the Gmail refresh token. Any
+# action in `build` can put code on production without touching the key, which
+# is why setup-php is pinned with the same care.
+#
+# The pins changed nothing that runs. The production deploy of 2026-10-09 (run
+# 37989683148) resolved every pinned tag to exactly these commits, in its jobs'
+# "Set up job" logs.
+#
+# ── WHAT THE PINS DO NOT COVER ─────────────────────────────────────────────
+#
+# Both appleboy actions fetch their real code at run time, by a reference that
+# can still move, so pinning them fixes the wrapper and not what holds the key:
+#
+#   ssh-action   downloads the drone-ssh 1.8.0 binary from appleboy's GitHub
+#                releases, with no checksum. That release is not immutable.
+#   scp-action   is a Docker action built FROM ghcr.io/appleboy/drone-scp:1.6.14,
+#                an image tag that can be pushed again.
+#
+# And neither step sets `fingerprint`, so appleboy's library accepts any host
+# key (`ssh.InsecureIgnoreHostKey`). An impostor answering at AFC_HOST would
+# receive the release and the Gmail secrets in `envs:` — though not the key
+# itself, which public-key authentication never sends.
+#
+# Replacing both actions with the runner's own OpenSSH, checking the host key,
+# removes all three. That is planned as its own piece of work (Andy,
+# 2026-10-10), NOT done. Until it is, these pins close the route tj-actions used,
+# and only that one.
+#
+# ── MOVING A PIN ───────────────────────────────────────────────────────────
+#
+# Nothing here updates them — there is no Dependabot — so a pin stays where it
+# is until someone moves it. Resolve the tag to its commit. If the type comes
+# back `tag`, the ref is an annotated tag object, and the commit is one step
+# further: setup-php's and pnpm's tags are both annotated, and the runner logs
+# above name the commit, not the tag object.
+#
+#   gh api repos/OWNER/REPO/git/ref/tags/TAG --jq '.object.type + " " + .object.sha'
+#   gh api repos/OWNER/REPO/git/tags/SHA --jq .object.sha        # type `tag` only
+#
+# For a moving tag like v2, find the release it equals, for the comment:
+#
+#   gh api 'repos/OWNER/REPO/tags?per_page=100' --jq '.[] | select(.commit.sha == "SHA") | .name'
+#
+# deploy-preview.yml pins the same pnpm and appleboy actions, and checks.yml and
+# external-links.yml the same pnpm. Move a pin in every file at once: one moved
+# in this deploy and not the preview's ships the two hosts by different code.
 
 on:
   workflow_dispatch:
@@ -103,6 +172,32 @@ on:
       - "pnpm-workspace.yaml"
       - ".github/workflows/deploy-astro.yml"
 
+# ── THE TOKEN READS, AND THE DEPLOY JOB'S CAN DO NOTHING ───────────────────
+#
+# Decided 2026-10-10 (Andy). Without this block a run gets the repository's
+# default token, and that default was READ-WRITE when this was written. A push
+# made with that token starts no workflow, but `repository_dispatch` is the
+# exception GitHub makes, and it is the event a Sanity publish sends. So one
+# compromised step in any job could commit to `main` and then dispatch the
+# deploy of it — no SSH key needed. Even without the dispatch, the next real
+# publish would ship that commit.
+#
+# A block that names any permission sets every one it does not name to none, so
+# `contents: read` is the whole grant, whatever the repository default becomes.
+# Reading is all `build` and `site` need: checkout clones with it, and the setup
+# actions use it only to read public files from GitHub without being
+# rate-limited. Artifacts and the pnpm cache never use this token; the runner
+# has its own for those.
+#
+# One of those setup actions is third-party. setup-php takes the token by
+# default, through its `github-token` input, so until this block every run of
+# `build` handed a READ-WRITE token to an action outside GitHub. That is the
+# plainest case for the block, and one more reason setup-php is pinned.
+#
+# `deploy` narrows it to nothing — see `permissions: {}` there.
+permissions:
+  contents: read
+
 # Neither value is a secret: both are compiled into the client bundle and are
 # readable by anyone who views source. Keeping them here rather than in repository
 # variables removes a setup step and makes the dataset visible in the diff when it
@@ -158,7 +253,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           # Matches `packageManager` in the root package.json. Two places, and they
           # have to agree — pnpm refuses to run if they do not.
@@ -197,7 +292,7 @@ jobs:
         run: pnpm --filter web build
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           # Must match the PHP-FPM socket named in nginx/site-common.conf. If the
           # droplet's version moves, both change together.
@@ -313,7 +408,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           version: 11.22.0
 
@@ -369,6 +464,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
 
+    # No token at all. This is the job holding the SSH key and the Gmail
+    # secrets, and it uses the token for nothing: downloading an artifact from
+    # its own run goes through the runner's token, and appleboy's actions never
+    # read this one. So a step that goes wrong here can reach the droplet, but
+    # not the repository.
+    permissions: {}
+
     # Never cancelled. This job extracts a tarball and swaps a symlink on a real
     # machine; interrupting it is how a half-applied release happens. Queuing is
     # the correct behavior even when the queue is long, because by this point the
@@ -398,8 +500,11 @@ jobs:
         with:
           name: afc-astro-release
 
+      # Both appleboy actions are pinned, still fetch their real code at run time,
+      # and neither checks the droplet's host key — see WHAT THE PINS DO NOT
+      # COVER in the header.
       - name: Copy the release to the droplet
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@917f8b81dfc1ccd331fef9e2d61bdc6c8be94634 # v0.1.7
         with:
           host: ${{ secrets.AFC_HOST }}
           username: ${{ secrets.AFC_SSH_USER }}
@@ -409,7 +514,7 @@ jobs:
           target: "/tmp"
 
       - name: Install the release (atomic symlink swap)
-        uses: appleboy/ssh-action@v1.2.0
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
         with:
           host: ${{ secrets.AFC_HOST }}
           username: ${{ secrets.AFC_SSH_USER }}
