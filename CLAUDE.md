@@ -170,7 +170,16 @@ dependencies bundled, runs the release from a directory with no `node_modules` a
 URL before shipping it, then activates it under the `afc-preview` user unit on `127.0.0.1:8081`,
 health-checks it and rolls back if it is not serving. Triggered by pushes to `main` touching `web/**`
 and by `workflow_dispatch` on any ref — **no** `repository_dispatch`, since SSR reads drafts per
-request. A push to `main` touching `web/` therefore deploys BOTH hosts.
+request. A push to `main` touching `web/` therefore deploys BOTH hosts. So does a merge that edits
+either deploy workflow, for its own host: each lists its own file under `paths:`.
+
+**The workflows' actions and tokens are locked down** (Andy, 2026-10-10). Every action not owned by
+GitHub is pinned to a full commit SHA with its release as a trailing comment, `actions/*` stays on
+major tags, every workflow's token is read-only, and both deploy jobs get none. **The record is
+`deploy-astro.yml`'s header** — the reasoning, what the pins do not cover, and how to move a pin.
+Read it before adding or bumping an action. One gap is knowingly open: the two appleboy SSH actions
+still download their real code at run time and never check the droplet's host key. Replacing them
+with the runner's own OpenSSH is planned, not done.
 
 ## Conventions and constraints
 
