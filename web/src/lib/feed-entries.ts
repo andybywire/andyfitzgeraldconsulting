@@ -111,8 +111,8 @@ const usable = <T extends Base>(
  *
  * ── THE QUESTION THAT WAS DECIDED BY OMISSION, NOW DECIDED ───────────────────
  *
- * The feeds shipped (2026-09-13) without heroes, and docs/feeds-kickoff.md recorded
- * that as never having been a decision. Andy made it one on 2026-10-02: entries
+ * The feeds shipped (2026-09-13) without heroes, and
+ * docs/astro-migration/feeds-kickoff.md recorded that as never having been a decision. Andy made it one on 2026-10-02: entries
  * looked spare in a reader, so the image the page leads with now leads the entry
  * too. Notes have no hero, and case studies are not in any feed, so this reaches
  * articles and presentations only.

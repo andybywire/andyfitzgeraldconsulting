@@ -19,7 +19,8 @@
  *   timings   LCP, CLS, INP — what a visitor experiences, and the better thing to care about.
  *             But they are measured in a simulated lab, and noisy on shared CI machines. LCP sat
  *             at 1.8–2.4s against Google's 2.5s "good" line on 2026-10-06, so as a gate it would
- *             fail at random. Measure them by hand; docs/eleventy-astro-comparison.md says how.
+ *             fail at random. Measure them by hand;
+ *             docs/astro-migration/eleventy-astro-comparison.md says how.
  *   scores    "Lighthouse ≥ 90" blends several timings, and the blend changes between Lighthouse
  *             versions. A failure would not even say what got worse.
  *

@@ -558,7 +558,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 
      *Heroes reached the Atom feeds on 2026-10-02 (Andy): an article entry opens with its
      hero and a presentation entry with its poster, both cropped to 16:9 by their
-     hotspots. See docs/feeds-kickoff.md → Settled: heroes and posters lead the entry.*
+     hotspots. See docs/astro-migration/feeds-kickoff.md → Settled: heroes and posters lead
+     the entry.*
 
    - **`h5` residue: NONE. Question closed** (2026-09-09). Phase 1 dropped the style from `article`,
      `caseStudy` and `singleton`, and dropping it from a schema does not remove it from published
@@ -626,7 +627,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    first time since 2026-08-14. What each check was, and the rollback, live in `nginx/` beside the
    config they test.
 
-   **How the two generations compare is [docs/eleventy-astro-comparison.md](docs/eleventy-astro-comparison.md)**
+   **How the two generations compare is
+   [docs/astro-migration/eleventy-astro-comparison.md](docs/astro-migration/eleventy-astro-comparison.md)**
    (measured 2026-10-06): code, page weight, droplet resources and accessibility, and how to rebuild
    the old site to measure it again. Start there before quoting any before-and-after figure. The
    11ty release no longer exists on the droplet, so its numbers can only come from a rebuild.
@@ -634,8 +636,9 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    **THE SSR PREVIEW IS DONE (2026-09-29), AND WITH IT PHASE 6.** `preview.` is Astro's SSR build
    behind an nginx proxy, and visual editing works end to end from the deployed Studio: overlays,
    click-through to the document, reload on edit, navigation sync. The plan and what was measured
-   along the way are [docs/ssr-preview-kickoff.md](docs/ssr-preview-kickoff.md); where it departed
-   from ux-methods, and which departures apply back, is
+   along the way are
+   [docs/astro-migration/ssr-preview-kickoff.md](docs/astro-migration/ssr-preview-kickoff.md);
+   where it departed from ux-methods, and which departures apply back, is
    [docs/ux-methods-notes.md](docs/ux-methods-notes.md). Five departures from that plan, each decided
    with Andy and recorded beside the code it shaped:
 
@@ -822,14 +825,14 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 
    **"per-taxonomy RSS feeds" means feeds per CONCEPT — EVALUATED, NOT BUILT (Andy,
    2026-10-09).** There is no user warrant for them yet; build them if one emerges. The
-   measurements and a ready recommendation are in docs/feeds-kickoff.md → *Per-concept feeds*,
-   so a revisit starts there rather than from scratch. Five feeds shipped 2026-09-13 —
+   measurements and a ready recommendation are in docs/astro-migration/feeds-kickoff.md →
+   *Per-concept feeds*, so a revisit starts there rather than from scratch. Five feeds shipped 2026-09-13 —
    `/feed.xml`, `/insights/feed.xml`, `/insights/feed-articles.xml`,
    `/insights/feed-notes.xml`, `/presentations/feed.xml` — and those are section and type
    feeds, not taxonomy ones. `RssBand`'s `buttonTarget` is content precisely so a page can
    point at a per-taxonomy feed without a code change if they arrive. See
-   [docs/feeds-kickoff.md](docs/feeds-kickoff.md), which also carries two live
-   carry-forwards: nginx must serve the feeds as `application/atom+xml`, and the YouTube
+   [docs/astro-migration/feeds-kickoff.md](docs/astro-migration/feeds-kickoff.md), which also
+   carries two live carry-forwards: nginx must serve the feeds as `application/atom+xml`, and the YouTube
    embed loads a player on view where the page uses click-to-load.
 
    **THE CODE GATES ARE BUILT (2026-10-08)**, and with them the **TypeGen drift check** this
@@ -925,10 +928,10 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 
    It found two real failures, both WCAG 2.5.3, Label in Name. The **facet chips** read
    "Structured Content11", because Astro's HTML compression dropped the whitespace between two
-   spans — not the comma that `docs/eleventy-astro-comparison.md` had blamed. And the
-   **close-search button**, whose visible text is "esc", is now named "Close search, esc", for
-   voice-control users who say what they see. The check takes about 125s on the runner against
-   45s on a Mac, the slowest gate by far; beside the deploy, that delays only the report.
+   spans — not the comma that `docs/astro-migration/eleventy-astro-comparison.md` had blamed.
+   And the **close-search button**, whose visible text is "esc", is now named "Close search,
+   esc", for voice-control users who say what they see. The check takes about 125s on the runner
+   against 45s on a Mac, the slowest gate by far; beside the deploy, that delays only the report.
 
    **BYTE BUDGETS ARE BUILT (2026-10-09)**, the fourth site gate, and with them **the quality
    gates are complete**: `web/scripts/check-budgets.mjs`, run with `pnpm budgets` after a build.
@@ -939,7 +942,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    - **Bytes, not timings or scores** (Andy, 2026-10-09). Bytes are deterministic — the runner and
      a Mac measured identically, to the tenth of a KB. LCP sat at 1.8–2.4s against Google's 2.5s
      line, so a timing gate would fail at random, and a Lighthouse score does not say what got
-     worse. Timings are still measured by hand; docs/eleventy-astro-comparison.md says how.
+     worse. Timings are still measured by hand; docs/astro-migration/eleventy-astro-comparison.md
+     says how.
    - **HTML has two budgets**, because its size follows what was written: the **median** page,
      which moves only when the template grows on every page, and a generous **ceiling** on the
      heaviest, for the pathological. One budget on the heaviest page would fail on long writing.
@@ -1097,10 +1101,11 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 - **`docs/future-work/`** holds follow-on work that was planned and deliberately deferred, each
   file written so a later session can pick it up cold. It starts with
   `posse-and-syndication.md`.
-- **`docs/astro-migration/`** is where the phase kickoffs and planning notes in `docs/` — the
-  `*-kickoff.md` files and their kin — move **once every phase is confirmed closed**. Not before,
-  and not phase by phase: they cross-reference each other and CLAUDE.md, so the move is one pass
-  that updates the links with it.
+- **`docs/astro-migration/`** holds the record of the Astro rebuild: the 19 phase kickoffs and
+  their one kin, `eleventy-astro-comparison.md`. They moved there in one pass on 2026-10-10, once
+  every phase was closed, with every link to them updated; its README lists them in phase order.
+  What stayed in `docs/` is living reference — the decision records, open questions, the URL
+  contract, search ranking, the Figma, Moz and ux-methods notes, and the phrase candidates.
 
 ### Deploy shape — static production, SSR preview, one droplet
 

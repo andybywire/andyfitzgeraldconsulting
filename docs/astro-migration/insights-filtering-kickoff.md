@@ -1,9 +1,9 @@
 # Phase 4, item 2 — Insights filtering
 
-CLAUDE.md is loaded. **Read [docs/urls-and-filtering.md](urls-and-filtering.md) in full** — it is the
+CLAUDE.md is loaded. **Read [docs/urls-and-filtering.md](../urls-and-filtering.md) in full** — it is the
 spec for this work, and four of its open questions were answered on 2026-08-31 (recorded below rather
 than in the doc, so fold them in as you go). Then read DESIGN.md → Components → *Filter chips* and
-*Card grids*, and skim [docs/open-questions.md](open-questions.md).
+*Card grids*, and skim [docs/open-questions.md](../open-questions.md).
 
 **Stay on `page-types`.** Branched from `next`, well ahead, unpushed. Build, `astro check`,
 `studio-next` `tsc` and Prettier are green; 44 pages build with the known `[SanityHero] no altText`
