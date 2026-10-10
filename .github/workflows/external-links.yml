@@ -57,6 +57,23 @@ name: External links
 # Like checks.yml's site job, it builds against PUBLISHED content. It cannot
 # reuse a production build instead: deploy-astro.yml keeps its artifact for seven
 # days, and this runs monthly.
+#
+# ── PROVEN 2026-10-10, ON THE RUNNER ───────────────────────────────────────
+#
+# A gate is not known to work until it has failed, and this one had real broken
+# links to fail on, left unfixed for the purpose:
+#
+#   red      The push of the `external-link-check` branch: the Judge step failed
+#            on 15 broken links — 13 404s and two dead hosts — and the lychee
+#            step beside it passed, as designed. About a minute and a half, the
+#            build 40s of it and lychee 15s.
+#   green    Andy fixed all 15 in the Studio, from the summary's links, and a
+#            re-run of the same commit rebuilt from the new content: nothing
+#            broken, 36 to check by hand.
+#   pending  The schedule. Its first run is 2026-11-01.
+#
+# To re-prove it after changing it, break it on purpose — a template link to a
+# `.invalid` host is a dead host that cannot come back — and watch it go red.
 
 on:
   schedule:

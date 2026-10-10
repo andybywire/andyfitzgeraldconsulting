@@ -36,10 +36,10 @@
  *
  * ── WHAT IT DOES NOT CHECK ──────────────────────────────────────────────────
  *
- *   external links     325 URLs on 132 hosts (2026-10-08). Deferred to its own warning-only
- *                      piece (Andy, 2026-10-08): another site's outage is not a defect here,
- *                      and checking them well takes retries, rate limits and a tool built for
- *                      it.
+ *   external links     323 URLs on 135 hosts (2026-10-10). Their own check, monthly rather than
+ *                      on every build: check-external-links.mjs, which reads lychee's report.
+ *                      Another site's outage is not a defect here, and checking them well takes
+ *                      retries, rate limits and a tool built for it (Andy, 2026-10-08).
  *   assets             `<link>`, `<img>`, `<script>`. Astro writes and hashes its own, so a
  *                      broken one is a build bug; images are on cdn.sanity.io.
  *   feeds, sitemap     Absolute URLs by design, and not HTML.

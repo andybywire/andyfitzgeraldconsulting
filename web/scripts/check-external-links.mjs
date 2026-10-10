@@ -101,7 +101,14 @@
  *                    unreachable, the report said so, named pages alone and still exited 1.
  *   end to end       `pnpm external-links` with LinkedIn excluded: 16 seconds, 15 broken, 32 to
  *                    check by hand, 31 not checked.
- *   still unproven   On the runner, and the monthly schedule.
+ *   on the runner    external-links.yml on the `external-link-check` branch: RED, on the same 15,
+ *                    each with its Studio link, and the lychee step green beside it, as designed.
+ *                    None of the five ux-methods 404s came back 503 there — lychee checks
+ *                    github.com through the API when it has the workflow's token. The runner was
+ *                    blocked more than a Mac (Gartner, ISO, Udemy), and infotoday reset the
+ *                    connection rather than failing TLS: 39 to check by hand, none failing. Andy
+ *                    fixed the 15 in the Studio, and a re-run went GREEN with nothing broken.
+ *   still unproven   The monthly schedule, whose first run is 2026-11-01.
  *
  * To re-prove it after changing it, do the same: break it on purpose and watch it go red.
  *
