@@ -1,9 +1,17 @@
-import iconUrl from '../web/scripts/icon-sources/app-icon.svg?url'
+import iconUri from '../web/scripts/icon-sources/app-icon.svg?inline'
 
 /**
  * The Studio's workspace icon is the site's square app icon, imported rather than copied so there
- * is one drawing to change. `?url` is a Vite import suffix: it yields the built asset's URL, not
- * its markup.
+ * is one drawing to change.
+ *
+ * ── WHY `?inline`, NOT `?url` ────────────────────────────────────────────────
+ *
+ * `?inline` is a Vite import suffix that yields a `data:` URI carrying the drawing itself. `?url`
+ * yields a path (`/static/app-icon-<hash>.svg`) and that was the first version: it showed in the
+ * Studio's own navbar and as a white square in sanity.io's "Studios & Apps" list. Deploying
+ * extracts a manifest that stores this component rendered to an HTML string, and the dashboard
+ * shows that string from ITS origin, where a relative path points at nothing. A data URI has no
+ * origin to resolve against. Read out of `sanity manifest extract`'s output, not inferred.
  *
  * It is the SQUARE master, not the round tab favicon (`public/icons/icon.svg`), on purpose. The
  * Studio sets workspace icons beside rectangular, square-cornered controls, and a disc looked
@@ -17,5 +25,5 @@ import iconUrl from '../web/scripts/icon-sources/app-icon.svg?url'
  * does not arise.
  */
 export const StudioIcon = () => (
-  <img src={iconUrl} alt="" style={{width: '1em', height: '1em', display: 'block'}} />
+  <img src={iconUri} alt="" style={{display: 'block'}} />
 )
