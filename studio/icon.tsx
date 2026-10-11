@@ -24,6 +24,4 @@ import iconUri from '../web/scripts/icon-sources/app-icon.svg?inline'
  * with no `prefers-color-scheme` rule, so the OS-versus-Studio-theme mismatch the round icon had
  * does not arise.
  */
-export const StudioIcon = () => (
-  <img src={iconUri} alt="" style={{display: 'block'}} />
-)
+export const StudioIcon = () => <img src={iconUri} alt="" style={{display: 'block'}} />
