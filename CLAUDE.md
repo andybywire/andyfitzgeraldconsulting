@@ -179,7 +179,9 @@ major tags, every workflow's token is read-only, and both deploy jobs get none. 
 `deploy-astro.yml`'s header** — the reasoning, what the pins do not cover, and how to move a pin.
 Read it before adding or bumping an action. One gap is knowingly open: the two appleboy SSH actions
 still download their real code at run time and never check the droplet's host key. Replacing them
-with the runner's own OpenSSH is planned, not done.
+with the runner's own OpenSSH is planned and **deferred** (Andy, 2026-10-10):
+[docs/future-work/deploy-over-openssh.md](docs/future-work/deploy-over-openssh.md) is the pickup
+point.
 
 ## Conventions and constraints
 
@@ -479,15 +481,17 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    in use there are Perspective, Method and Conference Themes. The corpus stood at 42 insights
    (30 articles, 5 notes, 7 case studies), 4 presentations and 41 events.
 
-   **Re-measured 2026-09-14: 42 insights (unchanged), 10 presentations, 47 events.** The
-   Presentation branch is where the migration is moving — and **35 of those 47 events are not
-   referenced by any presentation**, which is the bulk of the modelling work still outstanding.
-   Events render no page of their own, so an unattached one is invisible rather than broken.
-   Expect these numbers to move again; re-measure rather than quoting them.
+   **Re-measured 2026-10-10: 42 insights, 29 presentations, 39 events — and only ONE event is
+   unattached.** The modeling work this paragraph used to call outstanding is essentially done:
+   on 2026-09-14 it read 10 presentations, 47 events, and 35 events referenced by no
+   presentation. The one left is `03c2f5ff-19ce-4660-9761-ab618acff345`, "Structured Content",
+   dated 2022-05-25. Events render no page of their own, so an unattached one is invisible rather
+   than broken. Expect these numbers to move again; re-measure rather than quoting them.
 
-   The invariant is still worth a build-time check, because nothing enforces it — the Studio will
-   happily accept a Presentation genre on an `article` again. It just has no violations to find
-   today.
+   The invariant is checked, but not gated: `pnpm parity` tests it as its Check 4, walking
+   `broader` rather than trusting hard-coded ids, and the Studio will still accept a Presentation
+   genre on an `article`. Parity is run by hand, so a violation surfaces the next time someone
+   runs it.
 
    ### The five content types, and what separates them
 
@@ -1108,8 +1112,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
 **Two homes for planning notes** (Andy, 2026-10-09):
 
 - **`docs/future-work/`** holds follow-on work that was planned and deliberately deferred, each
-  file written so a later session can pick it up cold. It starts with
-  `posse-and-syndication.md`.
+  file written so a later session can pick it up cold. It holds `posse-and-syndication.md` and
+  `deploy-over-openssh.md`.
 - **`docs/astro-migration/`** holds the record of the Astro rebuild: the 19 phase kickoffs and
   their one kin, `eleventy-astro-comparison.md`. They moved there in one pass on 2026-10-10, once
   every phase was closed, with every link to them updated; its README lists them in phase order.
