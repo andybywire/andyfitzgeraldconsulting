@@ -5,6 +5,6 @@ This is the code for building, producing, and serving the professional website o
 ## Tech Stack
 - **Sanity:** content structure, content production, and image management
 - **Sanity Taxonomy Manager:** SKOS compliant taxonomy authoring and management
-- **Astro:** web framework for static generation of the website front end
+- **Astro:** web framework for static generation of the website front end and linked data
 - **Nginx:** server (with a smidge of PHP for forms) running on Digital Ocean
-- **Minisearch:** lightweight and taxonomy integrated full text search
+- **Minisearch:** lightweight and taxonomy integrated search functionality
