@@ -148,10 +148,7 @@ const sourcePage = Astro.url.pathname
   }
   <div class="contact-state contact-sent" id="contact-sent" tabindex="-1">
     <StateHeading>Thanks for reaching out!</StateHeading>
-    <p>
-      Your message was sent. I look forward to reading your note and will usually respond back
-      within a couple days.
-    </p>
+    <p>Your message was sent. I usually respond back within a couple days.</p>
   </div>
 
   {
@@ -526,10 +523,7 @@ const sourcePage = Astro.url.pathname
    * explaining what happened rather than a validation marker. DESIGN.md's error tokens
    * belong to the FIELD state, which is where they are used.
    *
-   * `:focus-visible` deliberately not suppressed even though these are only focusable
-   * programmatically: base.css's global ring is the right treatment if a visitor ever
-   * does reach one, and a `tabindex="-1"` element does not take a visible ring from a
-   * scripted `.focus()` anyway.
+   * Their focus ring is suppressed; see the note on `.contact-state:focus` below.
    */
   /*
    * ── HIDDEN BY A CLASS, NOT BY THE `hidden` ATTRIBUTE ──────────────────────
@@ -557,10 +551,13 @@ const sourcePage = Astro.url.pathname
   /*
    * Two ways in, one appearance. `.is-shown` is the script's; `:target` is the no-JS
    * path's, reached when the endpoint 303s back to `<the page>#contact-sent`.
+   * Bottom padding adds the space otherwise taken up by the form, so the page footer
+   * doesn't slide up on sent. 
    */
   .contact-state.is-shown,
   .contact-sent:target {
     display: grid;
+    padding-bottom: 23rem;
   }
 
   /*
@@ -573,6 +570,50 @@ const sourcePage = Astro.url.pathname
    */
   .contact-sent:target ~ .contact-form {
     display: none;
+  }
+
+  /*
+   * ── NO FOCUS RING ON A STATE BLOCK ───────────────────────────────────────────
+   *
+   * (Andy, 2026-10-16.) Both blocks take focus without anyone tabbing to them: the script
+   * calls `.focus()` after the swap, and on the no-JS path following `#contact-sent`
+   * focuses the target. base.css's global `:focus-visible` ring then drew around the whole
+   * confirmation, which reads as a bug rather than as a focus position.
+   *
+   * THIS COMMENT USED TO SAY THE OPPOSITE: that the ring was deliberately left alone,
+   * because "a `tabindex="-1"` element does not take a visible ring from a scripted
+   * `.focus()` anyway". Real browsers draw one. It is the assumption CardMasonry.astro
+   * records as measured wrong on 2026-09-30, made again here a month later. Whether
+   * script-moved focus counts as "visible" is a per-engine heuristic, and headless Chrome
+   * is not a reliable witness to it.
+   *
+   * So this is the same rule as `.card-masonry:focus`, for the same reasons:
+   *
+   *   - `:focus`, not `:focus-visible`, so it holds whatever the heuristic decides. It
+   *     also covers a click inside the block, which focuses it now that it has a tabindex.
+   *   - Both properties, because both can draw a ring: base.css uses `box-shadow` and
+   *     clears `outline`, while a UA stylesheet uses `outline`.
+   *   - Scoped, this is (0,3,0) against base.css's (0,1,0), so it wins without
+   *     `!important`.
+   *
+   * Only the RING goes. The `tabindex="-1"` and the `.focus()` call stay, because they
+   * are what tell a screen reader user that the form was replaced. A block is a landing
+   * point rather than a control, and the next Tab reaches something that draws its own
+   * ring.
+   *
+   * ── LOCAL, THOUGH THIS IS THE SECOND COPY ─────────────────────────────────────
+   *
+   * Two components writing the same rule is normally the trigger for promotion. It is
+   * NOT promoted (Andy, 2026-10-16), because the obvious global form,
+   * `[tabindex='-1']:focus`, keys on the wrong thing. In a roving-tabindex widget (tabs,
+   * a toolbar, a listbox) `-1` marks real controls that the arrow keys focus, and a global
+   * rule would silently remove their rings. Nothing on the site uses that pattern yet,
+   * which is exactly when such a rule gets written and forgotten. A shared version needs
+   * a hook that means "landing point", not the attribute.
+   */
+  .contact-state:focus {
+    outline: none;
+    box-shadow: none;
   }
 
   /* ── The honeypot ─────────────────────────────────────────────────────────── */
@@ -820,11 +861,16 @@ const sourcePage = Astro.url.pathname
      *
      * The field VALUES are deliberately left alone. Restoring what someone typed is what
      * bfcache is for, and it is the durability behaviour we want.
+     *
+     * `hideState(sent)`, NOT `sent.hidden = true`, which is what this first said. The
+     * attribute hid the block, but `[hidden]`'s `!important` then outranked `.is-shown`
+     * for good, so a SECOND successful send after coming Back hid the form and showed
+     * nothing. It is the trap described on `.contact-state`, from the other direction.
      */
     window.addEventListener('pageshow', (event) => {
       if (!event.persisted) return
       form.hidden = false
-      sent.hidden = true
+      hideState(sent)
       hideState(failed)
       submit.disabled = false
       submit.textContent = 'Send'
