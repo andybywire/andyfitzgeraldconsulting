@@ -8,7 +8,10 @@
 # CONVENTIONS, all decided at the same time:
 #
 #   Labels       Lowercase, as the terms read mid-sentence in a comment. Proper names keep their
-#                capitals ("Browser pane", "JavaScript-only control").
+#                capitals ("Browser pane", "JavaScript-only control"). No label belongs to two
+#                concepts, ignoring case. If nothing clearer exists, a preferred label may end in
+#                one qualifier in parentheses, as in "mercury (car)", but a clearer term is
+#                better. shapes.ttl enforces all of this except the case convention.
 #   Hierarchy    `skos:broader` only, never its inverse: a query can follow it backward.
 #                `skos:related` waits until a stage 4 query needs it.
 #   Top concepts Every concept with no broader one is a top concept of the scheme.
