@@ -34,8 +34,8 @@ focus-and-visibility material, so tuning the guide on it can't tune it toward th
 
 - **A throwaway branch, `pg-guide-trial`, at `086dd0f`,** the commit every arm starts from.
 - **`project-graph/` copied from the `project-graph` branch** at the commit this file lands in,
-  with `concepts.ttl` replaced by [guide-trial-concepts.ttl](guide-trial-concepts.ttl), a six-concept
-  vocabulary for vertical spacing. Nothing from `docs/project-graph/` is copied.
+  with `concepts.ttl` replaced by [guide-trial-concepts.ttl](guide-trial-concepts.ttl), a
+  six-concept vocabulary for vertical spacing. Nothing from `docs/project-graph/` is copied.
 - **Before the session starts:** the protocol's leak search over `project-graph/` on that branch
   comes back with nothing above "low", and `pnpm graph check` conforms.
 - **One fresh session,** in its own worktree from that branch, on **Opus 5.5 (`claude-opus-5-5`)
@@ -52,12 +52,42 @@ focus-and-visibility material, so tuning the guide on it can't tune it toward th
   usage are copied into `docs/project-graph/guide-trial/`. They hold vertical-rhythm material
   only, so they are safe to keep as the record. Then the branch and worktree are deleted.
 
+## As set up, 2026-10-17
+
+`pg-guide-trial` was created at `086dd0f` and its setup committed as **`4f0eb92`**, with
+`project-graph/` taken from `project-graph` at `8624354` by `git archive`, so nothing untracked
+came with it. The commit message names no trial, because the annotator can read `git log`.
+
+**Three departures from the setup above, each decided while setting it up:**
+
+- **`package.json` gains one line,** the `graph` script, because `086dd0f` predates it and the
+  guide tells the annotator to run `pnpm graph check`. That is why A1's baseline is now the setup
+  commit rather than `086dd0f`.
+- **`project-graph/tests/` is left out.** Its planted cases use the pilot's concepts, so against
+  this vocabulary `pnpm graph test` would fail. An annotator who ran it might start "fixing"
+  files. The extractor's unit tests don't depend on the vocabulary, and they stay.
+- **None of `docs/project-graph/` is present,** as intended. The branch has never contained it.
+
+**Checked before any session:** the protocol's leak search over `project-graph/` finds only the
+three known low mentions (that an experiment, a protocol and an arm exist), and its "annotat"
+matches outside the folder are about Figma annotations and annotated git tags. `pnpm graph check`
+conforms, with 0 tagged comments in 144 files, and the extractor's 18 tests pass.
+
+**Found while checking, and it matters for stage 5:** in a worktree with no `node_modules`, the
+first `pnpm graph …` silently ran a full `pnpm install` (1,515 packages from the local store,
+about 6 seconds and some 30 lines of output) before the command. The trial keeps it, since the
+guide says `pnpm graph check` and the trial tests the guide as written. Its cost goes under C. In
+the experiment's runs it would be a confound, landing in arm C's time and context and in no other
+arm's. The protocol now carries that as a precondition.
+
 ## Criteria
 
 ### A. Mechanical: checked by command, pass or fail
 
-- **A1. Only tag lines added.** `git diff 086dd0f -- . ':!project-graph'` deletes no lines, and
-  every line it adds is a tag line by the extractor's rule.
+- **A1. Only tag lines added.** `git diff 4f0eb92 -- . ':!project-graph'` deletes no lines, and
+  every line it adds is a tag line by the extractor's rule. *(The baseline was `086dd0f` until the
+  branch was set up. It is the setup commit now, because setup added one line to `package.json`;
+  see "As set up".)*
 - **A2. Nothing else written.** No new file outside `project-graph/` and, inside it, only
   `claims.ttl`. No notes file anywhere. `concepts.ttl` is unchanged.
 - **A3. The check.** `pnpm graph check` conforms, or every violation it reports is a comment

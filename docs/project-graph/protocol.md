@@ -230,6 +230,13 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
    exist, which say nothing about the answers. The list above lives here, not in `project-graph/`,
    because the list is itself a hint.
 
+6. **No arm pays for an install the others don't** *(added 2026-10-17, found while setting up the
+   guide's trial)*. In a fresh worktree with no `node_modules`, the first `pnpm graph …` runs a full
+   `pnpm install`, about 6 seconds and some 30 lines of output, before the command itself. Only arm
+   C calls the graph's tools, so that cost would land in its wall time and context alone. Before
+   the runs, settle one: arm C's CLAUDE.md section calls `node project-graph/graph.mjs` directly,
+   which needs no install, or every arm's worktree is installed before its session starts.
+
 ## How the results are read
 
 With 3 runs, an arm **beats** another on a metric only when **all three of its runs are better
