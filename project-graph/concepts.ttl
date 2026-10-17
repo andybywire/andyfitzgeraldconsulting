@@ -1,19 +1,185 @@
 # The Project Graph's concept scheme: the vocabulary its comment tags point at.
 #
-# PROVISIONAL, from stage 3a. It holds one concept only, so the plumbing has something to check.
-# Stage 3b replaces it with the pilot's concept list, which is Andy's to decide: which concepts,
-# their labels, their hierarchy, and how the homonyms in docs/project-graph/inventory.md split.
+# The pilot's concepts, decided by Andy on 2026-10-17 (stage 3b). It covers four branches: focus,
+# hiding, keyboard and announcement, and automated browsers. docs/project-graph/inventory.md is
+# where each concept's warrant comes from; every concept here is backed by at least one claim in
+# it, and nothing was added speculatively.
+#
+# CONVENTIONS, all decided at the same time:
+#
+#   Labels       Lowercase, as the terms read mid-sentence in a comment. Proper names keep their
+#                capitals ("Browser pane", "JavaScript-only control").
+#   Hierarchy    `skos:broader` only, never its inverse: a query can follow it backward.
+#                `skos:related` waits until a stage 4 query needs it.
+#   Top concepts Every concept with no broader one is a top concept of the scheme.
+#   Ids          Slugs fixed when a concept is created, never renamed. Labels can change; the
+#                slug cannot. See docs/project-graph/id-design.md.
+#
+# TWO WORDS ARE DELIBERATELY NOBODY'S LABEL. "hidden" appears on 222 lines in web/src and means at
+# least four of the concepts below. "inert" means three things, one of which (a rule that has no
+# effect) is outside the pilot. A comment keeps whichever word it uses, and its tag says which
+# thing it means. That is the point of tagging concepts rather than matching strings.
 #
 # The scheme's IRI is the document's own, with no fragment, and each concept is a fragment of it,
-# the usual pattern for a hash namespace. See docs/project-graph/id-design.md.
+# the usual pattern for a hash namespace.
 
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
 
-<https://andyfitzgeraldconsulting.com/ns/project-graph/concepts>
-  a skos:ConceptScheme .
+scheme:concepts
+  a skos:ConceptScheme ;
+  skos:prefLabel "Project Graph concepts"@en .
+
+# ── Focus ─────────────────────────────────────────────────────────────────────
 
 concept:focus-ring
   a skos:Concept ;
-  skos:inScheme <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts> ;
-  skos:prefLabel "focus ring"@en .
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "focus ring"@en ;
+  skos:altLabel "focus indicator"@en, "two-ring"@en, "offset-then-ring"@en, "focus pair"@en,
+    "ring pair"@en ;
+  skos:scopeNote "The visible indicator drawn around the focused element. Here, base.css's two-ring box-shadow."@en .
+
+concept:programmatic-focus
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "programmatic focus"@en ;
+  skos:altLabel "scripted focus"@en, "script-moved focus"@en, "moving focus"@en,
+    "focus follows"@en ;
+  skos:scopeNote "Focus moved without a Tab press or a click: by script (.focus()), or by following a fragment link to a focusable target."@en .
+
+concept:focus-target
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "focus target"@en ;
+  skos:scopeNote "Wherever programmatic focus is sent: a control, such as the reset chip, or a landing point."@en .
+
+# One referent, though card-index.ts:688 uses the term for where a filtered arrival SCROLLS to:
+# that element, the card grid, is then focused (card-index.ts:825-829). The inventory first read it
+# as a second meaning.
+concept:landing-point
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:focus-target ;
+  skos:prefLabel "landing point"@en ;
+  skos:altLabel "somewhere to land"@en, "focus fallback"@en ;
+  skos:scopeNote "A non-control element made focusable only by script (tabindex=\"-1\") and never a Tab stop, so focus has somewhere to land: <main> for the skip link, #result-count, the card grid, the contact form's state blocks."@en .
+
+concept:focus-loss
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "focus loss"@en ;
+  skos:altLabel "dropped focus"@en, "focus falls to the body"@en ;
+  skos:scopeNote "Focus falling back to <body> when the focused element is hidden or removed, so the next Tab starts from the top of the page."@en .
+
+# ── Hiding ────────────────────────────────────────────────────────────────────
+
+concept:hiding
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "hiding"@en ;
+  skos:scopeNote "Any way an element is kept from being drawn, announced, or both."@en .
+
+concept:not-applicable
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:hiding ;
+  skos:prefLabel "not applicable"@en ;
+  skos:altLabel "hidden attribute"@en, "[hidden]"@en ;
+  skos:scopeNote "The hidden attribute: the element does not apply right now. base.css forces display: none !important, so nothing can override it."@en .
+
+concept:styled-away
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:hiding ;
+  skos:prefLabel "styled away"@en ;
+  skos:altLabel "hidden by a class"@en, "class-based hiding"@en ;
+  skos:scopeNote "Hidden by a class or :target because it still applies but is not shown in this state, such as the contact form's .is-shown."@en .
+
+concept:visually-hidden
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:hiding ;
+  skos:prefLabel "visually hidden"@en ;
+  skos:altLabel "clip technique"@en, "1px clipped box"@en, "announced but not drawn"@en ;
+  skos:scopeNote "Kept off screen but still announced."@en .
+
+concept:hidden-from-assistive-technology
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:hiding ;
+  skos:prefLabel "hidden from assistive technology"@en ;
+  skos:altLabel "aria-hidden"@en, "drawn but not announced"@en ;
+  skos:scopeNote "Drawn, but left out of what assistive technology announces."@en .
+
+concept:inert-content
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:hiding ;
+  skos:prefLabel "inert content"@en ;
+  skos:altLabel "inert subtree"@en ;
+  skos:scopeNote "HTML inertness: not focusable, not clickable, not announced. <template> content, the page behind an open <dialog>, and the inert attribute, which is used nowhere."@en .
+
+concept:javascript-only-control
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "JavaScript-only control"@en ;
+  skos:altLabel "ships hidden"@en, "the contract"@en, "html.js gating"@en ;
+  skos:scopeNote "A control that does nothing without JavaScript, so it must not appear without it. Two mechanisms are in use: hidden in the markup, removed by script, or CSS keyed on html.js, set before first paint. A control shown without JavaScript that does nothing is the failure this prevents."@en .
+
+concept:forced-reflow
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "forced reflow"@en ;
+  skos:altLabel "layout flush"@en, "void el.offsetWidth"@en ;
+  skos:scopeNote "Making the browser compute layout right away, such as before focusing or measuring something just un-hidden."@en .
+
+# ── Keyboard and announcement ─────────────────────────────────────────────────
+
+concept:scroll-region
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "scroll region"@en ;
+  skos:altLabel "scrollable region"@en, "scroll container"@en ;
+  skos:scopeNote "An element whose content scrolls. Reachable by keyboard only if focusable, and browsers differ on whether it is by default."@en .
+
+concept:screen-reader-announcement
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "screen reader announcement"@en ;
+  skos:altLabel "announcement"@en ;
+  skos:scopeNote "What assistive technology speaks: on focus, from a live region, or from a name. A live region is covered by this note rather than being a concept of its own."@en .
+
+# ── Automated browsers ────────────────────────────────────────────────────────
+
+concept:automated-browser
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "automated browser"@en ;
+  skos:scopeNote "A browser driven by a tool rather than a person. It reports some states differently from real browsers."@en .
+
+concept:browser-pane
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:automated-browser ;
+  skos:prefLabel "Browser pane"@en ;
+  skos:altLabel "the pane"@en, "in-app browser"@en ;
+  skos:scopeNote "The browser built into the Claude app."@en .
+
+concept:headless-chrome
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:automated-browser ;
+  skos:prefLabel "headless Chrome"@en ;
+  skos:scopeNote "Chrome driven over the DevTools protocol, by the accessibility check or by one-off probes."@en .
