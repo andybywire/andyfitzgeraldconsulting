@@ -211,18 +211,21 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
 5. **Nothing in `project-graph/` leaks the test** *(added 2026-10-17, with the annotation guide)*.
    The blind annotator works in a checkout where that whole folder is present, so its comments
    must not name a task, a contradiction or a scored finding. Before the annotation runs, search
-   it, tests excluded:
+   all of it, tests included:
 
    ```bash
-   grep -rniE "\bT[1-5]\b|task|contradict|CardMasonry|ContactForm|09-30|measured wrong|turns on|real browsers drew|inventory|protocol" project-graph --exclude-dir=tests
+   grep -rniE "\bT[1-5]\b|task|contradict|CardMasonry|ContactForm|09-30|measured wrong|turns on|real browsers drew|inventory|protocol" project-graph
    ```
 
    On 2026-10-17 this found, and the guide's commit removed: the 09-30 focus-ring finding in
-   `automation-only.rq`; "the rule the experiment turns on" in `shapes.ttl`; tasks T2 and T4 named in
-   `queries.mjs` and `settled.rq`; and, in the guide's first draft, the phrase "measured wrong
-   first" and templates built on real, scored concepts. What remains is low: mentions that an
-   experiment, arms and an annotator exist, which say nothing about the answers. The list above
-   lives here, not in `project-graph/`, because the list is itself a hint.
+   `automation-only.rq`; "the rule the experiment turns on" in `shapes.ttl`; tasks T2 and T4 named
+   in `queries.mjs` and `settled.rq`; and, in the guide's first draft, the phrase "measured wrong
+   first" and templates built on real, scored concepts. Preparing the guide trial then found "the
+   rule the experiment turns on" again, in a test fixture's header. The first version of this
+   search excluded `tests/` on the unchecked assumption that fixtures are generic, so it now
+   searches everything. What remains is low: mentions that an experiment, arms and an annotator
+   exist, which say nothing about the answers. The list above lives here, not in `project-graph/`,
+   because the list is itself a hint.
 
 ## How the results are read
 

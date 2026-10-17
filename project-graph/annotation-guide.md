@@ -37,13 +37,14 @@ Work through the files the extractor reads: everything under `web/src` and `web/
 `.md` and `.php`.
 
 For each concept in `concepts.ttl`, search those files for its preferred label and each of its
-alternate labels, case-insensitively. Read its scope note too. Two words are deliberately nobody's
-label, **"hidden"** and **"inert"**, because each means several different things here. When a
-comment uses one of them, its scope notes tell you which concept, if any, it means.
+alternate labels, case-insensitively. Read its scope note too. **Some words are deliberately
+nobody's label,** because each means several different things in this repository, and the header
+of `concepts.ttl` names them. When a comment uses one, the scope notes tell you which concept, if
+any, it means.
 
 **A comment is in scope when it says something about one of the concepts:** what it is, how it
-behaves, why the code handles it this way, or what was decided about it. A passing mention, such as
-"hidden" in a sentence about something else, is not in scope.
+behaves, why the code handles it this way, or what was decided about it. A label that appears only
+in passing, in a sentence about something else, does not put the comment in scope.
 
 ## 2. Tag a comment
 
@@ -72,9 +73,9 @@ The same form works in every language this repository uses. Match the comment's 
 - **A tag covers the whole comment it ends.** Put tags only at the end, never in the middle.
 - **Keep the tag lines together.** Consecutive tag lines count as one tagged comment, so a blank
   line between them would split it in two.
-- **Use the most specific concept that fits.** "not applicable" rather than "hiding" when the
-  comment is about the `hidden` attribute. Use several concepts when the comment really is about
-  several things.
+- **Use the most specific concept that fits:** a narrower concept rather than its broader one,
+  when the comment is about the narrower thing. Use several concepts when the comment really is
+  about several things.
 - **Only `@concept` and `@claim`,** singular, in lowercase. A slug is lowercase words joined by
   hyphens.
 
@@ -136,8 +137,8 @@ has **at least one concept** (`dcterms:subject`). Then its backing, by kind:
 
 **An observation that a comment says how it was established.** Use the comment's own words for the
 method. Add a date only if the comment gives one. Add `prov:used` only when the comment says an
-automated tool did the looking: `concept:browser-pane` or `concept:headless-chrome`. Name real
-browsers in the method text.
+automated tool did the looking, and only with that tool's concept from `concepts.ttl`, if it has
+one. Name real browsers, and anything else, in the method text.
 
 ```turtle
 claim:some-observation a model:Observation ;

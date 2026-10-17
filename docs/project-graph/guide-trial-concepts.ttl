@@ -1,0 +1,70 @@
+# The Project Graph's concept scheme: the vocabulary its comment tags point at.
+#
+# Six concepts about vertical spacing between blocks of content: how it is set, what it is set
+# with, and what decides between competing rules.
+#
+# CONVENTIONS:
+#
+#   Labels       Lowercase, as the terms read mid-sentence in a comment. No label belongs to two
+#                concepts. If nothing clearer exists, a preferred label may end in one qualifier in
+#                parentheses.
+#   Hierarchy    `skos:broader` only. Every concept with no broader one is a top concept.
+#   Ids          Slugs fixed when a concept is created, never renamed.
+#
+# TWO WORDS ARE DELIBERATELY NOBODY'S LABEL. "ramp" names the vertical spacing ramp and also a
+# ramp of line heights, which is typography rather than spacing. "gap" names vertical space set
+# by a container and also the space between grid columns, which belongs to the grid. A comment
+# keeps whichever word it uses, and its tag says which thing it means, if either is here.
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+scheme:concepts
+  a skos:ConceptScheme ;
+  skos:prefLabel "Project Graph concepts"@en .
+
+concept:vertical-rhythm
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "vertical rhythm"@en ;
+  skos:altLabel "rhythm"@en, "rhythm ramp"@en ;
+  skos:scopeNote "The vertical space between blocks of content. Horizontal space between columns belongs to the grid, not to rhythm."@en .
+
+concept:sibling-margin
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:vertical-rhythm ;
+  skos:prefLabel "sibling margin"@en ;
+  skos:altLabel "sibling margins"@en, "sibling-margin ramp"@en ;
+  skos:scopeNote "Vertical space set as a top margin on each block after the first (* + *), with no bottom margins, so nothing collapses."@en .
+
+concept:container-gap
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:vertical-rhythm ;
+  skos:prefLabel "container gap"@en ;
+  skos:scopeNote "Vertical space set by a container's gap property, which needs a real wrapper element around the blocks. A gap between grid columns is not this."@en .
+
+concept:flat-block-sequence
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "flat block sequence"@en ;
+  skos:altLabel "flat sequence"@en, "no section wrappers"@en ;
+  skos:scopeNote "What Portable Text renders: a run of sibling blocks with no section containers around them."@en .
+
+concept:source-order
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "source order"@en ;
+  skos:scopeNote "Among rules of equal specificity, the one later in the stylesheet wins."@en .
+
+concept:rhythm-token
+  a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "rhythm token"@en ;
+  skos:scopeNote "A named vertical spacing value, such as rhythm-paragraph or rhythm-block."@en .

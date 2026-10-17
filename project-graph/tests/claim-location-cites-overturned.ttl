@@ -1,4 +1,4 @@
-# A comment that still cites a claim a measurement overturned: the rule the experiment turns on.
+# A comment that still cites a claim a measurement overturned, which the check must report.
 # expect: violation "which a measurement overturned"
 
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
