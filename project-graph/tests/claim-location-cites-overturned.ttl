@@ -1,0 +1,27 @@
+# A comment that still cites a claim a measurement overturned: the rule the experiment turns on.
+# expect: violation "which a measurement overturned"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-old-belief a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: the old belief."@en ;
+  model:basis model:assumed .
+
+claim:planted-correction a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: the correction."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Planted: seen in a real browser."@en ;
+    prov:invalidated claim:planted-old-belief ] .
+
+[] a model:CodeLocation ;
+  model:path "web/src/planted.astro" ;
+  model:line 40 ;
+  model:cites claim:planted-old-belief .

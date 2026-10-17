@@ -1,0 +1,21 @@
+# A measurement and a decision with no date. Andy, 2026-10-17: git already knows when each
+# comment was written, so a date is recorded only when a comment states one.
+# expect: conforms
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-undated-observation a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: measured, with no date given."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ; model:method "Planted: looked in a browser."@en ] .
+
+claim:planted-undated-decision a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: decided, with no date given."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> .

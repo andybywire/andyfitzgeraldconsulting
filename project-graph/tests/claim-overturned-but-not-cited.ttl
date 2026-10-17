@@ -1,0 +1,23 @@
+# A claim a measurement overturned, which no comment cites. Recording an invalidation is not a
+# defect; only a comment that still relies on the overturned claim is.
+# expect: conforms
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-old a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: the old belief."@en ;
+  model:basis model:assumed .
+
+claim:planted-new a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: what replaced it."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Planted: seen in a real browser."@en ;
+    prov:invalidated claim:planted-old ] .

@@ -1,0 +1,15 @@
+# A decision attributed to the string "Andy" rather than an IRI.
+# expect: violation "Who made a decision is an IRI"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-string-agent a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: string agent."@en ;
+  prov:wasAttributedTo "Andy" .

@@ -1,0 +1,45 @@
+# One well-formed claim of each kind, a measurement that used an automated browser, and a code
+# location citing a live claim. The template the claim violation cases break in one place.
+# expect: conforms
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-measured a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: a measured observation."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Planted: read in headless Chrome."@en ;
+    dcterms:date "2026-10-17"^^xsd:date ;
+    prov:used concept:headless-chrome ] .
+
+claim:planted-assumed a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: an assumed observation."@en ;
+  model:basis model:assumed .
+
+claim:planted-attributed a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: an attributed decision."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-10-17"^^xsd:date .
+
+claim:planted-unattributed a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: an unattributed decision."@en ;
+  model:basis model:unattributed .
+
+claim:planted-repo-fact a model:RepoFact ;
+  dcterms:subject concept:landing-point ;
+  dcterms:description "Planted: a fact about the repository."@en .
+
+[] a model:CodeLocation ;
+  model:path "web/src/planted.astro" ;
+  model:line 12 ;
+  dcterms:subject concept:focus-ring ;
+  model:cites claim:planted-measured .

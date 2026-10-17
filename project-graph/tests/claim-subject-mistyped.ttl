@@ -1,0 +1,15 @@
+# A claim whose concept slug is mistyped ("focus-rign").
+# expect: violation "at least one concept"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-subject-typo a model:Observation ;
+  dcterms:subject concept:focus-rign ;
+  dcterms:description "Planted: subject typo."@en ;
+  model:basis model:assumed .

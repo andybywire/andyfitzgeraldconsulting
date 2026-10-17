@@ -1,0 +1,14 @@
+# An observation with neither a measurement nor model:basis model:assumed: an unstated gap.
+# expect: violation "An observation says how it is known"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-unbacked a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: says nothing about how it is known."@en .

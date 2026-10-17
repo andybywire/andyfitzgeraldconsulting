@@ -63,6 +63,14 @@
  * broke `orphan-concept` and `top-concept-with-broader`. No cases, a case with no `# expect:` line,
  * and a malformed case each exited 2.
  *
+ * The claim shapes, the same day, seven more. Misbinding the overturned-claim query's variable
+ * broke `claim-location-cites-overturned`. Turning each of the three "exactly one" rules (an
+ * observation's basis, a decision's basis, a claim's kind) into "at least one" broke the case for
+ * that rule's "both". Dropping `sh:class` from `model:cites` broke the mistyped-tag case, and
+ * dropping a claim's subject `minCount` broke `claim-without-subject`. Making a measurement's date
+ * required broke the two cases that conform without one. All five earlier weakenings still broke
+ * exactly their own cases with the 28 claim cases added.
+ *
  * ── NEITHER TOOL'S EXIT STATUS CAN BE TRUSTED ON ITS OWN ────────────────────
  *
  * Both were probed by hand before this was written; jena.mjs lists what that found.

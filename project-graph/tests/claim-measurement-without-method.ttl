@@ -1,0 +1,15 @@
+# A measurement that does not say how it was made.
+# expect: violation "exactly one model:method"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-no-method a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: method missing."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ] .

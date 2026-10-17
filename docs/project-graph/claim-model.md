@@ -14,10 +14,19 @@ the vocabulary passed: a term that nothing reads is decoration, and it goes.
 - **Three classes, each a kind of `prov:Entity`:** `model:Observation`, `model:Decision` and
   `model:RepoFact`. They live in `project-graph/model.ttl`, namespace
   `https://andyfitzgeraldconsulting.com/ns/project-graph/model#`, following the
-  one-namespace-per-file rule.
+  one-namespace-per-file rule. All three sit under an abstract `model:Claim`, added while building
+  stage 4.1, so one shape can target every claim. SHACL follows `rdfs:subClassOf` from there.
 - **Standard terms for everything else:** PROV-O for how a claim came to be and for what overturned
   it; `dcterms:subject` for the concepts a claim is about; `dcterms:description` for its text;
-  `dcterms:date` for when.
+  `dcterms:date` for when, if a comment says.
+- **Every claim names at least one concept** (Andy, 2026-10-17, at stage 4.1). A claim with no
+  `dcterms:subject` would be invisible to "what is claimed about this concept?".
+- **Dates are optional** (Andy, 2026-10-17, at stage 4.1). id-design.md's table said a measurement
+  carries "when" and a decision "who, and when". But git already records when each comment line
+  was written, the Project Graph records only what git cannot, and requiring a date would force the
+  blind annotator to invent one. A date is recorded when a comment states it, and checked as an
+  `xsd:date` when it is. A measurement still needs its method, which is free text that can say
+  where and when.
 - **Andy is the site's existing Person IRI,** `https://andyfitzgeraldconsulting.com/#person`, which
   `nodeId()` in `web/src/lib/linked-data.ts` mints. That ties the Project Graph to the site's own
   identity graph rather than minting a second Andy.
@@ -63,7 +72,10 @@ claim:focus-needs-forced-reflow a model:Observation ;
 `prov:invalidated` the old one, so the two are joined through the evidence. No custom "superseded
 by" link is needed.
 
-**Code locations are the extractor's output, never authored:** a file path, a line, the concepts its
+**Code locations are the extractor's output, never authored:** a `model:CodeLocation` with a
+`model:path`, a `model:line`, `dcterms:subject` for its concept tags and `model:cites` for its claim
+tags. The terms were defined in stage 4.1, so the overturned-claim rule could have planted cases
+before the extractor exists. In words: a file path, a line, the concepts its
 `@concept` tag names, and the claims its `@claim` tag names. They are regenerated on every run.
 
 ## What reads each term

@@ -1,6 +1,7 @@
 # SHACL shapes for the Project Graph: what `pnpm graph check` holds the data to.
 #
-# Stage 3c: the integrity of the concept scheme. Stage 4 adds the shapes for claims.
+# Two parts: the integrity of the concept scheme (stage 3c), then claims, their provenance and the
+# code locations that cite them (stage 4, built to docs/project-graph/claim-model.md).
 #
 # EVERY CONSTRAINT HAS A PLANTED CASE in tests/, and `pnpm graph test` runs them all: each must
 # fail with this file's message for its constraint, or conform where a rule must allow something.
@@ -13,25 +14,40 @@
 #              single concept, never two concepts against each other.
 #   id design  Rules from docs/project-graph/id-design.md: readable slugs, one scheme.
 #   Andy       Decisions about this vocabulary, made 2026-10-17: no label shared across the
-#              scheme, a preferred label's optional qualifier, and the shape of the hierarchy.
+#              scheme, a preferred label's optional qualifier, and the shape of the hierarchy;
+#              then the claim model and its two details, that dates are optional and that every
+#              claim names a concept.
 #
 # WHAT IS DELIBERATELY NOT CHECKED: that labels are lowercase, since proper names keep their
 # capitals; `skos:hiddenLabel`, which nothing uses yet; `skos:related`, which waits for a query;
-# and whether a scope note exists, which no query needs yet.
+# whether a scope note exists, which no query needs yet; that a measurement or decision has a
+# date, since git already knows when each comment was written; and anything about repo facts,
+# which no part of the experiment checks.
 #
-# Two constraints need SPARQL, because SHACL Core cannot express them: a cycle in `skos:broader`,
-# and a label shared between two concepts. Jena runs SHACL-SPARQL as well as Core.
+# THE CHECK FAILS ON WHAT IS KNOWN TO BE WRONG, NEVER ON WHAT IS MERELY UNKNOWN (claim-model.md).
+# A claim must SAY how it is known, even if that is "assumed" or "unattributed", and a query
+# lists the weak ones. But a tag that cites a claim a measurement overturned is a violation.
+#
+# Three constraints need SPARQL, because SHACL Core cannot express them: a cycle in
+# `skos:broader`, a label shared between two concepts, and a tag citing an overturned claim. Jena
+# runs SHACL-SPARQL as well as Core.
 
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix pg: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
 @prefix shape: <https://andyfitzgeraldconsulting.com/ns/project-graph/shapes#> .
 
 # The prefixes the SPARQL constraints use, declared once and referenced by `sh:prefixes`.
 pg:shapes
-  sh:declare [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] .
+  sh:declare
+    [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
+    [ sh:prefix "prov" ; sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ,
+    [ sh:prefix "model" ; sh:namespace "https://andyfitzgeraldconsulting.com/ns/project-graph/model#"^^xsd:anyURI ] .
 
 # ── The scheme ────────────────────────────────────────────────────────────────
 
@@ -157,6 +173,194 @@ shape:Concept
         FILTER (?other != $this
           && LCASE(STR(?value)) = LCASE(STR(?label))
           && LANG(?value) = LANG(?label))
+      }
+    """ ;
+  ] .
+
+# ══ Claims ═══════════════════════════════════════════════════════════════════
+#
+# Built to docs/project-graph/claim-model.md. `model:Claim` is abstract, and SHACL follows
+# `rdfs:subClassOf` from model.ttl, so a shape targeting it reaches every claim of every kind.
+# As above, a node shape with constraints that need different messages is split, because a node
+# shape's `sh:message` covers every constraint declared directly on it.
+
+# id design: a claim is a fragment of the claims namespace, with a slug like a concept's.
+shape:ClaimIri
+  a sh:NodeShape ;
+  sh:targetClass model:Claim ;
+  sh:nodeKind sh:IRI ;
+  sh:pattern "^https://andyfitzgeraldconsulting\\.com/ns/project-graph/claims#[a-z0-9]+(-[a-z0-9]+)*$" ;
+  sh:message "A claim's IRI must be the claims namespace plus a slug of lowercase words joined by hyphens (id-design.md)." .
+
+# id design: three kinds, because each needs different backing. A claim typed only `model:Claim`
+# is no kind at all, and one typed two kinds could satisfy either kind's rules.
+shape:ClaimKind
+  a sh:NodeShape ;
+  sh:targetClass model:Claim ;
+  sh:xone (
+    [ sh:class model:Observation ]
+    [ sh:class model:Decision ]
+    [ sh:class model:RepoFact ]
+  ) ;
+  sh:message "A claim is exactly one kind: an observation, a decision or a repo fact." .
+
+shape:Claim
+  a sh:NodeShape ;
+  sh:targetClass model:Claim ;
+
+  # claim-model.md: one canonical sentence, so a query answer can be read without opening files.
+  sh:property [
+    sh:path dcterms:description ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype rdf:langString ;
+    sh:languageIn ( "en" ) ;
+    sh:message "A claim needs exactly one canonical sentence, in dcterms:description, tagged @en." ;
+  ] ;
+
+  # Andy: every claim names a concept, or "what is claimed about this concept?" can't find it. A
+  # subject must exist, which catches a mistyped slug.
+  sh:property [
+    sh:path dcterms:subject ;
+    sh:minCount 1 ;
+    sh:class skos:Concept ;
+    sh:message "A claim must name at least one concept as its dcterms:subject, and each must be a concept in the scheme. Is a slug mistyped?" ;
+  ] .
+
+# ── Observations: how is it known? ────────────────────────────────────────────
+
+# claim-model.md: an observation says how it is known, by a measurement that generated it or by
+# stating that it is assumed. Exactly one: neither is an unstated gap, both is a contradiction.
+shape:ObservationBasis
+  a sh:NodeShape ;
+  sh:targetClass model:Observation ;
+  sh:xone (
+    [ sh:path prov:wasGeneratedBy ; sh:minCount 1 ]
+    [ sh:path model:basis ; sh:hasValue model:assumed ]
+  ) ;
+  sh:message "An observation says how it is known: generated by a measurement, or model:basis model:assumed. Exactly one of the two." .
+
+shape:Observation
+  a sh:NodeShape ;
+  sh:targetClass model:Observation ;
+  sh:property [
+    sh:path prov:wasGeneratedBy ;
+    sh:class model:Measurement ;
+    sh:message "What generated an observation must be a model:Measurement." ;
+  ] ;
+  sh:property [
+    sh:path model:basis ;
+    sh:in ( model:assumed ) ;
+    sh:message "An observation's only possible basis is model:assumed." ;
+  ] .
+
+shape:Measurement
+  a sh:NodeShape ;
+  sh:targetClass model:Measurement ;
+  sh:property [
+    sh:path model:method ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype rdf:langString ;
+    sh:languageIn ( "en" ) ;
+    sh:message "A measurement says how it was made: exactly one model:method, tagged @en." ;
+  ] ;
+  # Andy: optional, since git knows when each comment was written. A date that is given must be one.
+  sh:property [
+    sh:path dcterms:date ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date ;
+    sh:message "A measurement has at most one dcterms:date, typed xsd:date." ;
+  ] ;
+  # The tools a measurement relied on are concepts, so "what was only ever measured by automation?"
+  # can follow them to concept:automated-browser. Real browsers go in model:method's text.
+  sh:property [
+    sh:path prov:used ;
+    sh:class skos:Concept ;
+    sh:message "What a measurement used must be a concept in the scheme, such as concept:headless-chrome. Is a slug mistyped?" ;
+  ] ;
+  sh:property [
+    sh:path prov:invalidated ;
+    sh:class model:Claim ;
+    sh:message "What a measurement overturned must be a claim. Is its slug mistyped?" ;
+  ] .
+
+# ── Decisions: who made it? ───────────────────────────────────────────────────
+
+# claim-model.md: a decision names who made it, or states that nobody is named. Exactly one.
+shape:DecisionBasis
+  a sh:NodeShape ;
+  sh:targetClass model:Decision ;
+  sh:xone (
+    [ sh:path prov:wasAttributedTo ; sh:minCount 1 ]
+    [ sh:path model:basis ; sh:hasValue model:unattributed ]
+  ) ;
+  sh:message "A decision says who made it, with prov:wasAttributedTo, or that nobody is named, with model:basis model:unattributed. Exactly one of the two." .
+
+shape:Decision
+  a sh:NodeShape ;
+  sh:targetClass model:Decision ;
+  sh:property [
+    sh:path prov:wasAttributedTo ;
+    sh:nodeKind sh:IRI ;
+    sh:message "Who made a decision is an IRI, such as the site's Person, <https://andyfitzgeraldconsulting.com/#person>." ;
+  ] ;
+  sh:property [
+    sh:path model:basis ;
+    sh:in ( model:unattributed ) ;
+    sh:message "A decision's only possible basis is model:unattributed." ;
+  ] ;
+  sh:property [
+    sh:path dcterms:date ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date ;
+    sh:message "A decision has at most one dcterms:date, typed xsd:date." ;
+  ] .
+
+# ── Code locations: what a tagged comment cites ───────────────────────────────
+
+shape:CodeLocation
+  a sh:NodeShape ;
+  sh:targetClass model:CodeLocation ;
+  sh:property [
+    sh:path model:path ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:message "A code location has exactly one model:path, a string." ;
+  ] ;
+  sh:property [
+    sh:path model:line ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:integer ;
+    sh:minInclusive 1 ;
+    sh:message "A code location has exactly one model:line, a whole number from 1." ;
+  ] ;
+  # A tag in a comment names a claim by slug. If the slug is mistyped, this is where it shows.
+  sh:property [
+    sh:path model:cites ;
+    sh:class model:Claim ;
+    sh:message "A comment's @claim tag names a claim that does not exist. Is the slug in the comment mistyped?" ;
+  ] ;
+  sh:property [
+    sh:path dcterms:subject ;
+    sh:class skos:Concept ;
+    sh:message "A comment's @concept tag names a concept that does not exist. Is the slug in the comment mistyped?" ;
+  ] ;
+
+  # THE RULE THE EXPERIMENT TURNS ON: a comment that relies on a claim a measurement overturned
+  # relies on something known to be wrong. This is "corrections spread": the overturned claim has
+  # one id, so every comment still citing it fails here, wherever it is.
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "This comment's @claim tag cites {?value}, which a measurement overturned. The comment relies on something known to be wrong." ;
+    sh:prefixes pg:shapes ;
+    sh:select """
+      SELECT $this ?value
+      WHERE {
+        $this model:cites ?value .
+        ?overturning prov:invalidated ?value .
       }
     """ ;
   ] .

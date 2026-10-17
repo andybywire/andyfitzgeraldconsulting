@@ -39,6 +39,6 @@ Decided by Andy, 2026-10-17, at the start of stage 3:
 | 1. Protocol and inventory  | Done, `39560e2`                                          |
 | 2. Id design               | Done, `5ce8534`                                          |
 | 3. Vocabulary and checks   | Built: Jena, 18 concepts, SKOS integrity shapes; `pnpm graph check` and `pnpm graph test` (19 planted cases) |
-| 4. Claims and extractor    | Model decided (claim-model.md); nothing built            |
+| 4. Claims and extractor    | 4.1 built: model.ttl, claim shapes, 28 claim cases (47 in all); extractor next |
 | 5. Arms and runs           | Not started; preconditions are in the protocol           |
 | 6. Analysis                | Not started                                              |
