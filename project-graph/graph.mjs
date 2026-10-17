@@ -2,24 +2,30 @@
  * The Project Graph's checks: is every Turtle file well formed, does the graph satisfy its shapes,
  * and do the shapes still catch what they are meant to catch?
  *
- *   pnpm graph check          check project-graph/
- *   pnpm graph test           run the planted cases in project-graph/tests/ against the shapes
+ *   pnpm graph check          check project-graph/, and every tagged comment in the repository
+ *   pnpm graph test           run the shapes' planted cases in tests/, then the extractor's tests
  *
  * Either takes a directory as well, which is how a planted violation or a weakened shape is proven
- * against a copy rather than the real files.
+ * against a copy rather than the real files. `check` reads tags from the folder that directory
+ * sits in, so a copy needs a source tree beside it to have tags at all.
  *
  * Part of the Project Graph experiment. docs/project-graph/ is its record: the protocol, and
- * id-design.md for the namespaces these files use. Saved queries (`pnpm graph query <name>`) join
- * this file in stage 4.
+ * id-design.md for the namespaces these files use. Saved queries (`pnpm graph query <name>`) are
+ * the next piece of stage 4.
  *
  * ── WHAT A CHECK IS ─────────────────────────────────────────────────────────
  *
  * Every `*.ttl` file directly in the directory takes part, and nothing in its subfolders, so the
  * planted cases in tests/ can never reach a real check. `shapes.ttl` holds the SHACL shapes, and
- * every other file is data. Two steps, each one Java start (about 0.4s apiece):
+ * every other file is data. Three steps, the last two each one Java start (about 0.4s apiece):
  *
- *   1. SYNTAX    `riot --validate` over every file, shapes included. Strict parsing, with IRIs
- *                and literals checked as well.
+ *   0. TAGS      extract.mjs reads the `@concept` and `@claim` tags in the repository's comments.
+ *                A malformed one fails here, with its file and line. The rest become code
+ *                locations, written to a temporary file outside the repository and passed to
+ *                both later steps, so the shapes judge real comments: a tag citing an overturned
+ *                claim, or naming a slug that doesn't exist, fails at step 2.
+ *   1. SYNTAX    `riot --validate` over every file, shapes and the generated locations included.
+ *                Strict parsing, with IRIs and literals checked as well.
  *   2. SHAPES    `shacl validate`, with every data file passed as its own `--data`. Jena merges
  *                them into one graph, so a shape sees every file at once. (Checked on
  *                2026-10-17 with two files holding different concepts. An earlier probe seemed
@@ -66,10 +72,18 @@
  * The claim shapes, the same day, seven more. Misbinding the overturned-claim query's variable
  * broke `claim-location-cites-overturned`. Turning each of the three "exactly one" rules (an
  * observation's basis, a decision's basis, a claim's kind) into "at least one" broke the case for
- * that rule's "both". Dropping `sh:class` from `model:cites` broke the mistyped-tag case, and
- * dropping a claim's subject `minCount` broke `claim-without-subject`. Making a measurement's date
+ * that rule's "both". Dropping the "does this claim exist?" filter from the tag rule broke the
+ * mistyped-tag case, and dropping a claim's subject `minCount` broke `claim-without-subject`. Making a measurement's date
  * required broke the two cases that conform without one. All five earlier weakenings still broke
  * exactly their own cases with the 28 claim cases added.
+ *
+ * The extractor, the same day. Six breakages of extract.mjs, each caught by exactly the unit tests
+ * it should break, with every shape case still passing: the Markdown marker dropped, the plural
+ * check dropped, the docs/project-graph skip dropped, the slug pattern loosened to any non-space,
+ * consecutive tags no longer merged, and closers left on. Then end to end, in a scratch repository
+ * with real source files: clean tags conform; a tag citing an overturned claim, a mistyped claim
+ * slug and a mistyped concept slug each fail with the file and line in the message; and a
+ * malformed tag fails before Jena starts.
  *
  * ── NEITHER TOOL'S EXIT STATUS CAN BE TRUSTED ON ITS OWN ────────────────────
  *
@@ -90,15 +104,19 @@
  *
  *   0  check: every file is well formed and the graph conforms. test: every case came out as
  *      expected.
- *   1  check: a syntax error, a warning, or a shape violation. test: at least one case did not
- *      come out as expected.
+ *   1  check: a malformed tag, a syntax error, a warning, or a shape violation. test: at least one
+ *      case did not come out as expected, or an extractor test failed.
  *   2  it could not run: no Java 21, Jena could not be fetched, nothing to check or test, a case
- *      with no `# expect:` line, a malformed case, or a report it could not read. Kept apart from
- *      1 so a broken tool is never read as a verdict.
+ *      with no `# expect:` line, a malformed case, the extractor's tests missing or not running,
+ *      or a report it could not read. Kept apart from 1 so a broken tool is never read as a
+ *      verdict.
  */
-import {existsSync, readdirSync, readFileSync} from 'node:fs'
+import {spawnSync} from 'node:child_process'
+import {existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs'
+import {tmpdir} from 'node:os'
 import {basename, join, relative, resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
+import {extractTags, toTurtle} from './extract.mjs'
 import {ensureJena, runJena, VERSION} from './jena.mjs'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
@@ -178,18 +196,39 @@ function validate(shapes, data) {
 
 async function check(dir) {
   const {shapes, data} = graphFiles(dir)
+
+  // The tagged comments, read from the repository the graph describes: the folder that
+  // project-graph/ sits in. A tag that can't be read is reported here, before Jena starts.
+  const root = resolve(dir, '..')
+  const tags = extractTags(root)
+  if (tags.errors.length > 0) {
+    console.error(`${tags.errors.length} malformed tag${tags.errors.length === 1 ? '' : 's'}:`)
+    for (const {path, line, message} of tags.errors) console.error(`  ${path}:${line}  ${message}`)
+    process.exit(1)
+  }
   await jena()
 
-  const problems = syntaxProblems([shapes, ...data])
+  // Written outside the repository and removed on exit, whichever way the check ends. A `finally`
+  // would not do: `process.exit()` skips it.
+  const scratch = mkdtempSync(join(tmpdir(), 'project-graph-'))
+  process.on('exit', () => rmSync(scratch, {recursive: true, force: true}))
+  const locations = join(scratch, 'locations.ttl')
+  writeFileSync(locations, toTurtle(tags.locations))
+
+  // The generated file goes through riot too, so an extractor bug shows as a syntax error rather
+  // than as Jena failing to read its input.
+  const problems = syntaxProblems([shapes, ...data, locations])
   if (problems) {
     console.error(`Not well formed:\n${problems}`)
     process.exit(1)
   }
 
-  const result = validate(shapes, data)
+  const result = validate(shapes, [...data, locations])
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`
+  const counted = `${plural(tags.locations.length, 'tagged comment')} in ${plural(tags.files, 'file')}`
   if (result.conforms) {
     console.log(
-      `Conforms: ${data.map(shown).join(', ')} against ${shown(shapes)} (Jena ${VERSION}).`,
+      `Conforms: ${data.map(shown).join(', ')} and ${counted}, against ${shown(shapes)} (Jena ${VERSION}).`,
     )
     return
   }
@@ -252,7 +291,21 @@ async function test(dir) {
 
   const passed = cases.length - failures
   console.log(`\n${passed} of ${cases.length} cases as expected (Jena ${VERSION}).`)
-  if (failures > 0) process.exit(1)
+
+  // The extractor's own tests: ordinary unit tests, since a parser is ordinary code. Run from the
+  // directory under test, so a copy with a weakened extractor tests that copy.
+  const unitTests = join(dir, 'extract.test.mjs')
+  if (!existsSync(unitTests)) fail(`No ${shown(unitTests)}, so the extractor is untested.`)
+  const run = spawnSync(process.execPath, ['--test', '--test-reporter=spec', unitTests], {
+    encoding: 'utf8',
+  })
+  const count = (label) => Number(run.stdout.match(new RegExp(`ℹ ${label} (\\d+)`))?.[1] ?? NaN)
+  const [total, pass] = [count('tests'), count('pass')]
+  if (Number.isNaN(total) || total === 0) fail(`The extractor's tests did not run:\n${run.stderr}`)
+  if (run.status !== 0) console.error(run.stdout)
+  console.log(`${pass} of ${total} extractor tests pass.`)
+
+  if (failures > 0 || run.status !== 0) process.exit(1)
 }
 
 /* ── Commands ─────────────────────────────────────────────────────────────── */

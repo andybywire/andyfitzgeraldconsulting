@@ -28,9 +28,9 @@
 # A claim must SAY how it is known, even if that is "assumed" or "unattributed", and a query
 # lists the weak ones. But a tag that cites a claim a measurement overturned is a violation.
 #
-# Three constraints need SPARQL, because SHACL Core cannot express them: a cycle in
-# `skos:broader`, a label shared between two concepts, and a tag citing an overturned claim. Jena
-# runs SHACL-SPARQL as well as Core.
+# SPARQL where SHACL Core can't do the job: a cycle in `skos:broader`, a label shared between two
+# concepts, a tag citing an overturned claim, and the two tag rules whose report must say which
+# file and line (see the code-location shape). Jena runs SHACL-SPARQL as well as Core.
 
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -47,7 +47,10 @@ pg:shapes
   sh:declare
     [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] ,
     [ sh:prefix "prov" ; sh:namespace "http://www.w3.org/ns/prov#"^^xsd:anyURI ] ,
-    [ sh:prefix "model" ; sh:namespace "https://andyfitzgeraldconsulting.com/ns/project-graph/model#"^^xsd:anyURI ] .
+    [ sh:prefix "model" ; sh:namespace "https://andyfitzgeraldconsulting.com/ns/project-graph/model#"^^xsd:anyURI ] ,
+    [ sh:prefix "dcterms" ; sh:namespace "http://purl.org/dc/terms/"^^xsd:anyURI ] ,
+    [ sh:prefix "rdf" ; sh:namespace "http://www.w3.org/1999/02/22-rdf-syntax-ns#"^^xsd:anyURI ] ,
+    [ sh:prefix "rdfs" ; sh:namespace "http://www.w3.org/2000/01/rdf-schema#"^^xsd:anyURI ] .
 
 # ── The scheme ────────────────────────────────────────────────────────────────
 
@@ -337,16 +340,37 @@ shape:CodeLocation
     sh:minInclusive 1 ;
     sh:message "A code location has exactly one model:line, a whole number from 1." ;
   ] ;
+  # THE THREE RULES THAT JUDGE A COMMENT'S TAGS ARE SPARQL, and the reason is the report. A code
+  # location is a blank node (id-design.md), so a Core constraint's result names `_:b0`, and the
+  # violation is caught but can't be found. A SPARQL constraint can bind the location's file and
+  # line and put them in its message. Each message keeps the wording the planted cases match on.
+  # The variable is `?file`, NOT `?path`: in SHACL-SPARQL, `?path` is reserved for the result's
+  # property path, and Jena reported the file name as one until it was renamed.
+
   # A tag in a comment names a claim by slug. If the slug is mistyped, this is where it shows.
-  sh:property [
-    sh:path model:cites ;
-    sh:class model:Claim ;
-    sh:message "A comment's @claim tag names a claim that does not exist. Is the slug in the comment mistyped?" ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "{?file}:{?line} A comment's @claim tag names a claim that does not exist: {?value}. Is the slug in the comment mistyped?" ;
+    sh:prefixes pg:shapes ;
+    sh:select """
+      SELECT $this ?value ?file ?line
+      WHERE {
+        $this model:cites ?value ; model:path ?file ; model:line ?line .
+        FILTER NOT EXISTS { ?value rdf:type/rdfs:subClassOf* model:Claim }
+      }
+    """ ;
   ] ;
-  sh:property [
-    sh:path dcterms:subject ;
-    sh:class skos:Concept ;
-    sh:message "A comment's @concept tag names a concept that does not exist. Is the slug in the comment mistyped?" ;
+  sh:sparql [
+    a sh:SPARQLConstraint ;
+    sh:message "{?file}:{?line} A comment's @concept tag names a concept that does not exist: {?value}. Is the slug in the comment mistyped?" ;
+    sh:prefixes pg:shapes ;
+    sh:select """
+      SELECT $this ?value ?file ?line
+      WHERE {
+        $this dcterms:subject ?value ; model:path ?file ; model:line ?line .
+        FILTER NOT EXISTS { ?value rdf:type skos:Concept }
+      }
+    """ ;
   ] ;
 
   # THE RULE THE EXPERIMENT TURNS ON: a comment that relies on a claim a measurement overturned
@@ -354,12 +378,12 @@ shape:CodeLocation
   # one id, so every comment still citing it fails here, wherever it is.
   sh:sparql [
     a sh:SPARQLConstraint ;
-    sh:message "This comment's @claim tag cites {?value}, which a measurement overturned. The comment relies on something known to be wrong." ;
+    sh:message "{?file}:{?line} This comment's @claim tag cites {?value}, which a measurement overturned. The comment relies on something known to be wrong." ;
     sh:prefixes pg:shapes ;
     sh:select """
-      SELECT $this ?value
+      SELECT $this ?value ?file ?line
       WHERE {
-        $this model:cites ?value .
+        $this model:cites ?value ; model:path ?file ; model:line ?line .
         ?overturning prov:invalidated ?value .
       }
     """ ;
