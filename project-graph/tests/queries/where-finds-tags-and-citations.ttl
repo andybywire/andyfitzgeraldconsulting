@@ -1,0 +1,31 @@
+# One comment tagged with a narrower concept of hiding, one citing a claim about another, and one
+# tagged only with the focus ring. Asking where hiding is discussed finds the first two only.
+# query: where hiding
+# expect: web/src/one.css:1 web/src/two.ts:5
+
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-styled a model:Observation ;
+  dcterms:subject concept:styled-away ;
+  dcterms:description "Planted: planted-styled."@en ;
+  model:basis model:assumed .
+
+[] a model:CodeLocation ;
+  model:path "web/src/one.css" ;
+  model:line 1 ;
+  dcterms:subject concept:not-applicable .
+
+[] a model:CodeLocation ;
+  model:path "web/src/two.ts" ;
+  model:line 5 ;
+  model:cites claim:planted-styled .
+
+[] a model:CodeLocation ;
+  model:path "web/src/three.css" ;
+  model:line 8 ;
+  dcterms:subject concept:focus-ring .

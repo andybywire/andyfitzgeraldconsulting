@@ -1,0 +1,57 @@
+# How one claim was established, what overturned it or what it overturned, and where it is cited.
+#
+# Reads prov:wasGeneratedBy, model:method, dcterms:date, prov:used, prov:wasAttributedTo,
+# model:basis and prov:invalidated. A repo fact has no backing to show, and still returns its row.
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#>
+PREFIX claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#>
+PREFIX model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#>
+
+SELECT ?claim ?kind ?description
+  (GROUP_CONCAT(DISTINCT ?how; SEPARATOR=" | ") AS ?established)
+  (GROUP_CONCAT(DISTINCT ?by; SEPARATOR=" | ") AS ?overturnedBy)
+  (GROUP_CONCAT(DISTINCT STR(?old); SEPARATOR=" ") AS ?overturns)
+  (GROUP_CONCAT(DISTINCT ?where; SEPARATOR=", ") AS ?cited)
+WHERE {
+  VALUES ?claim { {{claim}} }
+  ?claim a ?class ; dcterms:description ?description .
+  ?class rdfs:subClassOf model:Claim .
+  BIND(REPLACE(LCASE(STRAFTER(STR(?class), "#")), "repofact", "repo fact") AS ?kind)
+  OPTIONAL {
+    {
+      ?claim prov:wasGeneratedBy ?measurement .
+      ?measurement model:method ?method .
+      OPTIONAL { ?measurement dcterms:date ?measured }
+      OPTIONAL {
+        SELECT ?measurement (GROUP_CONCAT(DISTINCT STR(?tool); SEPARATOR=", ") AS ?tools)
+        WHERE { ?measurement prov:used ?tool }
+        GROUP BY ?measurement
+      }
+      BIND(CONCAT("measured: ", STR(?method),
+        IF(BOUND(?measured), CONCAT(" (", STR(?measured), ")"), ""),
+        IF(BOUND(?tools), CONCAT(", using ", ?tools), "")) AS ?how)
+    }
+    UNION
+    { ?claim model:basis ?gap . BIND(CONCAT("stated gap: ", STRAFTER(STR(?gap), "#")) AS ?how) }
+    UNION
+    {
+      ?claim prov:wasAttributedTo ?who .
+      OPTIONAL { ?claim dcterms:date ?decided }
+      BIND(CONCAT("decided by ", STR(?who), IF(BOUND(?decided), CONCAT(" on ", STR(?decided)), "")) AS ?how)
+    }
+  }
+  OPTIONAL {
+    ?overturning prov:invalidated ?claim ; model:method ?overturningMethod .
+    OPTIONAL { ?newer prov:wasGeneratedBy ?overturning }
+    BIND(CONCAT(IF(BOUND(?newer), CONCAT(STR(?newer), ", "), ""), "measured: ", STR(?overturningMethod)) AS ?by)
+  }
+  OPTIONAL { ?claim prov:wasGeneratedBy/prov:invalidated ?old . }
+  OPTIONAL {
+    ?location model:cites ?claim ; model:path ?file ; model:line ?line .
+    BIND(CONCAT(?file, ":", STR(?line)) AS ?where)
+  }
+}
+GROUP BY ?claim ?kind ?description

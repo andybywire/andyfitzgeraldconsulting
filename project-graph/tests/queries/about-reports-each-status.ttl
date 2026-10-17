@@ -1,0 +1,29 @@
+# An overturned claim, the claim that overturned it, and an assumed one, all about the focus ring.
+# Each gets its own status.
+# query: about focus-ring
+# expect: claim:planted-old claim:planted-new claim:planted-guess
+# expect status: overturned
+# expect status: backed
+# expect status: assumed
+
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-old a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: planted-old."@en ;
+  model:basis model:assumed .
+
+claim:planted-new a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: planted-new."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ; model:method "Planted: seen in a real browser."@en ; prov:invalidated claim:planted-old ] .
+
+claim:planted-guess a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: planted-guess."@en ;
+  model:basis model:assumed .

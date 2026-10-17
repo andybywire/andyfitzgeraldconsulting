@@ -1,17 +1,22 @@
 /**
- * The Project Graph's checks: is every Turtle file well formed, does the graph satisfy its shapes,
- * and do the shapes still catch what they are meant to catch?
+ * The Project Graph's commands: is every Turtle file well formed, does the graph satisfy its
+ * shapes, do the shapes and queries still do what they are meant to, and what does the graph say?
  *
- *   pnpm graph check          check project-graph/, and every tagged comment in the repository
- *   pnpm graph test           run the shapes' planted cases in tests/, then the extractor's tests
+ *   pnpm graph check                check project-graph/, and every tagged comment in the repository
+ *   pnpm graph test                 run the planted cases: shapes, then queries, then the extractor
+ *   pnpm graph query [name] [slug]  run a saved query; with no name, list them (see queries.mjs)
  *
- * Either takes a directory as well, which is how a planted violation or a weakened shape is proven
- * against a copy rather than the real files. `check` reads tags from the folder that directory
- * sits in, so a copy needs a source tree beside it to have tags at all.
+ * `check` and `test` take a directory as well, which is how a planted violation or a weakened shape
+ * is proven against a copy rather than the real files. `check` reads tags from the folder that
+ * directory sits in, so a copy needs a source tree beside it to have tags at all.
+ *
+ * A WEAKENED COPY MUST RUN ITS OWN graph.mjs. Running this file against a copy reads the copy's
+ * Turtle and queries but imports THIS folder's modules, so a weakened queries.mjs is never executed
+ * and its test passes for the wrong reason. That happened on 2026-10-17: disabling the slug check
+ * in a copy's queries.mjs left every case green until the copy was run as `node <copy>/graph.mjs`.
  *
  * Part of the Project Graph experiment. docs/project-graph/ is its record: the protocol, and
- * id-design.md for the namespaces these files use. Saved queries (`pnpm graph query <name>`) are
- * the next piece of stage 4.
+ * id-design.md for the namespaces these files use.
  *
  * ── WHAT A CHECK IS ─────────────────────────────────────────────────────────
  *
@@ -85,6 +90,12 @@
  * slug and a mistyped concept slug each fail with the file and line in the message; and a
  * malformed tag fails before Jena starts.
  *
+ * The saved queries, the same day. Seven breakages, each run with the copy's own graph.mjs and
+ * each caught by exactly the query cases it should break, with every shape case and extractor test
+ * still passing: `about` without `skos:broader*`, `about` blind to overturned claims, `where`
+ * without its citation branch, `settled` accepting any kind of claim, `weak` not requiring a gap,
+ * `automation-only` not excluding real-browser evidence, and queries.mjs skipping the slug check.
+ *
  * ── NEITHER TOOL'S EXIT STATUS CAN BE TRUSTED ON ITS OWN ────────────────────
  *
  * Both were probed by hand before this was written; jena.mjs lists what that found.
@@ -103,9 +114,10 @@
  * ── EXIT CODES ──────────────────────────────────────────────────────────────
  *
  *   0  check: every file is well formed and the graph conforms. test: every case came out as
- *      expected.
+ *      expected. query: it ran, whether or not anything matched.
  *   1  check: a malformed tag, a syntax error, a warning, or a shape violation. test: at least one
- *      case did not come out as expected, or an extractor test failed.
+ *      case did not come out as expected, or an extractor test failed. query: no such query, or a
+ *      slug that is malformed or names nothing.
  *   2  it could not run: no Java 21, Jena could not be fetched, nothing to check or test, a case
  *      with no `# expect:` line, a malformed case, the extractor's tests missing or not running,
  *      or a report it could not read. Kept apart from 1 so a broken tool is never read as a
@@ -117,6 +129,7 @@ import {tmpdir} from 'node:os'
 import {basename, join, relative, resolve} from 'node:path'
 import {fileURLToPath} from 'node:url'
 import {extractTags, toTurtle} from './extract.mjs'
+import {format, listQueries, QueryError, runQuery} from './queries.mjs'
 import {ensureJena, runJena, VERSION} from './jena.mjs'
 
 const HERE = fileURLToPath(new URL('.', import.meta.url))
@@ -194,26 +207,37 @@ function validate(shapes, data) {
 
 /* ── check ────────────────────────────────────────────────────────────────── */
 
+/**
+ * The tagged comments in the repository the graph describes (the folder project-graph/ sits in),
+ * written as code locations to a temporary file outside the repository and removed on exit,
+ * whichever way the command ends. A `finally` would not do: `process.exit()` skips it.
+ *
+ * A malformed tag stops `check` (exit 1). A query only warns, since partial answers to a question
+ * are still worth having, but it says loudly what it could not read.
+ */
+function gatherLocations(dir, {strict}) {
+  const tags = extractTags(resolve(dir, '..'))
+  if (tags.errors.length > 0) {
+    const say = strict ? console.error : (line) => console.error(`warning: ${line}`)
+    say(
+      `${tags.errors.length} malformed tag${tags.errors.length === 1 ? '' : 's'}${strict ? '' : ', left out of these results'}:`,
+    )
+    for (const {path, line, message} of tags.errors) say(`  ${path}:${line}  ${message}`)
+    if (strict) process.exit(1)
+  }
+  const scratch = mkdtempSync(join(tmpdir(), 'project-graph-'))
+  process.on('exit', () => rmSync(scratch, {recursive: true, force: true}))
+  const file = join(scratch, 'locations.ttl')
+  writeFileSync(file, toTurtle(tags.locations))
+  return {file, tags}
+}
+
 async function check(dir) {
   const {shapes, data} = graphFiles(dir)
 
-  // The tagged comments, read from the repository the graph describes: the folder that
-  // project-graph/ sits in. A tag that can't be read is reported here, before Jena starts.
-  const root = resolve(dir, '..')
-  const tags = extractTags(root)
-  if (tags.errors.length > 0) {
-    console.error(`${tags.errors.length} malformed tag${tags.errors.length === 1 ? '' : 's'}:`)
-    for (const {path, line, message} of tags.errors) console.error(`  ${path}:${line}  ${message}`)
-    process.exit(1)
-  }
+  // A tag that can't be read is reported before Jena starts.
+  const {file: locations, tags} = gatherLocations(dir, {strict: true})
   await jena()
-
-  // Written outside the repository and removed on exit, whichever way the check ends. A `finally`
-  // would not do: `process.exit()` skips it.
-  const scratch = mkdtempSync(join(tmpdir(), 'project-graph-'))
-  process.on('exit', () => rmSync(scratch, {recursive: true, force: true}))
-  const locations = join(scratch, 'locations.ttl')
-  writeFileSync(locations, toTurtle(tags.locations))
 
   // The generated file goes through riot too, so an extractor bug shows as a syntax error rather
   // than as Jena failing to read its input.
@@ -292,6 +316,28 @@ async function test(dir) {
   const passed = cases.length - failures
   console.log(`\n${passed} of ${cases.length} cases as expected (Jena ${VERSION}).`)
 
+  // The saved queries' planted cases: a fixture, the query to run on it, and what must come back.
+  const queryCasesDir = join(casesDir, 'queries')
+  const queryCases = existsSync(queryCasesDir) ? turtleIn(queryCasesDir) : []
+  if (queryCases.length === 0)
+    fail(`No query cases in ${shown(queryCasesDir)}, so the queries are untested.`)
+  const queryProblems = syntaxProblems(queryCases)
+  if (queryProblems) fail(`Not well formed, so the query cases cannot run:\n${queryProblems}`)
+  let queryFailures = 0
+  for (const file of queryCases) {
+    const name = basename(file, '.ttl')
+    const why = queryCaseFailure(dir, file, data)
+    if (why) {
+      queryFailures++
+      console.error(`FAIL  query/${name}: ${why.replace(/\n/g, '\n      ')}\n`)
+    } else {
+      console.log(`ok    query/${name}`)
+    }
+  }
+  console.log(
+    `${queryCases.length - queryFailures} of ${queryCases.length} query cases as expected.`,
+  )
+
   // The extractor's own tests: ordinary unit tests, since a parser is ordinary code. Run from the
   // directory under test, so a copy with a weakened extractor tests that copy.
   const unitTests = join(dir, 'extract.test.mjs')
@@ -305,14 +351,90 @@ async function test(dir) {
   if (run.status !== 0) console.error(run.stdout)
   console.log(`${pass} of ${total} extractor tests pass.`)
 
-  if (failures > 0 || run.status !== 0) process.exit(1)
+  if (failures > 0 || queryFailures > 0 || run.status !== 0) process.exit(1)
+}
+
+/**
+ * Why a query case did not come out as expected, or '' when it did. A case states:
+ *
+ *   # query: <name> [slug]
+ *   # expect: <first-column values, separated by spaces>    the EXACT set, or `nothing`
+ *   # expect <column>: <text>                               some result's column contains it
+ *   # expect error: <text>                                  the query refuses, saying this
+ *
+ * The first form is an exact set on purpose: what a query leaves out is as much its job as what it
+ * finds, as `automation-only` leaving out a claim also seen in a real browser shows.
+ */
+function queryCaseFailure(dir, file, data) {
+  const text = readFileSync(file, 'utf8')
+  const [name, slug] = (text.match(/^# query: (.+)$/m)?.[1] ?? '').trim().split(/\s+/)
+  if (!name) fail(`${shown(file)} needs a \`# query: <name> [slug]\` line.`)
+  const exact = text.match(/^# expect: (.+)$/m)?.[1].trim()
+  const contains = [...text.matchAll(/^# expect (?!error)(\w+): (.+)$/gm)].map((m) => [
+    m[1],
+    m[2].trim(),
+  ])
+  const error = text.match(/^# expect error: (.+)$/m)?.[1].trim()
+  if (!exact && contains.length === 0 && !error) fail(`${shown(file)} states nothing to expect.`)
+
+  let result
+  try {
+    result = runQuery(dir, name, slug, [...data, file])
+  } catch (e) {
+    if (!(e instanceof QueryError)) fail(e.message)
+    if (error && e.message.includes(error)) return ''
+    return `refused: ${e.message}`
+  }
+  if (error) return `expected it to refuse, saying "${error}"; it ran`
+
+  const first = result.rows.map((row) => row[result.vars[0]]).sort()
+  if (exact) {
+    const want = exact === 'nothing' ? [] : exact.split(/\s+/).sort()
+    if (JSON.stringify(first) !== JSON.stringify(want)) {
+      return `expected exactly [${want.join(' ')}]; got [${first.join(' ')}]`
+    }
+  }
+  for (const [column, needle] of contains) {
+    if (!result.rows.some((row) => (row[column] ?? '').includes(needle))) {
+      return `expected some result's ${column} to contain "${needle}"; got:\n${format(result)}`
+    }
+  }
+  return ''
+}
+
+/* ── query ────────────────────────────────────────────────────────────────── */
+
+async function query(dir, name, slug) {
+  if (!name) {
+    console.log('Saved queries (pnpm graph query <name> [slug]):\n')
+    for (const q of listQueries(dir)) {
+      console.log(`  ${q.name}${q.param ? ` <${q.param}>` : ''}\n    ${q.description}\n`)
+    }
+    return
+  }
+  const {data} = graphFiles(dir)
+  const {file: locations} = gatherLocations(dir, {strict: false})
+  await jena()
+  try {
+    console.log(format(runQuery(dir, name, slug, [...data, locations])))
+  } catch (e) {
+    if (e instanceof QueryError) {
+      console.error(e.message)
+      process.exit(1)
+    }
+    fail(e.message)
+  }
 }
 
 /* ── Commands ─────────────────────────────────────────────────────────────── */
 
-const [command, target] = process.argv.slice(2)
-const dir = target ? resolve(target) : HERE
+const [command, ...args] = process.argv.slice(2)
 
-if (command === 'check') await check(dir)
-else if (command === 'test') await test(dir)
-else fail('Usage: pnpm graph check [dir]\n       pnpm graph test [dir]')
+if (command === 'check') await check(args[0] ? resolve(args[0]) : HERE)
+else if (command === 'test') await test(args[0] ? resolve(args[0]) : HERE)
+else if (command === 'query') await query(HERE, args[0], args[1])
+else {
+  fail(
+    'Usage: pnpm graph check [dir]\n       pnpm graph test [dir]\n       pnpm graph query [name] [slug]',
+  )
+}

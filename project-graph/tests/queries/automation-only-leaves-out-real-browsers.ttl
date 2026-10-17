@@ -1,0 +1,27 @@
+# Measured only in the Browser pane: listed. Measured in headless Chrome AND by a second
+# measurement that used no automated browser: left out. Measured only in a real browser: left out.
+# query: automation-only
+# expect: claim:planted-only-pane
+
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-only-pane a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: planted-only-pane."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ; model:method "Planted: read in the pane."@en ; prov:used concept:browser-pane ] .
+
+claim:planted-also-real a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: planted-also-real."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ; model:method "Planted: read headless."@en ; prov:used concept:headless-chrome ] ,
+    [ a model:Measurement ; model:method "Planted: seen in Safari."@en ] .
+
+claim:planted-only-real a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Planted: planted-only-real."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ; model:method "Planted: looked in a real browser."@en ] .

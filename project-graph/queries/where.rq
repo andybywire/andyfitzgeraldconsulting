@@ -1,0 +1,25 @@
+# Every comment tagged with a concept or any narrower one, or citing a claim about it: the places
+# a change to that concept has to visit.
+#
+# Reads dcterms:subject on code locations, which only the mistyped-concept shape read before.
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#>
+PREFIX claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#>
+PREFIX model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#>
+
+SELECT ?where (GROUP_CONCAT(DISTINCT STR(?subject); SEPARATOR=" ") AS ?concepts)
+  (GROUP_CONCAT(DISTINCT STR(?cited); SEPARATOR=" ") AS ?claims)
+WHERE {
+  { ?location dcterms:subject/skos:broader* {{concept}} . }
+  UNION
+  { ?location model:cites/dcterms:subject/skos:broader* {{concept}} . }
+  ?location a model:CodeLocation ; model:path ?file ; model:line ?line .
+  BIND(CONCAT(?file, ":", STR(?line)) AS ?where)
+  OPTIONAL { ?location dcterms:subject ?subject . }
+  OPTIONAL { ?location model:cites ?cited . }
+}
+GROUP BY ?where ?file ?line
+ORDER BY ?file ?line

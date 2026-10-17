@@ -1,0 +1,28 @@
+# Two decisions about narrower concepts of hiding, one attributed and one not, and an observation
+# about hiding. Only the decisions are listed, each saying who decided or that nobody is named.
+# query: settled hiding
+# expect: claim:planted-decided claim:planted-nameless
+# expect decided: by site:person
+# expect decided: unattributed
+
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-decided a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: planted-decided."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> .
+
+claim:planted-nameless a model:Decision ;
+  dcterms:subject concept:styled-away ;
+  dcterms:description "Planted: planted-nameless."@en ;
+  model:basis model:unattributed .
+
+claim:planted-observed a model:Observation ;
+  dcterms:subject concept:hiding ;
+  dcterms:description "Planted: planted-observed."@en ;
+  model:basis model:assumed .
