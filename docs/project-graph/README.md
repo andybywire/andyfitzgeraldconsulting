@@ -4,13 +4,15 @@ A test of whether treating this repo's comments as a knowledge graph makes conte
 retrieve and more trustworthy. It compares three arms on the focus-and-visibility area.
 
 **This folder is the record, and it holds the answer key.** Never copy it into an arm branch: the
-inventory lists every contradiction T3 scores, and the protocol carries every rubric.
+inventory lists every contradiction T3 scores, and the protocol carries every rubric. Nor does the
+blind annotator see it; see claim-model.md.
 
 | File                             | What it holds                                                                 |
 | -------------------------------- | ----------------------------------------------------------------------------- |
 | [protocol.md](protocol.md)       | Hypotheses, predictions, arms, tasks and rubrics, how runs are done and read  |
 | [inventory.md](inventory.md)     | Ground truth at `086dd0f`: claims, where they're stated, contradictions       |
 | [id-design.md](id-design.md)     | Namespaces, slugs, comment tags, what counts as a claim                       |
+| [claim-model.md](claim-model.md) | Claim classes, provenance, gaps as explicit states, blind annotation          |
 
 ## Where the tooling lives
 
@@ -37,6 +39,6 @@ Decided by Andy, 2026-10-17, at the start of stage 3:
 | 1. Protocol and inventory  | Done, `39560e2`                                          |
 | 2. Id design               | Done, `5ce8534`                                          |
 | 3. Vocabulary and checks   | Built: Jena, 18 concepts, SKOS integrity shapes; `pnpm graph check` and `pnpm graph test` (19 planted cases) |
-| 4. Claims and extractor    | Not started                                              |
+| 4. Claims and extractor    | Model decided (claim-model.md); nothing built            |
 | 5. Arms and runs           | Not started; preconditions are in the protocol           |
 | 6. Analysis                | Not started                                              |

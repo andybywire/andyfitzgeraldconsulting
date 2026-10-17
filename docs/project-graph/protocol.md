@@ -60,8 +60,18 @@ correct it is.** That rules out the most likely way for C to win unfairly:
 
 - **Claims are encoded exactly as the comments state them,** contradictions included. No comment
   is fixed, reworded or removed.
-- **Nothing is marked as contradicting anything,** and nothing is tagged "stale" or "wrong". Two
-  claims that disagree get two ids, each attached to the concept it is about.
+- **The annotator marks nothing as contradicting anything,** and tags nothing "stale" or "wrong".
+  Two claims that disagree get two ids, each attached to the concept it is about. **One case
+  follows from "exactly as stated" and is not an exception to it:** where a comment itself records
+  that a belief was disproved, as CardMasonry does with "measured wrong first", that invalidation
+  is encoded, because the comment says it. It is never inferred. *(Clarified 2026-10-17, before
+  any run, when the claim model was decided; see [claim-model.md](claim-model.md).)*
+- **The annotations are made blind,** by a fresh session given only concepts.ttl, model.ttl and a
+  self-contained annotation guide. It never sees anything in `docs/project-graph/`: this protocol
+  and the inventory hold the answers, and even id-design.md and claim-model.md name
+  contradictions. The guide restates the rules it needs. Recognizing that
+  two comments state the same claim is the judgment the experiment turns on, and whoever makes it
+  must not know what the tasks score. *(Decided by Andy, 2026-10-17, before any run.)*
 - **The only text added is annotation:** ids, plus whatever the vocabulary and graph files hold.
   A diff of B or C against `086dd0f` must show comment annotations, graph and glossary files,
   the lint or the extractor, and the CLAUDE.md section below. Nothing else.
