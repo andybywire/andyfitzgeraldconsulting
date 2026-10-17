@@ -1,0 +1,20 @@
+# SHACL shapes for the Project Graph: what `pnpm graph check` holds the data to.
+#
+# PROVISIONAL, from stage 3a. One shape only, enough to prove the SHACL step can fail. Stage 3c
+# replaces it with the SKOS integrity shapes, and stage 4 adds the shapes for claims.
+#
+# Shapes get a hash namespace of their own, following id-design.md's rule of one namespace per
+# authored file.
+
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix shape: <https://andyfitzgeraldconsulting.com/ns/project-graph/shapes#> .
+
+shape:Concept
+  a sh:NodeShape ;
+  sh:targetClass skos:Concept ;
+  sh:property [
+    sh:path skos:prefLabel ;
+    sh:minCount 1 ;
+    sh:message "A concept needs a preferred label." ;
+  ] .

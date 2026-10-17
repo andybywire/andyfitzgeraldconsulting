@@ -36,7 +36,7 @@ Decided by Andy, 2026-10-17, at the start of stage 3:
 | 0. Correct my own error    | Done on `main`, `96c10e5`                                |
 | 1. Protocol and inventory  | Done, `39560e2`                                          |
 | 2. Id design               | Done, `5ce8534`                                          |
-| 3. Vocabulary and checks   | Layout decided; nothing built                            |
+| 3. Vocabulary and checks   | 3a built: pinned Jena, `pnpm graph check`; 3b, 3c next   |
 | 4. Claims and extractor    | Not started                                              |
 | 5. Arms and runs           | Not started; preconditions are in the protocol           |
 | 6. Analysis                | Not started                                              |

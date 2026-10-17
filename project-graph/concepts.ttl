@@ -1,0 +1,19 @@
+# The Project Graph's concept scheme: the vocabulary its comment tags point at.
+#
+# PROVISIONAL, from stage 3a. It holds one concept only, so the plumbing has something to check.
+# Stage 3b replaces it with the pilot's concept list, which is Andy's to decide: which concepts,
+# their labels, their hierarchy, and how the homonyms in docs/project-graph/inventory.md split.
+#
+# The scheme's IRI is the document's own, with no fragment, and each concept is a fragment of it,
+# the usual pattern for a hash namespace. See docs/project-graph/id-design.md.
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+
+<https://andyfitzgeraldconsulting.com/ns/project-graph/concepts>
+  a skos:ConceptScheme .
+
+concept:focus-ring
+  a skos:Concept ;
+  skos:inScheme <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts> ;
+  skos:prefLabel "focus ring"@en .
