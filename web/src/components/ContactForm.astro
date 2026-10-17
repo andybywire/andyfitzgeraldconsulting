@@ -582,10 +582,12 @@ const sourcePage = Astro.url.pathname
    *
    * THIS COMMENT USED TO SAY THE OPPOSITE: that the ring was deliberately left alone,
    * because "a `tabindex="-1"` element does not take a visible ring from a scripted
-   * `.focus()` anyway". Real browsers draw one. It is the assumption CardMasonry.astro
-   * records as measured wrong on 2026-09-30, made again here a month later. Whether
-   * script-moved focus counts as "visible" is a per-engine heuristic, and headless Chrome
-   * is not a reliable witness to it.
+   * `.focus()` anyway". Real browsers draw one. That claim was written here on 2026-09-05
+   * (`a6c870d`). CardMasonry.astro disproved the same assumption on 2026-09-30
+   * (`4138182`), and nothing carried the lesson back until Andy saw the ring on
+   * 2026-10-16. Dated with `git log -S`, because the first version of this note guessed
+   * the order and had it backwards. Whether script-moved focus counts as "visible" is a
+   * per-engine heuristic, and headless Chrome is not a reliable witness to it.
    *
    * So this is the same rule as `.card-masonry:focus`, for the same reasons:
    *
