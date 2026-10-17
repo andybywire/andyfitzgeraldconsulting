@@ -46,6 +46,17 @@ remembered.
 >   site generates a page per concept — 70 concepts collapsing to 67 slugs, of which only ~29 ever
 >   listed anything. That distinction is what makes the redirect decision below tractable.
 
+## `/ns/` is reserved — decided 2026-10-17
+
+**No page route may take `/ns/`.** `/ns/project-graph/` holds the ids of the Project Graph, a
+vocabulary for this repo's own comments that is meant for developers and agents, not readers. See
+[project-graph/id-design.md](project-graph/id-design.md). Nothing is served there today.
+
+The ids are minted on the domain so that, if serving the vocabulary ever earns its place, nginx
+can serve its two Turtle files at those paths as static files without changing a single id. That's
+the same authority as the Studio's SKOS base URI. The path of its own keeps development concepts
+from ever colliding with content ones.
+
 ## Redirects live in nginx, not in Astro
 
 Astro's `redirects` config emits `<meta http-equiv="refresh">` HTML pages under `output: "static"`,
