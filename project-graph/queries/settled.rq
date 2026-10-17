@@ -1,5 +1,5 @@
 # The decisions about a concept or any narrower one: who made each and when, or that nobody is
-# named, and whether it still stands. Task T4's question: is this already decided?
+# named, and whether it still stands. The question to ask before reopening a decision.
 #
 # Reads prov:wasAttributedTo and dcterms:date on decisions.
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>

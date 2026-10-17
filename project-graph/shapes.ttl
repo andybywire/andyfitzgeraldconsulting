@@ -373,9 +373,9 @@ shape:CodeLocation
     """ ;
   ] ;
 
-  # THE RULE THE EXPERIMENT TURNS ON: a comment that relies on a claim a measurement overturned
-  # relies on something known to be wrong. This is "corrections spread": the overturned claim has
-  # one id, so every comment still citing it fails here, wherever it is.
+  # THE RULE THAT SPREADS A CORRECTION: a comment that relies on a claim a measurement overturned
+  # relies on something known to be wrong. The overturned claim has one id, so every comment still
+  # citing it fails here, wherever it is.
   sh:sparql [
     a sh:SPARQLConstraint ;
     sh:message "{?file}:{?line} This comment's @claim tag cites {?value}, which a measurement overturned. The comment relies on something known to be wrong." ;

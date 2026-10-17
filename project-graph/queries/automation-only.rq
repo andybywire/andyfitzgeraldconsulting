@@ -1,6 +1,6 @@
 # Observations whose only evidence is an automated browser: every measurement behind them used
-# one. The lesson of 2026-09-30, when headless Chrome and the Browser pane both reported no focus
-# ring and real browsers drew one.
+# one. Automated browsers report some states differently from real ones (see the scope note on
+# concept:automated-browser), so these are the claims most worth checking again by hand.
 #
 # Reads prov:used, and follows skos:broader to concept:automated-browser, so a tool added under it
 # later is covered without changing this query. A claim with even one measurement that used no

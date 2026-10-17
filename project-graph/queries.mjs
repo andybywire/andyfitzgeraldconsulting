@@ -13,8 +13,8 @@
  * docs/project-graph/claim-model.md admits a term to the model only when a shape or a saved query
  * reads it, and its table names the questions. Five queries answer those: `about`, `claim`,
  * `settled`, `weak` and `automation-only`. `where` is the sixth. It reads `dcterms:subject` on
- * code locations, and it answers task T2's question directly: every place a change to a concept
- * has to visit.
+ * code locations, and it answers the question a change starts from: every place a change to a
+ * concept has to visit.
  *
  * ── A SLUG IS CHECKED BEFORE THE QUERY RUNS ─────────────────────────────────
  *
