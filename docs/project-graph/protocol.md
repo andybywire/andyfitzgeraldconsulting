@@ -71,7 +71,10 @@ correct it is.** That rules out the most likely way for C to win unfairly:
   and the inventory hold the answers, and even id-design.md and claim-model.md name
   contradictions. The guide restates the rules it needs. Recognizing that
   two comments state the same claim is the judgment the experiment turns on, and whoever makes it
-  must not know what the tasks score. *(Decided by Andy, 2026-10-17, before any run.)*
+  must not know what the tasks score. *(Decided by Andy, 2026-10-17, before any run.)* The
+  annotator is **Opus 5.5 (`claude-opus-5-5`) at high effort** (Andy, 2026-10-17), and the guide's
+  trial uses the same, so the trial tests what the real annotation will do. That choice is
+  separate from the model the runs use, which only has to be the same across arms.
 - **The only text added is annotation:** ids, plus whatever the vocabulary and graph files hold.
   A diff of B or C against `086dd0f` must show comment annotations, graph and glossary files,
   the lint or the extractor, and the CLAUDE.md section below. Nothing else.

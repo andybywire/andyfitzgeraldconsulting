@@ -38,8 +38,9 @@ focus-and-visibility material, so tuning the guide on it can't tune it toward th
   vocabulary for vertical spacing. Nothing from `docs/project-graph/` is copied.
 - **Before the session starts:** the protocol's leak search over `project-graph/` on that branch
   comes back with nothing above "low", and `pnpm graph check` conforms.
-- **One fresh session,** in its own worktree from that branch, on the model and effort the real
-  annotation will use (recorded here when chosen). Its whole prompt:
+- **One fresh session,** in its own worktree from that branch, on **Opus 5.5 (`claude-opus-5-5`)
+  at high effort**, the model and effort the real annotation will use (Andy, 2026-10-17). Its whole
+  prompt:
 
   > Annotate the comments in these files by following `project-graph/annotation-guide.md`:
   > `web/src/styles/base.css`, `DESIGN.md`, `docs/decisions/layout.md`, `CLAUDE.md`,
