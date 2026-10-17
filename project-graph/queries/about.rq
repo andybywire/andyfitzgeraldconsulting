@@ -1,0 +1,31 @@
+# What is claimed about a concept or any narrower one: each claim's kind, its status (backed, a
+# stated gap, or overturned), its sentence, and the comments that cite it.
+#
+# Reads dcterms:subject, and follows skos:broader so a question about "hiding" also finds the
+# claims about "not applicable" and the other kinds of hiding. That is the hierarchy earning its
+# place: grep for a word cannot do it.
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#>
+PREFIX claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#>
+PREFIX model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#>
+
+SELECT ?claim ?kind ?status ?description (GROUP_CONCAT(DISTINCT ?where; SEPARATOR=", ") AS ?cited)
+WHERE {
+  ?claim dcterms:subject/skos:broader* {{concept}} ;
+    a ?class ;
+    dcterms:description ?description .
+  ?class rdfs:subClassOf model:Claim .
+  BIND(REPLACE(LCASE(STRAFTER(STR(?class), "#")), "repofact", "repo fact") AS ?kind)
+  OPTIONAL { ?overturning prov:invalidated ?claim . }
+  OPTIONAL { ?claim model:basis ?gap . }
+  BIND(IF(BOUND(?overturning), "overturned", IF(BOUND(?gap), STRAFTER(STR(?gap), "#"), "backed")) AS ?status)
+  OPTIONAL {
+    ?location model:cites ?claim ; model:path ?file ; model:line ?line .
+    BIND(CONCAT(?file, ":", STR(?line)) AS ?where)
+  }
+}
+GROUP BY ?claim ?kind ?status ?description
+ORDER BY ?claim
