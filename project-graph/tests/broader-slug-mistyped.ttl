@@ -1,0 +1,11 @@
+# A broader concept whose slug is mistyped ("hidng" for "hiding"), so it names nothing.
+# expect: violation "Is its slug mistyped?"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-typo a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:broader concept:hidng ;
+  skos:prefLabel "planted typo"@en .

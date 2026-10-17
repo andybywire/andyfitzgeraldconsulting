@@ -1,0 +1,17 @@
+# A top concept that also has a broader concept.
+# expect: violation "exactly one of the two"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-parent a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted parent"@en .
+
+concept:planted-both a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:broader concept:planted-parent ;
+  skos:prefLabel "planted both"@en .

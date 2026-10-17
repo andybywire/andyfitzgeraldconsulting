@@ -1,0 +1,11 @@
+# A slug with a capital letter.
+# expect: violation "concept's IRI must be"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:Planted-capital a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted capital"@en .

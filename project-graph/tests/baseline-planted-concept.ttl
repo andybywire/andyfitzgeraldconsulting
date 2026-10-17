@@ -1,0 +1,13 @@
+# A well-formed planted concept, the template every violation case breaks in one place. If this
+# fails, the other cases prove nothing.
+# expect: conforms
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-baseline a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted baseline"@en ;
+  skos:altLabel "planted baseline alias"@en .

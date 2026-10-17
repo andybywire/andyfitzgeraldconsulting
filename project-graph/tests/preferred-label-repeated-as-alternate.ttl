@@ -1,0 +1,12 @@
+# A preferred label repeated as the same concept's alternate label. SKOS S13.
+# expect: violation "cannot also be one of its alternate labels"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-repeat a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted repeat"@en ;
+  skos:altLabel "planted repeat"@en .

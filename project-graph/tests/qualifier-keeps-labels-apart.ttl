@@ -1,0 +1,17 @@
+# Two preferred labels kept apart by a trailing qualifier, the form Andy allows when nothing
+# clearer exists.
+# expect: conforms
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-mercury-car a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted mercury (car)"@en .
+
+concept:planted-mercury-element a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted mercury (element)"@en .

@@ -1,0 +1,10 @@
+# A concept in no scheme.
+# expect: violation "exactly one concept scheme"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-no-scheme a skos:Concept ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted no scheme"@en .

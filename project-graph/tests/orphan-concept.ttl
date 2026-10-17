@@ -1,0 +1,10 @@
+# A concept that is neither a top concept nor narrower than one: an orphan.
+# expect: violation "exactly one of the two"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-orphan a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:prefLabel "planted orphan"@en .

@@ -1,0 +1,18 @@
+# One alternate label on two concepts, differing only in case.
+# expect: violation "also belongs to another concept"
+
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix scheme: <https://andyfitzgeraldconsulting.com/ns/project-graph/> .
+
+concept:planted-share-one a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted share one"@en ;
+  skos:altLabel "planted shared label"@en .
+
+concept:planted-share-two a skos:Concept ;
+  skos:inScheme scheme:concepts ;
+  skos:topConceptOf scheme:concepts ;
+  skos:prefLabel "planted share two"@en ;
+  skos:altLabel "Planted Shared Label"@en .

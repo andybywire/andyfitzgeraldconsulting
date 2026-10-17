@@ -1,8 +1,11 @@
 # SHACL shapes for the Project Graph: what `pnpm graph check` holds the data to.
 #
-# Stage 3c: the integrity of the concept scheme. Stage 4 adds the shapes for claims. Every
-# constraint below was proven to fail on a planted violation before it counted as working, and the
-# list of what was planted is at the end of this file.
+# Stage 3c: the integrity of the concept scheme. Stage 4 adds the shapes for claims.
+#
+# EVERY CONSTRAINT HAS A PLANTED CASE in tests/, and `pnpm graph test` runs them all: each must
+# fail with this file's message for its constraint, or conform where a rule must allow something.
+# Change a shape here, run the test, and it shows which case the change stopped catching. tests/ is
+# the only record of what is proven. A list here as well would be a second copy to drift.
 #
 # THREE SOURCES, and each constraint says which one it comes from:
 #
@@ -157,26 +160,3 @@ shape:Concept
       }
     """ ;
   ] .
-
-# ── How each constraint was proven, 2026-10-17 ───────────────────────────────
-#
-# A copy of concepts.ttl was changed once per case, and `pnpm graph check <copy>` had to exit 1
-# with this file's message for that constraint, or exit 0 for the two cases marked "passes".
-#
-#   the scheme also typed skos:Concept         S9
-#   the scheme with no preferred label         scheme label
-#   a slug with an underscore, one uppercase   slug pattern
-#   two preferred labels @en                   S14
-#   a preferred label with no language tag     S14
-#   "focus (ring) indicator", "ring (a) (b)"   qualifier form
-#   "mercury (car)" + "mercury (element)"      passes: a qualifier keeps them apart
-#   an alternate label with no language tag    alternate labels @en
-#   a preferred label repeated as alternate    S13
-#   a concept with no inScheme                 one scheme
-#   broader to a mistyped slug                 broader must exist
-#   a top concept that also has a broader      top or broader, not both
-#   a concept with neither                     top or broader, not neither
-#   two concepts each broader than the other   no cycles
-#   "Focus Indicator" on a second concept      no shared label, ignoring case
-#   one concept's preferred label as another's alternate   no shared label
-#   the scheme as committed                    passes
