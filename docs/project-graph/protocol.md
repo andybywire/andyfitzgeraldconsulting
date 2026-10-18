@@ -384,8 +384,16 @@ besides:
   those three. They pass now, 13 of 13. Against real records, all four of the canary's failed
   attempts now come out invalid, where each had been marked isolated, and the passing canary comes
   out valid. A dry run started from a login shell, whose PATH finds the npm copy first, launches
-  the native 2.1.302. **The canary has not been rerun on the changed harness.** That comes before
-  the trial's rerun.
+  the native 2.1.302.
+
+  **The canary passed again on the changed harness,** 2026-10-18, exit 0. Its record is
+  `runs/canary-2026-10-18T23-53-43-758Z/`. It ran from `pg-guide-trial` at `6e707c5`, with the
+  replaced-decision rule and the `node` wording in place, on 2.1.302, at $0.39 and $0.41. The
+  canary run was completed, isolated and valid. The control completed and was flagged for the
+  same three memory fingerprints. Every new field came back filled: `cli`, `completed`, `valid`
+  and `sourceTranscript`. Checked beyond the script's own verdict: the memory folder was
+  byte-identical, no memory file is named in the canary's transcript, and both transcripts show
+  effort `low`, as launched.
 
 ## Preconditions for stage 5
 
