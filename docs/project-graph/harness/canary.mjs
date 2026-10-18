@@ -52,14 +52,16 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   const missing = MEASURES.filter((key) => canary.result?.[key] === undefined)
   const overBudget = (canary.result?.total_cost_usd ?? Infinity) > common.budgetUsd
-  const canaryOk = canary.exit === 0 && canary.isolated && missing.length === 0 && !overBudget
+  const canaryOk = canary.valid && missing.length === 0 && !overBudget
   const controlLeaked = control.isolationProblems.some((p) =>
     /MEMORY\.md|persistent file-based memory/.test(p),
   )
 
   const show = (name, run) =>
     console.log(
-      `${name}: exit ${run.exit}, ${run.isolated ? 'isolated' : `NOT isolated: ${run.isolationProblems.join('; ')}`}` +
+      `${name}: ${run.cli.version}, ` +
+        `${run.completed ? 'completed' : `DID NOT COMPLETE: ${run.completionProblems.join('; ')}`}, ` +
+        `${run.isolated ? 'isolated' : `NOT isolated: ${run.isolationProblems.join('; ')}`}` +
         `, $${run.result?.total_cost_usd ?? '?'}, ${run.wallMs} ms`,
     )
   show('canary ', canary)
@@ -68,8 +70,15 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   if (overBudget) console.log('canary cost more than its cap, or reported no cost')
 
   if (!canaryOk) {
-    console.log('\nFAIL: the canary is not isolated, or its JSON is incomplete. Nothing may run.')
+    console.log(
+      '\nFAIL: the canary did not complete, is not isolated, or its JSON is incomplete. Nothing may run.',
+    )
     process.exit(1)
+  }
+  // A control that never reached the model can't leak, so its silence would prove nothing.
+  if (!control.completed) {
+    console.log('\nINCONCLUSIVE: the control did not complete, so the check is unproven.')
+    process.exit(3)
   }
   if (!controlLeaked) {
     console.log(

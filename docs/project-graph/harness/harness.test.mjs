@@ -9,11 +9,23 @@
  * Each was proven by failing: removing a fingerprint from BANNED, or never switching memory off,
  * failed exactly the tests for it (protocol.md → "The headless harness"). The CLAUDE_EFFORT test
  * was written before its fix and failed against the old CLAUDE_CODE_* filter, with the launch
- * still carrying 'xhigh'.
+ * still carrying 'xhigh'. The three tests for the CLI's path, its version and a run's completion
+ * were run first against stand-ins with the old behavior (launch by name, no version, no
+ * completion check), and failed exactly those three.
  */
 import assert from 'node:assert/strict'
+import {isAbsolute} from 'node:path'
 import {test} from 'node:test'
-import {BANNED, buildLaunch, changes, isolationProblems, userTexts} from './harness.mjs'
+import {
+  BANNED,
+  CLAUDE_BIN,
+  buildLaunch,
+  changes,
+  cliVersion,
+  completionProblems,
+  isolationProblems,
+  userTexts,
+} from './harness.mjs'
 
 const base = {prompt: 'Say hello.', model: 'claude-opus-5-5', effort: 'low', budgetUsd: 1}
 const line = (record) => JSON.stringify(record)
@@ -40,7 +52,7 @@ function withEnv(vars, fn) {
 
 test('the launch switches memory off, refuses unlisted tools, and loads no MCP servers', () => {
   const {command, args, env} = buildLaunch({...base, allowedTools: ['Read', 'Bash(ls *)']})
-  assert.equal(command, 'claude')
+  assert.equal(command, CLAUDE_BIN)
   assert.equal(env.CLAUDE_CODE_DISABLE_AUTO_MEMORY, '1')
   assert.deepEqual(args.slice(0, 2), ['-p', 'Say hello.'])
   for (const flag of ['--output-format', '--max-budget-usd', '--strict-mcp-config'])
@@ -57,7 +69,50 @@ test('the inherited Claude environment is scrubbed, and the control differs only
     assert.equal(on.env.CLAUDE_CODE_ENTRYPOINT, undefined)
     assert.equal(off.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY, undefined)
     assert.deepEqual(on.args, off.args)
+    const {CLAUDE_CODE_DISABLE_AUTO_MEMORY, ...onWithoutMemory} = on.env
+    assert.deepEqual(onWithoutMemory, off.env)
   })
+})
+
+/*
+ * A launch by name runs whichever `claude` comes first on the PATH, and a login shell here finds a
+ * leftover npm install, 2.1.63, before the native one. And the native CLI updates itself, so its
+ * version could change partway through a schedule. Both runs of the canary share these.
+ */
+test('the CLI is launched by absolute path, with auto-update off, in the control too', () => {
+  for (const memoryOff of [true, false]) {
+    const {command, env} = buildLaunch({...base, memoryOff})
+    assert.ok(isAbsolute(command), `${command} is not an absolute path`)
+    assert.equal(env.DISABLE_AUTOUPDATER, '1')
+  }
+})
+
+test("the CLI's version is read without starting a session", () => {
+  assert.match(cliVersion(), /^\d+\.\d+\.\d+ \(Claude Code\)$/)
+})
+
+/*
+ * The two failures the canary's first attempts produced, as their JSON came back, plus a timeout.
+ * Both real ones were marked isolated, because a session that never reached the model has nothing
+ * in its transcript to leak. Isolation says nothing about whether a run happened.
+ */
+test('a run that did not complete has completion problems, and a clean one has none', () => {
+  const notLoggedIn = {is_error: true, result: 'Not logged in · Please run /login'}
+  assert.deepEqual(completionProblems({exit: 1, result: notLoggedIn}), [
+    'exited with 1',
+    'the result is an error: Not logged in · Please run /login',
+  ])
+  const tooOld = {is_error: true, api_error_status: 400, result: 'API Error: 400 version too old'}
+  assert.deepEqual(completionProblems({exit: 1, result: tooOld}), [
+    'exited with 1',
+    'the result is an error: API Error: 400 version too old',
+  ])
+  assert.deepEqual(completionProblems({exit: null, error: 'spawnSync ETIMEDOUT', result: null}), [
+    'did not finish: spawnSync ETIMEDOUT',
+    'exited with null',
+    'no JSON result',
+  ])
+  assert.deepEqual(completionProblems({exit: 0, result: {is_error: false}}), [])
 })
 
 /*

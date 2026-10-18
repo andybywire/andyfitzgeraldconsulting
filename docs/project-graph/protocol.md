@@ -256,7 +256,7 @@ it too.
 **Built 2026-10-18, verified offline, then run the same day by the canary, which passed** (see
 "The canary's result" below). `harness.mjs` is the per-run machinery:
 `runOne()`, plus a `dry-run` command that creates and removes a worktree and prints the launch.
-`canary.mjs` is the canary and its control, and `harness.test.mjs` holds 10 tests that need no
+`canary.mjs` is the canary and its control, and `harness.test.mjs` holds 13 tests that need no
 launch. Two additions to the launch above, found in the CLI's help: `--permission-mode dontAsk`,
 so a tool not on the list is refused rather than waited on, and `--strict-mcp-config`, so none of
 Andy's MCP connections (Sanity, Figma, ClickUp) attach to a run. Verified without launching:
@@ -368,6 +368,24 @@ besides:
      `/opt/homebrew/bin/claude` at 2.1.63. Launch by absolute path.
   4. Claude Code keeps its own copy of each run's transcript, in a new folder per run under
      `~/.claude/projects/`. The harness copies it and leaves the original.
+
+  **All four were addressed on 2026-10-18**, test-first, and the harness's header records each:
+
+  1. A record now has `completed` and `valid`, and `valid` needs both completion and isolation.
+     The canary checks `valid`. A control that didn't complete is reported as inconclusive rather
+     than as a check that saw nothing.
+  2. Every run's environment has `DISABLE_AUTOUPDATER=1`, which the 2.1.302 binary was checked to
+     read. Every record carries the CLI's real path and its `--version`.
+  3. The CLI is launched at `~/.local/bin/claude`, or `PROJECT_GRAPH_CLAUDE`.
+  4. The originals are left, and each record names its copy in `sourceTranscript` (confirmed by
+     Andy, 2026-10-18).
+
+  Three new tests were run first against stand-ins with the old behavior, and failed exactly
+  those three. They pass now, 13 of 13. Against real records, all four of the canary's failed
+  attempts now come out invalid, where each had been marked isolated, and the passing canary comes
+  out valid. A dry run started from a login shell, whose PATH finds the npm copy first, launches
+  the native 2.1.302. **The canary has not been rerun on the changed harness.** That comes before
+  the trial's rerun.
 
 ## Preconditions for stage 5
 

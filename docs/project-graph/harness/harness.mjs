@@ -14,13 +14,34 @@
  *   1. A fresh worktree of the branch, detached, under RUNS_ROOT, outside this checkout.
  *   2. Snapshots of this checkout's auto-memory folder and the desktop app's side-session notes
  *      folder, to compare afterward: a run that changes either is not isolated.
- *   3. `claude -p` in that worktree, with the environment variable that switches auto-memory off,
- *      no MCP servers, and `dontAsk`, so any tool not listed is refused instead of prompted for.
+ *   3. The CLI at CLAUDE_BIN, `-p` in that worktree, with auto-memory and auto-update switched
+ *      off, no MCP servers, and `dontAsk`, so any tool not listed is refused instead of prompted
+ *      for. Its real path and `--version` go in the record first.
  *   4. The JSON result kept as it came, and the session's transcript found by its session id and
  *      copied beside it.
- *   5. An isolation check on the transcript (see `isolationProblems`). Any problem makes the run
- *      invalid, and the caller must stop the schedule.
+ *   5. Two checks. Did the run complete (`completionProblems`), and was it isolated
+ *      (`isolationProblems`)? `record.valid` needs both. An invalid run means the caller must stop
+ *      the schedule.
  *   6. The worktree removed, whatever happened.
+ *
+ * ── THE CLI, AND WHY BY PATH ─────────────────────────────────────────────────
+ *
+ * The desktop app runs its own copy of Claude Code, so a run uses the standalone CLI, which needs
+ * its own login (`claude auth login`) and must be new enough for the model. The canary's first
+ * two attempts failed on exactly those two things. Three choices follow from that:
+ *
+ *   - It is launched by absolute path, ~/.local/bin/claude, the native install that `claude update`
+ *     maintains, or PROJECT_GRAPH_CLAUDE. By name, a login shell here found a leftover npm install
+ *     first, version 2.1.63.
+ *   - DISABLE_AUTOUPDATER=1, which the CLI reads, so a run never updates it. Andy's own use still
+ *     can, which is why every record carries the version, for the schedule runner to compare.
+ *   - A run that exits nonzero, returns no JSON, or returns `is_error` is not valid. Both failed
+ *     attempts were marked isolated, because a session that never reaches the model has nothing in
+ *     its transcript to leak. Isolation says nothing about whether a run happened.
+ *
+ * Claude Code also keeps its own copy of each run's transcript, in a folder per run under
+ * ~/.claude/projects/. They are left there, because removing them would be more machinery than
+ * ~500 KB a run is worth. Each record names its copy in `sourceTranscript`.
  *
  * ── THE ENVIRONMENT, AND WHY IT IS SCRUBBED ──────────────────────────────────
  *
@@ -56,6 +77,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
@@ -67,6 +89,9 @@ export const REPO = resolve(fileURLToPath(new URL('../../..', import.meta.url)))
 export const RUNS_ROOT =
   process.env.PROJECT_GRAPH_RUNS ??
   join(process.env.XDG_CACHE_HOME ?? join(homedir(), '.cache'), 'project-graph', 'runs')
+/** The CLI every run launches, by absolute path. See "THE CLI, AND WHY BY PATH" above. */
+export const CLAUDE_BIN =
+  process.env.PROJECT_GRAPH_CLAUDE ?? join(homedir(), '.local', 'bin', 'claude')
 const PROJECTS = join(homedir(), '.claude', 'projects')
 // Claude Code keys a project's folder by its path, with every non-alphanumeric character as "-".
 export const MEMORY_DIR = join(PROJECTS, REPO.replace(/[^A-Za-z0-9]/g, '-'), 'memory')
@@ -130,8 +155,31 @@ export function buildLaunch({
   const env = Object.fromEntries(
     Object.entries(process.env).filter(([key]) => !key.startsWith('CLAUDE')),
   )
+  env.DISABLE_AUTOUPDATER = '1'
   if (memoryOff) env.CLAUDE_CODE_DISABLE_AUTO_MEMORY = '1'
-  return {command: 'claude', args, env}
+  return {command: CLAUDE_BIN, args, env}
+}
+
+/** The CLI's version, such as "2.1.302 (Claude Code)". It starts no session, so it costs nothing. */
+export function cliVersion(bin = CLAUDE_BIN) {
+  const run = spawnSync(bin, ['--version'], {encoding: 'utf8', input: ''})
+  if (run.status !== 0) {
+    throw new Error(`${bin} --version failed: ${run.stderr || run.error?.message || run.status}`)
+  }
+  return run.stdout.trim()
+}
+
+/**
+ * What makes a run incomplete: it didn't finish, exited nonzero, returned no JSON, or returned an
+ * error as its result. Returns a list; empty means it completed.
+ */
+export function completionProblems({exit, error, result}) {
+  const problems = []
+  if (error) problems.push(`did not finish: ${error}`)
+  if (exit !== 0) problems.push(`exited with ${exit}`)
+  if (!result) problems.push('no JSON result')
+  else if (result.is_error) problems.push(`the result is an error: ${result.result}`)
+  return problems
 }
 
 /** Every user message's text in a transcript (JSONL), in order. */
@@ -209,7 +257,7 @@ export function findTranscript(sessionId) {
 /**
  * One run. `spec` is the launch (see buildLaunch) plus `id`, `branch` and `outDir`; `timeoutMinutes`
  * defaults to 30. Writes `<outDir>/<id>.json` and `<outDir>/<id>.transcript.jsonl`, and returns the
- * record. `record.isolated` false means the run is invalid.
+ * record. `record.valid` false means the run is invalid: it didn't complete, or wasn't isolated.
  */
 export function runOne(spec) {
   const {id, branch, outDir, timeoutMinutes = 30} = spec
@@ -220,12 +268,14 @@ export function runOne(spec) {
   mkdirSync(outDir, {recursive: true})
 
   const launch = buildLaunch(spec)
+  // Before the worktree exists, so a missing CLI fails with nothing to clean up.
+  const cli = {path: realpathSync(launch.command), version: cliVersion(launch.command)}
   const memoryBefore = snapshot(MEMORY_DIR)
   const notesBefore = snapshot(NOTES_DIR)
   git('worktree', 'add', '--detach', worktree, branch)
   const commit = git('-C', worktree, 'rev-parse', '--short', 'HEAD')
 
-  const record = {id, branch, commit, memoryOff: spec.memoryOff !== false, args: launch.args}
+  const record = {id, branch, commit, cli, memoryOff: spec.memoryOff !== false, args: launch.args}
   try {
     const started = Date.now()
     const run = spawnSync(launch.command, launch.args, {
@@ -246,9 +296,12 @@ export function runOne(spec) {
       record.stdout = run.stdout.slice(0, 4000)
     }
     record.stderr = (run.stderr ?? '').slice(0, 4000)
+    record.completionProblems = completionProblems(record)
+    record.completed = record.completionProblems.length === 0
 
     const transcript = record.result?.session_id && findTranscript(record.result.session_id)
     record.transcript = transcript ? `${id}.transcript.jsonl` : null
+    record.sourceTranscript = transcript || null
     if (transcript) cpSync(transcript, join(outDir, record.transcript))
     record.isolationProblems = transcript
       ? isolationProblems(readFileSync(transcript, 'utf8'), spec.prompt)
@@ -262,6 +315,7 @@ export function runOne(spec) {
   if (record.notesChanged.length)
     record.isolationProblems.push('the side-session notes folder changed')
   record.isolated = record.isolationProblems.length === 0
+  record.valid = record.completed === true && record.isolated
   writeFileSync(join(outDir, `${id}.json`), `${JSON.stringify(record, null, 2)}\n`)
   return record
 }
@@ -281,8 +335,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   console.log(`worktree  ${worktree} at ${git('-C', worktree, 'rev-parse', '--short', 'HEAD')}`)
   console.log(`memory    ${MEMORY_DIR} (${Object.keys(snapshot(MEMORY_DIR)).length} files)`)
   console.log(`notes     ${NOTES_DIR} (${Object.keys(snapshot(NOTES_DIR)).length} files)`)
+  console.log(`cli       ${realpathSync(launch.command)}, ${cliVersion(launch.command)}`)
   console.log(
-    `launch    CLAUDE_CODE_DISABLE_AUTO_MEMORY=${launch.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY} claude ${launch.args.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(' ')}`,
+    `launch    DISABLE_AUTOUPDATER=${launch.env.DISABLE_AUTOUPDATER} CLAUDE_CODE_DISABLE_AUTO_MEMORY=${launch.env.CLAUDE_CODE_DISABLE_AUTO_MEMORY} ${launch.command} ${launch.args.map((a) => (/\s/.test(a) ? JSON.stringify(a) : a)).join(' ')}`,
   )
   git('worktree', 'remove', '--force', worktree)
   console.log(`removed   ${existsSync(worktree) ? 'NO, still there' : 'yes'}`)
