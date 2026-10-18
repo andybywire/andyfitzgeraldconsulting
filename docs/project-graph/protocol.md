@@ -220,9 +220,9 @@ showed three leaks the protocol's design never accounted for:
 A headless CLI process avoids all three by construction: no app, so no notes folder and no
 wrapper; and memory off for that launch. It also gives the measurements directly.
 
-**What it is:** `docs/project-graph/harness/`, planned here and not yet built. It lives in
-`docs/project-graph/` because it lists the tasks and arms, and nothing in that folder reaches an
-arm. For each run, in the fixed order:
+**What it is:** `docs/project-graph/harness/`. It lives in `docs/project-graph/` because it will
+list the tasks and arms, and nothing in that folder reaches an arm. For each run, in the fixed
+order:
 
 1. **A fresh worktree,** `git worktree add --detach <runs-root>/<run-id> <arm-branch>`, outside this
    checkout, so no app ever lists or touches it.
@@ -251,6 +251,31 @@ arm. For each run, in the fixed order:
 **The annotation is launched the same way,** with `--permission-mode acceptEdits` in place of the
 disallowed edit tools, since it must write tags and `claims.ttl`. A trial rerun of the guide uses
 it too.
+
+**Built 2026-10-18, verified offline, NOT yet run.** `harness.mjs` is the per-run machinery:
+`runOne()`, plus a `dry-run` command that creates and removes a worktree and prints the launch.
+`canary.mjs` is the canary and its control, and `harness.test.mjs` holds 9 tests that need no
+launch. Two additions to the launch above, found in the CLI's help: `--permission-mode dontAsk`,
+so a tool not on the list is refused rather than waited on, and `--strict-mcp-config`, so none of
+Andy's MCP connections (Sanity, Figma, ClickUp) attach to a run. Verified without launching:
+
+- **The isolation check, on the guide trial's real transcript,** flags all seven problems: the three
+  memory fingerprints, the two notes fingerprints, the wrapper, and the prompt not arriving
+  verbatim. So it sees the leaks that actually happened.
+- **The tests fail when the harness is weakened:** removing one fingerprint from the banned list
+  fails exactly the two fingerprint tests, and never switching memory off fails exactly the launch
+  test. The first version of the fingerprint test read the banned list itself, so a removed
+  fingerprint went unnoticed. The weakening caught that, and the test now states the trial's
+  fingerprints independently.
+- **The dry run** creates a worktree of `pg-guide-trial` under `~/.cache/project-graph/runs/`,
+  prints the launch, and removes it.
+
+**What only the canary can prove:** that `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` works on this
+machine's Claude Code (2.1.150), that the JSON carries the fields runs need, and that a headless
+run's transcript is found and is clean. One known uncertainty: a session launched from inside
+another Claude Code session may have memory off whatever the harness does. The harness removes the
+inherited `CLAUDECODE` and `CLAUDE_CODE_*` variables for that reason. If the control still doesn't
+leak, `canary.mjs` reports "inconclusive" (exit 3), and it must be run from a plain terminal.
 
 **Still to decide before the first run:** the runs' model and effort (only required to be the same
 across arms), the per-run cap `--max-budget-usd`, and a total budget at which the schedule stops.
