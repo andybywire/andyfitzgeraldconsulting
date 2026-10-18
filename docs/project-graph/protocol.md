@@ -348,18 +348,17 @@ besides:
 
 - **Two attempts failed first, neither a leak, both at $0.** The standalone CLI had never been
   logged in: the app authenticates its own sessions in a way a child process cannot use, under any
-  environment filter. Andy ran `claude auth login` with the claude.ai Team account. The CLI, at
-  2.1.150, was then too old for Opus 5.5, which needs 2.1.280 or newer, and `claude update` took
-  it to 2.1.302. Both attempts' output was deleted.
+  environment filter. Andy logged it in with `claude auth login`, as a claude.ai account rather
+  than an API key. The CLI, at 2.1.150, was then too old for Opus 5.5, which needs 2.1.280 or
+  newer, and `claude update` took it to 2.1.302. Both attempts' output was deleted.
 - **A transcript at 2.1.302 holds the system prompt and the request's parameters,** about 500 KB a
   run. So the isolation check now covers the system prompt as well, and each run's effort can be
   read back afterward from `output_config`. Both runs showed `low`, as launched. A search of both
   transcripts for credentials found none.
 - **Context costs about $0.40 a run before any work:** some 47K tokens of system prompt,
   CLAUDE.md and the listing of Andy's user-level skills, at Opus 5.5. The canary cost $0.40 and the
-  control $0.42, counted against the Team plan's usage rather than billed. A run cannot invoke
-  those skills, since `dontAsk` refuses any unlisted tool, and the listing is the same in every
-  arm.
+  control $0.42, at list price. A run cannot invoke those skills, since `dontAsk` refuses any
+  unlisted tool, and the listing is the same in every arm.
 - **Four things for the harness, before any real run:**
   1. `runOne()` marked both failed attempts `isolated: true`. Only the canary's own check of the
      exit code stopped them. A run's validity must also require exit 0 and no `is_error`.
