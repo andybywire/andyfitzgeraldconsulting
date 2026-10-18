@@ -130,7 +130,8 @@ arm's. The protocol now carries that as a precondition.
   look recorded as a measurement that `prov:invalidated` the old rule, with the stretch noted in
   the report. **Fails:** editing a comment, inventing a property, or making either choice silently.
   **What it decides:** whether the model needs a way to say one decision replaced another. That is
-  Andy's call after the trial, not before.
+  Andy's call after the trial, not before. *(Restated for the rerun, once the guide gained a rule
+  for replaced decisions; see "A criterion changed after the trial" below.)*
 - **B5. Attribution only where stated.** "(Andy, on screen)" with 2026-09-02, and
   "(Andy, 2026-09-22, on screen)" for the attributed-quote rule, are attributed and dated.
   PageHeader's "Settled on the article page" names nobody, so it is unattributed. **Fails** on
@@ -139,7 +140,8 @@ arm's. The protocol now carries that as a precondition.
   tagged with a rhythm concept. Grid column gaps ("Grid owns horizontal, rhythm owns vertical") are
   not tagged as a container gap, except where a comment is about the vertical case.
 - **B7. The report.** The final message lists the annotator's doubts. B4 is expected among them,
-  and none of them is written into a file.
+  and none of them is written into a file. *(For the rerun, B4 is no longer expected among them;
+  see "A criterion changed after the trial" below.)*
 
 ### C. Recorded, not judged
 
@@ -214,8 +216,8 @@ how long query answers get. It is raised for Andy below.
   `prov:wasRevisionOf`), so that a comment relying on a replaced decision can be found the way one
   citing an overturned observation is. **Decided 2026-10-18:** neither of those. A replacing
   decision's activity `prov:invalidated` the old one, with no new term. See claim-model.md, which
-  lists what must be built before the rerun. B4's criterion for the rerun has to be restated to
-  match, and that is Andy's to settle when the rerun is set up.
+  lists what must be built before the rerun. B4's criterion for the rerun was restated to match
+  (Andy, 2026-10-18); see "A criterion changed after the trial" below.
 - **Also for Andy: the grain.** Keep the literal splitting rule, or have the guide tell annotators
   to record only claims a comment makes a point of, not every clause. **Decided 2026-10-18: the
   literal rule stays,** and the guide is unchanged. id-design.md records why.
@@ -226,4 +228,40 @@ how long query answers get. It is raised for Andy below.
 a blank comment line (` *`) before the tags, and the annotator followed it 16 times. The criterion
 now allows that line. The change is wording to match the guide, not a relaxation: every other kind
 of added line still fails.
+
+**B4 and B7, restated for the rerun** (Andy, 2026-10-18). The first trial was judged against
+them as written above. The reason for the change: the guide now covers one decision replacing
+another (claim-model.md), so B4 no longer tests a gap in the guide. It tests whether the new rule
+is applied where the comments support it, and only there.
+
+**What the material says.** base.css: two rules gave lists, quotes, figures and code 48px above
+and below; "Removed 2026-09-02: too much vertical space in running text … (Andy, on screen)"; and
+`--rhythm-block`'s use there "was an inference": DESIGN.md names the token and never says these
+elements consume it. DESIGN.md agrees. The removal is plainly a decision. **The old pair is
+described as code that existed, not as a decision anyone made,** and the guide's rule applies only
+when a comment says one decision replaced another in so many words. The material sits on that
+boundary, so the criterion accepts either honest reading.
+
+- **B4, for the rerun.** The removal is a decision attributed to Andy and dated 2026-09-02 in every
+  reading. **Either passes:**
+  - **(a)** the old pair recorded only as statements of what the code did, or not at all, with
+    nothing invalidated, since the comments call it an inference rather than a decision; or
+  - **(b)** the old pair recorded as an unattributed decision, worded as the comments describe it,
+    that the removal's activity `prov:invalidated`, as the guide shows.
+
+  **Fails:**
+  - recording the on-screen look as a measurement. That was acceptable reading (b) of the original
+    criterion, but the guide now gives a decision its own path, so it is a misclassification;
+  - invalidating anything no comment says was replaced, including layout.md's stale "all six",
+    which B3 also guards against;
+  - editing a comment, or inventing a property.
+- **B7, for the rerun.** The final message lists the annotator's doubts, and none is written into a
+  file. B4 is no longer expected among them, because the guide now covers the case and requiring a
+  mention would penalize a correct annotation. A mention is still welcome.
+
+**What the rerun cannot show.** No comment in this material still relies on the old pair, so the
+rerun can show that the new rule doesn't misfire: no false links, and B3's disagreement still kept
+apart. It cannot show the rule catching anything. That would take material where a comment still
+cites a replaced decision. The pilot was deliberately not searched for one, so whether the real
+annotation exercises the rule is unknown.
 
