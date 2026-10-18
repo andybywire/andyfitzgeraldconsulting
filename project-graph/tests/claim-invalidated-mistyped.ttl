@@ -1,5 +1,5 @@
 # A measurement that overturned a claim whose slug is mistyped.
-# expect: violation "What a measurement overturned must be a claim"
+# expect: violation "What prov:invalidated points at must be a claim"
 
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .

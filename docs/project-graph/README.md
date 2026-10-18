@@ -41,6 +41,6 @@ Decided by Andy, 2026-10-17, at the start of stage 3:
 | 1. Protocol and inventory  | Done, `39560e2`                                          |
 | 2. Id design               | Done, `5ce8534`                                          |
 | 3. Vocabulary and checks   | Built: Jena, 18 concepts, SKOS integrity shapes; `node project-graph/graph.mjs check` and `test` (19 planted cases) |
-| 4. Claims and extractor    | Built: model and claim shapes, extractor, six saved queries (47 shape cases, 14 query cases, 18 extractor tests); annotation guide drafted; its trial run and reviewed (failures trace to the desktop app); headless harness built, and its canary passed on 2026-10-18 |
+| 4. Claims and extractor    | Built: model and claim shapes, extractor, six saved queries (now 50 shape cases, 16 query cases, 18 extractor tests); annotation guide drafted; its trial run and reviewed (failures trace to the desktop app); headless harness built, and its canary passed on 2026-10-18 |
 | 5. Arms and runs           | Not started; precondition 1 met by the canary, the rest are in the protocol |
 | 6. Analysis                | Not started                                              |

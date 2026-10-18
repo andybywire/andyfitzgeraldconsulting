@@ -6,7 +6,7 @@
 # Everything else a claim carries is a standard term:
 #
 #   prov:wasGeneratedBy     the measurement that established an observation
-#   prov:invalidated        what a measurement overturned
+#   prov:invalidated        what a measurement, or the making of a later decision, overturned
 #   prov:wasAttributedTo    who made a decision
 #   prov:used               an automated browser a measurement relied on
 #   dcterms:subject         the concepts a claim, or a tagged comment, is about

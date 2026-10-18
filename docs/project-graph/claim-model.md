@@ -99,6 +99,15 @@ now, a measurement was the only way to overturn a decision.
      decision.
   4. A section of the annotation guide, with an example.
 
+  **Built 2026-10-18, with a fifth item and a correction.** The paragraph above says the read side
+  already existed. That was true of the check, `about.rq` and `settled.rq`, but **not of
+  `claim.rq`**: it showed what overturned a claim only when the overturning activity had a
+  `model:method`, so a replaced decision showed nothing. It now says "a later decision". The
+  target check is `shape:Overturning`, on whatever uses `prov:invalidated`, and it replaces the
+  measurement shape's own. Five cases were planted first, and the three that could fail did. Two
+  existing cases changed their expected wording with the message. graph.mjs's header records how
+  it was proven. On this branch, 50 shape cases and 16 query cases now pass.
+
   The warrant comes from the trial, which sits outside the pilot. The inventory was deliberately not
   consulted, so the choice isn't fitted to the answer key.
 

@@ -1,0 +1,22 @@
+# The earlier decision names the decision that replaced it. There is no measurement to show.
+# query: claim planted-old-choice
+# expect overturnedBy: claim:planted-new-choice, a later decision
+
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-old-choice a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: the earlier choice."@en ;
+  model:basis model:unattributed .
+
+claim:planted-new-choice a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: the choice that replaced it."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-01-31"^^xsd:date ;
+  prov:wasGeneratedBy [ prov:invalidated claim:planted-old-choice ] .

@@ -1,0 +1,16 @@
+# A decision that replaced an earlier one whose slug is mistyped. Only a measurement's target was
+# checked before, so this pointed at nothing and the rule that spreads a correction never fired.
+# expect: violation "What prov:invalidated points at must be a claim"
+
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+claim:planted-new-choice a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Planted: replaces a typo."@en ;
+  model:basis model:unattributed ;
+  prov:wasGeneratedBy [ prov:invalidated claim:planted-no-such-choice ] .

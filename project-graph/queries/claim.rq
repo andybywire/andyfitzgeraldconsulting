@@ -43,10 +43,14 @@ WHERE {
       BIND(CONCAT("decided by ", STR(?who), IF(BOUND(?decided), CONCAT(" on ", STR(?decided)), "")) AS ?how)
     }
   }
+  # A measurement overturns with a method to show. The making of a later decision has none, and
+  # this once required one, so a replaced decision showed nothing here.
   OPTIONAL {
-    ?overturning prov:invalidated ?claim ; model:method ?overturningMethod .
+    ?overturning prov:invalidated ?claim .
+    OPTIONAL { ?overturning model:method ?overturningMethod }
     OPTIONAL { ?newer prov:wasGeneratedBy ?overturning }
-    BIND(CONCAT(IF(BOUND(?newer), CONCAT(STR(?newer), ", "), ""), "measured: ", STR(?overturningMethod)) AS ?by)
+    BIND(IF(BOUND(?overturningMethod), CONCAT("measured: ", STR(?overturningMethod)), "a later decision") AS ?how2)
+    BIND(CONCAT(IF(BOUND(?newer), CONCAT(STR(?newer), ", "), ""), ?how2) AS ?by)
   }
   OPTIONAL { ?claim prov:wasGeneratedBy/prov:invalidated ?old . }
   OPTIONAL {
