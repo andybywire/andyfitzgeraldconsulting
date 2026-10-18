@@ -24,11 +24,25 @@
  *
  * ── THE ENVIRONMENT, AND WHY IT IS SCRUBBED ──────────────────────────────────
  *
- * A run is often launched from inside another Claude Code session, which sets CLAUDECODE and
- * several CLAUDE_CODE_* variables. Inherited, they could change how the child behaves, so they are
- * removed, and then CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 is set: documented as "does not create or load
- * auto memory files". The canary's control launches without it, to prove the check sees the
- * difference.
+ * A run is often launched from inside another Claude Code session, and the desktop app sets about
+ * thirty variables beginning CLAUDE: CLAUDECODE, the CLAUDE_CODE_* family, and others outside it,
+ * such as CLAUDE_EFFORT, CLAUDE_PID and CLAUDE_AGENT_SDK_VERSION. Inherited, they could change how
+ * the child behaves, so EVERY variable beginning CLAUDE is removed, and then
+ * CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 is set: documented as "does not create or load auto memory
+ * files". The canary's control launches without it, to prove the check sees the difference.
+ *
+ * The first scrub removed only CLAUDECODE and CLAUDE_CODE_*, and let CLAUDE_EFFORT through (found
+ * 2026-10-18, before anything launched). That one matters. The launch passes --effort, and which
+ * of the two wins was never tested, so a run started from inside the app might have taken the
+ * app's effort rather than its own: a mismatch across arms that no result would show. Removing the
+ * variable makes the question moot instead of answering it. The prefix is broad on purpose:
+ *
+ *   - a variable a later Claude Code adds is covered without anyone having to notice it;
+ *   - CLAUDE_CONFIG_DIR goes too, which is right, because MEMORY_DIR assumes the default ~/.claude;
+ *   - ANTHROPIC_* is left alone. It can carry the credentials and API host that a launch from a
+ *     plain terminal relies on, and in the app it points at the real API.
+ *
+ * Proven by failing first: the test that plants CLAUDE_EFFORT failed against the old filter.
  *
  * NOT YET PROVEN END TO END. Built 2026-10-18 and verified without launching anything (see
  * harness.test.mjs, and protocol.md → "The headless harness"). The canary is its first real run.
@@ -111,10 +125,9 @@ export function buildLaunch({
   if (allowedTools.length) args.push('--allowedTools', allowedTools.join(' '))
   if (disallowedTools.length) args.push('--disallowedTools', disallowedTools.join(' '))
 
+  // Every CLAUDE* variable, not only CLAUDE_CODE_*: see "THE ENVIRONMENT" above.
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(
-      ([key]) => key !== 'CLAUDECODE' && !key.startsWith('CLAUDE_CODE_'),
-    ),
+    Object.entries(process.env).filter(([key]) => !key.startsWith('CLAUDE')),
   )
   if (memoryOff) env.CLAUDE_CODE_DISABLE_AUTO_MEMORY = '1'
   return {command: 'claude', args, env}

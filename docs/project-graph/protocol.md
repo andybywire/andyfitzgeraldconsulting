@@ -254,7 +254,7 @@ it too.
 
 **Built 2026-10-18, verified offline, NOT yet run.** `harness.mjs` is the per-run machinery:
 `runOne()`, plus a `dry-run` command that creates and removes a worktree and prints the launch.
-`canary.mjs` is the canary and its control, and `harness.test.mjs` holds 9 tests that need no
+`canary.mjs` is the canary and its control, and `harness.test.mjs` holds 10 tests that need no
 launch. Two additions to the launch above, found in the CLI's help: `--permission-mode dontAsk`,
 so a tool not on the list is refused rather than waited on, and `--strict-mcp-config`, so none of
 Andy's MCP connections (Sanity, Figma, ClickUp) attach to a run. Verified without launching:
@@ -269,13 +269,21 @@ Andy's MCP connections (Sanity, Figma, ClickUp) attach to a run. Verified withou
   fingerprints independently.
 - **The dry run** creates a worktree of `pg-guide-trial` under `~/.cache/project-graph/runs/`,
   prints the launch, and removes it.
+- **The scrub, widened before anything launched** (2026-10-18). It first removed only `CLAUDECODE`
+  and `CLAUDE_CODE_*`. The desktop app's environment turned out to hold `CLAUDE_EFFORT=xhigh` among
+  the variables that pattern lets through, beside `CLAUDE_PID` and `CLAUDE_AGENT_SDK_VERSION`. The
+  launch passes `--effort`, and which of the two wins was never tested, so a run started from inside
+  the app might have run at the app's effort rather than the arm's, and no result would show it. It
+  now removes every variable beginning `CLAUDE`. A test planting `CLAUDE_EFFORT` failed against the
+  old filter and passes against the new one, and against this session's real environment a launch
+  keeps none of its 30 `CLAUDE*` variables but the memory switch.
 
 **What only the canary can prove:** that `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` works on this
 machine's Claude Code (2.1.150), that the JSON carries the fields runs need, and that a headless
 run's transcript is found and is clean. One known uncertainty: a session launched from inside
-another Claude Code session may have memory off whatever the harness does. The harness removes the
-inherited `CLAUDECODE` and `CLAUDE_CODE_*` variables for that reason. If the control still doesn't
-leak, `canary.mjs` reports "inconclusive" (exit 3), and it must be run from a plain terminal.
+another Claude Code session may have memory off whatever the harness does. The harness removes
+every inherited `CLAUDE*` variable for that reason. If the control still doesn't leak,
+`canary.mjs` reports "inconclusive" (exit 3), and it must be run from a plain terminal.
 
 **Still to decide before the first run:** the runs' model and effort (only required to be the same
 across arms), the per-run cap `--max-budget-usd`, and a total budget at which the schedule stops.
