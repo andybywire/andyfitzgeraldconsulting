@@ -31,7 +31,7 @@ annotator: the inventory lists every contradiction the tasks score.
 ## Where things stand
 
 - **Branch `project-graph`,** local and unpushed, holds everything: `project-graph/` (the tooling)
-  and `docs/project-graph/` (the record). The last commit made by the earlier session is `d7a392e`.
+  and `docs/project-graph/` (the record). The harness and this handoff were committed in `1afeb3d`.
   `main` has `96c10e5`, a one-comment fix, also unpushed. Pushing is Andy's call, and a push to
   `main` deploys production.
 - **Built and proven:** a pinned Jena 6.2.0, the 18-concept pilot vocabulary, SKOS integrity and
@@ -39,8 +39,7 @@ annotator: the inventory lists every contradiction the tasks score.
   `node project-graph/graph.mjs test` runs 47 shape cases, 14 query cases and 18 extractor tests,
   in about 30 seconds.
 - **The headless harness** (`docs/project-graph/harness/`) is **built and verified offline, never
-  launched.** Unless Andy committed it after this was written, it's uncommitted. See protocol.md →
-  "Built 2026-10-18" for what is and isn't proven.
+  launched.** It's committed. See protocol.md → "Built 2026-10-18" for what is and isn't proven.
 - **`pg-guide-trial`** (`4f0eb92`) is the trial branch: `086dd0f` plus the tooling with a
   six-concept vertical-spacing vocabulary in place of the pilot's. **Keep it:** the canary and the
   trial rerun start from it.
