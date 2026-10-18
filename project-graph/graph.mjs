@@ -2,9 +2,14 @@
  * The Project Graph's commands: is every Turtle file well formed, does the graph satisfy its
  * shapes, do the shapes and queries still do what they are meant to, and what does the graph say?
  *
- *   pnpm graph check                check project-graph/, and every tagged comment in the repository
- *   pnpm graph test                 run the planted cases: shapes, then queries, then the extractor
- *   pnpm graph query [name] [slug]  run a saved query; with no name, list them (see queries.mjs)
+ * Run as `node project-graph/graph.mjs <command>`, where the command is one of:
+ *
+ *   check                check project-graph/, and every tagged comment in the repository
+ *   test                 run the planted cases: shapes, then queries, then the extractor
+ *   query [name] [slug]  run a saved query; with no name, list them (see queries.mjs)
+ *
+ * Call it with `node` directly. The root package.json's `pnpm graph` runs the same file, but in a
+ * fresh checkout with no node_modules, pnpm runs a full install before the command itself.
  *
  * `check` and `test` take a directory as well, which is how a planted violation or a weakened shape
  * is proven against a copy rather than the real files. `check` reads tags from the folder that
@@ -413,7 +418,7 @@ function queryCaseFailure(dir, file, data) {
 
 async function query(dir, name, slug) {
   if (!name) {
-    console.log('Saved queries (pnpm graph query <name> [slug]):\n')
+    console.log('Saved queries (node project-graph/graph.mjs query <name> [slug]):\n')
     for (const q of listQueries(dir)) {
       console.log(`  ${q.name}${q.param ? ` <${q.param}>` : ''}\n    ${q.description}\n`)
     }
@@ -442,6 +447,10 @@ else if (command === 'test') await test(args[0] ? resolve(args[0]) : HERE)
 else if (command === 'query') await query(HERE, args[0], args[1])
 else {
   fail(
-    'Usage: pnpm graph check [dir]\n       pnpm graph test [dir]\n       pnpm graph query [name] [slug]',
+    [
+      'Usage: node project-graph/graph.mjs check [dir]',
+      '       node project-graph/graph.mjs test [dir]',
+      '       node project-graph/graph.mjs query [name] [slug]',
+    ].join('\n'),
   )
 }

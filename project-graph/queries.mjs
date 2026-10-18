@@ -1,8 +1,9 @@
 /**
  * The saved queries: how a question about the codebase becomes a tool call rather than a search.
  *
- *   pnpm graph query                       list the queries
- *   pnpm graph query <name> [slug]         run one, over the graph and every tagged comment
+ *   node project-graph/graph.mjs query                list the queries
+ *   node project-graph/graph.mjs query <name> [slug]  run one, over the graph and every tagged
+ *                                                     comment
  *
  * Each query is a SPARQL file in queries/, and its opening comment is its description. graph.mjs
  * runs them for the `query` command and for the planted cases in tests/queries/; this file holds
@@ -106,10 +107,12 @@ function sparql(query, data) {
 export function runQuery(dir, name, slug, data) {
   const query = listQueries(dir).find((q) => q.name === name)
   if (!query)
-    throw new QueryError(`No query named "${name}". Run \`pnpm graph query\` to list them.`)
+    throw new QueryError(
+      `No query named "${name}". Run \`node project-graph/graph.mjs query\` to list them.`,
+    )
   if (query.param && !slug) {
     throw new QueryError(
-      `"${name}" needs a ${query.param}: pnpm graph query ${name} <${query.param}>`,
+      `"${name}" needs a ${query.param}: node project-graph/graph.mjs query ${name} <${query.param}>`,
     )
   }
   if (!query.param && slug) throw new QueryError(`"${name}" takes no slug.`)

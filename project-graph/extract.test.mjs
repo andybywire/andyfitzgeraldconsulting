@@ -1,6 +1,7 @@
 /**
- * The extractor's planted cases: source snippets, and exactly what each must yield. `pnpm graph test`
- * runs this after the shapes' cases; on its own, `node --test project-graph/extract.test.mjs`.
+ * The extractor's planted cases: source snippets, and exactly what each must yield.
+ * `node project-graph/graph.mjs test` runs this after the shapes' cases; on its own,
+ * `node --test project-graph/extract.test.mjs`.
  *
  * Ordinary unit tests, because a parser is ordinary code: Node's built-in `node:test`, so no new
  * dependency. Each case pins one rule from extract.mjs's header, and the ones that matter most are

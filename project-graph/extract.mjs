@@ -1,6 +1,7 @@
 /**
  * The extractor: reads the `@concept` and `@claim` tags at the end of comments and writes them as
- * code locations, in Turtle, for `pnpm graph check` to validate with everything else.
+ * code locations, in Turtle, for `node project-graph/graph.mjs check` to validate with everything
+ * else.
  *
  *   node project-graph/extract.mjs [root]    print what it finds, as Turtle, for a look by hand
  *
@@ -35,7 +36,7 @@
  *
  * A tag that can't be read would otherwise disappear, and a comment nobody can find is the failure
  * the whole Project Graph exists to prevent. So each of these is reported with its file and line,
- * and `pnpm graph check` exits 1:
+ * and `node project-graph/graph.mjs check` exits 1:
  *
  *   @concept                     no slugs
  *   @concept Landing-Point       not a slug: capitals
