@@ -90,6 +90,17 @@ backing. Arm B's glossary records the same fields as plain text.
 - Judgments that can't be false: "reads as a bug rather than a focus position."
 
 **How finely to split:** one claim is one statement that can be true or false on its own.
+**Kept as written by Andy, 2026-10-18,** after the guide's trial produced 79 claims from 47
+comments, half of them cited once and 17 in one header (guide-trial.md). The alternative was
+recording only the claims a comment makes a point of. It was turned down for three reasons:
+
+- The trial's one real disagreement sat in an incidental clause, which that rule would likely have
+  dropped.
+- "Makes a point of" is a judgment, where this rule is close to mechanical, and the experiment rests
+  on one blind annotation per arm.
+- What the literal rule costs is part of what the protocol measures.
+
+Accepted with it: long tag lines on long comments, whose line number points at the comment's end.
 
 - **Split** a statement whose parts can fail separately. "Real browsers draw the ring" and
   "automation misreports it" are two claims.

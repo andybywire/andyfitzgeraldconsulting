@@ -212,9 +212,13 @@ how long query answers get. It is raised for Andy below.
 - **B4 goes to Andy as the model decision it was set up to inform:** keep reading (a), two
   unlinked decisions, or give the model a way to say that one decision replaced another (such as
   `prov:wasRevisionOf`), so that a comment relying on a replaced decision can be found the way one
-  citing an overturned observation is.
+  citing an overturned observation is. **Decided 2026-10-18:** neither of those. A replacing
+  decision's activity `prov:invalidated` the old one, with no new term. See claim-model.md, which
+  lists what must be built before the rerun. B4's criterion for the rerun has to be restated to
+  match, and that is Andy's to settle when the rerun is set up.
 - **Also for Andy: the grain.** Keep the literal splitting rule, or have the guide tell annotators
-  to record only claims a comment makes a point of, not every clause.
+  to record only claims a comment makes a point of, not every clause. **Decided 2026-10-18: the
+  literal rule stays,** and the guide is unchanged. id-design.md records why.
 
 ### A criterion changed after the trial
 

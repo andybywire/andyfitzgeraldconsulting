@@ -189,7 +189,8 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
 ## How the runs are done
 
 - **3 runs per task per arm:** 5 tasks × 3 arms × 3 = **45 sessions.** A budget check comes before
-  any of them, and T5 can drop to 2 runs if that is too many.
+  any of them, and T5 can drop to 2 runs if that is too many. The model, effort, cap, budget and
+  rounds are under "The runs' settings", below.
 - **Every run is a fresh headless process,** launched by the harness below, in its own worktree
   from the arm's branch: never a session started from the desktop app. The same model and effort
   throughout, recorded with each run.
@@ -286,8 +287,35 @@ another Claude Code session may have memory off whatever the harness does. The h
 every inherited `CLAUDE*` variable for that reason. If the control still doesn't leak,
 `canary.mjs` reports "inconclusive" (exit 3), and it must be run from a plain terminal.
 
-**Still to decide before the first run:** the runs' model and effort (only required to be the same
-across arms), the per-run cap `--max-budget-usd`, and a total budget at which the schedule stops.
+**The runs' settings, decided by Andy, 2026-10-18.** Every dollar figure here is a list-price
+equivalent: the `total_cost_usd` Claude Code reports, which `--max-budget-usd` enforces. Prices at
+the time were $4 input, $20 output, $0.20 cache read and $8 one-hour cache write per million
+tokens. These rebuild the canary's reported cost to the cent.
+
+- **Model: Opus 5.5 (`claude-opus-5-5`)** for every run and annotation. The question is whether
+  the graph helps the agent actually used on this repo, and the annotator uses it too. Sonnet 5.5
+  was passed over. It would have saved about a third, not half, because cache reads cost the same
+  on both. A weaker model might gain more from the graph, but that is a different experiment.
+- **Effort: `high`, set explicitly,** since Opus 5.5's API default is `medium`. It matches the
+  annotation and the guide's trial, the only cost measurements so far. Low effort was passed over
+  because it consolidates tool calls and stops sooner, which would cut arm A's searching short and
+  inflate C's advantage on outcome. `xhigh`, Claude Code's default, would be more realistic, but
+  costs more and the hypothesis doesn't need it. Each run's effort is read back from its
+  transcript's `output_config`.
+- **Cap: $10 a run and $25 an annotation run.** The cap guards against a runaway run; it is not a
+  measurement. It sits about three times above the heaviest run measured, the trial's annotation
+  at $3.46, because a cap that truncates runs would penalize whichever arm searches more, which is
+  what's being measured. **A run that hits the cap is kept and scored as it stands,** with its cost
+  recorded as the cap. If a second run hits it, the schedule stops and the cap is revisited.
+- **Budget: $200 for all of stage 5,** covering the 45 runs (estimated at $1.50 to $4 each, about
+  $110 in all), the annotations, the trial's rerun and any canaries. The schedule stops when the
+  running total reaches it. **It runs in rounds of 15,** one run per task per arm, and pauses after
+  the first round so the estimate can be redone from real figures before more runs. Later rounds
+  are spread over days, with usage checked between them. If the budget gets tight, T5 drops to
+  2 runs, as allowed above.
+- **Before the schedule starts,** Andy confirms the spend is covered. That isn't a rule this file
+  can check, so it is listed here, where the schedule runner is built.
+
 The canary measured the floor: loading the context alone costs about $0.40 a run (see below).
 
 ### The canary: proving both leaks closed before anything real runs

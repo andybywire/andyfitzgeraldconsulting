@@ -72,6 +72,36 @@ claim:focus-needs-forced-reflow a model:Observation ;
 `prov:invalidated` the old one, so the two are joined through the evidence. No custom "superseded
 by" link is needed.
 
+**A replaced decision is overturned the same way** (Andy, 2026-10-18, deciding B4 of
+[guide-trial.md](guide-trial.md)). When a comment says one decision replaced another, the new
+decision is `prov:wasGeneratedBy` an activity that `prov:invalidated` the old one. Its attribution
+and date stay on the decision, as for any other. No term is added. The read side already existed:
+the rule that spreads a correction fires on any `prov:invalidated`, whatever did the
+invalidating, and `settled.rq` already reports a decision as `standing` or `overturned`. Until
+now, a measurement was the only way to overturn a decision.
+
+- **Why not `prov:wasRevisionOf`:** a revision doesn't say the original stopped being in force. In
+  PROV, a document's old version is still a valid entity. It would also be a new term, needing a
+  second copy of the overturned-claim rule. Invalidation is PROV's word for an entity's expiry,
+  which is what a replaced decision is.
+- **Why not two unlinked decisions,** the trial's own reading: a comment still relying on the old
+  decision would go unflagged, though it relies on something known to be no longer in force. That
+  is decision 2 below applied to decisions.
+- **The cost, accepted:** the annotator makes one more judgment, whether a comment *says* a decision
+  was replaced or only describes a change. A wrong link makes the check fail on honest comments. In
+  the trial's material, no comment still cited the replaced decision, so there it would have
+  flagged nothing.
+- **To build, before the trial's rerun:**
+  1. A shape so that whatever invalidates must point at a claim. Today only a measurement's target
+     is checked, so a mistyped slug from a decision's activity would fail silently.
+  2. That shape's planted cases.
+  3. The overturned-claim rule's message, which says "a measurement overturned", widened to a
+     decision.
+  4. A section of the annotation guide, with an example.
+
+  The warrant comes from the trial, which sits outside the pilot. The inventory was deliberately not
+  consulted, so the choice isn't fitted to the answer key.
+
 **Code locations are the extractor's output, never authored:** a `model:CodeLocation` with a
 `model:path`, a `model:line`, `dcterms:subject` for its concept tags and `model:cites` for its claim
 tags. The terms were defined in stage 4.1, so the overturned-claim rule could have planted cases
@@ -87,7 +117,7 @@ before the extractor exists. In words: a file path, a line, the concepts its
 | `prov:wasGeneratedBy`, `model:method`, `dcterms:date`  | Query: how was this claim established?                                                       |
 | `prov:used` an automated-browser concept               | Query: what was only ever measured by automation? That's the lesson of 2026-09-30.           |
 | `prov:wasAttributedTo` + `dcterms:date` on a decision  | Shape: a decision says who and when. Query: is this settled? (task T4)                       |
-| `prov:invalidated`                                     | Shape: no code location's tag points at an overturned claim                                  |
+| `prov:invalidated`                                     | Shape: no code location's tag points at an overturned claim. Query: does a decision stand?   |
 | `dcterms:subject`                                      | Query: what is claimed about this concept?                                                   |
 | `dcterms:description`                                  | Every query answer, so it can be read without opening files                                  |
 
