@@ -103,9 +103,9 @@ comments.
 This is the step that matters most, so take it slowly.
 
 - **Before minting a new claim, look for an existing one.** Read `claims.ttl`, and run
-  `pnpm graph query about <concept>` for the concepts involved. If another comment states the
-  same thing, **reuse its slug**, even when the wording is quite different. One claim stated in
-  five places is one claim with five tagged comments.
+  `node project-graph/graph.mjs query about <concept>` for the concepts involved. If another
+  comment states the same thing, **reuse its slug**, even when the wording is quite different. One
+  claim stated in five places is one claim with five tagged comments.
 - **Two statements that disagree are never the same claim,** however close their wording. Each
   gets its own slug, and nothing links them.
 - **A slug states the claim in its own polarity:** `sticky-works-inside-overflow-hidden` and
@@ -208,7 +208,7 @@ basis instead of `model:assumed`.
 
 ## 6. Check your work
 
-Run `pnpm graph check` as you go, and at the end.
+Run `node project-graph/graph.mjs check` as you go, and at the end.
 
 - **Fix what it reports about form:** a malformed tag, a mistyped slug, a missing sentence or
   subject, a claim that doesn't say how it's known, a date that isn't a date.
@@ -216,8 +216,9 @@ Run `pnpm graph check` as you go, and at the end.
   comment cites a claim a measurement overturned. That describes what the comments say, not a
   mistake in your annotation. Leave it exactly as it is.
 
-`pnpm graph query` lists the saved queries. `about <concept>` and `claim <slug>` are the most
-useful while annotating, for finding claims you have already recorded.
+`node project-graph/graph.mjs query` lists the saved queries. `about <concept>` and
+`claim <slug>` are the most useful while annotating, for finding claims you have already
+recorded.
 
 ## 7. Report, in your final message
 
@@ -253,5 +254,5 @@ for illustration only. Suppose three comments in three files:
   state, so the same slug is reused rather than a new one minted. **`c.css` is tagged only with
   the new claim.** It describes the old belief in order to reject it, so it neither states nor
   relies on it, and the invalidation already records the link.
-- **Nothing in `a.css` or `b.css` changes.** If `pnpm graph check` then reports that they cite an
-  overturned claim, that's the comments as they are, and it stays.
+- **Nothing in `a.css` or `b.css` changes.** If `node project-graph/graph.mjs check` then reports
+  that they cite an overturned claim, that's the comments as they are, and it stays.
