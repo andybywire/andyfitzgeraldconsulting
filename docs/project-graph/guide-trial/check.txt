@@ -1,0 +1,2 @@
+Conforms: project-graph/claims.ttl, project-graph/concepts.ttl, project-graph/model.ttl and 47 tagged comments in 144 files, against project-graph/shapes.ttl (Jena 6.2.0).
+exit 0

@@ -73,6 +73,14 @@ three known low mentions (that an experiment, a protocol and an arm exist), and 
 matches outside the folder are about Figma annotations and annotated git tags. `pnpm graph check`
 conforms, with 0 tagged comments in 144 files, and the extractor's 18 tests pass.
 
+**The session, started 2026-10-17:**
+[Annotate vertical-spacing comments](#local_8c860b82-f8a5-422b-bab0-266c10ca3525),
+Opus 5.5 at high effort, in its own worktree cut from `pg-guide-trial`, with the prompt above
+exactly. **One addition it also saw:** the app requires a second field of at least 80 characters
+for a fresh session, so this sentence went with the prompt, chosen to say nothing about a trial
+or tasks: *"The guide named in the prompt, project-graph/annotation-guide.md, is self-contained: it
+and the files it points to are all the instruction there is for this work."*
+
 **Found while checking, and it matters for stage 5:** in a worktree with no `node_modules`, the
 first `pnpm graph …` silently ran a full `pnpm install` (1,515 packages from the local store,
 about 6 seconds and some 30 lines of output) before the command. The trial keeps it, since the
@@ -85,7 +93,9 @@ arm's. The protocol now carries that as a precondition.
 ### A. Mechanical: checked by command, pass or fail
 
 - **A1. Only tag lines added.** `git diff 4f0eb92 -- . ':!project-graph'` deletes no lines, and
-  every line it adds is a tag line by the extractor's rule. *(The baseline was `086dd0f` until the
+  every line it adds is a tag line by the extractor's rule, or the blank comment line the guide's
+  own example puts before the tags. *(That allowance was added after the trial; see "A criterion
+  changed after the trial" below.)* *(The baseline was `086dd0f` until the
   branch was set up. It is the setup commit now, because setup added one line to `package.json`;
   see "As set up".)*
 - **A2. Nothing else written.** No new file outside `project-graph/` and, inside it, only
@@ -152,3 +162,64 @@ cannot start until runs are arranged so that memory can't reach them.
 - **B5 or B6 failing** means the guidance on attribution or on homonyms needs a sharper rule.
 - **A rerun is needed** if the guide changes by more than wording. A second trial uses a fresh
   session and the same criteria.
+
+## Results, reviewed 2026-10-18
+
+The session ran on 2026-10-17, started from the desktop app before the headless harness existed:
+[Annotate vertical-spacing comments](#local_8c860b82-f8a5-422b-bab0-266c10ca3525), on branch
+`claude/annotate-7777a5`. Its output is copied to [guide-trial/](guide-trial/): the tag diff, its
+`claims.ttl`, the check output, its last words, the usage figures, and the note it left in the
+app's folder. D was settled on 2026-10-17; A to C are reviewed here.
+
+| Criterion | Verdict | What it showed |
+| --- | --- | --- |
+| **A1** tag lines only | **Pass**, with a wording fix | 0 lines deleted. 94 tag lines and 16 blank comment lines added, nothing else. The blank lines are the ` *` separator in the guide's own example, so the criterion was too strict for the guide it tests. |
+| **A2** nothing else written | **Fail**, app cause | Inside the repository, only `claims.ttl`, and `concepts.ttl` is unchanged. But it wrote a note to the app's side-session folder, which the app tells side sessions to do. |
+| **A3** the check | **Pass** | Conforms: 79 claims, 47 tagged comments, no violations. |
+| **B1** restatement merged | **Pass** | `portable-text-emits-flat-sequence` is cited from 5 of the 6 places. GetInTouchBand cites `sibling-margin-ramp-is-only-for-flat-sequences` instead, which relies on it. |
+| **B2** kind and backing | **Pass** | The split reading, an assumed observation plus an unattributed decision, applied consistently. |
+| **B3** agreement merged, disagreement apart | **Pass** | "Equal specificity, so source order decides, `heading-close` last" is one claim across all three files. layout.md's stale "all six" is `all-rhythm-selectors-share-one-specificity`, cited only there and linked to nothing. It also kept "six selectors" apart from base.css's "four overrides". No word in `claims.ttl` marks anything wrong. |
+| **B4** the reversal | **Fail**, on "silently" | The encoding is acceptable reading (a): `rhythm-block-pair-removed` is a decision by Andy, 2026-09-02, with nothing invalidated, and the old 48px pair survives only as separate statements of what the code did. But the gap was raised nowhere, because there was no report (B7). |
+| **B5** attribution as stated | **Pass** | 6 decisions are attributed to Andy, and each traces to a cited comment that names him and gives the date. 25 are unattributed, including PageHeader's "Settled on the article page". |
+| **B6** the homonyms | **Pass** | Nothing near DESIGN.md's leading ramp is tagged. Container-gap tags sit only on comments about vertical gaps; the one in "grid owns horizontal" comes from its sentence about a wrapped column's row gap. |
+| **B7** the report | **Fail**, app cause | No doubts appear in its final message or its wrap-up, only counts and a pointer to the note. The app told it to "leave hand-over notes or large findings there instead of pasting them into messages", the opposite of the guide's step 7. |
+
+### C. Cost and conduct, recorded
+
+**7.9 minutes and 46 tool calls:** 17 edits, 15 shell commands, 9 file reads, 2 file writes, and 3
+calls to the app's own tools. **Tokens:** 51.6k output, 4.79M cache reads and 183k cache writes,
+with 56 uncached input tokens. It ran the check once, through `pnpm graph check`, and never ran a
+query: it found claims to reuse by reading its own `claims.ttl`. Its first command listed the
+notes folder, as the app told it to, which was empty then. It read the tooling (`extract.mjs`,
+`shapes.ttl`) to learn the tag syntax, and used a scratch script to help insert tags.
+
+**The grain is fine:** 79 claims from 47 comments, and base.css's rhythm header alone cites 17. That
+is the guide's splitting rule applied literally ("one claim is one statement that can be true or
+false on its own"). It's not a criterion, but it bears on what annotating the pilot will cost and on
+how long query answers get. It is raised for Andy below.
+
+### What it changes
+
+- **Every failure traces to the desktop app, not the guide:** A2 and B7 to the notes folder and the
+  app's instruction to use it, D to auto-memory, and B4's "silently" to B7. The headless harness
+  removes all three causes. That claim is only true once a run shows it, so **the trial is rerun
+  through the harness after the canary passes**, with these criteria. The rerun doubles as the
+  harness's first real test.
+- **The guide's "one claim, one id" section works on this material.** B1, B3 and B5 all passed,
+  and they are the judgments the real annotation turns on most.
+- **One guide change before the rerun:** `pnpm graph check` becomes `node project-graph/graph.mjs
+  check`, which the harness decided on for every run. It is wording only.
+- **B4 goes to Andy as the model decision it was set up to inform:** keep reading (a), two
+  unlinked decisions, or give the model a way to say that one decision replaced another (such as
+  `prov:wasRevisionOf`), so that a comment relying on a replaced decision can be found the way one
+  citing an overturned observation is.
+- **Also for Andy: the grain.** Keep the literal splitting rule, or have the guide tell annotators
+  to record only claims a comment makes a point of, not every clause.
+
+### A criterion changed after the trial
+
+**A1** originally required every added line to be a tag line. The guide's own worked example puts
+a blank comment line (` *`) before the tags, and the annotator followed it 16 times. The criterion
+now allows that line. The change is wording to match the guide, not a relaxation: every other kind
+of added line still fails.
+

@@ -1,0 +1,411 @@
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ── The mechanism ─────────────────────────────────────────────────────────────
+
+claim:rhythm-uses-sibling-margins-not-gap a model:Decision ;
+  dcterms:subject concept:sibling-margin, concept:container-gap ;
+  dcterms:description "Vertical rhythm in body content is set with sibling margins rather than with a container's gap."@en ;
+  model:basis model:unattributed .
+
+claim:rhythm-adds-no-wrapper-elements a model:Decision ;
+  dcterms:subject concept:sibling-margin, concept:container-gap ;
+  dcterms:description "The rhythm mechanism adds no container: its margins sit on existing grid items."@en ;
+  model:basis model:unattributed .
+
+claim:portable-text-emits-flat-sequence a model:Observation ;
+  dcterms:subject concept:flat-block-sequence ;
+  dcterms:description "Portable Text renders a flat sequence of sibling blocks with no section wrappers."@en ;
+  model:basis model:assumed .
+
+claim:prose-component-emits-no-container a model:RepoFact ;
+  dcterms:subject concept:flat-block-sequence ;
+  dcterms:description "The Prose component is transparent: it emits a flat sequence of blocks and no container of its own."@en .
+
+claim:gap-cannot-express-tighter-after-a-heading a model:Observation ;
+  dcterms:subject concept:container-gap ;
+  dcterms:description "A container's gap cannot express tighter spacing after a heading."@en ;
+  model:basis model:assumed .
+
+claim:sibling-margin-ramp-is-only-for-flat-sequences a model:Decision ;
+  dcterms:subject concept:sibling-margin, concept:flat-block-sequence, concept:container-gap ;
+  dcterms:description "The sibling-margin ramp exists for Portable Text's flat sequence; a component with real wrapper elements spaces its own children instead."@en ;
+  model:basis model:unattributed .
+
+claim:rhythm-sets-no-bottom-margins a model:Decision ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "The rhythm mechanism sets no margin-bottom anywhere, only top margins on following siblings."@en ;
+  model:basis model:unattributed .
+
+claim:adjacent-sibling-margins-collapse a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "A block's bottom margin collapses against its next sibling's top margin."@en ;
+  model:basis model:assumed .
+
+claim:margins-collapse-through-an-empty-paragraph a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "An empty paragraph's margins collapse through it, so a 48 margin before it and the next block's 24 collapse to 48."@en ;
+  model:basis model:assumed .
+
+claim:star-plus-x-never-matches-a-first-child a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "A `* + X` selector never matches a first child, so no :first-child reset is needed."@en ;
+  model:basis model:assumed .
+
+claim:detail-ramp-reaches-only-direct-children a model:RepoFact ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "The .detail rhythm ramp reaches only .detail's direct children, never blocks nested inside them or elements outside .detail."@en .
+
+claim:prose-paragraphs-outside-detail-butt-together a model:Observation ;
+  dcterms:subject concept:sibling-margin, concept:flat-block-sequence ;
+  dcterms:description "Outside .detail, two adjacent Portable Text paragraphs have no space between them unless a rule supplies it."@en ;
+  model:basis model:assumed .
+
+# ── Source order and specificity ──────────────────────────────────────────────
+
+claim:equal-specificity-later-rule-wins a model:Observation ;
+  dcterms:subject concept:source-order ;
+  dcterms:description "Among rules of equal specificity, the last matching one wins."@en ;
+  model:basis model:assumed .
+
+claim:author-display-rule-beats-hidden-on-source-order a model:Observation ;
+  dcterms:subject concept:source-order ;
+  dcterms:description "The user agent's [hidden] { display: none } is an ordinary declaration at (0,1,0), so any author rule setting display on the same element beats it on source order."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Caught by the Insights filter chips: `.chip { display: inline-flex }` left a hidden \"See all genres\" button rendering."@en ;
+    dcterms:date "2026-08-31"^^xsd:date ] .
+
+claim:rhythm-overrides-share-specificity-0-1-1 a model:RepoFact ;
+  dcterms:subject concept:sibling-margin, concept:source-order ;
+  dcterms:description "Every override in the .detail rhythm ramp has the same specificity, (0,1,1)."@en .
+
+claim:rhythm-base-rule-sits-one-notch-below-overrides a model:RepoFact ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "The .detail base rhythm rule has specificity (0,1,0), one notch below the overrides, which makes it the fallback they override."@en .
+
+claim:all-rhythm-selectors-share-one-specificity a model:RepoFact ;
+  dcterms:subject concept:sibling-margin, concept:source-order ;
+  dcterms:description "All six selectors of the rhythm rule have equal specificity."@en .
+
+claim:rhythm-rule-has-six-selectors a model:RepoFact ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "The rhythm rule in DESIGN.md is made of six selectors."@en .
+
+claim:rhythm-ramp-has-four-overrides a model:RepoFact ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "The .detail rhythm ramp is a base rule plus four overrides."@en .
+
+claim:heading-close-rule-sits-last a model:Decision ;
+  dcterms:subject concept:source-order, concept:sibling-margin ;
+  dcterms:description "The heading-close rule is placed last among the rhythm overrides, so that a heading binds to whatever follows it."@en ;
+  model:basis model:unattributed .
+
+claim:attributed-quote-rule-sits-before-heading-rules a model:Decision ;
+  dcterms:subject concept:source-order, concept:sibling-margin ;
+  dcterms:description "The rule for the space after an attributed quote is placed before the heading rules, so that a heading following a quotation still takes its own opening space."@en ;
+  model:basis model:unattributed .
+
+claim:bare-not-exclusion-flattens-the-ramp a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "Writing the base rule's exclusion as a bare :not(.sidebar):not(.banner) would lift it to (0,3,0), beat every override and flatten the whole ramp to rhythm-paragraph."@en ;
+  model:basis model:assumed .
+
+claim:where-contributes-zero-specificity a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description ":where() contributes zero specificity whatever it contains."@en ;
+  model:basis model:assumed .
+
+claim:grid-placed-elements-excluded-from-rhythm-margin a model:Decision ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description ".sidebar and .banner are excluded from the rhythm's top margin because they are explicitly grid-placed."@en ;
+  model:basis model:unattributed .
+
+claim:margin-top-pushes-grid-placed-element-off-its-row a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "A flow margin-top on an explicitly grid-placed element pushes it off its grid row."@en ;
+  model:basis model:assumed .
+
+claim:sibling-margins-cannot-skip-an-out-of-flow-element a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "Excluding a grid-placed element stops a margin landing on it but not on its successor, so in an h2, .sidebar, p sequence the paragraph takes 24 instead of heading-close's 16."@en ;
+  model:basis model:assumed .
+
+claim:detail-selector-change-left-ramp-unchanged a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "Changing the ramp's selectors from article.detail to .detail left every rhythm gap unchanged."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured all 31 sibling gaps on a real article before and after the change; identical."@en ] .
+
+# ── What the ramp's rules give ────────────────────────────────────────────────
+
+claim:rhythm-paragraph-is-the-default-between-adjacent-blocks a model:Decision ;
+  dcterms:subject concept:rhythm-token, concept:sibling-margin ;
+  dcterms:description "rhythm-paragraph (24) is the space any two adjacent blocks take, the base rule of the rhythm ramp."@en ;
+  model:basis model:unattributed .
+
+claim:rhythm-block-is-what-adjacent-blocks-take a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "rhythm-block (48) is what any two adjacent blocks take."@en ;
+  model:basis model:unattributed .
+
+claim:heading-close-spaces-a-heading-from-its-copy a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "rhythm-heading-close (16) is the space between a heading and the copy bound to it."@en ;
+  model:basis model:unattributed .
+
+claim:heading-close-follows-an-h1 a model:Decision ;
+  dcterms:subject concept:rhythm-token, concept:vertical-rhythm ;
+  dcterms:description "What follows an h1 is spaced rhythm-heading-close, because a title is bound to what follows it the way a heading is bound to its paragraph."@en ;
+  model:basis model:unattributed .
+
+claim:rhythm-ramp-heading-close-covers-h2-to-h4-not-h1 a model:RepoFact ;
+  dcterms:subject concept:rhythm-token, concept:sibling-margin ;
+  dcterms:description "The rhythm ramp's heading-close rule covers h2 to h4 and leaves the h1 out."@en .
+
+claim:rhythm-block-pair-removed a model:Decision ;
+  dcterms:subject concept:rhythm-token, concept:sibling-margin ;
+  dcterms:description "Lists, quotes, figures and code no longer take rhythm-block above and below; they take rhythm-paragraph like any two adjacent blocks."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-02"^^xsd:date .
+
+claim:design-md-never-assigns-rhythm-block-to-blocks a model:RepoFact ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "DESIGN.md names rhythm-block as a token and never says lists, quotes, figures or code consume it."@en .
+
+claim:detail-ramp-puts-rhythm-block-around-lists a model:RepoFact ;
+  dcterms:subject concept:rhythm-token, concept:sibling-margin ;
+  dcterms:description "The .detail ramp puts rhythm-block (48) above and below a list as a block."@en .
+
+claim:detail-ramp-gives-figure-rhythm-block a model:RepoFact ;
+  dcterms:subject concept:rhythm-token, concept:sibling-margin ;
+  dcterms:description "The rhythm ramp gives a figure the block gap (48) and a bare img the base 24."@en .
+
+claim:rhythm-block-after-attributed-quote a model:Decision ;
+  dcterms:subject concept:rhythm-token, concept:sibling-margin ;
+  dcterms:description "An attributed quotation takes rhythm-block (48) after it, and only below it; a bare quote and the space above any quote stay at rhythm-paragraph."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-22"^^xsd:date .
+
+claim:attribution-sits-rhythm-paragraph-below-its-quote a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "A quotation's attribution sits rhythm-paragraph (24) below its quote rather than a caption's rhythm-tight (8)."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-22"^^xsd:date .
+
+claim:reviews-page-puts-rhythm-block-between-reviews a model:RepoFact ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "The Reviews page puts rhythm-block between one review's byline and the next quote."@en .
+
+claim:quote-blocks-take-rhythm-paragraph a model:Decision ;
+  dcterms:subject concept:sibling-margin, concept:rhythm-token ;
+  dcterms:description "Blocks inside a blockquote are spaced rhythm-paragraph apart, as body prose is, with one element rule."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-22"^^xsd:date .
+
+claim:p-plus-p-leaves-other-block-transitions-at-zero a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "A `p + p` rule separates paragraphs and leaves every other block transition at zero."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Seen on /reviews: a review stored as p, p, ul, p kept its list jammed against the paragraphs either side while the paragraphs looked right."@en ] .
+
+claim:star-plus-star-without-child-combinator-matches-list-items a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "Without the child combinator, `* + *` also matches `li + li` and spaces every list item."@en ;
+  model:basis model:assumed .
+
+claim:vertical-margin-on-inline-box-does-nothing a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "A vertical margin on an inline box does nothing."@en ;
+  model:basis model:assumed .
+
+claim:li-li-margin-removed a model:Decision ;
+  dcterms:subject concept:sibling-margin, concept:rhythm-token ;
+  dcterms:description "There is no global li + li margin: list items are separated by their leading alone, and a list that wants item spacing asks for it locally."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-02"^^xsd:date .
+
+claim:eight-components-cancelled-li-li-margin a model:RepoFact ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "Eight places wrote li + li { margin-top: 0 } purely to cancel the global li + li margin."@en .
+
+claim:design-md-never-assigns-rhythm-item-to-lists a model:RepoFact ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "DESIGN.md names rhythm-item as a token and never says a list consumes it."@en .
+
+claim:nav-card-and-chip-lists-space-items-with-gap a model:RepoFact ;
+  dcterms:subject concept:container-gap ;
+  dcterms:description "Nav, card and chip lists take their item spacing from a flex or grid gap."@en .
+
+# ── The floated thumbnail ─────────────────────────────────────────────────────
+
+claim:float-sits-where-it-would-have-sat-in-flow a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "A float is placed where it would have sat in flow, so its top margin is measured from the same edge as the next block's."@en ;
+  model:basis model:assumed .
+
+claim:figure-thumbnail-aligns-with-following-title a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "Rendered as a figure rather than a bare image, a floated thumbnail's top aligns with the title after it with no rule added."@en ;
+  model:basis model:assumed .
+
+claim:thumbnail-sat-24px-proud-after-pair-removal a model:Observation ;
+  dcterms:subject concept:sibling-margin, concept:rhythm-token ;
+  dcterms:description "After the rhythm-block pair was removed, a floated thumbnail's cover sat 24px above the title beside it."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured, not inferred, on the reading-list article."@en ] .
+
+claim:thumbnail-takes-rhythm-heading-minor-at-md a model:Decision ;
+  dcterms:subject concept:rhythm-token, concept:sibling-margin ;
+  dcterms:description "From md, a floated thumbnail takes rhythm-heading-minor above it, the token the h3 rule reads, so its top aligns with the title."@en ;
+  model:basis model:unattributed .
+
+claim:float-adds-nothing-to-parent-height a model:Observation ;
+  dcterms:subject concept:vertical-rhythm ;
+  dcterms:description "A float contributes nothing to its parent's height, so a margin on it costs no vertical space."@en ;
+  model:basis model:assumed .
+
+# ── Tokens and the scale ──────────────────────────────────────────────────────
+
+claim:grid-owns-horizontal-rhythm-owns-vertical a model:Decision ;
+  dcterms:subject concept:vertical-rhythm, concept:rhythm-token ;
+  dcterms:description "Horizontal spacing between columns comes from grid tokens and vertical spacing from rhythm tokens."@en ;
+  model:basis model:unattributed .
+
+claim:rhythm-tokens-not-prevented-from-horizontal-gaps a model:Observation ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "Nothing stops a rhythm token being used for a horizontal gap."@en ;
+  model:basis model:assumed .
+
+claim:figma-refuses-rhythm-tokens-for-widths a model:Observation ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "In Figma, space and rhythm variables are scoped to GAP and never WIDTH_HEIGHT, so Figma refuses to offer a rhythm token where a width belongs."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "The contact form's 48px input height surfaced in Figma as a missing role (field-height) rather than being bound to a spacing token."@en ] .
+
+claim:wrapped-column-row-gap-uses-rhythm-heading-major a model:Decision ;
+  dcterms:subject concept:container-gap, concept:rhythm-token ;
+  dcterms:description "A wrapped column's row gap is vertical and so takes a rhythm token, rhythm-heading-major."@en ;
+  model:basis model:unattributed .
+
+claim:spacing-scale-derives-from-body-line-box a model:Decision ;
+  dcterms:subject concept:vertical-rhythm, concept:rhythm-token ;
+  dcterms:description "The spacing scale is built on the 32.4px body line box rounded to 32px, with space-1 to space-7 as quarter-unit to three-unit steps."@en ;
+  model:basis model:unattributed .
+
+claim:nothing-runs-on-a-baseline-grid a model:Decision ;
+  dcterms:subject concept:vertical-rhythm ;
+  dcterms:description "Nothing runs on a baseline grid, so the spacing unit need only be commensurate with the line box, not equal to it."@en ;
+  model:basis model:unattributed .
+
+claim:white-around-h2-is-about-2-5-to-1 a model:Observation ;
+  dcterms:subject concept:vertical-rhythm ;
+  dcterms:description "Because of half-leading, the white above an h2 measures about 81px and below it about 33px, about 2.5:1 rather than the 4:1 the token values suggest."@en ;
+  model:basis model:assumed .
+
+claim:rhythm-paragraph-is-three-quarters-of-a-line a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "rhythm-paragraph is three quarters of a line box rather than a full one."@en ;
+  model:basis model:unattributed .
+
+claim:rhythm-band-and-section-are-band-padding a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "rhythm-band and rhythm-section are two values of one property, a band's vertical padding, chosen per band by how it reads."@en ;
+  model:basis model:unattributed .
+
+claim:bands-stack-at-gap-zero a model:RepoFact ;
+  dcterms:subject concept:vertical-rhythm ;
+  dcterms:description "Bands stack with no space between them, so band-to-band space is two paddings."@en .
+
+claim:hero-takes-rhythm-band a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "The Hero band takes rhythm-band rather than rhythm-section."@en ;
+  model:basis model:unattributed .
+
+claim:spacing-token-named-only-when-shared a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "A spacing token earns a name only when more than one thing uses it or its values move as a set; one-off component spacing binds a space-N primitive."@en ;
+  model:basis model:unattributed .
+
+claim:four-spacing-values-shared-by-multiple-roles a model:RepoFact ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "Four spacing values (8, 16, 48, 64) are each shared by two or more spacing roles."@en .
+
+claim:shared-spacing-values-caused-wrong-bindings-twice a model:RepoFact ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "Spacing roles that share a value have already produced wrong bindings twice."@en .
+
+claim:pick-spacing-token-by-prefix-then-name a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "A spacing token is picked by prefix first, then by name, and never by value."@en ;
+  model:basis model:unattributed .
+
+claim:type-derived-spacing-does-not-vary-by-viewport a model:Decision ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "Type-derived spacing does not change between viewports; only the page-derived band, section and chrome-inset roles vary."@en ;
+  model:basis model:unattributed .
+
+claim:three-of-twenty-four-spacing-roles-vary a model:RepoFact ;
+  dcterms:subject concept:rhythm-token ;
+  dcterms:description "Only three of the twenty-four spacing roles vary by viewport."@en .
+
+# ── Figma ─────────────────────────────────────────────────────────────────────
+
+claim:figma-frame-has-one-gap a model:Observation ;
+  dcterms:subject concept:container-gap ;
+  dcterms:description "A Figma auto-layout frame has one gap, so Figma expresses the rhythm as nested auto-layout."@en ;
+  model:basis model:assumed .
+
+claim:figma-and-css-rhythm-mechanics-differ-by-design a model:Decision ;
+  dcterms:subject concept:container-gap, concept:sibling-margin ;
+  dcterms:description "Figma's nested auto-layout and the CSS sibling margins share the scale and role names but not their mechanics, and are not reconciled."@en ;
+  model:basis model:unattributed .
+
+# ── Components with real wrappers ─────────────────────────────────────────────
+
+claim:space-after-page-header-belongs-to-parent-band a model:Decision ;
+  dcterms:subject concept:vertical-rhythm ;
+  dcterms:description "The space after the page header belongs to its parent band, not the component, so pages may differ there."@en ;
+  model:basis model:unattributed .
+
+claim:title-band-padding-is-64-above-16-below a model:Decision ;
+  dcterms:subject concept:rhythm-token, concept:vertical-rhythm ;
+  dcterms:description "The page title's band padding is asymmetric: 64 above the title block and 16, rhythm-heading-close, below."@en ;
+  model:basis model:unattributed ;
+  dcterms:date "2026-08-26"^^xsd:date .
+
+claim:display-contents-leaves-no-box-for-gap a model:Observation ;
+  dcterms:subject concept:container-gap ;
+  dcterms:description "Under display: contents an element has no box for a gap to belong to, and its children become the parent's grid items."@en ;
+  model:basis model:assumed .
+
+claim:page-header-margins-give-same-spacing-in-both-modes a model:Observation ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "The page header's two margin rules produce the same spacing whether the header is an ordinary block or display: contents."@en ;
+  model:basis model:assumed .
+
+claim:lead-gets-no-paragraph-spacing a model:Decision ;
+  dcterms:subject concept:sibling-margin ;
+  dcterms:description "No rule spaces a second paragraph in a page lead: a lead is one paragraph, and a second block butting against the first is the signal."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-08-28"^^xsd:date .
+
+claim:contact-board-copy-to-form-gap-is-48 a model:Observation ;
+  dcterms:subject concept:container-gap, concept:rhythm-token ;
+  dcterms:description "The Contact board draws 48 between the Get in Touch copy and the form."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured off the board's desktop variant (506:4478): the header frame is 147 tall and the form frame starts at 195."@en ] .
+
+claim:contact-board-heading-to-message-is-16 a model:Observation ;
+  dcterms:subject concept:container-gap, concept:rhythm-token ;
+  dcterms:description "The Contact board draws 16 between the Get in Touch h2 and its message."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Read off the board: the h2 text is 35 tall, ending at y=35, with the message starting at y=51."@en ] .
+
+claim:gap-is-inert-with-one-child a model:Observation ;
+  dcterms:subject concept:container-gap ;
+  dcterms:description "A container's gap is inert when it has only one child."@en ;
+  model:basis model:assumed .

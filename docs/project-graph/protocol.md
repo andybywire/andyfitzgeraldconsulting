@@ -66,10 +66,10 @@ correct it is.** That rules out the most likely way for C to win unfairly:
   that a belief was disproved, as CardMasonry does with "measured wrong first", that invalidation
   is encoded, because the comment says it. It is never inferred. *(Clarified 2026-10-17, before
   any run, when the claim model was decided; see [claim-model.md](claim-model.md).)*
-- **The annotations are made blind,** by a fresh session given only concepts.ttl, model.ttl and a
-  self-contained annotation guide. It never sees anything in `docs/project-graph/`: this protocol
-  and the inventory hold the answers, and even id-design.md and claim-model.md name
-  contradictions. The guide restates the rules it needs. Recognizing that
+- **The annotations are made blind,** by a fresh headless process (see the harness) given only
+  concepts.ttl, model.ttl and a self-contained annotation guide. It never sees anything in
+  `docs/project-graph/`: this protocol and the inventory hold the answers, and even id-design.md
+  and claim-model.md name contradictions. The guide restates the rules it needs. Recognizing that
   two comments state the same claim is the judgment the experiment turns on, and whoever makes it
   must not know what the tasks score. *(Decided by Andy, 2026-10-17, before any run.)* The
   annotator is **Opus 5.5 (`claude-opus-5-5`) at high effort** (Andy, 2026-10-17), and the guide's
@@ -190,23 +190,98 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
 
 - **3 runs per task per arm:** 5 tasks × 3 arms × 3 = **45 sessions.** A budget check comes before
   any of them, and T5 can drop to 2 runs if that is too many.
-- **Every run is a fresh session,** with fresh context, in its own worktree from the arm's branch.
-  The same model and effort throughout, recorded with each run.
+- **Every run is a fresh headless process,** launched by the harness below, in its own worktree
+  from the arm's branch: never a session started from the desktop app. The same model and effort
+  throughout, recorded with each run.
 - **The order is round-robin across arms,** fixed and written here before the first run, so model
   or time-of-day drift spreads evenly across arms.
-- **Recorded for every run:** session id, arm, task, run number, model, the cost figures, and the
-  answer text. They go in `docs/project-graph/runs/`.
+- **Recorded for every run:** the harness's JSON for it (session id, answer text, tokens, turns,
+  time, cost), plus arm, task, run number, model and effort, and the session's transcript for
+  the tool calls and files read. They go in `docs/project-graph/runs/`.
 - **Grading:** rubric items are scored against the ground truth by checking the answer text. Andy
   grades with the arm labels removed. **Blinding is partial:** an arm C answer may mention a query,
   which reveals its arm. The objective scores (T2 recall, T3 recall) carry the most weight for that
   reason.
 
+## The headless harness *(decided by Andy, 2026-10-18)*
+
+**Why not sessions started from the desktop app.** The guide's trial, run that way on 2026-10-17,
+showed three leaks the protocol's design never accounted for:
+
+1. **Auto-memory reached it.** Memory is documented as one folder per repository, shared by every
+   worktree, and the trial session was handed this checkout's index, which describes this
+   experiment, and even told to write to it.
+2. **The app gives sessions started by another session a shared notes folder,** keyed to the
+   session that started them, and tells them to "read siblings' notes there". It is undocumented
+   and has no switch, and the trial annotator left a note in it.
+3. **The app wraps the prompt** in text of its own ("Background (from the session that started
+   this one) … Task: …") and appends the notes line, so no prompt reached a session verbatim.
+
+A headless CLI process avoids all three by construction: no app, so no notes folder and no
+wrapper; and memory off for that launch. It also gives the measurements directly.
+
+**What it is:** `docs/project-graph/harness/`, planned here and not yet built. It lives in
+`docs/project-graph/` because it lists the tasks and arms, and nothing in that folder reaches an
+arm. For each run, in the fixed order:
+
+1. **A fresh worktree,** `git worktree add --detach <runs-root>/<run-id> <arm-branch>`, outside this
+   checkout, so no app ever lists or touches it.
+2. **The launch,** with the worktree as the working directory and nothing on stdin:
+
+   ```bash
+   CLAUDE_CODE_DISABLE_AUTO_MEMORY=1 claude -p "<the task's prompt, verbatim>" \
+     --model <model> --effort <effort> --output-format json --max-budget-usd <cap> \
+     --allowedTools "<the same list for every arm>" --disallowedTools "Edit Write NotebookEdit"
+   ```
+
+   `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` is documented as "does not create or load auto memory
+   files". `--bare` would also turn memory off, but it drops CLAUDE.md, where each arm's section
+   lives, so it is not used. **The allowed tools are identical for every arm**: reading, searching,
+   and `node project-graph/*`, which simply does not exist in arm A. Arm C calls
+   `node project-graph/graph.mjs` directly, never `pnpm graph`, which settles precondition 6.
+3. **Capture:** the JSON goes to `runs/<run-id>.json` as it is. The session's transcript, which
+   headless runs still save, is copied beside it for the tool calls and files read.
+4. **An isolation check on every transcript,** automated: none of "MEMORY.md", "persistent
+   file-based memory", "side-session-notes", "Shared notes folder" or "Background (from the
+   session that started this one)", and the first user message equal to the prompt. **A run that
+   fails is invalid, and the schedule stops.**
+5. **The worktree is removed,** and the next run starts only after this one finishes. Sequential,
+   not parallel, so runs can't contend or order themselves.
+
+**The annotation is launched the same way,** with `--permission-mode acceptEdits` in place of the
+disallowed edit tools, since it must write tags and `claims.ttl`. A trial rerun of the guide uses
+it too.
+
+**Still to decide before the first run:** the runs' model and effort (only required to be the same
+across arms), the per-run cap `--max-budget-usd`, and a total budget at which the schedule stops.
+
+### The canary: proving both leaks closed before anything real runs
+
+Two cheap, throwaway runs through the harness, each in a worktree of `pg-guide-trial`, with a
+neutral prompt: *"List the files in project-graph/ and say in one sentence what concepts.ttl
+holds. Don't change anything."*
+
+- **The canary,** exactly as the harness launches. **Passes** only if every one of these holds:
+  - its JSON parses and carries tokens, turns, time and cost;
+  - its transcript passes step 4's isolation check;
+  - this checkout's memory folder is byte-identical before and after;
+  - the side-session notes folder gains nothing;
+  - the reported cost is within the cap.
+- **The control,** identical but **without** `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. It must **fail**
+  the isolation check, with memory text in its transcript. That proves the check can see a leak, by
+  the rule every gate in this repo is held to: a check isn't known to work until it has failed.
+
+**Why both, on this machine:** Claude Code here is 2.1.150, and some of what the docs describe is
+documented for later versions. Nothing about the environment variable is assumed until the
+canary and its control agree.
+
 ## Preconditions for stage 5
 
 1. **Auto-memory cannot reach the runs.** This checkout's memory contains T1's answer and a note
-   about this experiment. Verify that a session in an arm worktree loads none of it. If it does,
-   the runs need another arrangement before they start, because a leak would favor every arm
-   alike and hide the effect.
+   about this experiment. **Tested on 2026-10-17 and it FAILED:** the guide's trial, started from
+   the desktop app in a worktree, was handed this checkout's memory index (guide-trial.md,
+   criterion D). The precondition is now **the canary and its control** above, and the harness
+   checks every run's transcript besides.
 2. **The ground truth is verified.** T2's must-find list and every hard contradiction are read at
    `086dd0f` by hand. The contradictions are done (inventory.md marks each); T2's list is not.
 3. **The arm diffs are clean,** checked against the rule above.
@@ -236,6 +311,11 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
    C calls the graph's tools, so that cost would land in its wall time and context alone. Before
    the runs, settle one: arm C's CLAUDE.md section calls `node project-graph/graph.mjs` directly,
    which needs no install, or every arm's worktree is installed before its session starts.
+   **Settled 2026-10-18 by the harness:** the direct `node` call, which also needs no install for
+   the annotator.
+7. **No session can read another's notes** *(added 2026-10-18)*. The desktop app's side-session
+   notes folder is closed by launching nothing from the app: annotation, trial reruns and runs all
+   go through the harness. The canary checks it, and so does every run's isolation check.
 
 ## How the results are read
 

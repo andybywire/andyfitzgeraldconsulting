@@ -1,0 +1,29 @@
+{
+  "model": "claude-opus-5-5",
+  "assistant_messages": 28,
+  "usage": {
+    "input_tokens": 56,
+    "output_tokens": 51574,
+    "cache_read_input_tokens": 4786631,
+    "cache_creation_input_tokens": 183479
+  },
+  "tool_calls": {
+    "mcp__ccd_turn__update_plan": 2,
+    "Bash": 15,
+    "Read": 9,
+    "Write": 2,
+    "Edit": 17,
+    "mcp__ccd_turn__wrap_up": 1
+  },
+  "tool_calls_total": 46,
+  "wall_time_minutes": 7.9,
+  "files_read": {
+    "web/src/styles/base.css": 3,
+    "DESIGN.md": 3,
+    "docs/decisions/layout.md": 1,
+    "web/src/components/PageHeader.astro": 1,
+    "web/src/components/bands/GetInTouchBand.astro": 1
+  },
+  "ran_graph_check": true,
+  "ran_graph_query": false
+}
