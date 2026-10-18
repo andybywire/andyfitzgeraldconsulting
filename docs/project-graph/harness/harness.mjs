@@ -44,8 +44,9 @@
  *
  * Proven by failing first: the test that plants CLAUDE_EFFORT failed against the old filter.
  *
- * NOT YET PROVEN END TO END. Built 2026-10-18 and verified without launching anything (see
- * harness.test.mjs, and protocol.md → "The headless harness"). The canary is its first real run.
+ * Proven end to end by the canary on 2026-10-18, after being built and verified without
+ * launching anything the same day (see harness.test.mjs). protocol.md → "The canary's result"
+ * records the run, and four things it found for this file to fix before any real run.
  */
 import {spawnSync} from 'node:child_process'
 import {createHash} from 'node:crypto'

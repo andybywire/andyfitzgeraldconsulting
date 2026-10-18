@@ -252,7 +252,8 @@ order:
 disallowed edit tools, since it must write tags and `claims.ttl`. A trial rerun of the guide uses
 it too.
 
-**Built 2026-10-18, verified offline, NOT yet run.** `harness.mjs` is the per-run machinery:
+**Built 2026-10-18, verified offline, then run the same day by the canary, which passed** (see
+"The canary's result" below). `harness.mjs` is the per-run machinery:
 `runOne()`, plus a `dry-run` command that creates and removes a worktree and prints the launch.
 `canary.mjs` is the canary and its control, and `harness.test.mjs` holds 10 tests that need no
 launch. Two additions to the launch above, found in the CLI's help: `--permission-mode dontAsk`,
@@ -278,15 +279,16 @@ Andy's MCP connections (Sanity, Figma, ClickUp) attach to a run. Verified withou
   old filter and passes against the new one, and against this session's real environment a launch
   keeps none of its 30 `CLAUDE*` variables but the memory switch.
 
-**What only the canary can prove:** that `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` works on this
-machine's Claude Code (2.1.150), that the JSON carries the fields runs need, and that a headless
-run's transcript is found and is clean. One known uncertainty: a session launched from inside
+**What only the canary can prove:** that `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` works on the Claude
+Code the harness launches, that the JSON carries the fields runs need, and that a headless run's
+transcript is found and is clean. One known uncertainty: a session launched from inside
 another Claude Code session may have memory off whatever the harness does. The harness removes
 every inherited `CLAUDE*` variable for that reason. If the control still doesn't leak,
 `canary.mjs` reports "inconclusive" (exit 3), and it must be run from a plain terminal.
 
 **Still to decide before the first run:** the runs' model and effort (only required to be the same
 across arms), the per-run cap `--max-budget-usd`, and a total budget at which the schedule stops.
+The canary measured the floor: loading the context alone costs about $0.40 a run (see below).
 
 ### The canary: proving both leaks closed before anything real runs
 
@@ -304,9 +306,41 @@ holds. Don't change anything."*
   the isolation check, with memory text in its transcript. That proves the check can see a leak, by
   the rule every gate in this repo is held to: a check isn't known to work until it has failed.
 
-**Why both, on this machine:** Claude Code here is 2.1.150, and some of what the docs describe is
-documented for later versions. Nothing about the environment variable is assumed until the
-canary and its control agree.
+**Why both, on this machine:** some of what the docs describe is documented for later versions
+than the one installed, so nothing about the environment variable is assumed until the canary and
+its control agree.
+
+*Corrected 2026-10-18.* This read "Claude Code here is 2.1.150". That was the version of the
+standalone CLI at `~/.local/bin/claude`, which nothing had run on yet. The desktop app runs its
+own copy, 2.1.299 that day, and the guide's trial ran on it. The harness launches the standalone
+CLI, updated to 2.1.302 for the canary.
+
+**The canary's result** (2026-10-18). It passed, recorded under precondition 1. What it found
+besides:
+
+- **Two attempts failed first, neither a leak, both at $0.** The standalone CLI had never been
+  logged in: the app authenticates its own sessions in a way a child process cannot use, under any
+  environment filter. Andy ran `claude auth login` with the claude.ai Team account. The CLI, at
+  2.1.150, was then too old for Opus 5.5, which needs 2.1.280 or newer, and `claude update` took
+  it to 2.1.302. Both attempts' output was deleted.
+- **A transcript at 2.1.302 holds the system prompt and the request's parameters,** about 500 KB a
+  run. So the isolation check now covers the system prompt as well, and each run's effort can be
+  read back afterward from `output_config`. Both runs showed `low`, as launched. A search of both
+  transcripts for credentials found none.
+- **Context costs about $0.40 a run before any work:** some 47K tokens of system prompt,
+  CLAUDE.md and the listing of Andy's user-level skills, at Opus 5.5. The canary cost $0.40 and the
+  control $0.42, counted against the Team plan's usage rather than billed. A run cannot invoke
+  those skills, since `dontAsk` refuses any unlisted tool, and the listing is the same in every
+  arm.
+- **Four things for the harness, before any real run:**
+  1. `runOne()` marked both failed attempts `isolated: true`. Only the canary's own check of the
+     exit code stopped them. A run's validity must also require exit 0 and no `is_error`.
+  2. The CLI updates itself, so its version could change partway through a schedule. Turn
+     auto-update off for runs, and record the version in every run's record.
+  3. `claude` is found on the PATH, and a login shell finds a leftover npm install first,
+     `/opt/homebrew/bin/claude` at 2.1.63. Launch by absolute path.
+  4. Claude Code keeps its own copy of each run's transcript, in a new folder per run under
+     `~/.claude/projects/`. The harness copies it and leaves the original.
 
 ## Preconditions for stage 5
 
@@ -315,6 +349,15 @@ canary and its control agree.
    the desktop app in a worktree, was handed this checkout's memory index (guide-trial.md,
    criterion D). The precondition is now **the canary and its control** above, and the harness
    checks every run's transcript besides.
+   **MET 2026-10-18.** The canary ran from inside a desktop-app session, from `pg-guide-trial`
+   (`4f0eb92`), on Claude Code 2.1.302 with Opus 5.5 at low effort, and exited 0. Its record is
+   `runs/canary-2026-10-18T20-16-24-649Z/`. The canary was isolated: its memory folder was
+   byte-identical, and none of the 14 memory files is named anywhere in its transcript, a wider
+   search than the banned list. The control loaded this checkout's memory index as an `AutoMem`
+   attachment, from a worktree outside the checkout, and was flagged for it. That shows the check
+   can see a leak, and that memory follows the repository rather than the worktree's path. The
+   inconclusive case did not arise: with every `CLAUDE*` variable removed, a launch from inside a
+   session still loads memory when it is allowed to.
 2. **The ground truth is verified.** T2's must-find list and every hard contradiction are read at
    `086dd0f` by hand. The contradictions are done (inventory.md marks each); T2's list is not.
 3. **The arm diffs are clean,** checked against the rule above.
