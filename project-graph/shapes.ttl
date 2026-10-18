@@ -1,12 +1,13 @@
-# SHACL shapes for the Project Graph: what `pnpm graph check` holds the data to.
+# SHACL shapes for the Project Graph: what `node project-graph/graph.mjs check` holds the data to.
 #
 # Two parts: the integrity of the concept scheme (stage 3c), then claims, their provenance and the
 # code locations that cite them (stage 4, built to docs/project-graph/claim-model.md).
 #
-# EVERY CONSTRAINT HAS A PLANTED CASE in tests/, and `pnpm graph test` runs them all: each must
-# fail with this file's message for its constraint, or conform where a rule must allow something.
-# Change a shape here, run the test, and it shows which case the change stopped catching. tests/ is
-# the only record of what is proven. A list here as well would be a second copy to drift.
+# EVERY CONSTRAINT HAS A PLANTED CASE in tests/, and `node project-graph/graph.mjs test` runs them
+# all: each must fail with this file's message for its constraint, or conform where a rule must
+# allow something. Change a shape here, run the test, and it shows which case the change stopped
+# catching. tests/ is the only record of what is proven. A list here as well would be a second
+# copy to drift.
 #
 # THREE SOURCES, and each constraint says which one it comes from:
 #
