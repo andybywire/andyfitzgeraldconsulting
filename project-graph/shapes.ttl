@@ -26,7 +26,8 @@
 #
 # THE CHECK FAILS ON WHAT IS KNOWN TO BE WRONG, NEVER ON WHAT IS MERELY UNKNOWN (claim-model.md).
 # A claim must SAY how it is known, even if that is "assumed" or "unattributed", and a query
-# lists the weak ones. But a tag that cites a claim a measurement overturned is a violation.
+# lists the weak ones. But a tag that cites a claim a measurement or a later decision overturned
+# is a violation.
 #
 # SPARQL where SHACL Core can't do the job: a cycle in `skos:broader`, a label shared between two
 # concepts, a tag citing an overturned claim, and the two tag rules whose report must say which
@@ -281,11 +282,22 @@ shape:Measurement
     sh:path prov:used ;
     sh:class skos:Concept ;
     sh:message "What a measurement used must be a concept in the scheme, such as concept:headless-chrome. Is a slug mistyped?" ;
-  ] ;
+  ] .
+
+# ── Overturning: what is overturned must be a claim ──────────────────────────
+
+# claim-model.md: a measurement overturns a belief, and the activity that made a later decision
+# overturns the decision it replaced. Both use prov:invalidated, so this targets whatever uses it,
+# not measurements only. It was a property of the measurement shape until replaced decisions came
+# in, and then a mistyped slug from a decision pointed at nothing and failed silently: the rule
+# that spreads a correction simply never fired.
+shape:Overturning
+  a sh:NodeShape ;
+  sh:targetSubjectsOf prov:invalidated ;
   sh:property [
     sh:path prov:invalidated ;
     sh:class model:Claim ;
-    sh:message "What a measurement overturned must be a claim. Is its slug mistyped?" ;
+    sh:message "What prov:invalidated points at must be a claim. Is its slug mistyped?" ;
   ] .
 
 # ── Decisions: who made it? ───────────────────────────────────────────────────
@@ -373,12 +385,12 @@ shape:CodeLocation
     """ ;
   ] ;
 
-  # THE RULE THAT SPREADS A CORRECTION: a comment that relies on a claim a measurement overturned
-  # relies on something known to be wrong. The overturned claim has one id, so every comment still
-  # citing it fails here, wherever it is.
+  # THE RULE THAT SPREADS A CORRECTION: a comment that relies on a claim a measurement overturned,
+  # or on a decision a later decision replaced, relies on something known to be no longer true.
+  # The overturned claim has one id, so every comment still citing it fails here, wherever it is.
   sh:sparql [
     a sh:SPARQLConstraint ;
-    sh:message "{?file}:{?line} This comment's @claim tag cites {?value}, which a measurement overturned. The comment relies on something known to be wrong." ;
+    sh:message "{?file}:{?line} This comment's @claim tag cites {?value}, which a measurement or a later decision overturned. The comment relies on something known to be no longer true." ;
     sh:prefixes pg:shapes ;
     sh:select """
       SELECT $this ?value ?file ?line

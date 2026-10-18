@@ -96,6 +96,13 @@
  * without its citation branch, `settled` accepting any kind of claim, `weak` not requiring a gap,
  * `automation-only` not excluding real-browser evidence, and queries.mjs skipping the slug check.
  *
+ * Replaced decisions, 2026-10-18. A decision a later one replaced is overturned the way a belief
+ * is, through `prov:invalidated`, so the check that its target is a claim moved from the
+ * measurement shape to a shape on whatever uses `prov:invalidated`. Five cases were planted before
+ * the change, and the three that could fail did: a mistyped slug from a decision, the rule's
+ * wording, and `claim` showing what replaced a decision. Removing the new shape in a copy then
+ * broke exactly the two mistyped-slug cases, the measurement's and the decision's.
+ *
  * ── NEITHER TOOL'S EXIT STATUS CAN BE TRUSTED ON ITS OWN ────────────────────
  *
  * Both were probed by hand before this was written; jena.mjs lists what that found.
