@@ -1379,11 +1379,15 @@ following `h4` still wraps beside the cover while its list clears, that heading 
 the image. The richer fix is `display: flow-root` on the lists, which makes each a block sitting
 *beside* the float at reduced width with its markers intact. Reach for it only if the stranding shows.
 
-**Switching from a bare `image` block to `figure` fixed the top alignment for free** — worth knowing,
-because it looks like it should need a rule. The rhythm ramp gives a bare `<img>` the base `* + *`
-(24px) and a `<figure>` the block gap (48px), while the heading after it takes `* + h3` (48px) either
-way. A float sits where it would have sat in flow, so as an image the title started 24px below the
-cover and as a figure they align with nothing added.
+**The top alignment is an explicit rule, keyed to the heading's token, not a free one.**
+A float sits where it would have sat in flow, so the cover and the title after it start together
+only while the figure's top margin equals `* + h3`'s. At md and up the thumbnail rule,
+`.detail > * + figure[data-thumbnail]`, takes `--rhythm-heading-minor`, the token the h3 step reads,
+so if that step moves, the cover moves with it. A float adds no height, so this reopens none of the
+air removed on 2026-09-02, and below md, where the figure is an ordinary block in flow, it keeps the
+base 24. Until 2026-09-02 the two matched by luck: the `rhythm-block` pair gave a `figure` 48, as
+`* + h3` gives the heading, and this paragraph called that free. When the pair went, every cover sat
+24px proud of its title until the rule was written into base.css.
 
 ### Search — specified 2026-08-21, built in phase 4
 
