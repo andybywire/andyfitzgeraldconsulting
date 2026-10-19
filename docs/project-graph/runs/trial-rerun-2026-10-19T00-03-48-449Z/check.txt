@@ -1,0 +1,6 @@
+exit 1
+1 shape violation:
+
+Node=_:Baa980eef3f369b65d826cf21312572dc
+  Value: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#figure-gets-block-gap-so-thumbnail-aligns-for-free>
+  Message: DESIGN.md:1417 This comment's @claim tag cites <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#figure-gets-block-gap-so-thumbnail-aligns-for-free>, which a measurement or a later decision overturned. The comment relies on something known to be no longer true.

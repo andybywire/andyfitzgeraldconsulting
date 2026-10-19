@@ -1,0 +1,156 @@
+{
+  "id": "trial-rerun-2026-10-19T00-03-48-449Z",
+  "branch": "pg-guide-trial",
+  "commit": "6e707c5",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "Annotate the comments in these files by following `project-graph/annotation-guide.md`: `web/src/styles/base.css`, `DESIGN.md`, `docs/decisions/layout.md`, `CLAUDE.md`, `web/src/components/PageHeader.astro` and `web/src/components/bands/GetInTouchBand.astro`. Work only in those files, and only on comments about the concepts in `project-graph/concepts.ttl`.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "25",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Edit Write Bash(node project-graph/graph.mjs *)"
+  ],
+  "wallMs": 578008,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 566825,
+    "stop_reason": "end_turn",
+    "session_id": "997d45c0-53a2-4180-a003-ea0026bfea7a",
+    "total_cost_usd": 3.4694479999999994,
+    "usage": {
+      "input_tokens": 58,
+      "cache_creation_input_tokens": 174342,
+      "cache_read_input_tokens": 3792700,
+      "output_tokens": 65797,
+      "output_tokens_details": {
+        "thinking_tokens": 32842
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 174342,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1970,
+          "cache_read_input_tokens": 186451,
+          "cache_creation_input_tokens": 757,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 757
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 58,
+        "outputTokens": 65797,
+        "cacheReadInputTokens": 3792700,
+        "cacheCreationInputTokens": 174342,
+        "webSearchRequests": 0,
+        "costUSD": 3.4694479999999994,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 32842,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01Uz6QFTtbmNNS7ThzvrY14n",
+        "tool_input": {
+          "command": "sed -n 150,400p project-graph/shapes.ttl | grep -v '^\\s*$' | grep -E 'message|targetClass' ",
+          "description": "List claim shape messages"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01UiJwpecSNc76GaSov7ShJw",
+        "tool_input": {
+          "command": "node project-graph/graph.mjs check; echo \"exit $?\"; git diff --stat",
+          "description": "Run the graph check and summarize the diff"
+        }
+      }
+    ],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 78,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "I've tagged 47 comments across the six files and recorded 92 claims in a new file, `project-graph/claims.ttl`. Nothing is committed. No existing text changed; the only additions are tag lines and that new file. Prettier passes on all six files. Running it through `pnpm exec` also installed `node_modules` in this worktree, which wasn't there before.\n\n`node project-graph/graph.mjs check` reports one violation, and per the guide I left it in place. `DESIGN.md:1417` (the paragraph saying \"switching from a bare `image` block to `figure` fixed the top alignment for free\") cites `figure-gets-block-gap-so-thumbnail-aligns-for-free`. base.css's thumbnail comment says it measured that this stopped being true once the `rhythm-block` pair was removed, so it is recorded as overturned. The check reports nothing about form.\n\n**Comments I wasn't sure were in scope**\n- **Included:** base.css's `hidden` note. It says an author `display` rule \"beats it on source order\", which is a statement about source order, but the comment is mainly about the `hidden` attribute.\n- **Included:** base.css's quotation-caption note, the PageHeader note on the lead's single paragraph, and layout.md's sections on band padding and token naming. They are about vertical space, but not always the ramp itself.\n- **Left out, as only passing mentions:**\n  - the \"rhythm mechanism\" mentions in base.css's header, PageHeader's header, and CLAUDE.md lines 193, 251 and 385;\n  - the floated-thumbnail section header in base.css;\n  - DESIGN.md's front-matter YAML comments;\n  - DESIGN.md:1127, the arrival label's `rhythm-heading-close` (16) above the cards. This is the closest call.\n- **Left out, because \"source order\" there means DOM order, not the cascade:** DESIGN.md 663 and 773, and layout.md's footer paragraph.\n\n**Claims I nearly merged or split**\n- **Merged:** three wordings of \"adjacent paragraphs the `.detail` ramp doesn't reach butt together\" (the quote \"slab\", PageHeader, GetInTouch) into `unramped-adjacent-paragraphs-have-no-space-between`.\n- **Kept separate:**\n  - The ramp \"reaches only `.detail`'s direct children\" (base.css) versus \"never reaches outside `.detail`\" (PageHeader, GetInTouch). The first is a stronger statement than the second.\n  - The comments disagree about the spacing two adjacent blocks take. Most say `rhythm-paragraph`; GetInTouch says `rhythm-block`. Each is its own claim.\n  - base.css's Prose comment says the ramp \"still puts `--rhythm-block` (48) above and below a list\". I recorded that as its own repo fact, not linked to the removed-pair decision.\n  - \"Every override shares (0,1,1)\" plus \"four overrides\" (base.css, DESIGN.md) versus layout.md's \"all six have equal specificity\" and \"six-selector rule\". Separate claims. I didn't tag base.css's passing \"five overrides\" (line 744) as a claim.\n- **Recorded as one decision replacing another, from the comments' own wording:**\n  - `li + li` margin → lists separated by leading alone (Andy, 2026-09-02)\n  - the `rhythm-block` pair → `rhythm-paragraph` (Andy, 2026-09-02)\n  - `article.detail` → `.detail` (2026-08-26, no one named)\n  - the lead's `p + p` → no spacing (Andy, 2026-08-28)\n- **The overturned figure belief:** base.css doesn't literally say \"turned out not to be true\". It quotes the earlier \"fixed the top alignment for free\" and then reports a measurement showing otherwise. I judged that explicit enough.\n\n**Concepts that weren't in `concepts.ttl`**\n- **Specificity**, which many claims rely on (`:where()`, the bare `:not()`, (0,1,1)). I tagged those `sibling-margin`, or `source-order` where order was the point.\n- **Floats**, tagged `sibling-margin` or `vertical-rhythm`.\n- **The spacing scale's `space-N` primitives and spacing tokens in general**, tagged `vertical-rhythm` or `rhythm-token`.\n- **Band padding**, tagged `rhythm-token` and `vertical-rhythm`.\n\n**Unclear in the guide**\n- What a \"comment\" is in Markdown: a paragraph, a list, a bullet. I tagged after whole lists, and indented the tag under single bullets in CLAUDE.md and DESIGN.md.\n- How to tell a decision from a repo fact for statements like \"the base rule uses `rhythm-paragraph`\". I chose decision.\n- Whether an Andy attribution on one aspect of a rule (promoting it to base.css) can carry the whole spacing decision. I let it.\n- Whether a Figma board read counts as a measurement. I treated it as one.",
+    "ttft_ms": 2804,
+    "type": "result",
+    "duration_ms": 577087,
+    "uuid": "d88c805e-8e42-4787-95dd-0ae3b4338e19",
+    "ttft_stream_ms": 2173,
+    "time_to_request_ms": 152,
+    "first_content_frame_ms": 2174,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "trial-rerun-2026-10-19T00-03-48-449Z.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-project-graph-runs-trial-rerun-2026-10-19T00-03-48-449Z/997d45c0-53a2-4180-a003-ea0026bfea7a.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "worktree": "/Users/andyfitzgerald/.cache/project-graph/runs/trial-rerun-2026-10-19T00-03-48-449Z",
+  "isolated": true,
+  "valid": true
+}

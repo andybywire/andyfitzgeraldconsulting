@@ -1,0 +1,7 @@
+ M CLAUDE.md
+ M DESIGN.md
+ M docs/decisions/layout.md
+ M web/src/components/PageHeader.astro
+ M web/src/components/bands/GetInTouchBand.astro
+ M web/src/styles/base.css
+?? project-graph/claims.ttl

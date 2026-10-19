@@ -39,6 +39,19 @@
  *     attempts were marked isolated, because a session that never reaches the model has nothing in
  *     its transcript to leak. Isolation says nothing about whether a run happened.
  *
+ * ── THE BLOCKED COMMANDS ─────────────────────────────────────────────────────
+ *
+ * An allowed list does not confine a run's shell. Claude Code lets a command it judges read-only
+ * through without asking: the guide trial's rerun ran `cat`, `ls`, `wc`, `sed -n`, `git status` and
+ * `pnpm exec prettier --check`, which installed node_modules, under a list naming none of them. A
+ * deny rule is checked first, so BLOCKED_COMMANDS goes on every launch. Proven 2026-10-18 by a probe
+ * run (runs/probe-2026-10-19T00-29-07-149Z/): all six attempts were refused, `git log`, `git status`,
+ * `pnpm`, `npm`, `npx` and `ls && git status`, so a chain is refused if any part of it is.
+ *
+ * NOT CLOSED BY THIS: reading outside the worktree. The same probe read a file outside it with both
+ * `cat` and the Read tool, and `cat .git` names the main checkout, where docs/project-graph/ sits.
+ * protocol.md → "The canary's result" has what is proposed.
+ *
  * Claude Code also keeps its own copy of each run's transcript, in a folder per run under
  * ~/.claude/projects/. They are left there, because removing them would be more machinery than
  * ~500 KB a run is worth. Each record names its copy in `sourceTranscript`.
@@ -109,6 +122,14 @@ export const NOTES_DIR = join(
  * experiment's own memory file), the side-session notes folder, and the app's prompt wrapper.
  * A false positive (a run that greps a file mentioning MEMORY.md) invalidates a run; that's the
  * safe direction.
+ *
+ * The last entry is this checkout's last two path segments ("Repos/af-consulting" here), taken
+ * from REPO so a moved checkout keeps it right. A run can read outside its worktree, and `cat .git`
+ * names this checkout, where the answer key in docs/project-graph/ sits. Any run that reaches it,
+ * by an absolute, `~/` or relative path, carries those segments. It is detected, not prevented:
+ * Bash can't be confined by path the way the Read tool can. Measured 2026-10-18: absent from all
+ * five clean transcripts so far, both canaries' runs and controls and the trial's rerun, and present
+ * four times in the probe's, which read `.git` on purpose.
  */
 export const BANNED = [
   'MEMORY.md',
@@ -117,7 +138,21 @@ export const BANNED = [
   'side-session-notes',
   'Shared notes folder',
   'Background (from the session that started this one)',
+  REPO.split('/').slice(-2).join('/'),
 ]
+
+/**
+ * Commands no run may use, whatever else it is allowed. An allowed list does not stop them on its
+ * own: Claude Code lets a command it judges read-only through without asking, and the guide trial's
+ * rerun ran `cat`, `git status` and `pnpm exec prettier --check` under a list that named none of
+ * them. A deny rule is what stops one (see "THE BLOCKED COMMANDS" in the header).
+ *
+ *   git          a worktree shares the repository's objects, so `git show <branch>:<path>` reaches
+ *                every branch from inside any arm, the answer key in docs/project-graph/ included
+ *   pnpm, npm,   an install lands in one run's time and context and not in another's, and
+ *   npx          `pnpm exec` installed node_modules in the rerun (protocol precondition 6)
+ */
+export const BLOCKED_COMMANDS = ['Bash(git *)', 'Bash(pnpm *)', 'Bash(npm *)', 'Bash(npx *)']
 
 /** The exact command, arguments and environment for one launch. Pure, so it can be tested. */
 export function buildLaunch({
@@ -149,7 +184,7 @@ export function buildLaunch({
     '--strict-mcp-config',
   ]
   if (allowedTools.length) args.push('--allowedTools', allowedTools.join(' '))
-  if (disallowedTools.length) args.push('--disallowedTools', disallowedTools.join(' '))
+  args.push('--disallowedTools', [...BLOCKED_COMMANDS, ...disallowedTools].join(' '))
 
   // Every CLAUDE* variable, not only CLAUDE_CODE_*: see "THE ENVIRONMENT" above.
   const env = Object.fromEntries(

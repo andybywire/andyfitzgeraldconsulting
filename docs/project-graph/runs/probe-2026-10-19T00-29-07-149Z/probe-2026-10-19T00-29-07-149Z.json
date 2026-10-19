@@ -1,0 +1,189 @@
+{
+  "id": "probe-2026-10-19T00-29-07-149Z",
+  "branch": "pg-guide-trial",
+  "commit": "6e707c5",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "This is a permissions check. Use the Bash tool once per command, exactly as written, even if you expect a refusal: (1) git log --oneline -1 (2) git status --short (3) ls && git status --short (4) pnpm --version (5) npm --version (6) npx --version (7) ls (8) cat .git (9) cat /private/tmp/claude-501/-Users-andyfitzgerald-Repos-af-consulting/917678ab-8929-47cc-a0de-b187855621aa/scratchpad/probe/outside.txt. Then use the Read tool on /private/tmp/claude-501/-Users-andyfitzgerald-Repos-af-consulting/917678ab-8929-47cc-a0de-b187855621aa/scratchpad/probe/outside.txt. Finally list all ten attempts, each with whether it ran and the first line of its output or of its refusal. Do not change anything.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "low",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "1",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 13792,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 12291,
+    "stop_reason": "end_turn",
+    "session_id": "95c19c15-624b-453e-be5f-6cca5a4e5767",
+    "total_cost_usd": 0.412838,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 46102,
+      "cache_read_input_tokens": 71030,
+      "output_tokens": 1490,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 46102,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 627,
+          "cache_read_input_tokens": 57820,
+          "cache_creation_input_tokens": 1492,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 1492
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 4,
+        "outputTokens": 1490,
+        "cacheReadInputTokens": 71030,
+        "cacheCreationInputTokens": 46102,
+        "webSearchRequests": 0,
+        "costUSD": 0.412838,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 0,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01NehsJCcmuwCWgBdoYuLrnm",
+        "tool_input": {
+          "command": "git log --oneline -1",
+          "description": "Show latest commit"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01312zqiXFBkDCfyBnGzxa2x",
+        "tool_input": {
+          "command": "git status --short",
+          "description": "Show short working tree status"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_012Hj5k33xD4hQqT4DmaZUA8",
+        "tool_input": {
+          "command": "ls && git status --short",
+          "description": "List files and show short status"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01RYgBnJ2GWvi637zzr5JbfV",
+        "tool_input": {
+          "command": "pnpm --version",
+          "description": "Show pnpm version"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01DFzjw51p8AK6qgXPfJg5H3",
+        "tool_input": {
+          "command": "npm --version",
+          "description": "Show npm version"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01JgdQG4aVGuisx5oHHU4bke",
+        "tool_input": {
+          "command": "npx --version",
+          "description": "Show npx version"
+        }
+      }
+    ],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 11,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "I ran all ten attempts and changed nothing. Six were refused and four ran.\n\n| # | Attempt | Ran? | First line of output or refusal |\n|---|---|---|---|\n| 1 | `git log --oneline -1` | No | Permission to use Bash with command git log --oneline -1 has been denied. |\n| 2 | `git status --short` | No | Permission to use Bash with command git status --short has been denied. |\n| 3 | `ls && git status --short` | No | Permission to use Bash with command ls && git status --short has been denied. |\n| 4 | `pnpm --version` | No | Permission to use Bash with command pnpm --version has been denied. |\n| 5 | `npm --version` | No | Permission to use Bash with command npm --version has been denied. |\n| 6 | `npx --version` | No | Permission to use Bash with command npx --version has been denied. |\n| 7 | `ls` | Yes | `CLAUDE.md` |\n| 8 | `cat .git` | Yes | `gitdir: /Users/andyfitzgerald/Repos/af-consulting/.git/worktrees/probe-2026-10-19T00-29-07-149Z` |\n| 9 | Bash `cat` of `outside.txt` | Yes | `PROBE-OUTSIDE-TOKEN-4c1e: this file sits outside every run worktree.` |\n| 10 | Read tool on `outside.txt` | Yes | `PROBE-OUTSIDE-TOKEN-4c1e: this file sits outside every run worktree.` |\n\n- **Every git and package-manager command was refused.** That includes #3, even though plain `ls` was allowed on its own in #7. So a chain is refused if any part of it is refused.\n- **The file outside the worktree could be read both ways**, with Bash `cat` and with the Read tool. Nothing confined reading to the run's worktree.",
+    "ttft_ms": 1770,
+    "type": "result",
+    "duration_ms": 12615,
+    "uuid": "b9432167-0863-48ad-b4b0-367f90329808",
+    "ttft_stream_ms": 1228,
+    "time_to_request_ms": 306,
+    "first_content_frame_ms": 1228,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "probe-2026-10-19T00-29-07-149Z.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-project-graph-runs-probe-2026-10-19T00-29-07-149Z/95c19c15-624b-453e-be5f-6cca5a4e5767.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

@@ -1,0 +1,435 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 5b94fd9..1ba3316 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -1380,6 +1380,8 @@ it lives.
+ - **Portable Text emits a flat sequence with no section wrappers**, which is why vertical rhythm is
+   sibling margins rather than `gap`. This is a constraint on the markup, not a preference — see
+   DESIGN.md and docs/decisions/layout.md.
++  <!-- @concept flat-block-sequence sibling-margin -->
++  <!-- @claim portable-text-emits-flat-sequence rhythm-uses-sibling-margins-not-gap -->
+ 
+ **Fonts — settled in phase 2, recorded because the shape is easy to undo by accident:**
+ 
+diff --git a/DESIGN.md b/DESIGN.md
+index 957615f..8de9a30 100644
+--- a/DESIGN.md
++++ b/DESIGN.md
+@@ -686,6 +686,8 @@ The rule that decides most spacing questions.
+ - A component's intrinsic height (`field-height`) is a component internal, like `card-pad`.
+ - **Not self-enforcing for gaps.** A horizontal gap *is* a gap, so nothing stops a rhythm token being
+   used for one. Keep it by hand.
++<!-- @concept vertical-rhythm container-gap rhythm-token -->
++<!-- @claim grid-owns-horizontal-rhythm-owns-vertical wrapped-column-row-gap-is-rhythm-heading-major nothing-stops-a-rhythm-token-on-a-horizontal-gap -->
+ 
+ ### The skip family
+ 
+@@ -708,14 +710,20 @@ collapses to the full content width on mobile.
+ 
+ Body is 18px at 1.8, so one line box is 32.4px, rounded to **32px = 2rem**. `space-1` … `space-7` are
+ ¼, ½, ¾, 1, 1½, 2 and 3 units — an 8px grid derived from the line box rather than imposed on it.
++<!-- @concept vertical-rhythm -->
++<!-- @claim spacing-unit-is-the-line-box-rounded-to-32px -->
+ 
+ **Check ratios in apparent space, not token values.** Half-leading means the white above an h2
+ measures ~81px and below it ~33px — about 2.5:1, not the 4:1 the raw numbers suggest.
++<!-- @concept vertical-rhythm -->
++<!-- @claim half-leading-makes-h2-spacing-about-2-5-to-1 -->
+ 
+ ### The CSS mechanism — sibling margins, no container
+ 
+ Portable Text emits a flat sequence with no section wrappers, so `gap` cannot express "tighter after a
+ heading."
++<!-- @concept sibling-margin container-gap flat-block-sequence -->
++<!-- @claim portable-text-emits-flat-sequence gap-cannot-express-tighter-after-heading rhythm-uses-sibling-margins-not-gap -->
+ 
+ ```css
+ .detail > * + *:where(:not(.sidebar, .banner))           { margin-top: var(--rhythm-paragraph); }
+@@ -731,6 +739,8 @@ heading."
+ *first*, so a heading after a quotation still takes its own opening space. No `margin-bottom`
+ anywhere, so nothing collapses. The base rule sits deliberately one notch lower at (0,1,0), which is
+ what makes it the fallback the other four override.
++<!-- @concept source-order sibling-margin -->
++<!-- @claim rhythm-overrides-share-specificity-0-1-1 source-order-decides-among-rhythm-overrides heading-close-rule-is-last-so-a-heading-binds-to-what-follows attributed-quote-rule-sits-before-the-heading-rules no-bottom-margins-so-nothing-collapses rhythm-base-rule-is-one-notch-below-overrides rhythm-ramp-has-four-overrides -->
+ 
+ **No `rhythm-block` around lists, quotes, figures or code.** A pair of rules gave those five 48 above
+ *and* below until 2026-09-02, and it was too much air in running text; they now take
+@@ -738,8 +748,12 @@ what makes it the fallback the other four override.
+ quote, and only below it** (2026-09-22): the credit sits `rhythm-paragraph` under its quote, so at 24
+ after the figure as well it would sit halfway between its own quote and the next thing. A bare Quote
+ with no attribution is untouched.
++<!-- @concept sibling-margin rhythm-token -->
++<!-- @claim block-elements-take-rhythm-paragraph-like-any-adjacent-blocks rhythm-paragraph-is-what-adjacent-blocks-take rhythm-block-after-attributed-quote attribution-sits-rhythm-paragraph-below-its-quote -->
+ 
+ > **The exclusion must be `:where(:not(…))`, never a bare `:not()`.**
++<!-- @concept sibling-margin -->
++<!-- @claim rhythm-exclusion-uses-where-not-bare-not -->
+ 
+ `.sidebar` and `.banner` are explicitly grid-placed, so a flow margin would push them off their row —
+ but `*:not(.sidebar):not(.banner)` adds **two class weights** and lifts the base rule to **(0,3,0)**.
+@@ -747,17 +761,23 @@ Three classes outrank one class plus a type, so it then beats all four overrides
+ whole ramp to `rhythm-paragraph`** — every heading and block gap silently gone. Uniform 24px spacing
+ reads as a design choice rather than a cascade bug, which is what makes this worth stating. `:where()`
+ contributes zero specificity whatever it contains.
++<!-- @concept sibling-margin -->
++<!-- @claim margin-top-would-push-grid-placed-blocks-off-their-row bare-not-exclusion-would-flatten-the-ramp where-contributes-zero-specificity -->
+ 
+ **The exclusion is one-directional, by construction.** It stops a margin landing *on* a grid-placed
+ element; it does not stop the element's *successor* taking one. So `.sidebar + p` gets
+ `rhythm-paragraph`, and an `h2` → `.sidebar` → `p` sequence gives the paragraph 24px instead of
+ `heading-close`'s 16, losing its bond to the heading. Sibling margins cannot express "skip the
+ out-of-flow thing." See docs/open-questions.md.
++<!-- @concept sibling-margin -->
++<!-- @claim sibling-margin-exclusion-is-one-directional sibling-margins-cannot-skip-an-out-of-flow-element -->
+ 
+ ### Responsive — split by cause, not by size
+ 
+ **Type-derived spacing does not change; page-derived spacing does.** Only `band`, `section` and
+ `chrome-inset` vary, and the band roles interpolate with no breakpoint:
++<!-- @concept rhythm-token vertical-rhythm -->
++<!-- @claim spacing-split-by-cause-not-size -->
+ 
+ ```css
+ --rhythm-band:    clamp(2rem, 1.0909rem + 3.8788vw, 4rem);
+@@ -1140,6 +1160,8 @@ its own.
+ to neither; and it cannot go inside `<CardMasonry>`, whose children are the facet index. The wrapper is
+ also what the arrival scrolls to, so the label lands in view when it shows and the cards do when it
+ does not.
++<!-- @concept container-gap -->
++<!-- @claim wrapped-column-row-gap-is-rhythm-heading-major arrival-label-shares-a-grid-item-with-the-masonry -->
+ 
+ ### Transitions — eased, not switched
+ 
+@@ -1162,6 +1184,8 @@ animation rather than to be spared 150ms of colour, so each of these degrades to
+ **not margin** — the bar sits at the box edge, so a margin would put the gap outside it. **The blocks
+ inside a quote take `rhythm-paragraph`** (`blockquote > * + *`), as body prose does — `* + *` rather
+ than `p + p` so a list inside a quote is spaced too, and the child combinator so its items are not.
++<!-- @concept sibling-margin rhythm-token -->
++<!-- @claim quote-blocks-spaced-by-rhythm-paragraph quote-spacing-uses-star-plus-star-not-p-plus-p without-child-combinator-star-plus-star-matches-list-items -->
+ 
+ **A quote's attribution is its figure's `figcaption`** — `<figure><blockquote>…</blockquote>
+ <figcaption>– Name</figcaption></figure>`, outside the quote, with no `<cite>`. It takes the
+@@ -1172,6 +1196,8 @@ only after an *attributed* quote: a bare Quote, and the space above any quote, s
+ `rhythm-paragraph`. One element rule (`figure:has(> blockquote) > figcaption`) serves the Portable Text
+ `attribution` style, /reviews and the case study testimonial. Reasoning in
+ [docs/decisions/components.md](docs/decisions/components.md).
++<!-- @concept sibling-margin rhythm-token -->
++<!-- @claim attribution-sits-rhythm-paragraph-below-its-quote rhythm-block-after-attributed-quote reviews-page-puts-rhythm-block-between-reviews -->
+ 
+ **The color-mode selector** is a radio group — three exclusive options with one active is what radios
+ are, where `aria-pressed` would claim all three can be on at once. **"System" is the absence of a
+@@ -1191,6 +1217,8 @@ The same two colors in both contexts, order swapped. In CSS:
+ **The page header is one component with an optional lead**, and the boolean is required by the rail
+ rather than offered as flexibility. **The gap after the header belongs to the parent band**, not the
+ component, so pages legitimately differ there.
++<!-- @concept vertical-rhythm -->
++<!-- @claim space-after-page-header-belongs-to-parent-band -->
+ 
+ **Its band's padding is deliberately asymmetric — 64 above the title block, 16 below** (read off the
+ Article board, confirmed intentional 2026-08-26). The title is bound to the prose that follows it the
+@@ -1198,6 +1226,8 @@ way a heading is bound to its paragraph, so the space below is `rhythm-heading-c
+ `rhythm-band`. **This also settles what follows an h1**, which the rhythm ramp never covered:
+ `heading-close` handles h2–h4 and the h1 was left out. Provisional in the sense every spacing value
+ here is — judge it against real content, not the board.
++<!-- @concept vertical-rhythm rhythm-token -->
++<!-- @claim page-header-band-padding-is-64-above-16-below heading-close-spaces-a-heading-from-its-bound-copy h1-is-followed-by-rhythm-heading-close heading-close-rule-covers-h2-to-h4-not-h1 -->
+ 
+ **The eyebrow above the title is the `label` role** — Lato **700** at the 16px step with +2% tracking,
+ in `text-muted`. Not the 400 an earlier specimen used; it reads as a small bold label, which is what
+@@ -1384,6 +1414,8 @@ because it looks like it should need a rule. The rhythm ramp gives a bare `<img>
+ (24px) and a `<figure>` the block gap (48px), while the heading after it takes `* + h3` (48px) either
+ way. A float sits where it would have sat in flow, so as an image the title started 24px below the
+ cover and as a figure they align with nothing added.
++<!-- @concept sibling-margin rhythm-token -->
++<!-- @claim figure-gets-block-gap-so-thumbnail-aligns-for-free float-is-placed-where-it-would-sit-in-flow -->
+ 
+ ### Search — specified 2026-08-21, built in phase 4
+ 
+@@ -1612,6 +1644,8 @@ questioned rather than followed.
+   `.prose` container — it re-centers the measure and moves the left edge of text between page types.
+ - **Do** pick a spacing token by prefix first, then by name. **Never** by value — four values are
+   shared by two or more roles.
++  <!-- @concept rhythm-token -->
++  <!-- @claim pick-spacing-token-by-prefix-then-name four-spacing-values-shared-by-multiple-roles -->
+ - **Do** let the wide column fill and pin only the narrow one. **Don't** let a rail size itself from
+   its contents, or the grid ends up downstream of a photo crop.
+ - **Do** use `grid-gutter-content` for real gaps between content columns; `grid-gutter` exists to make
+diff --git a/docs/decisions/layout.md b/docs/decisions/layout.md
+index 1c81c30..287151a 100644
+--- a/docs/decisions/layout.md
++++ b/docs/decisions/layout.md
+@@ -30,12 +30,16 @@ margins float; stretching fixes the margin and lets the columns flex, which is w
+ 
+ The rule that decides most spacing questions. A gap between columns is a *grid* relationship, not a
+ rhythm value, and tokenizing it in both places lets the two drift.
++<!-- @concept vertical-rhythm rhythm-token -->
++<!-- @claim grid-owns-horizontal-rhythm-owns-vertical -->
+ 
+ **The rule is not self-enforcing for gaps.** In Figma, `space/*` and `rhythm/*` are scoped `GAP` only
+ and never `WIDTH_HEIGHT`, which makes it structural for *widths* — Figma will refuse to offer a rhythm
+ token where a width belongs. That is how the contact form's 48px input height surfaced as a missing
+ role (`field-height`) rather than being quietly bound to a spacing token meaning something else. But a
+ horizontal gap *is* a gap, so nothing stops a rhythm token being used for one. **Keep it by hand.**
++<!-- @concept rhythm-token -->
++<!-- @claim figma-offers-rhythm-tokens-only-for-gaps nothing-stops-a-rhythm-token-on-a-horizontal-gap grid-owns-horizontal-rhythm-owns-vertical -->
+ 
+ **`grid-gutter-content` is the gutter that isn't the grid's gutter**, and the only token whose mobile
+ value exceeds its desktop one. `grid-gutter` exists to make the column arithmetic close; its mobile
+@@ -82,12 +86,16 @@ of 656. **A photo crop was setting the measure.**
+ 
+ Body is 18px at 1.8, so one line box is **32.4px**. The scale is built on **32px = 2rem**, a 1.2%
+ round-down; `space-1` … `space-7` are ¼, ½, ¾, 1, 1½, 2 and 3 units.
++<!-- @concept vertical-rhythm -->
++<!-- @claim spacing-unit-is-the-line-box-rounded-to-32px -->
+ 
+ **The rounding is deliberate and costs nothing.** Nothing here runs on a baseline grid — impractical
+ with fluid type, images and mixed leading — so the unit does not need to *equal* the line box, only to
+ be commensurate with it. What the rounding buys is a scale whose every step is a whole number of
+ pixels *and* a clean `rem`, which 32.4 is not. This is an 8px grid **derived from the line box rather
+ than imposed on it**, so if the type scale changes the spacing scale regenerates from the new line box.
++<!-- @concept vertical-rhythm -->
++<!-- @claim spacing-unit-is-the-line-box-rounded-to-32px no-baseline-grid -->
+ 
+ Note this cuts the opposite way from the font sizes, where ugly values are kept exact — there the
+ ugliness is unavoidable if the ratio is to hold; here it is avoidable and buys nothing.
+@@ -97,10 +105,14 @@ clearly above the within-paragraph line distance, or the paragraph stops coherin
+ requirement gets *stronger* as leading loosens. At ¾ the baseline-to-baseline distance across a break
+ is ~56px against 32.4px within, a **1.74×** step that stays unmistakable. A full line (2.0×) is the
+ other defensible choice; ½ would be marginal at 1.5×.
++<!-- @concept rhythm-token -->
++<!-- @claim rhythm-paragraph-is-three-quarters-of-a-line paragraph-break-must-clearly-exceed-line-distance -->
+ 
+ **Check ratios in apparent space, not in token values.** Every line box contributes half-leading, so
+ the white above an h2 measures ~81px and below it ~33px — about 2.5:1, not the 4:1 the raw numbers
+ suggest.
++<!-- @concept vertical-rhythm -->
++<!-- @claim half-leading-makes-h2-spacing-about-2-5-to-1 -->
+ 
+ **`rhythm-band` and `rhythm-section` are two values of one property**, not two properties: both are a
+ band's vertical padding, and `section` is the heavier choice for a band opening a new page region.
+@@ -108,15 +120,21 @@ Bands stack at gap 0, so band-to-band space is simply two paddings. **Which of t
+ decided by how it reads, not by a rule** — the Hero takes `band` despite being a colored
+ self-contained region, because 96 read as too much air above a three-line statement. Expect to try
+ both and look.
++<!-- @concept rhythm-token vertical-rhythm -->
++<!-- @claim rhythm-band-and-section-are-values-of-band-padding bands-stack-with-no-gap band-padding-chosen-by-how-it-reads -->
+ 
+ **A token earns a name only when more than one thing uses it, or the values move as a set.** One-off
+ component spacing binds a `space-N` primitive directly. Optical nudges — a 2px alignment correction
+ between a glyph and adjacent text — stay untokenized deliberately, because giving them a token invites
+ people to reach for them as spacing values.
++<!-- @concept rhythm-token -->
++<!-- @claim spacing-token-named-only-when-shared -->
+ 
+ **Value collisions are the live hazard.** Four values are shared by two or more roles (8, 16, 48, 64).
+ The collisions are deliberate — roles that agree today and can diverge later — but they are
+ indistinguishable by value in a picker, and that has already produced wrong bindings twice.
++<!-- @concept rhythm-token -->
++<!-- @claim four-spacing-values-shared-by-multiple-roles value-collisions-produced-wrong-bindings-twice -->
+ 
+ ---
+ 
+@@ -125,6 +143,8 @@ indistinguishable by value in a picker, and that has already produced wrong bind
+ Portable Text emits a flat sequence — `p p h2 p p figure p` — with **no section wrappers**, so `gap`
+ cannot express "tighter after a heading." That constraint, not preference, produced the six-selector
+ rule in DESIGN.md.
++<!-- @concept flat-block-sequence container-gap sibling-margin -->
++<!-- @claim portable-text-emits-flat-sequence gap-cannot-express-tighter-after-heading rhythm-uses-sibling-margins-not-gap rhythm-rule-has-six-selectors -->
+ 
+ - Every selector is `* + X`, so a **first child never picks up a margin** — no `:first-child` reset.
+ - Nothing sets `margin-bottom`, so there is **no margin collapsing** to reason about.
+@@ -132,10 +152,14 @@ rule in DESIGN.md.
+   makes a heading bind to whatever follows it, including a figure.
+ - **No new container** — these are margins on existing grid items, the same move-only-one-edge logic
+   the measure cap uses.
++<!-- @concept sibling-margin source-order -->
++<!-- @claim star-plus-x-selectors-give-a-first-child-no-margin no-bottom-margins-so-nothing-collapses all-six-rhythm-selectors-share-specificity source-order-decides-among-rhythm-overrides heading-close-rule-is-last-so-a-heading-binds-to-what-follows rhythm-margins-sit-on-existing-grid-items -->
+ 
+ **Figma expresses the same system as nested auto-layout, because one frame has one gap. The two
+ structures are not parallel and cannot be made parallel.** They share the scale and the role names;
+ the mechanics differ by tool. That is not a defect to reconcile.
++<!-- @concept container-gap sibling-margin -->
++<!-- @claim a-figma-frame-has-one-gap figma-and-css-rhythm-structures-stay-unreconciled -->
+ 
+ ---
+ 
+@@ -150,6 +174,8 @@ The useful division is *what creates the space*:
+   and three lines of dead air between regions is wrong on a short screen.
+ 
+ Only three of the twenty-four spacing roles vary.
++<!-- @concept rhythm-token vertical-rhythm -->
++<!-- @claim spacing-split-by-cause-not-size three-of-twenty-four-spacing-roles-vary -->
+ 
+ **Figma boards are 375; the CSS floor stays 360.** At 375 every `clamp()` sits exactly at its minimum,
+ which is what the mobile values *are*, so a 375 board shows precisely what the CSS produces at the
+diff --git a/web/src/components/PageHeader.astro b/web/src/components/PageHeader.astro
+index 620e1c2..8dc7d43 100644
+--- a/web/src/components/PageHeader.astro
++++ b/web/src/components/PageHeader.astro
+@@ -113,6 +113,9 @@ const {title, lede, body, class: className, ...rest}: Props = Astro.props
+     deliberately TRANSPARENT — it emits a flat sequence of blocks and no container — so
+     the paragraphs would otherwise become children of <header> with nothing to scope
+     their role to.
++
++    @concept flat-block-sequence
++    @claim prose-emits-a-flat-sequence-with-no-container
+   */
+ }
+ <header class:list={['page-header', className]} {...rest}>
+@@ -196,6 +199,9 @@ const {title, lede, body, class: className, ...rest}: Props = Astro.props
+    * stylistic: under `display: contents` (see the note above) there is no header box for
+    * a `gap` to belong to, and the two children become grid items whose spacing has to
+    * survive as margins. The same two rules produce the same two numbers in both modes.
++   *
++   * @concept sibling-margin container-gap flat-block-sequence rhythm-token
++   * @claim rhythm-uses-sibling-margins-not-gap portable-text-emits-flat-sequence flat-sequence-leaves-no-container-for-gap h1-is-followed-by-rhythm-heading-close heading-close-spaces-a-heading-from-its-bound-copy heading-close-rule-covers-h2-to-h4-not-h1 rhythm-paragraph-is-what-adjacent-blocks-take page-header-spaces-with-margins-not-gap display-contents-leaves-no-box-for-gap
+    */
+   /* Inert while the header is an ordinary block — a non-grid-item ignores
+      `grid-column` — and load-bearing the moment a page makes it transparent. */
+@@ -229,6 +235,9 @@ const {title, lede, body, class: className, ...rest}: Props = Astro.props
+    *
+    * `:global()` because <Prose> is a child component: a page or parent scope attribute
+    * reaches a component's ROOT, never its descendants, and these <p>s are Prose's.
++   *
++   * @concept sibling-margin rhythm-token
++   * @claim rhythm-ramp-does-not-reach-outside-detail unramped-adjacent-paragraphs-have-no-space-between page-body-paragraphs-spaced-by-rhythm-paragraph rhythm-paragraph-is-what-adjacent-blocks-take lead-paragraphs-get-no-spacing
+    */
+   .page-body :global(p + p) {
+     margin-top: var(--rhythm-paragraph);
+@@ -255,5 +264,8 @@ const {title, lede, body, class: className, ...rest}: Props = Astro.props
+    *
+    * The right home for the lead's invariant is `validation: Rule.max(1)` on `heroCopy`
+    * in the Studio, so the editor cannot create the state at all. That is schema work.
++   *
++   * @concept sibling-margin
++   * @claim lead-paragraphs-get-no-spacing page-body-paragraphs-spaced-by-rhythm-paragraph
+    */
+ </style>
+diff --git a/web/src/components/bands/GetInTouchBand.astro b/web/src/components/bands/GetInTouchBand.astro
+index 3bb12e1..17d3469 100644
+--- a/web/src/components/bands/GetInTouchBand.astro
++++ b/web/src/components/bands/GetInTouchBand.astro
+@@ -114,6 +114,9 @@ const showCopy = Boolean(bandCopy)
+    *
+    * With `bandCopy` false there is one child and the gap is inert, which is why nothing
+    * needs to switch it off.
++   *
++   * @concept container-gap sibling-margin flat-block-sequence rhythm-token
++   * @claim rhythm-block-is-what-adjacent-blocks-take get-in-touch-board-copy-to-form-is-48 real-wrappers-take-gap-flat-sequences-take-sibling-margins rhythm-uses-sibling-margins-not-gap portable-text-emits-flat-sequence gap-is-inert-with-one-child
+    */
+   .get-in-touch {
+     display: grid;
+@@ -127,6 +130,9 @@ const showCopy = Boolean(bandCopy)
+    *
+    * The h2 itself takes base.css's element role and is not styled here; there is nothing
+    * about this heading that differs from any other h2.
++   *
++   * @concept container-gap rhythm-token
++   * @claim heading-close-spaces-a-heading-from-its-bound-copy get-in-touch-board-heading-to-message-is-16
+    */
+   .get-in-touch-copy {
+     display: grid;
+@@ -144,6 +150,9 @@ const showCopy = Boolean(bandCopy)
+    * No measure cap. The container is already `--col-main` — 8 columns, 656 — which
+    * DESIGN.md's Measure section puts inside the 66ch target, so a cap here would be a
+    * second constraint that never binds.
++   *
++   * @concept flat-block-sequence sibling-margin
++   * @claim prose-emits-a-flat-sequence-with-no-container rhythm-ramp-does-not-reach-outside-detail unramped-adjacent-paragraphs-have-no-space-between
+    */
+   .get-in-touch-message :global(p + p) {
+     margin-top: var(--rhythm-paragraph);
+diff --git a/web/src/styles/base.css b/web/src/styles/base.css
+index 5747a8f..1ba744b 100644
+--- a/web/src/styles/base.css
++++ b/web/src/styles/base.css
+@@ -62,6 +62,9 @@
+  *
+  * `:where()` keeps this at zero specificity, so a component overrides it
+  * without needing to escalate.
++ *
++ * @concept sibling-margin
++ * @claim rhythm-uses-sibling-margins-not-gap default-bottom-margins-would-collapse-against-sibling-margins
+  */
+ 
+ *,
+@@ -93,6 +96,9 @@
+  * legitimate case for a component overriding it, and `[hidden]` cannot outrank an
+  * arbitrary future selector any other way. Same reasoning every mainstream reset
+  * uses. Use `[hidden]` for "not applicable" and a class for "styled away".
++ *
++ * @concept source-order
++ * @claim hidden-loses-to-author-display-rule-on-source-order
+  */
+ [hidden] {
+   display: none !important;
+@@ -249,6 +255,9 @@ h4 {
+  * `.detail`'s ramp still puts `--rhythm-block` (48) ABOVE and BELOW a list as a
+  * block — that is a different rule, it is still here, and it was not part of
+  * this. See Vertical rhythm below.
++ *
++ * @concept sibling-margin rhythm-token
++ * @claim list-items-separated-by-leading-only eight-places-cancelled-the-li-margin design-md-never-says-lists-consume-rhythm-item topiclist-and-review-list-set-item-spacing-locally detail-ramp-puts-rhythm-block-around-lists
+  */
+ 
+ /* ── Links ─────────────────────────────────────────────────────────────────── */
+@@ -594,6 +603,9 @@ blockquote {
+  * (0,0,1), so a component overrides it without escalating. The case study's
+  * two-column testimonial does exactly that, zeroing it on the paragraph that starts
+  * the second column.
++ *
++ * @concept sibling-margin rhythm-token
++ * @claim rhythm-ramp-reaches-only-direct-children-of-detail unramped-adjacent-paragraphs-have-no-space-between rhythm-paragraph-is-what-adjacent-blocks-take quote-blocks-spaced-by-rhythm-paragraph quote-spacing-had-three-local-copies p-plus-p-leaves-other-block-transitions-unspaced quote-spacing-uses-star-plus-star-not-p-plus-p without-child-combinator-star-plus-star-matches-list-items list-items-separated-by-leading-only vertical-margin-on-inline-box-does-nothing
+  */
+ 
+ blockquote > * + * {
+@@ -636,6 +648,9 @@ figcaption {
+  *
+  * `end`, not `right` — a logical value, so the line follows the writing direction
+  * like the quote bar's `border-inline-start` does.
++ *
++ * @concept vertical-rhythm
++ * @claim attribution-sits-rhythm-paragraph-below-its-quote
+  */
+ 
+ figure:has(> blockquote) > figcaption {
+@@ -750,6 +765,9 @@ svg.lucide.icon-sm {
+  * margin-top would push them off their grid row.
+  *
+  * No `margin-bottom` anywhere, so nothing collapses.
++ *
++ * @concept sibling-margin container-gap flat-block-sequence source-order
++ * @claim rhythm-uses-sibling-margins-not-gap portable-text-emits-flat-sequence flat-sequence-leaves-no-container-for-gap gap-cannot-express-tighter-after-heading rhythm-overrides-share-specificity-0-1-1 source-order-decides-among-rhythm-overrides heading-close-rule-is-last-so-a-heading-binds-to-what-follows rhythm-base-rule-is-one-notch-below-overrides rhythm-exclusion-uses-where-not-bare-not bare-not-exclusion-would-flatten-the-ramp where-contributes-zero-specificity rhythm-ramp-has-four-overrides block-elements-take-rhythm-paragraph-like-any-adjacent-blocks attributed-quote-rule-sits-before-the-heading-rules rhythm-selector-scoped-to-detail-class detail-selector-change-left-the-ramp-unchanged only-the-specimen-renders-article-detail margin-top-would-push-grid-placed-blocks-off-their-row no-bottom-margins-so-nothing-collapses
+  */
+ 
+ .detail > * + *:where(:not(.sidebar, .banner)) {
+@@ -777,6 +795,9 @@ svg.lucide.icon-sm {
+  * THREE OVERRIDES REMAINED, all at (0,1,1), and the source-order note above still
+  * governs them: `* + h3` and `* + h2` open a section, and `:is(h2,h3,h4) + *`
+  * binds a heading to whatever follows. `heading-close` stays last for that reason.
++ *
++ * @concept sibling-margin rhythm-token source-order
++ * @claim block-elements-take-rhythm-paragraph-like-any-adjacent-blocks design-md-never-says-block-elements-consume-rhythm-block rhythm-paragraph-is-what-adjacent-blocks-take rhythm-overrides-share-specificity-0-1-1 source-order-decides-among-rhythm-overrides heading-close-rule-is-last-so-a-heading-binds-to-what-follows
+  */
+ 
+ /*
+@@ -804,6 +825,9 @@ svg.lucide.icon-sm {
+  *
+  * Matches whatever follows, including an EMPTY paragraph: its margins collapse
+  * through it, and the 48 collapses with the next block's 24 to 48.
++ *
++ * @concept sibling-margin rhythm-token source-order
++ * @claim rhythm-block-after-attributed-quote attribution-sits-rhythm-paragraph-below-its-quote reviews-page-puts-rhythm-block-between-reviews block-elements-take-rhythm-paragraph-like-any-adjacent-blocks rhythm-overrides-share-specificity-0-1-1 where-contributes-zero-specificity attributed-quote-rule-sits-before-the-heading-rules margin-top-would-push-grid-placed-blocks-off-their-row empty-paragraph-margins-collapse-through-it
+  */
+ 
+ .detail > figure:where(:has(> blockquote)) + *:where(:not(.sidebar, .banner)) {
+@@ -906,6 +930,9 @@ svg.lucide.icon-sm {
+    *
+    * ONLY THE THUMBNAIL. A full-width figure is not aligned to anything and takes
+    * the paragraph step like every other block.
++   *
++   * @concept sibling-margin rhythm-token
++   * @claim float-is-placed-where-it-would-sit-in-flow thumbnail-cover-sits-24px-above-its-title-without-a-rule block-elements-take-rhythm-paragraph-like-any-adjacent-blocks thumbnail-top-margin-keyed-to-heading-minor float-adds-nothing-to-parent-height
+    */
+   .detail > * + figure[data-thumbnail] {
+     margin-top: var(--rhythm-heading-minor);

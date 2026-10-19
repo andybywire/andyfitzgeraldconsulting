@@ -395,6 +395,28 @@ besides:
   byte-identical, no memory file is named in the canary's transcript, and both transcripts show
   effort `low`, as launched.
 
+  **A fifth gap, found by the guide trial's rerun: an allowed list does not confine the shell.**
+  Claude Code lets a command it judges read-only through without asking. The rerun ran `cat`,
+  `git status` and `pnpm exec prettier --check`, which installed node_modules, though its list named
+  none of them. Two of those matter. **`git` reaches the answer key:** a worktree shares the
+  repository's objects, so `git show project-graph:docs/project-graph/inventory.md` works from
+  inside any arm. **An install** breaks precondition 6. The harness now puts a deny rule on every
+  launch, `Bash(git *)`, `Bash(pnpm *)`, `Bash(npm *)` and `Bash(npx *)`, with a test written to
+  fail first. A probe run then proved it (`runs/probe-2026-10-19T00-29-07-149Z/`, $0.41): all six
+  attempts were refused, including the chain `ls && git status`.
+
+  **A sixth gap: a run can read outside its worktree.** The same probe read a file outside it with
+  both `cat` and the Read tool, and `cat .git` prints the main checkout's path, under which this
+  folder sits. No run has gone there unprompted. **Closed by detection** (Andy, 2026-10-18, over
+  prevention by deny rules, which can't confine Bash by path). The checkout's last two path
+  segments, `Repos/af-consulting` here and taken from `REPO` so a moved checkout keeps them right,
+  are now a banned string. A run that reaches the checkout by an absolute, `~/` or relative path is
+  invalid, and the schedule stops. Before the change, the probe's transcript passed the isolation
+  check, and the new test failed. After it, the probe's transcript is flagged, while both canary
+  runs and the trial's rerun stay clean and both controls are flagged for memory alone. So the
+  string adds no false positive, even with memory on. The probe's own record still says
+  `isolated: true`, because it was judged by the check as it stood when it ran.
+
 ## Preconditions for stage 5
 
 1. **Auto-memory cannot reach the runs.** This checkout's memory contains T1's answer and a note

@@ -18,6 +18,7 @@ import {isAbsolute} from 'node:path'
 import {test} from 'node:test'
 import {
   BANNED,
+  REPO,
   CLAUDE_BIN,
   buildLaunch,
   changes,
@@ -85,6 +86,24 @@ test('the CLI is launched by absolute path, with auto-update off, in the control
     assert.ok(isAbsolute(command), `${command} is not an absolute path`)
     assert.equal(env.DISABLE_AUTOUPDATER, '1')
   }
+})
+
+/*
+ * Written out here, NOT read from the harness's own list, for the reason TRIAL_LEAKS is below: a
+ * test that reads the list it tests can't notice an entry removed from it. The guide trial's rerun
+ * ran `git status` and `pnpm exec prettier --check` under an allowed list that named neither,
+ * because Claude Code lets a command it judges read-only through. A deny rule has to say so.
+ */
+test('every launch blocks git and the package managers, in the control too, beside its own', () => {
+  for (const memoryOff of [true, false]) {
+    const {args} = buildLaunch({...base, memoryOff, disallowedTools: ['Edit']})
+    const denied = args[args.indexOf('--disallowedTools') + 1] ?? ''
+    for (const rule of ['Bash(git *)', 'Bash(pnpm *)', 'Bash(npm *)', 'Bash(npx *)', 'Edit']) {
+      assert.ok(denied.includes(rule), `--disallowedTools lacks ${rule}: "${denied}"`)
+    }
+  }
+  const {args} = buildLaunch(base)
+  assert.ok(args.includes('--disallowedTools'), 'a launch with no list of its own still blocks')
 })
 
 test("the CLI's version is read without starting a session", () => {
@@ -172,6 +191,26 @@ test('each leak the trial found is flagged', () => {
       user('Say hello.'),
     ].join('\n')
     assert.deepEqual(isolationProblems(transcript, 'Say hello.'), [`contains "${text}"`])
+  }
+})
+
+/*
+ * A run can read outside its worktree, and `cat .git` names this checkout, where the answer key in
+ * docs/project-graph/ sits. A blocking probe proved both on 2026-10-18. So any mention of the
+ * checkout's last two path segments invalidates a run, which catches an absolute path, a `~/` path
+ * and a relative one alike. The segments come from REPO here, not from the banned list under test.
+ */
+test('a run that reaches this checkout is flagged, by any form of its path', () => {
+  const tail = REPO.split('/').slice(-2).join('/')
+  const reaches = [
+    `gitdir: ${REPO}/.git/worktrees/run-1`,
+    `${REPO}/docs/project-graph/inventory.md`,
+    `~/${tail}/docs/project-graph/protocol.md`,
+    `../../../../${tail}/docs/project-graph/inventory.md`,
+  ]
+  for (const text of reaches) {
+    const transcript = [user('Say hello.'), user([{type: 'text', text}])].join('\n')
+    assert.deepEqual(isolationProblems(transcript, 'Say hello.'), [`contains "${tail}"`], text)
   }
 })
 
