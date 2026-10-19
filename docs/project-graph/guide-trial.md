@@ -265,3 +265,87 @@ apart. It cannot show the rule catching anything. That would take material where
 cites a replaced decision. The pilot was deliberately not searched for one, so whether the real
 annotation exercises the rule is unknown.
 
+
+## The rerun, through the harness, reviewed 2026-10-18
+
+**Run on 2026-10-18** (local time; its folder is named in UTC) by
+`docs/project-graph/harness/trial-rerun.mjs`. The record, with everything below, is
+[runs/trial-rerun-2026-10-19T00-03-48-449Z/](runs/trial-rerun-2026-10-19T00-03-48-449Z/), and the
+transcript is kept out of git.
+
+**Set up as the first trial, with the app's three causes removed:**
+- `pg-guide-trial` at `6e707c5`, which has the guide's rule for replaced decisions and the
+  `node project-graph/graph.mjs` wording;
+- Opus 5.5 at high effort, on the standalone CLI at 2.1.302;
+- the prompt read word for word from "Setup" above, without the sentence the app required;
+- auto-memory off;
+- tools listed, with `dontAsk` refusing the rest. The protocol said `acceptEdits`, which leaves
+  other tools on an ask path that a headless run can't answer;
+- a $25 cap;
+- Andy's user-level `~/.claude/CLAUDE.md` still loaded, as it was in the app, so it adds no
+  difference.
+
+Before launch, the leak search over the branch's `project-graph/` found only the three known low
+mentions.
+
+**Judged against the criteria as restated for the rerun** (B4 and B7; see "A criterion changed
+after the trial"):
+
+| Criterion | First trial | Rerun | What the rerun showed |
+| --- | --- | --- | --- |
+| **A1** tag lines only | Pass | **Pass** | 0 lines deleted. 94 tag lines, 15 ` *` separators and 1 empty line, which is the same separator inside an Astro comment, where there is no marker. |
+| **A2** nothing else written | Fail, app cause | **Pass, with a note** | Only `claims.ttl` is new, `concepts.ttl` is unchanged, and there is no notes file. But `pnpm exec prettier --check`, run on its own initiative, installed `node_modules`. That is finding 1 below. |
+| **A3** the check | Pass | **Pass** | One violation: DESIGN.md cites `figure-gets-block-gap-so-thumbnail-aligns-for-free`, which base.css says a measurement overturned ("measured, not inferred"). The guide says to leave it. The statement really was stale (finding 2). |
+| **B1** restatement merged | Pass, 5 of 6 | **Pass, 6 of 6** | `portable-text-emits-flat-sequence` is cited from all six places. |
+| **B2** kind and backing | Pass | **Pass** | An assumed observation, the same everywhere. The one measurement is base.css's own, so none is invented. |
+| **B3** disagreement apart | Pass | **Pass** | layout.md's "all six" is its own repo fact, cited only there and invalidated by nothing. "Six selectors" is kept apart from "four overrides". |
+| **B4** the reversal | Fail, on "silently" | **Pass, reading (b)** | The old pair is an unattributed decision, worded as the comments describe it, which Andy's 2026-09-02 decision invalidated. |
+| **B5** attribution as stated | Pass | **Pass** | 6 decisions are attributed to Andy, each traced to a comment that names him and gives the date. 33 are unattributed. One stretch, flagged by the annotator itself: "quote blocks are spaced by an element rule *in base.css*", from "Promoted on its third consumer (Andy, 2026-09-22)". It holds, because the claim is about the rule living in base.css. |
+| **B6** the homonyms | Pass | **Pass** | Nothing near the leading ramp is tagged. The `container-gap` tag on "Grid owns horizontal" comes from its row-gap sentence, as before. |
+| **B7** the report | Fail, app cause | **Pass** | A full list of doubts in the final message, and none in a file. |
+| **D** auto-memory | Fail, app cause | **Pass** | The harness's isolation check, and the memory folder was byte-identical. |
+
+**Every failure of the first trial is gone, and nothing new failed.** That confirms the first
+trial's failures were the app's, not the guide's.
+
+**The rule for replaced decisions** was used four times, each stated in so many words:
+- the 48px pair;
+- `li + li` ("lived here until 2026-09-02. Removed…");
+- `article.detail` → `.detail` ("WAS … UNTIL 2026-08-26. It became…"), left unattributed because
+  nobody is named;
+- the lead's `p + p` ("REMOVED DELIBERATELY (Andy, 2026-08-28)").
+
+It did not misfire on B3's material. As predicted, no comment still relies on a replaced decision,
+so it caught nothing.
+
+### C. Cost and conduct, recorded
+
+| | First trial | Rerun |
+| --- | --- | --- |
+| Wall time | 7.9 minutes | 9.6 minutes |
+| Tool calls | 46 | 77: 46 edits, 15 reads, 12 shell commands, 3 searches, 1 write |
+| Output tokens | 51.6k | 65.8k, 32.8k of them thinking |
+| Cache reads / writes | 4.79M / 183k | 3.79M / 174k |
+| List-price cost | $3.46 | $3.47 |
+| Claims from 47 comments | 79 | 92: 39 decisions, 33 observations, 20 repo facts |
+
+It ran the check several times and a query. It read `extract.mjs` to learn the tag syntax.
+Two shell commands were refused: a three-stage pipe, and a chain ending in `git diff --stat`.
+
+### Findings beyond the criteria
+
+1. **An allowed list does not confine a run's shell.** Claude Code let `cat`, `ls`, `wc`, `sed -n`,
+   `git status` and `pnpm exec prettier --check` through as read-only. **Fixed:** every launch now
+   denies `git`, `pnpm`, `npm` and `npx`, proven by a probe. A run reaching the main checkout is now
+   detected. See protocol.md, the fifth and sixth gaps.
+2. **The annotation found a stale statement in the live repo.** DESIGN.md said switching to
+   `figure` "fixed the top alignment for free", which stopped being true on 2026-09-02. Figure.astro
+   had been corrected and base.css records the measurement, but DESIGN.md never got the correction.
+   That is the experiment's "a correction didn't spread", found on trial material. **Corrected** on
+   the branch `design-md-figure-alignment` (`1f27216`), off `main`, and not yet merged.
+3. **The guide's unclear points, from the report.** What one "comment" is in Markdown: a paragraph,
+   a list or a bullet. A decision versus a repo fact, for "the base rule uses `rhythm-paragraph`".
+   How far an attribution reaches. Whether reading a Figma board is a measurement. Any fix beyond
+   wording would mean another rerun, so these are Andy's call before the real annotation.
+4. **The trial vocabulary lacked concepts:** specificity, floats, the `space-N` scale and band
+   padding. It is a throwaway vocabulary, so there is nothing to fix.
