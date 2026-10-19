@@ -188,9 +188,30 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
 
 ## How the runs are done
 
-- **3 runs per task per arm:** 5 tasks × 3 arms × 3 = **45 sessions.** A budget check comes before
-  any of them, and T5 can drop to 2 runs if that is too many. The model, effort, cap, budget and
-  rounds are under "The runs' settings", below.
+**Narrowed to one round, by Andy, 2026-10-19, before any run.** One run per task per arm makes
+**15 sessions**, not 45. The experiment answers Andy's own question, whether the graph helps him,
+and is not headed for publication, and he judges it already overbuilt for that.
+
+**Why one run is enough here.** Three runs per cell buy the power to tell a small difference from
+run-to-run noise, and that matters mostly for cost. The guide trial's two runs of the same
+annotation, under different conditions, differed by two-thirds in tool calls (46 and 77) at the
+same cost. A difference large enough to change what Andy does should show in one run per cell, on
+the trust measures above all.
+
+**Accepted with it:**
+
+- **Cost comparisons are directional.** A small cost difference between arms can't be read.
+- **One unusual run can decide a cell.** The write-up says which results rest on a run that looked
+  unusual.
+- **There are no later rounds, whatever this one shows.** That also removes the risk of deciding to
+  run more after seeing the results.
+
+**"How the results are read" was written for three runs.** It has to be restated for one before
+the first run, and that is Andy's call.
+
+- **1 run per task per arm:** 5 tasks × 3 arms = **15 sessions** *(3 runs, and 45 sessions, until
+  2026-10-19)*. A budget check comes before any of them. The model, effort, cap and budget are
+  under "The runs' settings", below.
 - **Every run is a fresh headless process,** launched by the harness below, in its own worktree
   from the arm's branch: never a session started from the desktop app. The same model and effort
   throughout, recorded with each run.
@@ -313,6 +334,10 @@ tokens. These rebuild the canary's reported cost to the cent.
   the first round so the estimate can be redone from real figures before more runs. Later rounds
   are spread over days, with usage checked between them. If the budget gets tight, T5 drops to
   2 runs, as allowed above.
+
+  **Since 2026-10-19 there is one round**, so the runs are estimated at about $40. The $200
+  ceiling stands for stage 5 as a whole, and the schedule still stops if it is reached. The second
+  and third rounds, and dropping T5 to 2 runs, no longer apply.
 - **Before the schedule starts,** Andy confirms the spend is covered. That isn't a rule this file
   can check, so it is listed here, where the schedule runner is built.
 
@@ -469,6 +494,9 @@ besides:
    go through the harness. The canary checks it, and so does every run's isolation check.
 
 ## How the results are read
+
+*To be restated before the first run: the experiment was narrowed to one run per task per arm on
+2026-10-19, and the rule below needs three. The rest of this section stands.*
 
 With 3 runs, an arm **beats** another on a metric only when **all three of its runs are better
 than all three of the other's**: the ranges don't overlap. That's deliberately strict, so a small

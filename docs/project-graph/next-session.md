@@ -1,11 +1,14 @@
 # Picking up the Project Graph experiment in a fresh session
 
 **Refreshed 2026-10-18, at the end of the session that proved the harness and reran the guide's
-trial.** The first version, written that morning at the end of stages 0 to 4, is in git history.
-Start a new session with this one line:
+trial, and updated 2026-10-19 when Andy narrowed the experiment to one round.** The first version,
+written the morning of 2026-10-18 at the end of stages 0 to 4, is in git history. Start a new
+session with this prompt:
 
 > Read `docs/project-graph/next-session.md` and pick up the Project Graph experiment from there.
-> Start with step 1, and stop for my review after each step.
+> It's now a single round of 15 runs, and I think it's already overbuilt for what I want to find
+> out, so take the lightest path to a result and propose cuts before additions. Start with step 1,
+> and stop for my review after each step.
 
 ## What this is
 
@@ -19,8 +22,13 @@ more trustworthy** than grep over prose. It has three arms, all starting from `0
 - **C:** the full graph.
 
 Andy advocates the graph and has asked for pushback, so the design gives it room to lose: C has to
-beat B, not just A. **Andy chose to stay the course at full scale** (2026-10-18), after weighing a
-12-run version and a dogfooding alternative.
+beat B, not just A.
+
+**Narrowed to one round of 15 runs** (Andy, 2026-10-19), one per task per arm, with no later
+rounds. It answers his own question, not a journal's, and **he judges the experiment already
+overbuilt for that.** So take the lightest path to a result: keep only what the 15 runs need, and
+propose a cut before proposing anything new. protocol.md → "How the runs are done" records the
+narrowing and what it gives up.
 
 **Read in this order:**
 
@@ -70,39 +78,55 @@ annotator: the inventory lists every contradiction the tasks score.
 - **The runs** (protocol.md → "The runs' settings"):
   - Opus 5.5 at high effort;
   - a $10 cap a run and $25 an annotation run;
-  - $200 at list price for stage 5, in rounds of 15 that pause after the first;
+  - **one round of 15 runs, about $40 at list price**, within a $200 ceiling for stage 5;
   - Andy confirms the spend is covered before the schedule starts.
 - **Reading outside the worktree** is detected, not prevented. Claude Code's per-run transcript
   folders are left where they are.
 
 ## The next steps, in order, each a stop for Andy's review
 
+The first three are decisions, and each comes with a recommendation toward the lighter path.
+
 1. **Andy's call on the guide's four unclear points.** They come from the rerun's report and are
-   listed in guide-trial.md, under "Findings beyond the criteria". Wording fixes can go straight
-   in. Anything more means another rerun.
-2. **Andy's call: Andy's user-level `~/.claude/CLAUDE.md` in the 45 runs.** Every run loads it now,
-   including "work in small chunks, pause for review". It was left loaded for the rerun to match
-   the first trial. `--bare` can't remove it, because it skips the claude.ai login.
-   `--setting-sources project,local` might, but proving that needs a probe of about $0.40.
-3. **Stage 5, per the protocol's preconditions:**
+   listed in guide-trial.md, under "Findings beyond the criteria". **Recommendation: wording fixes
+   only, or none,** since anything more means another rerun.
+2. **Andy's call: Andy's user-level `~/.claude/CLAUDE.md` in the 15 runs.** Every run loads it,
+   including "work in small chunks, pause for review". **Recommendation: leave it loaded.** It is
+   the same in every arm, it was loaded in both trial runs, and removing it would take a probe
+   (`--setting-sources project,local`, about $0.40). `--bare` can't remove it, because it skips the
+   claude.ai login.
+3. **Andy's call: restate "How the results are read" for one run per cell.** The current rule needs
+   three runs that all beat three. **Recommendation, for him to adjust:**
+   - the trust measures decide;
+   - an arm beats another on one only by a clear margin, such as two more must-find sites on T2 or
+     two more hard contradictions on T3, so a single lucky read can't decide it;
+   - cost is reported, and counts only at a gap of 2× or more. The guide trial's two runs of the
+     same annotation differed by two-thirds in tool calls.
+   
+   Record it in the protocol before any run.
+4. **Stage 5, as narrowly as the 15 runs allow:**
    - verify T2's must-find list by hand (precondition 2, Andy's);
    - build arms A, B and C from `086dd0f`;
    - annotate B and C blind through the harness. `trial-rerun.mjs` is the pattern: `keepWorktree`,
      then collect the output;
    - write each arm's CLAUDE.md section and the run order into the protocol (precondition 4);
    - run the leak search (precondition 5);
-   - build the schedule runner on `runOne()`. It runs rounds of 15, pauses after the first, stops
-     at the $200 budget and on any invalid run, applies the capped-run rule, and refuses a run whose
-     CLI version differs from the first;
+   - a **minimal** schedule runner on `runOne()`. It runs the 15 in the recorded order, stops on any
+     invalid run, a changed CLI version or the budget, and applies the capped-run rule. No rounds;
    - Andy confirms the spend;
-   - then the 45 runs.
-4. **Not part of the experiment:** Andy merges `design-md-figure-alignment` when he's ready, and
+   - then the 15 runs.
+5. **Stage 6:** Andy grades the 15 answers blind, then the maintenance measures, then the
+   write-up.
+6. **Not part of the experiment:** Andy merges `design-md-figure-alignment` when he's ready, and
    removes its worktree after.
 
 ## How to work with Andy here
 
 The root CLAUDE.md has the full rules. The ones that matter most for this work:
 
+- **The lightest thing that answers the question** (2026-10-19). Andy judges this experiment
+  overbuilt for its purpose. Before building, ask whether the 15 runs need it. Offer a cut before
+  an addition. Prefer a recorded caveat to new machinery.
 - **One coherent piece, then stop for review.** Say what you're about to build in a sentence before
   building it.
 - **Seams are his:** the content model, ids and URLs, what counts as a claim, where a value lives,
