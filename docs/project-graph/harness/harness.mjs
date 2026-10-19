@@ -258,9 +258,13 @@ export function findTranscript(sessionId) {
  * One run. `spec` is the launch (see buildLaunch) plus `id`, `branch` and `outDir`; `timeoutMinutes`
  * defaults to 30. Writes `<outDir>/<id>.json` and `<outDir>/<id>.transcript.jsonl`, and returns the
  * record. `record.valid` false means the run is invalid: it didn't complete, or wasn't isolated.
+ *
+ * `keepWorktree: true` leaves the worktree in place, named in `record.worktree`, for a caller whose
+ * output IS the worktree: an annotation's tags and claims.ttl. That caller collects them and removes
+ * it. The memory and notes snapshots are taken when the session ends either way.
  */
 export function runOne(spec) {
-  const {id, branch, outDir, timeoutMinutes = 30} = spec
+  const {id, branch, outDir, timeoutMinutes = 30, keepWorktree = false} = spec
   if (!id || !branch || !outDir) throw new Error('runOne needs id, branch and outDir.')
   const worktree = join(RUNS_ROOT, id)
   if (existsSync(worktree)) throw new Error(`${worktree} already exists; ids must be unique.`)
@@ -309,7 +313,8 @@ export function runOne(spec) {
   } finally {
     record.memoryChanged = changes(memoryBefore, snapshot(MEMORY_DIR))
     record.notesChanged = changes(notesBefore, snapshot(NOTES_DIR))
-    spawnSync('git', ['-C', REPO, 'worktree', 'remove', '--force', worktree])
+    if (keepWorktree) record.worktree = worktree
+    else spawnSync('git', ['-C', REPO, 'worktree', 'remove', '--force', worktree])
   }
   if (record.memoryChanged.length) record.isolationProblems.push('the memory folder changed')
   if (record.notesChanged.length)
