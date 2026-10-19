@@ -1,0 +1,123 @@
+# The Project Graph's model: the few classes and properties a claim and its provenance need that
+# PROV-O, Dublin Core and SKOS do not already supply.
+#
+# The spec is docs/project-graph/claim-model.md (decided by Andy, 2026-10-17). Its rule admits a
+# term only when a shape or a saved query reads it, and each term below names what reads it.
+# Everything else a claim carries is a standard term:
+#
+#   prov:wasGeneratedBy     the measurement that established an observation
+#   prov:invalidated        what a measurement, or the making of a later decision, overturned
+#   prov:wasAttributedTo    who made a decision
+#   prov:used               an automated browser a measurement relied on
+#   dcterms:subject         the concepts a claim, or a tagged comment, is about
+#   dcterms:description     a claim's one canonical sentence
+#   dcterms:date            a date a comment states, and only then (see DATES below)
+#
+# RDFS ONLY WHERE SHACL NEEDS IT. `rdfs:subClassOf` is here because SHACL's `sh:targetClass` and
+# `sh:class` follow it through the data graph, so one shape can target every claim of any kind.
+# There are no `rdfs:domain` or `rdfs:range` declarations: the shapes in shapes.ttl say what is
+# required, and a domain or range would only license inferences nothing reads.
+#
+# DATES ARE OPTIONAL (Andy, 2026-10-17). A measurement or decision carries a date only when a
+# comment states one. Git already records when every comment line was written, and the Project
+# Graph records only what git cannot. Requiring a date would force the blind annotator to invent
+# one, which breaks "exactly as stated". `dcterms:date` rather than PROV's time properties, which
+# take a full timestamp; every date in these comments is a day.
+
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+
+# ── Claims ────────────────────────────────────────────────────────────────────
+
+# Abstract: every claim is exactly one of the three kinds below. Read by every shape that targets
+# "any claim", and by `model:cites`'s check that a tag names a claim that exists.
+model:Claim
+  a rdfs:Class ;
+  rdfs:subClassOf prov:Entity ;
+  rdfs:label "claim"@en ;
+  rdfs:comment "A statement that could turn out false, and that something in the repository depends on."@en .
+
+model:Observation
+  a rdfs:Class ;
+  rdfs:subClassOf model:Claim ;
+  rdfs:label "observation"@en ;
+  rdfs:comment "A claim about how a browser, the cascade, a tool or a platform behaves. It says how it was established, or that it is assumed."@en .
+
+model:Decision
+  a rdfs:Class ;
+  rdfs:subClassOf model:Claim ;
+  rdfs:label "decision"@en ;
+  rdfs:comment "A choice that settles a question. It says who made it, or that nobody is named."@en .
+
+model:RepoFact
+  a rdfs:Class ;
+  rdfs:subClassOf model:Claim ;
+  rdfs:label "repo fact"@en ;
+  rdfs:comment "A claim about the repository itself: a file, a line, a count, where something is recorded, its history. A script can check it; nothing in the Project Graph does during the experiment."@en .
+
+# ── Provenance ────────────────────────────────────────────────────────────────
+
+# Read by the shape "an observation says how it is known" and the query "how was this established?"
+model:Measurement
+  a rdfs:Class ;
+  rdfs:subClassOf prov:Activity ;
+  rdfs:label "measurement"@en ;
+  rdfs:comment "An activity that established an observation: something looked at, run or read, by a person or a tool."@en .
+
+model:method
+  a rdf:Property ;
+  rdfs:label "method"@en ;
+  rdfs:comment "How a measurement was made, in words, including where and when if the comment says. Free text, because comments describe methods in prose."@en .
+
+# A gap in a claim's backing, stated rather than left blank. Read by the shapes that require every
+# claim to declare its basis, and by the query that lists the weak ones. A gap is never a
+# violation: the check fails on what is known to be wrong, never on what is merely unknown.
+model:basis
+  a rdf:Property ;
+  rdfs:label "basis"@en ;
+  rdfs:comment "Says that a claim's backing is missing, and which kind of gap it is."@en .
+
+model:Basis
+  a rdfs:Class ;
+  rdfs:label "basis"@en ;
+  rdfs:comment "A kind of missing backing."@en .
+
+model:assumed
+  a model:Basis ;
+  rdfs:label "assumed"@en ;
+  rdfs:comment "An observation stated with no measurement behind it."@en .
+
+model:unattributed
+  a model:Basis ;
+  rdfs:label "unattributed"@en ;
+  rdfs:comment "A decision stated with nobody named as having made it."@en .
+
+# ── Code locations ────────────────────────────────────────────────────────────
+#
+# Never authored. The extractor writes them on every run, from the @concept and @claim tags at the
+# end of a comment, and never into the repository. A location carries `dcterms:subject` for its
+# concept tags and `model:cites` for its claim tags.
+
+model:CodeLocation
+  a rdfs:Class ;
+  rdfs:label "code location"@en ;
+  rdfs:comment "A tagged comment: the file it is in and the line its tags are on."@en .
+
+model:path
+  a rdf:Property ;
+  rdfs:label "path"@en ;
+  rdfs:comment "The file a code location is in, relative to the repository root."@en .
+
+model:line
+  a rdf:Property ;
+  rdfs:label "line"@en ;
+  rdfs:comment "The line a code location's tags are on. Derived on every run, never stored."@en .
+
+# Read by the check that matters most: no tag cites a claim that was overturned. Also by the check
+# that a tag names a claim that exists, which is what catches a mistyped slug in a comment.
+model:cites
+  a rdf:Property ;
+  rdfs:label "cites"@en ;
+  rdfs:comment "A claim a code location's @claim tag names: the comment states it or relies on it."@en .

@@ -1,0 +1,25 @@
+# Every claim whose backing is a stated gap: observations marked assumed, decisions marked
+# unattributed. The check never fails on these, by design, so this is where they are found.
+#
+# Reads model:basis.
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#>
+PREFIX claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#>
+PREFIX model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#>
+
+SELECT ?claim ?kind ?gap ?description (GROUP_CONCAT(DISTINCT ?where; SEPARATOR=", ") AS ?cited)
+WHERE {
+  ?claim model:basis ?basis ; a ?class ; dcterms:description ?description .
+  ?class rdfs:subClassOf model:Claim .
+  BIND(REPLACE(LCASE(STRAFTER(STR(?class), "#")), "repofact", "repo fact") AS ?kind)
+  BIND(STRAFTER(STR(?basis), "#") AS ?gap)
+  OPTIONAL {
+    ?location model:cites ?claim ; model:path ?file ; model:line ?line .
+    BIND(CONCAT(?file, ":", STR(?line)) AS ?where)
+  }
+}
+GROUP BY ?claim ?kind ?gap ?description
+ORDER BY ?gap ?claim
