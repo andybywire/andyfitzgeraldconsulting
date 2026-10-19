@@ -221,6 +221,22 @@ point.
   Astro plugin. The old rule here said tabs in CSS; that described the 11ty build's `web/style/`,
   now in git history. Don't reintroduce a per-language override.
 
+## Comment tags
+
+Comments about focus, hiding, keyboard reach, screen-reader announcement and automated browsers
+end with tag lines. `@concept` names the terms a comment is about, and `@claim` names each
+statement it makes or relies on, by a stable id. A claim made in several places carries the same
+id in each.
+
+**`project-graph/` records every id as a graph:** the concepts in `concepts.ttl` (SKOS), and in
+`claims.ttl` each claim's kind, its sentence, how it is known (measured, assumed, unattributed or
+decided) and what it overturns. Query it with `node project-graph/graph.mjs`, run directly:
+
+- `query` lists the saved queries. Most useful: `query about <concept>`, `query where <concept>`,
+  `query settled <concept>` and `query claim <id>`. A concept query covers its narrower concepts.
+- `check` validates the tags and claims, and reports every comment that relies on a claim since
+  overturned.
+
 ## Design system
 
 **[DESIGN.md](DESIGN.md) is the single source for design direction** — every token value plus the
