@@ -221,6 +221,19 @@ point.
   Astro plugin. The old rule here said tabs in CSS; that described the 11ty build's `web/style/`,
   now in git history. Don't reintroduce a per-language override.
 
+## Comment tags
+
+Comments about focus, hiding, keyboard reach, screen-reader announcement and automated browsers
+end with tag lines. `@concept` names the terms a comment is about, and `@claim` names each
+statement it makes or relies on, by a stable id. A claim made in several places carries the same
+id in each.
+
+**`project-graph/glossary.md` defines every id:** each concept's labels, broader concept and scope
+note, and each claim's kind, its sentence, how it is known (measured, assumed, unattributed or
+decided) and what it overturns. To find every comment that states or relies on a claim, search
+the repository for its id. To find what is claimed about a concept, search the glossary for the
+concept's id.
+
 ## Design system
 
 **[DESIGN.md](DESIGN.md) is the single source for design direction** — every token value plus the
