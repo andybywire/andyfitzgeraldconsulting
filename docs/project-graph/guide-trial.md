@@ -347,5 +347,24 @@ Two shell commands were refused: a three-stage pipe, and a chain ending in `git 
    a list or a bullet. A decision versus a repo fact, for "the base rule uses `rhythm-paragraph`".
    How far an attribution reaches. Whether reading a Figma board is a measurement. Any fix beyond
    wording would mean another rerun, so these are Andy's call before the real annotation.
+
+   **Decided 2026-10-19 (Andy): one sentence for the first, nothing for the other three.** Each
+   was checked against the focus-and-visibility material at `086dd0f`, for whether it could change
+   anything the runs score:
+
+   - **A Markdown comment** can. The extractor records a location at the tag's own line, so a tag
+     after a whole list points queries and grep at the list's end. `CLAUDE.md:585`, contradiction
+     9, is one sub-bullet in a list that runs from line 368 to 1111. The guide now says a Markdown
+     comment is one paragraph or one list item: tagged once after its last item when the whole list
+     is in scope, and indented under the item when only that one is. That is what the rerun did,
+     and its check accepted the indented tags, so the change needs no third run.
+   - **Decision or repo fact:** only `settled.rq` tells the two apart, since it lists decisions,
+     and T4 is the task built on it. T4's comment says "`!important` deliberately", which can't be
+     read as a repo fact.
+   - **An attribution's reach** is scored by no rubric, and T4's decision names nobody. Where a
+     comment opens with "(Andy, date.)", as CardMasonry's grid comment and `card-index.ts:702` do,
+     the attribution covers the whole comment.
+   - **A Figma read** appears in one focus-area comment, ContactForm's measured heading size, and
+     it is about heading level, not focus or visibility.
 4. **The trial vocabulary lacked concepts:** specificity, floats, the `space-N` scale and band
    padding. It is a throwaway vocabulary, so there is nothing to fix.

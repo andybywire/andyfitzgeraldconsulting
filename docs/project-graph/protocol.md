@@ -172,8 +172,11 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
 ## What is measured
 
 **Cost, per run:**
-- Tokens: input, output, cache read and cache write, kept separate. The primary figure is
-  input plus output, because cache reads depend on run order.
+- **The primary figure is the list-price cost,** `total_cost_usd`. It was input plus output until
+  2026-10-19, which leaves out reading: almost all of a run's input arrives through the cache, so
+  the trial's rerun had 58 input tokens beside 174K written to cache. Run order can shift a run's
+  fixed context, about $0.40, between cache written and cache read, which is far below a 2× gap.
+- Tokens: input, output, cache read and cache write, kept separate.
 - Tool calls.
 - Distinct files read, by any tool.
 - Wall time.
@@ -206,8 +209,8 @@ the trust measures above all.
 - **There are no later rounds, whatever this one shows.** That also removes the risk of deciding to
   run more after seeing the results.
 
-**"How the results are read" was written for three runs.** It has to be restated for one before
-the first run, and that is Andy's call.
+**"How the results are read" was written for three runs,** and was restated for one on
+2026-10-19, before any run.
 
 - **1 run per task per arm:** 5 tasks × 3 arms = **15 sessions** *(3 runs, and 45 sessions, until
   2026-10-19)*. A budget check comes before any of them. The model, effort, cap and budget are
@@ -338,6 +341,10 @@ tokens. These rebuild the canary's reported cost to the cent.
   **Since 2026-10-19 there is one round**, so the runs are estimated at about $40. The $200
   ceiling stands for stage 5 as a whole, and the schedule still stops if it is reached. The second
   and third rounds, and dropping T5 to 2 runs, no longer apply.
+- **Andy's user-level `~/.claude/CLAUDE.md` stays loaded** (Andy, 2026-10-19). It is the same in
+  every arm, both runs of the guide's trial loaded it, and the agent used on this repo loads it. It
+  asks for work in small pieces with a pause for review, so a run could stop short and ask whether
+  to continue. The trial's rerun, a far longer task, did not. Grading notes any answer that does.
 - **Before the schedule starts,** Andy confirms the spend is covered. That isn't a rule this file
   can check, so it is listed here, where the schedule runner is built.
 
@@ -495,15 +502,25 @@ besides:
 
 ## How the results are read
 
-*To be restated before the first run: the experiment was narrowed to one run per task per arm on
-2026-10-19, and the rule below needs three. The rest of this section stands.*
+*Restated for one run per cell (Andy, 2026-10-19), before any run. The rule for three runs, under
+which an arm won only when all three of its runs beat all three of the other's, is in git history.*
 
-With 3 runs, an arm **beats** another on a metric only when **all three of its runs are better
-than all three of the other's**: the ranges don't overlap. That's deliberately strict, so a small
-sample can't produce a win by noise. Medians and ranges are reported either way.
+With one run per cell, a difference counts only when it is larger than one lucky or unlucky read
+could make:
 
-- **The annotation discipline earns its place** if B beats A on at least one trust measure (T1
-  point 4, T2 recall, T3 recall) without losing to A on cost.
+- **On trust, an arm beats another by two or more:** two more must-find rows on T2, or two more of
+  the 11 hard contradictions on T3. A difference of one is reported, not counted. T1 point 4 is a
+  single yes or no, so it is reported and decides nothing.
+- **On cost, an arm loses to another at twice the cost or more,** in list-price cost summed over
+  T1 to T4. Each task's cost, the tokens by kind and the tool calls are reported. The guide trial's
+  two runs of one annotation differed by two-thirds in tool calls at the same cost, so a smaller
+  gap can't be read.
+- **On T5, arms separate** at a gap of two points out of its three, or at twice the cost.
+
+Then:
+
+- **The annotation discipline earns its place** if B beats A on at least one trust measure (T2
+  recall, T3 recall) without losing to A on cost.
 - **The semantic layer earns its place** if C beats B on at least one trust measure without losing
   to B on cost, or beats it on cost without losing on trust.
 - **If C never beats B, the RDF layer has not earned its place** at this scale, whatever its other

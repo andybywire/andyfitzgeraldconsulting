@@ -71,6 +71,10 @@ The same form works in every language this repository uses. Match the comment's 
 | PHP                          | `// @concept landing-point`              |
 
 - **A tag covers the whole comment it ends.** Put tags only at the end, never in the middle.
+- **In Markdown, a comment is one paragraph or one list item.** When a whole list is in scope, tag
+  it once, after its last item. When only one item is, put the tags on their own lines right after
+  that item, indented to its text. A tag records the line it sits on, so a tag far below the
+  sentence it covers points to the wrong place.
 - **Keep the tag lines together.** Consecutive tag lines count as one tagged comment, so a blank
   line between them would split it in two.
 - **Use the most specific concept that fits:** a narrower concept rather than its broader one,

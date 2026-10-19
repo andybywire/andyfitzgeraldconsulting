@@ -1,13 +1,13 @@
 # Picking up the Project Graph experiment in a fresh session
 
 **Refreshed 2026-10-18, at the end of the session that proved the harness and reran the guide's
-trial, and updated 2026-10-19 when Andy narrowed the experiment to one round.** The first version,
-written the morning of 2026-10-18 at the end of stages 0 to 4, is in git history. Start a new
-session with this prompt:
+trial, updated 2026-10-19 when Andy narrowed the experiment to one round, and again that day once
+steps 1 to 3 were settled.** The first version, written the morning of 2026-10-18 at the end of
+stages 0 to 4, is in git history. Start a new session with this prompt:
 
 > Read `docs/project-graph/next-session.md` and pick up the Project Graph experiment from there.
 > It's now a single round of 15 runs, and I think it's already overbuilt for what I want to find
-> out, so take the lightest path to a result and propose cuts before additions. Start with step 1,
+> out, so take the lightest path to a result and propose cuts before additions. Start with step 4,
 > and stop for my review after each step.
 
 ## What this is
@@ -53,7 +53,7 @@ annotator: the inventory lists every contradiction the tasks score.
 
 | Branch | At | What it holds |
 | --- | --- | --- |
-| `project-graph` | `61db443` | Everything: `project-graph/` (the tooling) and `docs/project-graph/` (the record) |
+| `project-graph` | its tip | Everything: `project-graph/` (the tooling) and `docs/project-graph/` (the record) |
 | `pg-guide-trial` | `6e707c5` | `086dd0f` plus the tooling, with a vertical-spacing vocabulary. **Keep it** |
 | `main` | `96c10e5` | One commit ahead of `origin/main`: a one-comment fix |
 | `design-md-figure-alignment` | `1f27216` | Off `main`, not merged: a stale DESIGN.md paragraph the rerun found. Its worktree is `.claude/worktrees/design-md-figure-alignment` |
@@ -83,40 +83,52 @@ annotator: the inventory lists every contradiction the tasks score.
 - **Reading outside the worktree** is detected, not prevented. Claude Code's per-run transcript
   folders are left where they are.
 
+**Decided on 2026-10-19,** steps 1 to 3 below, each recorded where it lives:
+
+- **The guide's four unclear points:** one sentence on what a Markdown comment is, since a tag
+  records the line it sits on, and nothing for the other three, none of which can change a scored
+  result (guide-trial.md, finding 3). No third run of the trial.
+- **Andy's user-level `~/.claude/CLAUDE.md` stays loaded** in the runs, with a recorded caveat that
+  a run might stop short to ask whether to continue (protocol.md → "The runs' settings").
+- **How the results are read, restated for one run per cell** (protocol.md):
+  - T2 and T3 recall decide, by a margin of two;
+  - cost counts at a gap of 2× or more, summed over T1 to T4;
+  - T1 point 4 is reported and decides nothing;
+  - **the primary cost figure is list-price cost,** because input plus output left out reading.
+
 ## The next steps, in order, each a stop for Andy's review
 
-The first three are decisions, and each comes with a recommendation toward the lighter path.
+Steps 1 to 3 were decisions, settled on 2026-10-19 and listed above.
 
-1. **Andy's call on the guide's four unclear points.** They come from the rerun's report and are
-   listed in guide-trial.md, under "Findings beyond the criteria". **Recommendation: wording fixes
-   only, or none,** since anything more means another rerun.
-2. **Andy's call: Andy's user-level `~/.claude/CLAUDE.md` in the 15 runs.** Every run loads it,
-   including "work in small chunks, pause for review". **Recommendation: leave it loaded.** It is
-   the same in every arm, it was loaded in both trial runs, and removing it would take a probe
-   (`--setting-sources project,local`, about $0.40). `--bare` can't remove it, because it skips the
-   claude.ai login.
-3. **Andy's call: restate "How the results are read" for one run per cell.** The current rule needs
-   three runs that all beat three. **Recommendation, for him to adjust:**
-   - the trust measures decide;
-   - an arm beats another on one only by a clear margin, such as two more must-find sites on T2 or
-     two more hard contradictions on T3, so a single lucky read can't decide it;
-   - cost is reported, and counts only at a gap of 2× or more. The guide trial's two runs of the
-     same annotation differed by two-thirds in tool calls.
-   
-   Record it in the protocol before any run.
-4. **Stage 5, as narrowly as the 15 runs allow:**
+4. **Stage 5, as narrowly as the 15 runs allow.** **Its first piece is a decision about what it
+   builds,** brought to Andy with three proposed cuts:
+   - **one annotation run feeds both B and C,** since their annotations must be identical. B's
+     glossary is generated from its `claims.ttl`, recording the same fields as plain text, as
+     id-design.md already says;
+   - **defer the maintenance probe, and with it B's lint,** until B or C earns its place. The lint
+     only checks that ids resolve, which helps no answer-only run find anything, and the probe is
+     its one use. Maintenance only matters if there is a gain to weigh it against;
+   - **drop "distinct files read"** from the measures. It decides nothing, and counting it "by any
+     tool" means parsing shell commands.
+
+   Then, in this order:
    - verify T2's must-find list by hand (precondition 2, Andy's);
+   - run the leak search (precondition 5) **before** the annotation, since the annotator works in a
+     checkout with `project-graph/` present. **It already has something to judge:** concepts.ttl's
+     header names `docs/project-graph/inventory.md`, and its line 65 says "The inventory first read
+     it as a second meaning". Neither gives an answer away, but both go beyond the three low
+     mentions the trial's search found;
    - build arms A, B and C from `086dd0f`;
-   - annotate B and C blind through the harness. `trial-rerun.mjs` is the pattern: `keepWorktree`,
-     then collect the output;
+   - annotate once, blind, through the harness. `trial-rerun.mjs` is the pattern: `keepWorktree`,
+     then collect the output. About $3.50, so Andy is asked first;
    - write each arm's CLAUDE.md section and the run order into the protocol (precondition 4);
-   - run the leak search (precondition 5);
+   - check the arm diffs (precondition 3);
    - a **minimal** schedule runner on `runOne()`. It runs the 15 in the recorded order, stops on any
      invalid run, a changed CLI version or the budget, and applies the capped-run rule. No rounds;
    - Andy confirms the spend;
    - then the 15 runs.
-5. **Stage 6:** Andy grades the 15 answers blind, then the maintenance measures, then the
-   write-up.
+5. **Stage 6:** Andy grades the 15 answers blind, then the maintenance measures unless step 4
+   defers them, then the write-up.
 6. **Not part of the experiment:** Andy merges `design-md-figure-alignment` when he's ready, and
    removes its worktree after.
 
