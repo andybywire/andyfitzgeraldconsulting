@@ -93,6 +93,9 @@
  * legitimate case for a component overriding it, and `[hidden]` cannot outrank an
  * arbitrary future selector any other way. Same reasoning every mainstream reset
  * uses. Use `[hidden]` for "not applicable" and a class for "styled away".
+ *
+ * @concept not-applicable styled-away
+ * @claim author-display-rule-overrides-ua-hidden hidden-attribute-forced-with-important hidden-for-not-applicable-class-for-styled-away
  */
 [hidden] {
   display: none !important;
@@ -468,6 +471,9 @@ code {
  *
  * `pre code` RESETS THE SIZE. `code` above sets 0.9em, which would compound
  * against the block's own step and land at 14.4px.
+ *
+ * @concept scroll-region
+ * @claim tabindex-zero-makes-scroll-region-keyboard-reachable
  */
 pre {
   padding: var(--space-3);
@@ -672,6 +678,9 @@ video {
  * Accessibility is Lucide's default and it is the right one: it adds
  * `aria-hidden="true"` unless you pass an a11y prop, so an icon-only control puts
  * its name on the BUTTON (`aria-label`) and leaves the glyph decorative.
+ *
+ * @concept hidden-from-assistive-technology
+ * @claim lucide-marks-its-svg-aria-hidden
  */
 
 svg.lucide {
@@ -699,6 +708,9 @@ svg.lucide.icon-sm {
  * whatever radius the control has, with no calc() needed. That is the +2 / +4
  * derivation happening for free — and the capsule case falls out too, because a
  * ring around a capsule is a capsule.
+ *
+ * @concept focus-ring
+ * @claim focus-ring-stated-as-relationship fixed-focus-pair-fails-on-accent-band accent-band-components-swap-focus-colors box-shadow-ring-follows-border-radius ring-around-capsule-is-a-capsule
  */
 
 :focus-visible {

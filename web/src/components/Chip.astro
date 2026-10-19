@@ -63,6 +63,9 @@ const {as: Tag = 'a', class: className, ...rest}: Props = Astro.props
    * `inline-flex` because an anchor is inline by default: without it the pill has no
    * box, and a chip that wrapped a line would have its focus ring split into two
    * fragments. It also makes a label and a count share a baseline row.
+   *
+   * @concept focus-ring
+   * @claim inline-anchor-focus-ring-splits-across-lines
    */
   .chip {
     display: inline-flex;

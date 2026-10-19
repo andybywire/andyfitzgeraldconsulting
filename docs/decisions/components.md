@@ -42,11 +42,15 @@ The same two colors in both contexts, order swapped — 5.67 / 5.42 on light, 5.
 **Rejected: a fixed inner-white / outer-accent ring.** It **fails on the accent band**, where the
 white inner merges with the white ghost button and the accent outer merges with the band. Stating the
 rule as a relationship is what makes it survive a context change — and a theme change.
+<!-- @concept focus-ring -->
+<!-- @claim focus-ring-stated-as-relationship fixed-focus-pair-fails-on-accent-band -->
 
 **Radii are derived from the control they wrap** — inner at `radius + 2`, outer at `radius + 4`. The
 button's inner ring is 5 *because the button is 3*, not because 5 is a value in the system. In CSS
 this is a real `calc()`, so the dependency stays live. In Figma it can't be, so the derivation lives in
 the layer name.
+<!-- @concept focus-ring -->
+<!-- @claim focus-ring-radii-derived-from-control figma-focus-ring-radii-raw-with-derivation-in-layer-name -->
 
 **The capsule chip is the one place the derivation collapses.** `border-radius` clamps to half the
 shorter side, so a ring around a capsule is a capsule at any size — there is nothing left to derive,
@@ -55,6 +59,8 @@ than as an addition to a radius, which is why the chip's ring layers are named f
 The rings stay **unbound** in Figma even so: binding them to `radius-full` would be correct only while
 the chip is a capsule, and a chip that later returned to a numeric radius would silently inherit that
 radius instead of `radius + 2` — the exact error leaving them raw prevents.
+<!-- @concept focus-ring -->
+<!-- @claim ring-around-capsule-is-a-capsule figma-focus-ring-radii-raw-with-derivation-in-layer-name -->
 
 **Radius tokens are ordinal, and only the terminal value is named** — `radius-1`, `radius-2`,
 `radius-full`. Two reasons. `radius` rather than `rounded` because it names what the value *is* rather

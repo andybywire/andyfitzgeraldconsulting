@@ -305,6 +305,9 @@ export function initSearch() {
    * Which elements THIS script hid, rather than "everything in <main>". Restoring by
    * clearing `hidden` on every child would reveal anything a page had hidden for its own
    * reasons — and both index pages hide cards past the truncation point.
+   *
+   * @concept not-applicable
+   * @claim search-restores-only-what-it-hid
    */
   let hidden: HTMLElement[] = []
   let view: HTMLElement | null = null
@@ -324,6 +327,9 @@ export function initSearch() {
    * own scripts keep their listeners, their ResizeObservers and their state — the Insights
    * masonry is mid-measurement behind this — so closing search restores a live page rather
    * than rebuilding one.
+   *
+   * @concept not-applicable
+   * @claim search-hides-page-content-rather-than-removing
    */
   const takeOver = () => {
     const current = ensureView()
@@ -357,6 +363,9 @@ export function initSearch() {
      * Two separate faults produced that, and both are fixed: the flag now lifts here, and
      * `run` is called unconditionally at the end of this file rather than only when a
      * query is present.
+     *
+     * @concept styled-away
+     * @claim search-query-flag-hides-resting-search-body-before-paint stale-search-query-flag-blanked-search-page
      */
     delete document.documentElement.dataset.searchQuery
   }
@@ -557,6 +566,9 @@ export function initSearch() {
    *
    * The `more` control is measured too and parked at the end of the run — it occupies a
    * slot in the last kept row, so packing without it reveals one chip too many.
+   *
+   * @concept forced-reflow
+   * @claim per-chip-fitting-forces-a-layout-flush-per-step chip-width-independent-of-visible-siblings facet-rows-packed-in-arithmetic
    */
   const fitGroup = (list: HTMLElement, key: FacetKey) => {
     const items = Array.from(list.children) as HTMLElement[]
@@ -574,6 +586,9 @@ export function initSearch() {
      *
      * `fewer` is hidden for the measurement because it never coexists with `more` — it is
      * the control for the state where nothing is being packed at all.
+     *
+     * @concept not-applicable forced-reflow
+     * @claim hidden-element-reports-no-size measuring-hidden-more-control-overpacks-by-a-row
      */
     for (const li of chips) li.hidden = false
     more.hidden = false
@@ -679,7 +694,8 @@ export function initSearch() {
       if (fewer) list.append(fewer)
 
       /* A group with nothing in it is hidden rather than left as a bare heading — the
-         Presentation-branch genres simply do not appear in a Document-only result set. */
+         Presentation-branch genres simply do not appear in a Document-only result set.
+         @concept not-applicable */
       group.hidden = facets[key].length === 0
       reset.hidden = selected[key].size === 0
     }
@@ -828,6 +844,9 @@ export function initSearch() {
      *
      * Deliberately not `requestAnimationFrame`: it does not fire in a hidden document,
      * which is exactly where this would be hardest to notice.
+     *
+     * @concept forced-reflow programmatic-focus focus-loss
+     * @claim focus-is-a-no-op-on-display-none-element reading-layout-property-flushes-style force-reflow-before-focusing-just-shown-element raf-does-not-fire-in-hidden-document
      */
     void toggle.offsetWidth
     toggle.focus()
@@ -859,6 +878,9 @@ export function initSearch() {
    *
    * What it does not do is appear on keyboard focus, which is the honest limitation of
    * the native affordance. If that matters, it needs a designed tooltip.
+   *
+   * @concept javascript-only-control screen-reader-announcement
+   * @claim javascript-only-control-must-not-appear-without-javascript search-shortcut-hint-is-a-native-title title-becomes-accessible-description native-title-does-not-appear-on-keyboard-focus
    */
   const platform =
     (navigator as {userAgentData?: {platform?: string}}).userAgentData?.platform ||
@@ -892,6 +914,9 @@ export function initSearch() {
        *
        * `expanded` still resets on a new query, so the row also collapses on its own at the
        * next keystroke; this control is for going back WITHIN a query.
+       *
+       * @concept programmatic-focus focus-target focus-loss
+       * @claim search-reveal-focuses-first-chip hiding-the-focused-element-drops-focus-to-body
        */
       const group = reveal.closest<HTMLElement>('[data-search-facet]')!
       group.querySelector<HTMLElement>('[data-facet-chip]')?.focus()
@@ -926,6 +951,9 @@ export function initSearch() {
        * lose their place entirely. open-questions.md records the alternative — the group
        * heading with `tabindex="-1"` — as something to revisit with a live region, which
        * search does not have yet.
+       *
+       * @concept programmatic-focus focus-target focus-loss
+       * @claim reset-focuses-first-facet-in-group hiding-the-focused-element-drops-focus-to-body
        */
       const group = ensureView().querySelector(`[data-search-facet="${key}"]`)
       group?.querySelector<HTMLElement>('[data-facet-chip]')?.focus()

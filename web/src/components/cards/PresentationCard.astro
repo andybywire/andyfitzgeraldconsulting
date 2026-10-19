@@ -108,7 +108,9 @@ const {
        pseudo-element. Keeps the accessible name to the title rather than announcing
        title, eyebrow, venue and every tag as one link. See ArticleCard for the full
        note — including the cost, which is that a second link in here would need
-       lifting with `z-index`. This card has none. */
+       lifting with `z-index`. This card has none.
+       @concept screen-reader-announcement
+       @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element */
   }
   <Tag class="card-title"><a href={href}>{title}</a></Tag>
 

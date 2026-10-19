@@ -348,11 +348,15 @@ const PLAUSIBLE_INIT =
       try/catch because reading localStorage THROWS outright (not returns null)
       when storage is blocked, e.g. Safari with cross-site tracking prevention
       in some embedded contexts. An exception here would break the whole page.
+
+      @concept javascript-only-control
+      @claim synchronous-head-script-runs-before-first-paint javascript-only-control-must-not-appear-without-javascript card-truncation-keyed-on-html-js html-js-flag-is-global
     */
     }
     <script is:inline>
       /* First, and outside the try: a localStorage failure must not cost the page
-         its enhancement flag. */
+         its enhancement flag.
+         @concept javascript-only-control */
       document.documentElement.classList.add('js')
 
       try {
@@ -374,7 +378,9 @@ const PLAUSIBLE_INIT =
          owns the two elements.
 
          Deliberately not `URLSearchParams`: this is the one script on the critical path
-         before first paint, and a substring test is enough to ask "is there a q". */
+         before first paint, and a substring test is enough to ask "is there a q".
+         @concept styled-away
+         @claim synchronous-head-script-runs-before-first-paint search-query-flag-hides-resting-search-body-before-paint */
       if (/[?&]q=/.test(location.search)) document.documentElement.dataset.searchQuery = ''
     </script>
 
@@ -741,6 +747,9 @@ const PLAUSIBLE_INIT =
       a component — that one is for content announced but never drawn, and this is drawn
       the moment it matters. Borrowing the mechanism is right; borrowing the semantics
       would not be.
+
+      @concept landing-point programmatic-focus visually-hidden
+      @claim fragment-navigation-moves-focus-only-to-a-focusable-target main-cannot-hold-focus-by-default tabindex-minus-one-focusable-not-tab-stop skip-link-target-is-main-with-tabindex-minus-one skip-link-does-not-use-visually-hidden-component visually-hidden-is-for-announced-but-not-drawn
     */
     }
     <a class="skip-link" href="#main">Skip to main content</a>
@@ -803,6 +812,9 @@ const PLAUSIBLE_INIT =
    *
    * Declarations are <VisuallyHidden>'s, which documents why each is load-bearing and why
    * `display: none`, `visibility: hidden` and `width: 0` are all wrong here.
+   *
+   * @concept visually-hidden
+   * @claim display-none-removes-from-accessibility-tree visibility-hidden-removes-from-accessibility-tree width-zero-does-not-remove-text-from-layout
    */
   .skip-link:not(:focus) {
     position: absolute;

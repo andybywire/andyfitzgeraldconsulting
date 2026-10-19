@@ -122,7 +122,9 @@ export function highlight(code: string, language?: string | null): string {
             /* Re-applied here because this `<pre>` is Shiki's, not the one the
                component used to write. `tabindex` keeps the scroll region keyboard
                reachable (WCAG 2.1.1) and `data-language` carries the stored value
-               through to the markup. */
+               through to the markup.
+               @concept scroll-region
+               @claim tabindex-zero-makes-scroll-region-keyboard-reachable unreachable-scroll-region-fails-wcag-2-1-1 */
             node.properties.tabindex = '0'
             if (language) node.properties['data-language'] = language
           },

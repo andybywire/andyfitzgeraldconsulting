@@ -204,9 +204,12 @@ Kept here rather than deleted, because each was an open question long enough to 
   clamp, and static at both ends. DESIGN.md → Typography.
 - **The focus ring at `radius-1`** now has a real control to judge on: the mode selector. DESIGN.md
   asked for that check in phase 3 and it is on screen, unresolved by eye.
+  <!-- @concept focus-ring -->
 - **Whether an accent band's focus ring needs the swapped pair** — yes, and the mode selector is the
   first component that proves it: `focus-offset` is white and its selected pill is white, so the
   default order would put an invisible ring on the one control that most needs it.
+  <!-- @concept focus-ring -->
+  <!-- @claim accent-band-components-swap-focus-colors default-focus-order-vanishes-into-selected-theme-pill -->
 - **The masthead's tablet state**, which the Figma boards never drew. It needed no design: six items in
   equal columns produce it on the way from two rows to one.
 

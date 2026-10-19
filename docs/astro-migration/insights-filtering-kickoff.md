@@ -70,7 +70,9 @@ than a phase 6 surprise.
   genres" is the longer label in the narrower column. Judge it on screen.
 - **Which focus target on reset.** "First facet" is the plan; the group heading with `tabindex="-1"`
   is the alternative, and announces "Topics" rather than a contextless chip name. Pairs with the next one.
+  <!-- @concept focus-target -->
 - **The `aria-live` wording.** "12 of 42 shown" is the doc's minimum. Note the count is now 45, not 42.
+  <!-- @concept screen-reader-announcement -->
 
 ### What the spec already settles — don't redesign these
 
@@ -85,6 +87,8 @@ than a phase 6 surprise.
 - **The accessible name changes by state** — `, add filter` against `, selected, remove filter` — because
   the same control means opposite things and only the fill says so visually. The script already appends
   the first half.
+  <!-- @concept screen-reader-announcement -->
+  <!-- @claim chip-accessible-name-changes-by-state -->
 - **"Insights" cannot be a genre inside Insights.** The board's `Insights 6` chip is a phantom; the real
   genres are the nine in the data.
 
@@ -103,6 +107,8 @@ exists at all.
   `.chip { display: inline-flex }` beat it and a `hidden` button rendered while `el.hidden` said true.
   base.css now has the `!important` guard. Use `[hidden]` for "not applicable" and a class for "styled
   away".
+  <!-- @concept not-applicable styled-away -->
+  <!-- @claim author-display-rule-overrides-ua-hidden hidden-attribute-forced-with-important hidden-for-not-applicable-class-for-styled-away -->
 - **`ResizeObserver` watches both axes**, so anything that changes an element's height inside its own
   observer callback feeds itself. Both observers here are width-guarded. Copy that.
 - **`ResizeObserver` never fires on `display: contents`** — no box. Observe a child with a box.
@@ -114,6 +120,8 @@ exists at all.
   obstacle to verifying in the Browser pane. Twice this session, stale-looking layout turned out to be
   a deferred rAF rather than a bug. Validate the logic by calling it directly before concluding
   anything.
+  <!-- @concept browser-pane -->
+  <!-- @claim raf-does-not-fire-in-hidden-document browser-pane-never-fires-raf -->
 - **TypeScript will not narrow a captured binding into a hoisted `function`.** Pass the non-null
   element as a parameter.
 - **Measure, don't reason.** Every wrong number this session came from computing on the wrong input:
@@ -127,6 +135,8 @@ exists at all.
   "show all" — side by side, stacked on mobile, both present only while items remain. Needs the
   `html.js` class added to BaseLayout's synchronous head script (Andy approved; not yet written), so the
   no-JS page keeps all 45 visible.
+  <!-- @concept javascript-only-control -->
+  <!-- @claim card-truncation-keyed-on-html-js -->
 - **`grid-auto-flow: dense` is decided but flagged.** 21 of 45 positions differ from tab order, none by
   more than two slots, DOM order untouched. Reversible in one word. See open-questions.md.
 - **Three note cards link to 404s** until `[slug].astro` widens to include `note`. It is one route that

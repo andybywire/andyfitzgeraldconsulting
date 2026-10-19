@@ -202,6 +202,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
    * Both properties, because both can draw a ring: base.css draws with `box-shadow` and
    * clears `outline`, while a UA stylesheet draws with `outline`. Scoped, this is (0,3,0)
    * against base.css's (0,1,0), so it wins without `!important`.
+   *
+   * @concept focus-ring landing-point programmatic-focus headless-chrome browser-pane
+   * @claim filtered-arrival-focuses-the-grid no-focus-ring-on-landing-grid tabindex-minus-one-focusable-not-tab-stop scripted-focus-on-tabindex-minus-one-can-draw-focus-visible-ring focus-visible-heuristics-vary-for-programmatic-focus click-in-grid-gutter-focuses-the-grid base-focus-ring-is-box-shadow-with-outline-cleared ua-stylesheet-draws-focus-with-outline
    */
   .card-masonry:focus {
     outline: none;
@@ -253,6 +256,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
    * which is a visible collapse rather than a reflow.
    *
    * Baseline widely available — Safari 9, Chrome 111, Firefox 113.
+   *
+   * @concept not-applicable
+   * @claim plain-nth-child-counts-hidden-siblings
    */
   @container style(--breakpoint-md: true) {
     .card-masonry {
@@ -368,6 +374,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
    *
    * `:global()` on the child half for the reason every selector here needs it: the cards
    * are slotted and carry the caller's scope, not this component's.
+   *
+   * @concept javascript-only-control styled-away
+   * @claim synchronous-head-script-runs-before-first-paint card-truncation-keyed-on-html-js javascript-only-control-must-not-appear-without-javascript truncation-hands-over-to-hidden-in-one-pass
    */
   html.js .card-masonry[data-truncate]:not([data-hydrated]) > :global(:nth-child(n + 25)) {
     display: none;
@@ -426,7 +435,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
       /* Only what a filter left standing. A hidden card is `display: none`, so it holds
          no grid cell and reports no height — measuring one would write a span of just
          the gap. This is also the set the columns are assigned over, so a filtered view
-         is balanced across its survivors rather than across the full corpus. */
+         is balanced across its survivors rather than across the full corpus.
+         @concept not-applicable
+         @claim hidden-element-reports-no-size */
       const visible = cards.filter((card) => !card.hidden)
 
       /*
@@ -443,6 +454,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
        *
        * Two passes on purpose: read every rect, THEN write. Interleaving would invalidate
        * layout on each write and force a reflow per card.
+       *
+       * @concept forced-reflow
+       * @claim interleaved-layout-reads-and-writes-force-a-reflow-each
        */
       const rects = visible.map((card) => card.getBoundingClientRect())
       const spans = rects.map((rect) => Math.ceil(rect.height) + gap)

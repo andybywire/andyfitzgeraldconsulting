@@ -153,7 +153,9 @@ const {
        as separate component entries — focus-ring-on-light and focus-ring-on-accent
        — because which color contrasts "the control" depends on the control, not on
        the band. base.css carries the on-page-ground default; a control that can
-       appear on a band swaps the pair itself. */
+       appear on a band swaps the pair itself.
+       @concept focus-ring
+       @claim band-does-not-repoint-focus-ring custom-property-substitution-is-not-sequential accent-band-components-swap-focus-colors */
 
     color: var(--color-text);
   }

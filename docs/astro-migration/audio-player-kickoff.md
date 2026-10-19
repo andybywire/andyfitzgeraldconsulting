@@ -227,6 +227,8 @@ All of these failed **silently** in this session or the last.
 
 **The browser pane runs with `document.hidden: true`, and it suppresses more than you
 expect.** Each of these looked like a bug in my code first:
+<!-- @concept browser-pane -->
+<!-- @claim browser-pane-runs-with-document-hidden -->
 
 - `requestAnimationFrame` never fires, so smooth `scrollTo` is a no-op and any
   rAF-deferred work never runs.
@@ -237,6 +239,8 @@ expect.** Each of these looked like a bug in my code first:
 - **`dialog.close()` set `open` to false and fired ZERO `close` events**, with a listener
   added in the same call counting none. Never established whether that is real platform
   behaviour or the pane; the code no longer depends on the answer.
+<!-- @concept browser-pane -->
+<!-- @claim browser-pane-never-fires-raf browser-pane-smooth-scroll-is-a-no-op browser-pane-fires-no-scroll-events browser-pane-suppresses-lazy-loading dialog-close-fired-no-close-event-in-the-pane -->
 
 **Layout:**
 

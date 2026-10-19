@@ -164,6 +164,8 @@ are all answered above.
   contact form — the form hid correctly and the confirmation stayed hidden too — and was
   caught only by reading computed `display` rather than trusting that author styles beat
   the UA sheet.
+  <!-- @concept not-applicable styled-away -->
+  <!-- @claim hidden-attribute-forced-with-important hidden-for-not-applicable-class-for-styled-away hidden-attribute-rule-is-at-base-css-line-97 important-hidden-outranks-target-rule -->
 - **A `defineQuery` past a complexity ceiling yields `any`, not an error.** Two Portable
   Text arrays plus a band fragment is the documented tipping shape, which is exactly what
   a `page` query is — hence the split in `pages.ts`. **Probe with a deliberate bogus
@@ -182,6 +184,8 @@ are all answered above.
   measuring anything that transitions, force reflow with `void el.offsetWidth`, use
   `{behavior: 'instant'}` for scrolling, and prefer `getBoundingClientRect` and
   `getComputedStyle` over screenshots.
+  <!-- @concept browser-pane forced-reflow -->
+  <!-- @claim browser-pane-runs-with-document-hidden browser-pane-never-advances-transitions browser-pane-never-fires-raf reading-layout-property-flushes-style browser-pane-screenshots-unreliable -->
 - **Astro does not route pages whose filename starts with `_`** — a throwaway test page
   named `__tmp.astro` will 404 and look like a broken route.
 - **Sanity MCP patches write to drafts; the static build reads published.** Patching

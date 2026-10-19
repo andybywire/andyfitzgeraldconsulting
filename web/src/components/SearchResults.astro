@@ -22,6 +22,9 @@
  * So carrying this on all 62 pages costs the markup and nothing else, which is what makes
  * "results replace the current page" possible from any page rather than only from
  * `/search/`.
+ *
+ * @concept inert-content
+ * @claim template-content-is-inert
  */
 import {Link} from '@lucide/astro'
 import Chip from './Chip.astro'
@@ -36,6 +39,9 @@ import Eyebrow from './Eyebrow.astro'
       An <h1>, replacing the host page's own — which the controller hides, so exactly one
       is ever in the accessibility tree. It is the STATE of the view: "8 results for …",
       "No results for …", and on `/search/` at rest simply "Search".
+
+      @concept not-applicable
+      @claim search-view-h1-replaces-host-h1 hidden-attribute-removes-from-accessibility-tree
     */
     }
     <h1 data-search-title></h1>
@@ -112,6 +118,8 @@ import Eyebrow from './Eyebrow.astro'
             Both ship `hidden` and only one is ever shown: "see all" while the group is
             truncated, "see fewer" once it has been expanded. Neither appears from `lg` up,
             where the rail shows everything anyway.
+
+            @concept not-applicable
           */
           }
           <li hidden>

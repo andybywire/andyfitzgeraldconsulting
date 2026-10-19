@@ -161,6 +161,8 @@ clickable and focusable. Two entry points to one state." The boards add `[Esc]` 
 close affordance. On mobile the icon becomes the word "search" — the masthead already renders
 the label as real text at both widths and hides it visually in the inline state, so that markup
 exists.
+<!-- @concept programmatic-focus visually-hidden -->
+<!-- @claim cmd-k-opens-search-and-focuses-field search-label-visually-hidden-not-removed -->
 
 ### 6. Then the last of the JSON-LD
 
@@ -175,6 +177,8 @@ search accepts a query at, so it could not be written until search had one. One 
 control that needs JavaScript ships hidden, because a control that does nothing is worse than
 no control. **It currently ships VISIBLE and inert, so today a no-JS visitor sees a Search
 button that never responds.** That is a live defect this work closes, not a style question.
+<!-- @concept javascript-only-control -->
+<!-- @claim search-toggle-ships-hidden javascript-only-control-must-not-appear-without-javascript -->
 
 **From DESIGN.md → Components → Search (specified 2026-08-21):**
 
@@ -206,6 +210,8 @@ here. Match on clean data rather than rendered text, or run values through `steg
 **no scroll events fire at all**, and **lazy loading is suppressed entirely**. Each of these
 looked like a bug in my code first. Sticky-filter behavior in particular cannot be verified
 there — hand that check to Andy.
+<!-- @concept browser-pane -->
+<!-- @claim browser-pane-runs-with-document-hidden browser-pane-never-fires-raf browser-pane-fires-no-scroll-events browser-pane-suppresses-lazy-loading -->
 
 **A `defineQuery` past the complexity ceiling yields `any`, not an error.** Probe with a
 deliberate bogus property access against a known-good control; a green `astro check` proves
@@ -233,6 +239,8 @@ one cost a `border-radius` in the presentations work.
 **`html.js` is set by a synchronous head script before first paint** (`BaseLayout.astro`), so
 any rule keyed on it is true from that paint rather than applied as a correction. This is the
 mechanism for revealing controls without a flash, and it is what the search toggle should use.
+<!-- @concept javascript-only-control -->
+<!-- @claim synchronous-head-script-runs-before-first-paint -->
 
 ## Smaller things left open
 

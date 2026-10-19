@@ -194,6 +194,8 @@ These are all things that failed **silently** in this session or the last.
 - **The browser pane opens with zero layout width.** Call `resize_window` explicitly before
   measuring anything, or every number is meaningless. It also runs with `document.hidden`,
   so transitions never advance.
+  <!-- @concept browser-pane -->
+  <!-- @claim browser-pane-opens-with-zero-layout-width browser-pane-runs-with-document-hidden browser-pane-never-advances-transitions -->
 - **base.css's `nav :is(a, button)` reset** strips the resting underline *and* adds the
   wipe-in `::after`. Never wrap prose links in a `<nav>` unless you intend to re-derive the
   prose treatment.

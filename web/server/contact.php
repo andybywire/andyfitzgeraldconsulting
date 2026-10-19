@@ -252,6 +252,9 @@ $source   = safe_return_path((string) ($_POST['source_page'] ?? '')) ?? FALLBACK
  * First, so a bot costs nothing — no validation, no Gmail token exchange, no network call.
  * And logged, because a false positive would be a real person silently turned away, and
  * the log is the only place that would ever be visible.
+ *
+ * @concept hidden-from-assistive-technology
+ * @claim honeypot-off-screen-aria-hidden-and-untabbable aria-hidden-removes-from-accessibility-tree tabindex-minus-one-focusable-not-tab-stop
  */
 if ($honeypot !== '') {
     fail_generic('honeypot filled from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
@@ -384,6 +387,8 @@ if (wants_json()) {
  * confirmation revealed by `:target`, so a full-page POST can still confirm itself with
  * no JavaScript at all. That block lands with the client script; until it does, this
  * redirect returns the visitor to a page that says nothing.
+ *
+ * @concept styled-away
  */
 header('Location: ' . $source . '#contact-sent', true, 303);
 exit;

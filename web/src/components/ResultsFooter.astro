@@ -33,6 +33,9 @@
  *
  * `role="status"` rather than a bare `aria-live="polite"`: it carries implicit `polite`
  * and `atomic`, and is the better-supported of the two.
+ *
+ * @concept screen-reader-announcement
+ * @claim results-footer-sits-below-grid live-region-announces-wherever-it-sits announcement-region-ships-empty live-region-silent-on-initial-render role-status-implies-polite-and-atomic role-status-better-supported-than-aria-live-polite
  */
 import Chip from './Chip.astro'
 import VisuallyHidden from './VisuallyHidden.astro'
@@ -88,6 +91,9 @@ const totalLabel = `Displaying all ${total} ${total === 1 ? noun.one : noun.many
     tell. The script reads this attribute rather than restating the value, so the id is
     written once. A fixed id is safe while a page carries one of these, which both
     indexes do.
+
+    @concept landing-point focus-loss screen-reader-announcement
+    @claim tabindex-minus-one-focusable-not-tab-stop hiding-the-focused-element-drops-focus-to-body reveal-focus-fallback-ladder card-grid-named-by-count-line
   */
   }
   <p id="result-count" class="result-count" tabindex="-1">{totalLabel}</p>
@@ -103,6 +109,9 @@ const totalLabel = `Displaying all ${total} ${total === 1 ? noun.one : noun.many
     shown, not what the URL addresses, and the reveal is deliberately NOT in the URL
     (Andy, 2026-08-31) — it resets on navigating away. A control with no address is a
     button.
+
+    @concept not-applicable javascript-only-control
+    @claim reveal-controls-ship-hidden
   */
   }
   <div class="result-controls">

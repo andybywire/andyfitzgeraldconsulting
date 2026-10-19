@@ -144,6 +144,9 @@ const sourcePage = Astro.url.pathname
       it a screen reader user gets no signal that anything happened — the button they
       pressed simply vanishes. Focus rather than `aria-live`, because the content is
       replacing itself rather than being announced alongside; doing both double-announces.
+
+      @concept landing-point programmatic-focus screen-reader-announcement
+      @claim tabindex-minus-one-focusable-not-tab-stop contact-state-announced-by-focus-not-live-region focus-and-live-region-together-double-announce
     */
   }
   <div class="contact-state contact-sent" id="contact-sent" tabindex="-1">
@@ -284,6 +287,9 @@ const sourcePage = Astro.url.pathname
       NOT the `.visually-hidden` pattern, which would be the wrong tool even though it
       looks similar: that exists for content that SHOULD be announced but not drawn.
       This is the opposite — drawn nowhere and announced nowhere.
+
+      @concept hidden-from-assistive-technology visually-hidden hiding
+      @claim hidden-or-display-none-honeypot-is-skipped-by-bots tabindex-minus-one-focusable-not-tab-stop aria-hidden-removes-from-accessibility-tree aria-hidden-on-focusable-is-an-aria-violation honeypot-off-screen-aria-hidden-and-untabbable visually-hidden-is-for-announced-but-not-drawn
     */
     }
     <div class="honeypot" aria-hidden="true">
@@ -476,6 +482,9 @@ const sourcePage = Astro.url.pathname
    * declared here: base.css's global `:focus-visible` already draws the two-ring
    * treatment on every focusable element, and a control-specific ring would be a
    * second answer to a question the global tier has already settled.
+   *
+   * @concept focus-ring
+   * @claim focus-ring-is-global-not-per-control
    */
   input:hover,
   textarea:hover {
@@ -489,6 +498,9 @@ const sourcePage = Astro.url.pathname
    * state and the announced state cannot drift apart — there is only one thing to
    * set, and forgetting it fails loudly in both channels at once rather than quietly
    * in one.
+   *
+   * @concept screen-reader-announcement
+   * @claim error-state-styled-from-aria-invalid
    */
   input[aria-invalid='true'],
   textarea[aria-invalid='true'] {
@@ -506,6 +518,9 @@ const sourcePage = Astro.url.pathname
    *
    * DESIGN.md: identify errors in text, never by color alone. The color is a second
    * channel, not the message.
+   *
+   * @concept not-applicable
+   * @claim author-display-rule-overrides-ua-hidden
    */
   .field-error {
     margin: 0;
@@ -530,6 +545,9 @@ const sourcePage = Astro.url.pathname
    * programmatically: base.css's global ring is the right treatment if a visitor ever
    * does reach one, and a `tabindex="-1"` element does not take a visible ring from a
    * scripted `.focus()` anyway.
+   *
+   * @concept focus-ring landing-point programmatic-focus
+   * @claim contact-state-focus-visible-not-suppressed scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring
    */
   /*
    * ── HIDDEN BY A CLASS, NOT BY THE `hidden` ATTRIBUTE ──────────────────────
@@ -548,6 +566,9 @@ const sourcePage = Astro.url.pathname
    *
    * `display: none` removes these from the accessibility tree exactly as `hidden` would,
    * so nothing is lost semantically by using a class for it.
+   *
+   * @concept styled-away not-applicable
+   * @claim hidden-for-not-applicable-class-for-styled-away hidden-attribute-forced-with-important important-hidden-outranks-target-rule display-none-removes-from-accessibility-tree hidden-attribute-removes-from-accessibility-tree contact-states-hidden-by-class
    */
   .contact-state {
     display: none;
@@ -557,6 +578,8 @@ const sourcePage = Astro.url.pathname
   /*
    * Two ways in, one appearance. `.is-shown` is the script's; `:target` is the no-JS
    * path's, reached when the endpoint 303s back to `<the page>#contact-sent`.
+   *
+   * @concept styled-away
    */
   .contact-state.is-shown,
   .contact-sent:target {
@@ -570,6 +593,9 @@ const sourcePage = Astro.url.pathname
    *
    * The script does this with `form.hidden = true` instead, which needs no rule and wins
    * outright thanks to that same `!important`. The two mechanisms never meet.
+   *
+   * @concept styled-away not-applicable
+   * @claim hidden-attribute-forced-with-important
    */
   .contact-sent:target ~ .contact-form {
     display: none;
@@ -729,6 +755,9 @@ const sourcePage = Astro.url.pathname
      * can undo — see the note on `.contact-state`. The reflow is forced before focusing
      * because a `display: none` element cannot take focus, and the class change and the
      * `.focus()` call are in the same task.
+     *
+     * @concept forced-reflow programmatic-focus styled-away
+     * @claim hidden-attribute-forced-with-important focus-is-a-no-op-on-display-none-element reading-layout-property-flushes-style force-reflow-before-focusing-just-shown-element
      */
     function showState(block: HTMLElement) {
       block.classList.add('is-shown')
@@ -746,7 +775,9 @@ const sourcePage = Astro.url.pathname
       hideState(failed)
 
       /* Validate everything, then focus the FIRST invalid control — not the last, which
-         is what a naive loop leaves focused, and not the one that happened to be blurred. */
+         is what a naive loop leaves focused, and not the one that happened to be blurred.
+         @concept programmatic-focus focus-target
+         @claim submit-focuses-first-invalid-control */
       const invalid = controls.filter((el) => !validate(el))
       if (invalid.length > 0) {
         invalid[0].focus()

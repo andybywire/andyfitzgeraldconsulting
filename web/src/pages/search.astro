@@ -123,6 +123,9 @@ const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map(
     `search` renders the field already open. It only sets an attribute — the swap itself
     is CSS gated on `html.js`, so this paints correct rather than correcting itself, and
     a visitor with no script keeps the nav and the Common Topics list below.
+
+    @concept javascript-only-control
+    @claim search-swap-gated-on-html-js synchronous-head-script-runs-before-first-paint
   */
   }
   <Masthead search />

@@ -65,6 +65,9 @@ const STEP = 24
  * not depend on how many of its siblings are visible, so instead: reveal everything once,
  * read every width in a single pass, then simulate the wrap in arithmetic. One layout
  * read, no thrash.
+ *
+ * @concept forced-reflow
+ * @claim per-chip-fitting-forces-a-layout-flush-per-step chip-width-independent-of-visible-siblings facet-rows-packed-in-arithmetic
  */
 function fitRow(list: HTMLElement, budget: number) {
   const entries = Array.from(list.children) as HTMLElement[]
@@ -77,7 +80,9 @@ function fitRow(list: HTMLElement, budget: number) {
 
   /* Reveal everything so every width is measurable, then read in one pass. The `more`
      control has to be measured too: it occupies a slot in the last kept row, so packing
-     without it would reveal one chip too many. */
+     without it would reveal one chip too many.
+     @concept forced-reflow not-applicable
+     @claim hidden-element-reports-no-size */
   for (const li of chips) li.hidden = false
   more.hidden = false
   fewer.hidden = true
@@ -164,7 +169,9 @@ function wireFacets() {
       list.dataset.expanded = 'true'
       fitRow(list, rowBudget())
       /* Focus follows the disclosure to the control that replaced it, so a keyboard user
-         is not dropped at the top of a list that just grew under them. */
+         is not dropped at the top of a list that just grew under them.
+         @concept programmatic-focus focus-target focus-loss
+         @claim disclosure-focus-moves-to-replacing-control hiding-the-focused-element-drops-focus-to-body */
       fewer?.focus()
     })
 
@@ -367,6 +374,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * emitting bad English — the singular, and zero, which reads "No matching insights"
    * rather than "Displaying 0". The no-filter branch is mirrored server-side by
    * <ResultsFooter>; if this sentence changes, that one does.
+   *
+   * @concept screen-reader-announcement
+   * @claim aria-labelledby-name-follows-referenced-text live-region-heard-without-context announcement-does-not-name-the-filter result-count-wording-is-andys
    */
   function describe(sel: Selection, shown: number) {
     if (isFiltered(sel)) {
@@ -387,6 +397,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    *
    * One timer, reset on each call, so a second change inside the window replaces the
    * message rather than having its own clear cancelled by the first.
+   *
+   * @concept screen-reader-announcement
+   * @claim live-region-cleared-after-speaking populated-live-region-repeats-for-linear-readers
    */
   let clearAnnouncement = 0
   function announce(message: string) {
@@ -416,7 +429,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
 
   /* False for exactly one call — the initial render — because the region must not read a
      shared `?topic=` link's count out over the page load. Back and Forward DO announce:
-     the content changed and the visitor asked for it. */
+     the content changed and the visitor asked for it.
+     @concept screen-reader-announcement
+     @claim live-region-silent-on-initial-render */
   function applySelection(sel: Selection, shouldAnnounce = true) {
     current = sel
 
@@ -441,7 +456,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
 
     /* The handover: from here `hidden` is the only thing truncating, so the pre-paint CSS
        rule must stop. Set in the same synchronous pass that writes the flags above, so no
-       frame sees both mechanisms or neither. */
+       frame sees both mechanisms or neither.
+       @concept styled-away not-applicable
+       @claim truncation-hands-over-to-hidden-in-one-pass */
     grid.dataset.hydrated = ''
 
     /* "Show all" while anything is held back; "Show more" only while a further step would
@@ -501,6 +518,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
        * selected pill too, since DESIGN.md has the attribute carry the fact.
        * `aria-disabled` rather than dropping `href`, so a zero-hit chip stays focusable
        * and discoverable — with the href pointing at the current view, per above.
+       *
+       * @concept screen-reader-announcement
+       * @claim chip-accessible-name-changes-by-state aria-pressed-is-button-only
        */
       if (selected) {
         chip.setAttribute('aria-current', 'true')
@@ -533,7 +553,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
        hides it and taking that tag away again, or pressing Back, brings it back. The
        grid's name follows it, joined ahead of the count line: `aria-labelledby` reads
        referenced text even while it is hidden, so the label's id is only in the list
-       while the label is on screen. */
+       while the label is on screen.
+       @concept screen-reader-announcement not-applicable
+       @claim aria-labelledby-reads-hidden-text */
     const labelled = arrivalUrl !== null && urlFor(sel) === arrivalUrl
     if (resultsLabel) resultsLabel.hidden = !labelled
     if (countLine?.id) {
@@ -624,7 +646,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
        replaced has just gone `hidden`, so focus would otherwise fall to the body.
        `:not([hidden])` because the re-fit above may have re-packed the row. Whether this
        should be the group HEADING instead, which announces "Topics" where a chip name is
-       contextless, is still open and pairs with the wording of the live region. */
+       contextless, is still open and pairs with the wording of the live region.
+       @concept programmatic-focus focus-target focus-loss
+       @claim reset-focuses-first-facet-in-group hiding-the-focused-element-drops-focus-to-body */
     if (isReset) group?.querySelector<HTMLElement>('li:not([hidden]) .chip')?.focus()
   })
 
@@ -640,6 +664,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * starting the page again. The fallback ladder is: the other control if it survived,
    * otherwise the count line, which is focusable for exactly this and reads out the new
    * total when focus lands on it.
+   *
+   * @concept focus-loss programmatic-focus landing-point
+   * @claim hiding-the-focused-element-drops-focus-to-body reveal-focus-fallback-ladder count-line-reads-total-on-focus
    */
   function reveal(next: number, pressed: HTMLButtonElement) {
     revealed = Math.min(next, cards.length)
@@ -688,6 +715,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * THE OPENED GROUPS NOW SIT ABOVE THE LANDING POINT, since a filtered arrival scrolls
    * to the cards (below). Still right: someone who scrolls back up to see what this is a
    * filter OF is exactly who this was for, and they find it open.
+   *
+   * @concept landing-point
+   * @claim filtered-arrival-opens-both-facet-groups filtered-arrival-scrolls-to-the-cards
    */
   if (isFiltered(initial)) {
     for (const group of groups) {
@@ -718,6 +748,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    * `aria-labelledby` itself is written by `applySelection`, not here, because since the
    * results label arrived it depends on the selection: the label joins the name while it
    * shows. That makes the one writer the only place the name is decided.
+   *
+   * @concept landing-point programmatic-focus screen-reader-announcement
+   * @claim filtered-arrival-focuses-the-grid div-has-no-role-and-no-name card-grid-named-by-count-line grid-region-set-by-script tabindex-minus-one-focusable-not-tab-stop
    */
   const named = Boolean(countLine?.id)
   if (countLine?.id) {
@@ -834,6 +867,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
    *
    * SEARCH NEVER REACHES THIS. It is excluded by construction, not by a route check:
    * only <FacetFilters> boots this module, and `/search/` composes <SearchResults>.
+   *
+   * @concept landing-point programmatic-focus screen-reader-announcement
+   * @claim filtered-arrival-scrolls-to-the-cards filtered-arrival-focuses-the-grid focus-scrolls-with-nearest-alignment prevent-scroll-focus-does-not-cancel-smooth-scroll live-region-silent-on-initial-render
    */
   const navigation = performance.getEntriesByType('navigation')[0] as
     PerformanceNavigationTiming | undefined
