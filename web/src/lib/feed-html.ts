@@ -193,7 +193,9 @@ function components(options: FeedHtmlOptions): PortableTextComponents {
         /* Alt falls back to '' rather than to the caption. An empty alt marks an
            image as decorative, which is wrong here but honest; repeating the caption
            would make a screen reader read the same sentence twice. Body figures are
-           clean anyway — 0 of 142 lack altText. */
+           clean anyway — 0 of 142 lack altText.
+           @concept screen-reader-announcement
+           @claim caption-as-alt-is-read-twice */
         const alt = escapeHTML(node.altText ?? '')
         const caption = node.caption ? `<figcaption>${escapeHTML(node.caption)}</figcaption>` : ''
 

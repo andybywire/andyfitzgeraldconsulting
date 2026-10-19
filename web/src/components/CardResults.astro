@@ -37,6 +37,9 @@
  *
  * A fixed id, like <ResultsFooter>'s `result-count`, is safe while a page carries one
  * of these.
+ *
+ * @concept not-applicable screen-reader-announcement
+ * @claim results-label-ships-hidden results-label-is-a-p-not-a-heading card-grid-named-by-count-line aria-labelledby-reads-hidden-text
  */
 interface Props {
   class?: string
@@ -65,6 +68,9 @@ const {class: className, ...rest}: Props = Astro.props
    * base.css's rule for scroll targets: without a margin the content lands flush against
    * the viewport edge. `--rhythm-band` is the value every other scroll target on the site
    * takes, and `scrollIntoView` honors it, so no number is restated in the script.
+   *
+   * @concept not-applicable
+   * @claim hidden-element-reports-no-size
    */
   .card-results {
     scroll-margin-block-start: var(--rhythm-band);
@@ -84,6 +90,9 @@ const {class: className, ...rest}: Props = Astro.props
    * The space BELOW is the bind — `rhythm-heading-close`, 16 — and it lives on the
    * label rather than as a gap on the wrapper so that it disappears with it: `hidden` is
    * `display: none`, and a margin on a box that does not render does not exist.
+   *
+   * @concept not-applicable
+   * @claim hidden-element-reports-no-size
    */
   .results-label {
     color: var(--color-text-muted);

@@ -91,6 +91,9 @@ import {Search} from '@lucide/astro'
  * prefix match for any of the five hrefs, and neither is `/`. The prefix test only
  * works because every section href is itself a directory ending in `/` — without the
  * trailing slash, a future `/insight-search/` would light up Insights.
+ *
+ * @concept screen-reader-announcement
+ * @claim aria-current-page-and-true-announce-differently
  */
 const here = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`
 
@@ -155,6 +158,9 @@ interface Props {
    * A visitor with no JavaScript never gets the class, so the swap never happens and they
    * keep the nav. That is the honest state: the field cannot rank anything without a
    * script, and `/search/` already answers them with the Common Topics list instead.
+   *
+   * @concept javascript-only-control
+   * @claim synchronous-head-script-runs-before-first-paint search-swap-gated-on-html-js
    */
   search?: boolean
 }
@@ -308,6 +314,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
             have an accessible name without `aria-label`: Lucide marks its own SVG
             `aria-hidden`, so with `display: none` on the label the button would
             have no name at all.
+
+            @concept javascript-only-control visually-hidden hidden-from-assistive-technology
+            @claim javascript-only-control-must-not-appear-without-javascript search-item-hidden-as-whole-li search-toggle-gated-on-html-js hidden-attribute-set-by-script-arrives-after-first-paint search-label-visually-hidden-not-removed lucide-marks-its-svg-aria-hidden display-none-removes-from-accessibility-tree
           */
           }
           <button
@@ -362,6 +371,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
       even the old name: "Close search, esc" and "Esc, close search" pass; "Close search
       (Esc)" and "Close search, Escape" do not — axe matches whole words, so "Escape" is
       not "esc", and parentheses defeat it where a comma does not.
+
+      @concept screen-reader-announcement
+      @claim never-visible-name-uses-aria-label close-search-named-close-search-esc axe-passes-close-search-name-in-isolation axe-label-in-name-matches-whole-words
     */
     }
     <form class="search-field" id="masthead-search" role="search" action="/search/" method="get">
@@ -394,6 +406,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
         the magnifier itself the submit control — visible, conventional, no invisible
         focus stop — and rejected for now because it would add a hover and focus treatment
         to an element the design draws as decoration. Worth revisiting on screen.
+
+        @concept visually-hidden
+        @claim search-submit-visually-hidden-in-tab-order
       */
       }
       <button class="search-submit" type="submit">Search</button>
@@ -519,7 +534,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
      this band the inner 2px is `focus-offset` — white on light, near-black on
      dark, both legible against the fill — and the outer 2px is `focus-ring`,
      which blends into it. A tight legible ring rather than an offset one, in both
-     themes. Verified against both dark values, not assumed. */
+     themes. Verified against both dark values, not assumed.
+     @concept focus-ring
+     @claim masthead-band-needs-no-focus-ring-override */
 
   /* ── Nav ────────────────────────────────────────────────────────────────── */
 
@@ -936,6 +953,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
      *
      * The icon shift this was reaching for is real, and it is fixed on
      * `.search-toggle` instead — see the note there.
+     *
+     * @concept visually-hidden hidden-from-assistive-technology
+     * @claim search-label-visually-hidden-not-removed lucide-marks-its-svg-aria-hidden search-label-does-not-use-visually-hidden-component visibility-hidden-removes-from-accessibility-tree display-none-removes-from-accessibility-tree width-zero-does-not-remove-text-from-layout
      */
     .search-label {
       position: absolute;
@@ -963,6 +983,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
    * `html.js .thing` shape used elsewhere. The positive form would have to restate the
    * button's `display` and every state that depends on it; the negative form leaves all
    * of that untouched and simply removes the item when the class never arrives.
+   *
+   * @concept javascript-only-control
+   * @claim search-toggle-gated-on-html-js hidden-attribute-set-by-script-arrives-after-first-paint synchronous-head-script-runs-before-first-paint
    */
   html:not(.js) .search-item {
     display: none;
@@ -978,6 +1001,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
    * Both halves are gated on `html.js` for the reason above, and it is load-bearing on
    * the nav specifically: hiding the navigation for a visitor who could never open the
    * field would leave them a header with nothing in it.
+   *
+   * @concept javascript-only-control styled-away
+   * @claim search-swap-gated-on-html-js
    */
   .search-field {
     display: none;
@@ -1040,7 +1066,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
 
   /* The label is never visible at any width, so this is the case ThemeToggle's rule sends
      to a clip rather than to `aria-label`: the input needs a real associated <label> that
-     survives autofill and translation. */
+     survives autofill and translation.
+     @concept visually-hidden
+     @claim never-visible-search-input-label-is-a-clipped-label */
   .search-field-label {
     position: absolute;
     inline-size: 1px;
@@ -1059,7 +1087,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
   /* Same clip as the label above. It is left IN the tab order deliberately: a control
      that submits the form is a real control, and removing it with `tabindex="-1"` would
      hide it from keyboard users while keeping it for the pointer — the wrong way round.
-     The order it produces is input, Search, Esc, which reads correctly. */
+     The order it produces is input, Search, Esc, which reads correctly.
+     @concept visually-hidden
+     @claim search-submit-visually-hidden-in-tab-order tabindex-minus-one-focusable-not-tab-stop */
   .search-submit {
     position: absolute;
     inline-size: 1px;
@@ -1099,6 +1129,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
      * spreads precisely so "the rings stay concentric with whatever radius the control
      * has". At 0 the ring came out square-cornered inside a field rounded to `radius-1` —
      * two different corner treatments, 1px apart, on the only control in the header.
+     *
+     * @concept focus-ring
+     * @claim box-shadow-ring-follows-border-radius search-input-carries-radius-for-focus-ring
      */
     border-radius: var(--radius-1);
     background-color: transparent;

@@ -147,6 +147,7 @@ is a `<button>` rather than a link precisely because search does not navigate.
   open-questions.md against this phase.
 - **The focus ring at `radius-1`** is now on screen in the mode selector, which is the check
   DESIGN.md asked for. Unresolved by eye.
+  <!-- @concept focus-ring -->
 - **`sizes="auto"` was accepted on spec, not measurement** — see the harness warning above.
 - **Rail headings have no role**, and rail width at md is 166px, which is where `body-compact`
   ("a column too narrow for `body`") most likely earns its keep.

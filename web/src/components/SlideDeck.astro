@@ -33,6 +33,9 @@
  * keyboard scrolling are all CSS and the platform. The script below only adds the
  * buttons, the arrow keys and the counter — which is why they ship `hidden` and are
  * revealed by it, the same contract <FacetFilters> uses for its disclosure controls.
+ *
+ * @concept javascript-only-control scroll-region
+ * @claim slide-deck-no-script-state-is-a-grid synchronous-head-script-runs-before-first-paint html-js-set-at-baselayout-line-72 deck-track-needs-no-javascript javascript-only-control-must-not-appear-without-javascript
  */
 import {ChevronLeft, ChevronRight, Download, Fullscreen, Minimize} from '@lucide/astro'
 import SanityImage from './SanityImage.astro'
@@ -91,6 +94,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
     scrollable regions focusable on their own, Safari does not — so without this,
     arrow-key scrolling is simply unavailable there. Valid on an <ol> given the
     `aria-label`, and honest: this element really is an interactive scroll region.
+
+    @concept scroll-region
+    @claim tabindex-zero-makes-scroll-region-keyboard-reachable chrome-and-firefox-make-scroll-regions-focusable safari-does-not-make-scroll-regions-focusable
   */
   }
   <ol class="deck-track" role="list" tabindex="0" aria-label={`Slides from ${title}`}>
@@ -123,6 +129,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
     The pager ships `hidden` and is revealed by the script, the contract <FacetFilters>
     uses. The download link does NOT — it is a plain anchor that works with no script at
     all, so hiding it would remove the one control a no-JS visitor can actually use.
+
+    @concept javascript-only-control
+    @claim javascript-only-control-must-not-appear-without-javascript deck-download-link-not-hidden
   */
   }
   <div class="deck-controls">
@@ -131,7 +140,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
         /* `aria-label` carries the accessible name because the icon is decorative —
           Lucide marks its own SVG `aria-hidden`. `title` adds the board's annotated
           tooltip on hover; it does not appear on keyboard focus or touch, which is a
-          limit of the attribute rather than of this markup. */
+          limit of the attribute rather than of this markup.
+          @concept hidden-from-assistive-technology screen-reader-announcement
+          @claim lucide-marks-its-svg-aria-hidden native-title-does-not-appear-on-keyboard-focus native-title-does-not-appear-on-touch */
       }
       <button
         class="deck-button"
@@ -159,7 +170,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
         /* The board annotates both with the keyboard shortcut, which is the only place a
           visitor would learn it. Disabled rather than hidden at the ends, so the row
           does not reflow as you page — and `disabled` on a real <button> takes it out
-          of the tab order honestly rather than leaving a dead target. */
+          of the tab order honestly rather than leaving a dead target.
+          @concept hiding
+          @claim deck-pager-disabled-not-hidden-at-ends */
       }
       <button
         class="deck-button"
@@ -201,6 +214,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
 
     No counter and no slide numbers: the board draws none, and inventing one here
     would be designing rather than building.
+
+    @concept inert-content
+    @claim dialog-brings-focus-trap-and-inert-background
   */
   }
   <dialog class="deck-dialog" data-deck-dialog aria-label={`Slides from ${title}, full screen`}>
@@ -606,6 +622,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
    * at the ends. The TRACK itself is CSS — swipe, snap, scrollbar and native keyboard
    * scrolling all work before this runs, which is why the controls ship `hidden` rather
    * than the track shipping broken.
+   *
+   * @concept javascript-only-control scroll-region
+   * @claim deck-track-needs-no-javascript javascript-only-control-must-not-appear-without-javascript
    */
   for (const deck of document.querySelectorAll<HTMLElement>('[data-deck]')) {
     const track = deck.querySelector<HTMLElement>('.deck-track')
@@ -662,7 +681,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
       track.scrollTo({left: clamped * track.clientWidth, behavior})
     }
 
-    /* Disabled at the ends rather than hidden, so neither row reflows mid-page. */
+    /* Disabled at the ends rather than hidden, so neither row reflows mid-page.
+       @concept hiding
+       @claim deck-pager-disabled-not-hidden-at-ends */
     const syncButtons = () => {
       const i = indexNow()
       for (const {prev, next} of pagers) {
@@ -687,6 +708,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
      *
      * `preventDefault` because the browser's own arrow-key scrolling would move the track
      * by a fraction of a slide and fight the snap.
+     *
+     * @concept scroll-region
+     * @claim deck-arrow-keys-scoped-to-track
      */
     track.addEventListener('keydown', (event) => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
@@ -740,7 +764,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
         goTo(i)
         syncButtons()
         /* Focus the track rather than leaving it on the button now behind the dialog, so
-           the arrow keys work immediately on opening. */
+           the arrow keys work immediately on opening.
+           @concept programmatic-focus focus-target
+           @claim deck-fullscreen-focuses-track */
         track.focus()
       })
 
@@ -758,6 +784,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
        * So this does not depend on the answer: the button restores directly, the `close`
        * event restores as well for Esc, and the parent check makes the second call a
        * no-op. One of the two always runs.
+       *
+       * @concept browser-pane
+       * @claim dialog-close-fired-no-close-event-in-the-pane browser-pane-never-fires-raf browser-pane-fires-no-scroll-events deck-restore-runs-from-both-paths
        */
       const exitFullscreen = () => {
         if (track.parentElement !== stage) return

@@ -76,6 +76,9 @@
  * the loudness of the scheme are open decisions. This component is the baseline
  * either one layers onto: the change would be to the `<code>` contents, not to the
  * block's own rules.
+ *
+ * @concept scroll-region screen-reader-announcement
+ * @claim unreachable-scroll-region-fails-wcag-2-1-1 tabindex-zero-makes-scroll-region-keyboard-reachable code-blocks-get-no-region-role focusable-pre-announces-its-contents
  */
 import type {Props as NodeProps} from 'astro-portabletext/types'
 import {highlight} from './highlighter'

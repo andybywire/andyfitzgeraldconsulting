@@ -145,6 +145,9 @@ const usable = <T extends Base>(
  *
  * Alt falls back to '' for the reason `feed-html.ts` gives for figures: decorative
  * is wrong but honest, and there is nothing truer to say.
+ *
+ * @concept screen-reader-announcement
+ * @claim image-link-announces-only-its-alt
  */
 function leadImage(
   image: SanityImageSource | null | undefined,
@@ -328,6 +331,9 @@ function recordingHtml(
    * `title` because an iframe needs an accessible name; without one a screen reader
    * announces an unlabelled frame. 560x315 is YouTube's own 16:9 default rather than
    * Substack's 728x409, which is sized to their column and not to anyone else's.
+   *
+   * @concept screen-reader-announcement
+   * @claim iframe-without-title-announced-unlabelled
    */
   const videoId = recording.kind === 'video' ? youtubeId(recording.url) : null
   if (videoId) {

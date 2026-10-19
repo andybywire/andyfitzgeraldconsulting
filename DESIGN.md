@@ -972,6 +972,8 @@ typography and radius but no box — the same gap the filter chip had).
   see its note for why it cannot and should not — so the default offset-then-ring order would paint a
   blue-500 ring onto a blue-500 ground. Reversed, the inner ring reads against the button and the outer
   white one against the band. Same fix as the mode selector's pill.
+  <!-- @concept focus-ring -->
+  <!-- @claim band-does-not-repoint-focus-ring fixed-focus-pair-fails-on-accent-band accent-band-components-swap-focus-colors -->
 
 **Filter chips.** Rest is a surface with a control border; hover and pressed tint toward the accent;
 selected is a filled accent pill. **The chip border is its own role, not the card hairline** — a card
@@ -1027,6 +1029,8 @@ Wrapping an anchor around the card instead would announce the title, genre, date
 link, and would put a heading inside a link rather than a link inside a heading. The costs are real but
 small: text in the card can no longer be drag-selected, and a second link inside a card would need
 lifting above the overlay with `z-index`. No card has one.
+<!-- @concept screen-reader-announcement -->
+<!-- @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element -->
 
 ### Card grids — the breakpoint ladder differs per index
 
@@ -1110,6 +1114,8 @@ short enough that the results are already in view.
 **Arriving on a filtered URL scrolls to the results.** A fresh navigation to a URL carrying any valid
 `?topic=` or `?genre=` glides to the results and focuses the card grid. Reload, Back/Forward, in-page
 chip clicks and a reader who has already scrolled are left alone.
+<!-- @concept landing-point programmatic-focus -->
+<!-- @claim filtered-arrival-scrolls-to-the-cards filtered-arrival-focuses-the-grid -->
 - **The motion is the wayfinding**, the same as following a heading anchor: it shows where on the page
   the reader landed and that the page moved them. It is base.css's `scroll-behavior: smooth`, so
   reduced motion gets a jump. `instant` was tried first and rejected for making the page appear simply
@@ -1121,6 +1127,8 @@ chip clicks and a reader who has already scrolled are left alone.
 `tabindex="-1"`, so it is a landing point rather than a tab stop. Its focus ring is suppressed, because
 a ring around the whole grid reads as a fault, and the next Tab lands on the first card, which draws
 its own.
+<!-- @concept focus-ring landing-point programmatic-focus -->
+<!-- @claim no-focus-ring-on-landing-grid card-grid-named-by-count-line tabindex-minus-one-focusable-not-tab-stop -->
 
 **A single-tag arrival is labeled above the cards**: "{concept} Insights", "{concept} Presentations" —
 "Interoperability Insights", "Case Study Insights", "Talk Presentations".
@@ -1132,6 +1140,8 @@ its own.
   again, or pressing Back, restores it. A chip clicked on the bare index never shows one.
 - **A `<p>`, not a heading** — a heading that comes and goes with the filter is a poor thing to
   navigate by. It reaches assistive tech by joining the grid's accessible name while it is visible.
+  <!-- @concept screen-reader-announcement -->
+  <!-- @claim results-label-is-a-p-not-a-heading -->
 - **Title case, as specified** — note that the Heading case table lists labels as sentence case. The
   concept half is the vocabulary's prefLabel either way.
 
@@ -1187,6 +1197,8 @@ harder to see.
 
 The same two colors in both contexts, order swapped. In CSS:
 `box-shadow: 0 0 0 2px <inner>, 0 0 0 4px <outer>`.
+<!-- @concept focus-ring -->
+<!-- @claim focus-ring-stated-as-relationship -->
 
 **The page header is one component with an optional lead**, and the boolean is required by the rail
 rather than offered as flexibility. **The gap after the header belongs to the parent band**, not the
@@ -1401,6 +1413,8 @@ Recorded ahead of the build so the masthead can leave the right seam. **Phase 3 
 - **Fuse.js**, the same engine the previous version of the site used.
 - **`cmd + k` opens it**, moving focus into the field, and the icon is independently clickable and
   focusable. Two entry points to one state.
+  <!-- @concept programmatic-focus -->
+  <!-- @claim cmd-k-opens-search-and-focuses-field -->
 - **On mobile the icon becomes the word "search"** — the masthead restacks at that breakpoint and the
   nav moves to a full-bleed accent strip, where an icon alone reads as decoration. The Figma file has
   a mobile search-results screen showing the behavior.
@@ -1483,6 +1497,8 @@ self-hosting article overflow, the widest at 1344px against a 656px column.**
 Scrolling brings an obligation: **the `<pre>` carries `tabindex="0"`**, because a scroll region that
 a pointer can drag and a keyboard cannot reach fails WCAG 2.1.1. No `role`/`aria-label` with it —
 21 landmarks in one article would bury the page's real ones.
+<!-- @concept scroll-region -->
+<!-- @claim tabindex-zero-makes-scroll-region-keyboard-reachable unreachable-scroll-region-fails-wcag-2-1-1 code-blocks-get-no-region-role -->
 
 **A per-language wrap policy is possible and not taken.** `data-language` is on every block, so yaml
 and JavaScript could wrap — their lines are indented, so a break is far less ambiguous — while `sh`
@@ -1623,6 +1639,8 @@ questioned rather than followed.
 - **Do** check an interaction ramp's direction against **the page**, never the previous step.
 - **Do** state the focus ring as a relationship — inner contrasts the control, outer contrasts the
   surface. A fixed color pair fails on the accent band.
+  <!-- @concept focus-ring -->
+  <!-- @claim focus-ring-stated-as-relationship fixed-focus-pair-fails-on-accent-band -->
 - **Don't** give tags hover, pressed or focus states. They are markers, not controls.
 
 ## Open questions

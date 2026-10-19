@@ -217,6 +217,8 @@ questions, and putting them adjacent would invite reading one as the other.
 single rule gated on `html.js`, set by BaseLayout's synchronous head script, so it is in force at the
 first paint rather than applied as a visible collapse — and it never applies to someone who could not
 undo it. Verified: 24 cards render with the class, 45 without.
+<!-- @concept javascript-only-control -->
+<!-- @claim card-truncation-keyed-on-html-js synchronous-head-script-runs-before-first-paint card-truncation-applies-only-with-html-js -->
 
 ### Chip order is fixed at build time — decided 2026-08-31, on the built page
 
@@ -322,6 +324,8 @@ same number, leaving its scope unclear.
 Replaced by a **labeled text control per group — "reset topics" / "reset genres" — on the group's
 heading row, right-aligned, appearing only once that group has a selection.** Clicking it clears that
 group, restores the facets to their unselected order, and moves focus to the first facet.
+<!-- @concept programmatic-focus focus-target -->
+<!-- @claim reset-focuses-first-facet-in-group -->
 
 **An icon-only control in the chip row was considered and rejected.** It would have sat left of the
 selected chips, which means inserting a leading item into the row and shifting everything after it —
@@ -373,14 +377,20 @@ Three consequences that do follow from the element choice:
   `card-index.ts` and [open-questions.md](open-questions.md) → Settled after cutover.
 - **The selected state cannot use `aria-pressed`**, which is button-only. `aria-current="true"` is the
   link equivalent.
+  <!-- @concept screen-reader-announcement -->
+  <!-- @claim aria-pressed-is-button-only -->
 - **The accessible name has to differ by state**, and this is an improvement rather than a workaround.
   A selected chip's `href` *removes* its filter while an unselected chip's *adds* it — the same control
   meaning opposite things. Sighted users read the fill; a screen-reader user needs it said. "Knowledge
   graphs, 8 results, selected, remove filter" against "Knowledge graphs, 8 results, add filter" carries
   more than `aria-pressed` would have.
+  <!-- @concept screen-reader-announcement -->
+  <!-- @claim chip-accessible-name-changes-by-state -->
 
 Also mechanical: an anchor is inline by default, so it needs `inline-flex` or `inline-block` for the
 pill to have a box and for the focus ring not to split into two fragments when it wraps a line.
+<!-- @concept focus-ring -->
+<!-- @claim inline-anchor-focus-ring-splits-across-lines -->
 
 **Where the reset control goes at narrow widths.** A heading with a right-aligned link is comfortable
 at 1440 and tight at 360, and "reset genres" is the longer of the two. Whether it wraps beneath the
@@ -393,6 +403,8 @@ would otherwise fall to the body. The alternative is the group heading with `tab
 announces "Topics" and orients a screen-reader user, where landing on "Knowledge graphs 8" is
 contextless. **Revisit it with the live region**, not before: the two decisions pair, and a heading
 that announces its own name is less useful than a chip if the count change is announced anyway.
+<!-- @concept programmatic-focus focus-target focus-loss landing-point screen-reader-announcement -->
+<!-- @claim reset-focuses-first-facet-in-group hiding-the-focused-element-drops-focus-to-body -->
 
 **"Insights" cannot be a genre inside Insights.** A mock shows a genre chip reading "Insights 6"; no
 such value exists in the data, where the four in use are Perspective (20), Method (12), Case Study (7)
@@ -421,6 +433,8 @@ fresh entry rather than overwriting the one the visitor just returned to.
 
 ~~**Announcing result changes.**~~ **Built 2026-08-31.** A visible count line *below* the grid, grouped
 with the reveal controls, plus a visually-hidden `role="status"` region that speaks the same sentence.
+<!-- @concept screen-reader-announcement visually-hidden -->
+<!-- @claim announcement-region-ships-empty -->
 
 - **Below, not above** — the chips report on the whole collection by design, so the number on screen is
   not something you need before you start; it is what you want at the point you notice the grid ended.
@@ -441,6 +455,8 @@ with the reveal controls, plus a visually-hidden `role="status"` region that spe
 - **It does not name the active filters**, and that is deliberate: the chip just clicked is the focused
   element and its own accessible name already changed to "Method, 14 results, selected, remove filter".
   Naming the filter in the region would say it twice.
+<!-- @concept screen-reader-announcement -->
+<!-- @claim results-footer-sits-below-grid live-region-announces-wherever-it-sits announcement-region-ships-empty live-region-silent-on-initial-render live-region-cleared-after-speaking populated-live-region-repeats-for-linear-readers result-count-wording-is-andys announcement-does-not-name-the-filter -->
 
 ~~**The empty and unknown states.**~~ **Decided 2026-08-31.** Unknown `?topic=` values are **dropped
 silently** and the cleaned URL is written back with `replaceState`, so a stale shared link heals

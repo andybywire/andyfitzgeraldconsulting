@@ -163,6 +163,9 @@ const Tag = href ? 'a' : 'button'
    * control that most needs it. Reversed, the inner ring reads against the button and
    * the outer white one reads against the band. Same fix, same reasoning, as
    * ThemeToggle's selected pill, which is the precedent.
+   *
+   * @concept focus-ring
+   * @claim band-does-not-repoint-focus-ring custom-property-substitution-is-not-sequential fixed-focus-pair-fails-on-accent-band accent-band-components-swap-focus-colors
    */
   .button[data-variant='ghost']:focus-visible {
     box-shadow:

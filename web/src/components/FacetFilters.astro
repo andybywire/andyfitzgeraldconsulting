@@ -65,6 +65,9 @@ const {facets, basePath, label}: Props = Astro.props
 
             Its href is the current URL minus this group's parameters, which with no
             selection is the bare index.
+
+            @concept not-applicable
+            @claim facet-reset-hidden-until-selection
           */}
           <a class="facet-reset" href={basePath} hidden>
             {group.reset}
@@ -98,6 +101,9 @@ const {facets, basePath, label}: Props = Astro.props
                 Content 15", which the aria-label contains once punctuation is set
                 aside — the wording above was never the problem, though it was blamed
                 for it at first. The pill is inline-flex, so the space draws nothing.
+
+                @concept screen-reader-announcement
+                @claim chip-accessible-name-changes-by-state missing-space-between-chip-spans-caused-label-in-name-failure
               */}
               <Chip
                 href={`${basePath}?${group.key}=${facet.slug}`}
@@ -122,6 +128,9 @@ const {facets, basePath, label}: Props = Astro.props
             Both are `hidden` at rest and revealed by the script, so the no-JS page
             carries no control that cannot work. In the markup rather than built in JS so
             the chip's shape is written once.
+
+            @concept javascript-only-control not-applicable
+            @claim javascript-only-control-must-not-appear-without-javascript
           */}
           <li hidden>
             <Chip as="button" class="chip-more" type="button">

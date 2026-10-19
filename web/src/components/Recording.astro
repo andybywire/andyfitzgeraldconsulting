@@ -148,6 +148,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
     <FacetFilters> use. Inverted from the usual reading and worth saying plainly: with
     no script this button would do nothing, and a control that does nothing is worse
     than no control. The poster and the link out are the no-JS state, and they work.
+
+    @concept javascript-only-control
+    @claim javascript-only-control-must-not-appear-without-javascript
   */
 }
 {
@@ -201,6 +204,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
 
     No `crossorigin`. It would demand CORS headers from the host and break playback
     silently if they are absent, and nothing here reads the media from script.
+
+    @concept screen-reader-announcement
+    @claim bare-media-control-announces-only-as-player
   */
 }
 {
@@ -322,6 +328,8 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
    * The button covers the whole frame, so the poster IS the click target rather than a
    * small badge being the only hit area. The badge is the visible affordance and is
    * `aria-hidden`; the accessible name lives on the button.
+   *
+   * @concept hidden-from-assistive-technology
    */
   .video-play {
     position: absolute;
@@ -371,6 +379,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
    * a round ring out of that derivation without a single calc. The button's own shadow
    * is cleared rather than its `outline`: base.css already set `outline: none`, so
    * clearing the outline would suppress nothing and leave the real ring in place.
+   *
+   * @concept focus-ring
+   * @claim box-shadow-ring-follows-border-radius base-focus-ring-is-box-shadow-with-outline-cleared video-play-focus-ring-moved-to-badge
    */
   .video-play:focus-visible {
     box-shadow: none;
@@ -453,7 +464,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
 
         /* Focus follows the replacement. The button that had focus no longer exists, so
            without this the focus ring falls back to the document and a keyboard visitor
-           is returned to the top of the page by their next Tab. */
+           is returned to the top of the page by their next Tab.
+           @concept programmatic-focus focus-target focus-loss
+           @claim hiding-the-focused-element-drops-focus-to-body video-facade-focus-follows-iframe */
         iframe.focus()
       },
       {once: true},

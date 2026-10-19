@@ -97,6 +97,9 @@ const {
       description as one link. `text-title` and no underline, per DESIGN.md's Links
       rule: a block-level link title is identified as a link by position. See the
       note on `.card-title a::after`.
+
+      @concept screen-reader-announcement
+      @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element
     */
     }
     <Tag class="card-title"><a href={href}>{title}</a></Tag>
@@ -186,6 +189,9 @@ const {
    * The cost is that text inside the card can no longer be selected by dragging, and
    * any second link in a card would need lifting above this with `z-index`. Neither
    * card has one today.
+   *
+   * @concept screen-reader-announcement
+   * @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element
    */
   .card-title a::after {
     content: '';

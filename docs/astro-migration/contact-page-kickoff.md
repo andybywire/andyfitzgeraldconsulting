@@ -222,6 +222,8 @@ reserving the column is a template decision, not content.
 ### The browser pane lies about anything animated
 
 It runs with `document.hidden: true`, so **animations and transitions never advance.**
+<!-- @concept browser-pane -->
+<!-- @claim browser-pane-runs-with-document-hidden browser-pane-never-advances-transitions -->
 
 - A transitioned property (`border-color` on `.button`) **freezes at its previous value**, so
   `getComputedStyle` readings lag one interaction behind — in both directions. This was
@@ -236,6 +238,8 @@ It runs with `document.hidden: true`, so **animations and transitions never adva
   common. Measure with `getBoundingClientRect` / `getComputedStyle` and hand Andy the eyeball
   steps. Do not chase a screenshot more than twice.
 - Images below the fold report `complete: false` because they are lazy. Not a broken image.
+<!-- @concept browser-pane forced-reflow -->
+<!-- @claim browser-pane-never-advances-transitions browser-pane-smooth-scroll-is-a-no-op browser-pane-never-fires-raf reading-layout-property-flushes-style browser-pane-screenshots-unreliable -->
 
 ### Astro scoping — this bit three times in one session
 

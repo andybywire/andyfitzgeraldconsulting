@@ -231,6 +231,8 @@ Lighthouse on mobile, and axe-core 4.14 in headless Chrome with every rule enabl
 and 2.2 at A and AA, plus best practice. The new site was run in both color schemes, with identical
 results. Automated checks find a minority of real accessibility problems, so these results set a
 floor and do not certify either site.
+<!-- @concept headless-chrome -->
+<!-- @claim automated-checks-find-a-minority-of-accessibility-failures -->
 
 | Page | Lighthouse | axe, Eleventy | axe, Astro |
 |---|---|---|---|
@@ -266,6 +268,8 @@ floor and do not certify either site.
   against axe showed it sets punctuation aside. The real cause was the two spans rendering with no
   space between them, so the visible text was "Structured Content11". One `{' '}` in
   `FacetFilters.astro` fixed it, with the name unchanged. The phase 8 accessibility gate found it.
+  <!-- @concept screen-reader-announcement -->
+  <!-- @claim missing-space-between-chip-spans-caused-label-in-name-failure -->
 - **The rail's "Contents" heading** is an `h3` that skips a level on About and Consulting. The rail
   shows only at desktop widths, which is why those pages score 99 on desktop and 100 on mobile.
   **Fixed 2026-10-08:** the rail headings are h2 now, after the phase 8 HTML validator reported the
@@ -346,6 +350,7 @@ npx lighthouse@12 <url> --only-categories=performance,accessibility,best-practic
 with Node's built-in `WebSocket`, no puppeteer. Each page loaded in a fresh browser context,
 scrolled to the bottom in viewport steps, then CacheStorage was read back and `axe.min.js` injected.
 `Emulation.setEmulatedMedia` provided the dark pass.
+<!-- @concept headless-chrome -->
 
 **Code.** cloc reproduces the totals, and understands `.astro` and `.njk` natively:
 

@@ -178,10 +178,14 @@ caveat so the roman is not mistaken for an intention.
   `spread`, reports it back, and grows `absoluteRenderBounds` by it — then draws nothing. Anything
   needing a ring or halo has to be real geometry. CSS `box-shadow` handles spread correctly, so this
   is a drawing limitation, not a design constraint.
+  <!-- @concept focus-ring -->
+  <!-- @claim figma-drop-shadow-spread-draws-nothing -->
 - **Focus ring radii are raw, with the derivation in the layer name** (`focus ring outer — 6+4`).
   Figma has no `calc()`, so binding them to a token would freeze the arithmetic and hide the
   dependency. Moving the chip from radius 5 to 6 required its rings to move 7 → 8 and 9 → 10 to stay
   concentric, and nothing but that name will tell the next person.
+  <!-- @concept focus-ring -->
+  <!-- @claim figma-focus-ring-radii-raw-with-derivation-in-layer-name focus-ring-radii-derived-from-control -->
 - **`Note list — 348 outdent (span-4 + 2x card/pad)`** — same device. 348 is the one number Figma
   cannot derive. If `card/pad` changes, the CSS follows automatically and Figma does not; the frame
   name is the tripwire.
@@ -267,6 +271,8 @@ const ok = SIDES.every(s => n.boundVariables[s] && n.boundVariables[s].id === ha
 **Three things at weight 1 were deliberately not swept**, and the distinction matters:
 
 - **Focus rings sit at weight 2**, and their radii are derived from the control — see above.
+  <!-- @concept focus-ring -->
+  <!-- @claim focus-ring-radii-derived-from-control -->
 - **The blockquote's other three sides are 0**; only `strokeLeftWeight` carries the bar, bound to
   `border/quote`.
 - **~116 nodes at 1.2px named `stroke` / `fill+stroke`** are imported icon vector geometry, not UI

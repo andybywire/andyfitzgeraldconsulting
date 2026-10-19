@@ -586,6 +586,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
       elements — without the tabindex a fragment moves the scroll position but not keyboard focus,
       so the link looks like it works and puts you back in the nav. `specimen.astro` had no `main`
       landmark at all and gained one.
+      <!-- @concept landing-point programmatic-focus -->
+      <!-- @claim fragment-navigation-moves-focus-only-to-a-focusable-target skip-link-target-is-main-with-tabindex-minus-one tabindex-minus-one-focusable-not-tab-stop -->
     - ~~Add a "copy to clipboard" icon to RSS feed links.~~ **DEFERRED 2026-09-17 to
       [issue #4](https://github.com/andybywire/andyfitzgeraldconsulting/issues/4)** — the repo's
       first, and the pattern for post-launch work that is specified but not launch critical.
@@ -904,6 +906,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      findings and were left for that gate. **It found neither, because neither was real**: the
      theme toggle's fieldset is named by `aria-label`, and the `<nav>` was inside an inert
      `<template>`.
+     <!-- @concept inert-content -->
+     <!-- @claim template-content-is-inert -->
    - **It does not check CSS.** Every `CSS:` message is filtered: the Nu checker's CSS checker
      does not know `@container style()` or `container-type`, which were 543 of its 565 errors.
      Warnings are off too — almost all deliberate `role="list"` and `aria-disabled`.
@@ -925,6 +929,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    protocol and runs **axe-core** — pinned exactly, and the only new dependency: no Playwright,
    no downloaded browser — failing on any of axe's default rules, which are WCAG 2.0–2.2 at A and
    AA plus best practice. Its header records the reasoning; what is worth not re-deriving:
+   <!-- @concept headless-chrome -->
+   <!-- @claim a11y-check-runs-axe-in-headless-chrome -->
 
    - **Five configurations**: desktop in light, OS dark and toggle dark — the three CSS blocks a
      token can be wrong in — and phone in light and dark. Every page is checked to have reached
@@ -932,12 +938,18 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    - **Reduced motion is on, and it waits for animations to finish.** Without that, 1 run in 10
      caught links partway through base.css's 0.15s color transition and reported a contrast
      failure in colors that were no token. A harness artifact: a real page load starts none.
+     <!-- @concept headless-chrome -->
+     <!-- @claim a11y-harness-caught-links-mid-transition real-page-load-starts-no-transition -->
    - **Test an accessibility fix inside the real page, not in a bare test file.** axe passed the
      close-search button's failing name in isolation and failed it in `/search/`, with the
      page's own CSS applied.
+     <!-- @concept headless-chrome screen-reader-announcement -->
+     <!-- @claim axe-passes-close-search-name-in-isolation -->
    - **A pass is a floor.** Automated checks find roughly a third of WCAG failures. Keyboard use,
      focus order, what a screen reader announces, whether alt text is any good, and interactive
      states — search open, the mobile menu expanded — are not tested at all.
+     <!-- @concept headless-chrome screen-reader-announcement -->
+     <!-- @claim automated-checks-find-a-minority-of-accessibility-failures a11y-check-does-not-test-announcements -->
 
    It found two real failures, both WCAG 2.5.3, Label in Name. The **facet chips** read
    "Structured Content11", because Astro's HTML compression dropped the whitespace between two
@@ -945,6 +957,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    And the **close-search button**, whose visible text is "esc", is now named "Close search,
    esc", for voice-control users who say what they see. The check takes about 125s on the runner
    against 45s on a Mac, the slowest gate by far; beside the deploy, that delays only the report.
+   <!-- @concept screen-reader-announcement -->
+   <!-- @claim missing-space-between-chip-spans-caused-label-in-name-failure close-search-named-close-search-esc -->
 
    **BYTE BUDGETS ARE BUILT (2026-10-09)**, the fourth site gate, and with them **the quality
    gates are complete**: `web/scripts/check-budgets.mjs`, run with `pnpm budgets` after a build.

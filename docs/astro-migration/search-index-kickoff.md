@@ -169,6 +169,8 @@ were renamed to `search-facet*` / `search-chips` to stay clear of it.
 **The browser pane, again:** no scroll events, no `requestAnimationFrame`, lazy loading suppressed,
 and **a synthetic Return does not submit a form** — `requestSubmit()` and a real submit-button click
 both do. Anything scroll- or keyboard-dependent is Andy's to eyeball.
+<!-- @concept browser-pane -->
+<!-- @claim browser-pane-fires-no-scroll-events browser-pane-never-fires-raf browser-pane-suppresses-lazy-loading browser-pane-synthetic-return-does-not-submit -->
 
 **`defineQuery` past the complexity ceiling yields `any`, not an error.** All four search queries
 were probed with a bogus property access against a known-good control. Re-probe before adding a

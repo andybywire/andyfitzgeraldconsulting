@@ -25,6 +25,9 @@
  * masthead's search button, where the label IS visible on the band and only
  * hidden once the control becomes an icon — there the text has to be real. The
  * distinction is whether the name is ever seen, not which technique is nicer.
+ *
+ * @concept visually-hidden screen-reader-announcement
+ * @claim never-visible-name-uses-aria-label
  */
 import {Monitor, Sun, Moon} from '@lucide/astro'
 
@@ -94,6 +97,9 @@ const MODES = [
    * hidden label needed the full clip technique: there the thing being hidden was
    * TEXT, which overflows its box and spills; a 1px transparent form control has
    * nothing to leak.
+   *
+   * @concept visually-hidden hiding
+   * @claim display-none-or-visibility-hidden-makes-a-control-unfocusable theme-radio-hidden-with-opacity-not-clip
    */
   input {
     position: absolute;
@@ -139,6 +145,9 @@ const MODES = [
    * radius-1 the derived focus rings run 3 -> 5 -> 7, so the outer corner is
    * 2.3x rounder than the control's. This is the first real control to show it.
    * Judge at 1x, not on a blowup.
+   *
+   * @concept focus-ring
+   * @claim box-shadow-ring-follows-border-radius
    */
   input:checked + label {
     background-color: var(--color-surface);
@@ -158,6 +167,9 @@ const MODES = [
    * `outline` rather than `box-shadow` so it cannot collide with the focus ring
    * below, which is a box-shadow and would replace it outright. Negative offset
    * so the line hugs the pill instead of floating outside it.
+   *
+   * @concept focus-ring
+   * @claim hover-outline-avoids-focus-ring-collision
    */
   input:not(:checked) + label:hover {
     outline: var(--border-width-hairline) solid var(--color-border-on-accent);
@@ -177,6 +189,9 @@ const MODES = [
    * On the two unselected segments the inner ring blends into the band instead
    * and you get a white ring set 2px off the icon, which is legible and is what
    * the masthead's nav links already do.
+   *
+   * @concept focus-ring
+   * @claim focus-ring-stated-as-relationship accent-band-components-swap-focus-colors default-focus-order-vanishes-into-selected-theme-pill
    */
   input:focus-visible + label {
     box-shadow:
@@ -186,7 +201,9 @@ const MODES = [
     /* Lifted above its neighbours. A box-shadow paints outside the box but stays
        in flow order, so once the gap closes at lg a later sibling's fill would
        paint over the ring of the item before it. Harmless while there is a gap;
-       cheaper to state once than to make conditional. */
+       cheaper to state once than to make conditional.
+       @concept focus-ring
+       @claim later-sibling-fill-paints-over-box-shadow-ring */
     position: relative;
     z-index: 1;
   }
