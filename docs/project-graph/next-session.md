@@ -2,13 +2,13 @@
 
 **Refreshed 2026-10-18, at the end of the session that proved the harness and reran the guide's
 trial, updated 2026-10-19 when Andy narrowed the experiment to one round, and again that day once
-steps 1 to 3 were settled.** The first version, written the morning of 2026-10-18 at the end of
-stages 0 to 4, is in git history. Start a new session with this prompt:
+steps 1 to 3 and stage 5's first pieces were settled.** The first version, written the morning of
+2026-10-18 at the end of stages 0 to 4, is in git history. Start a new session with this prompt:
 
 > Read `docs/project-graph/next-session.md` and pick up the Project Graph experiment from there.
 > It's now a single round of 15 runs, and I think it's already overbuilt for what I want to find
-> out, so take the lightest path to a result and propose cuts before additions. Start with step 4,
-> and stop for my review after each step.
+> out, so take the lightest path to a result and propose cuts before additions. Start with the
+> next open piece of step 4, and stop for my review after each step.
 
 ## What this is
 
@@ -100,24 +100,19 @@ annotator: the inventory lists every contradiction the tasks score.
 
 Steps 1 to 3 were decisions, settled on 2026-10-19 and listed above.
 
-4. **Stage 5, as narrowly as the 15 runs allow.** **Its first piece is a decision about what it
-   builds,** brought to Andy with three proposed cuts:
-   - **one annotation run feeds both B and C,** since their annotations must be identical. B's
-     glossary is generated from its `claims.ttl`, recording the same fields as plain text, as
-     id-design.md already says;
-   - **defer the maintenance probe, and with it B's lint,** until B or C earns its place. The lint
-     only checks that ids resolve, which helps no answer-only run find anything, and the probe is
-     its one use. Maintenance only matters if there is a gain to weigh it against;
-   - **drop "distinct files read"** from the measures. It decides nothing, and counting it "by any
-     tool" means parsing shell commands.
+4. **Stage 5, as narrowly as the 15 runs allow.** **Done on 2026-10-19,** each Andy's call and
+   recorded in protocol.md:
+   - **three cuts:** one annotation run feeds both B and C, with B's glossary generated from its
+     `claims.ttl`; the maintenance probe, and B's lint with it, deferred until B or C earns its
+     place; "distinct files read" dropped from the measures;
+   - **T2's must-find list verified as listed** (precondition 2), from a packet of each location's
+     text at `086dd0f`;
+   - **the leak search** (precondition 5). Its six hits were all low. Read against the rubrics,
+     four of `concepts.ttl`'s scope notes carried answers the search can't see, and they were
+     trimmed with its two mentions of the inventory. **Any later vocabulary change needs the same
+     reading.**
 
-   Then, in this order:
-   - verify T2's must-find list by hand (precondition 2, Andy's);
-   - run the leak search (precondition 5) **before** the annotation, since the annotator works in a
-     checkout with `project-graph/` present. **It already has something to judge:** concepts.ttl's
-     header names `docs/project-graph/inventory.md`, and its line 65 says "The inventory first read
-     it as a second meaning". Neither gives an answer away, but both go beyond the three low
-     mentions the trial's search found;
+   **Still open, in this order:**
    - build arms A, B and C from `086dd0f`;
    - annotate once, blind, through the harness. `trial-rerun.mjs` is the pattern: `keepWorktree`,
      then collect the output. About $3.50, so Andy is asked first;
@@ -127,8 +122,8 @@ Steps 1 to 3 were decisions, settled on 2026-10-19 and listed above.
      invalid run, a changed CLI version or the budget, and applies the capped-run rule. No rounds;
    - Andy confirms the spend;
    - then the 15 runs.
-5. **Stage 6:** Andy grades the 15 answers blind, then the maintenance measures unless step 4
-   defers them, then the write-up.
+5. **Stage 6:** Andy grades the 15 answers blind, then the write-up. The maintenance probe runs
+   first only if B or C has earned its place.
 6. **Not part of the experiment:** Andy merges `design-md-figure-alignment` when he's ready, and
    removes its worktree after.
 

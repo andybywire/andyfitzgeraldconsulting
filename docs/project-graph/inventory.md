@@ -54,7 +54,8 @@ rings actually show in a real browser is unchecked.
 
 The ground truth for T2's site recall. **Status: reported**, apart from the locations the
 contradiction checks above read directly. T2's own list, in the protocol, is the subset that
-must be verified before stage 5.
+must be verified before stage 5. **It was verified by Andy on 2026-10-19, as listed**, by reading
+each of its locations at `086dd0f`; see the protocol's precondition 2.
 
 Basis: **bare** means no method, browser, date or person is given; otherwise the basis is quoted.
 **DUP ×n** marks a claim restated in n places.

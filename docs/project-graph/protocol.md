@@ -51,7 +51,7 @@ to help with.
 | Arm                   | Branch      | What it adds to `086dd0f`                                                                                                                                       |
 | --------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **A, control**        | `pg-arm-a`  | Nothing                                                                                                                                                        |
-| **B, ids and grep**   | `pg-arm-b`  | Stable concept and claim ids in the pilot comments, a plain-text glossary, and a small Node lint that fails when an id doesn't resolve                        |
+| **B, ids and grep**   | `pg-arm-b`  | Stable concept and claim ids in the pilot comments, and a plain-text glossary. *A small Node lint that fails when an id doesn't resolve is deferred (2026-10-19); see "What is measured"* |
 | **C, Project Graph**  | `pg-arm-c`  | B's annotations, plus SKOS, SHACL and a small PROV-O subset in Turtle, an extractor that reads the annotations, and saved SPARQL queries, run with the Jena command-line tools |
 
 **B and C carry identical annotations,** so the difference between them measures the semantic
@@ -74,15 +74,17 @@ correct it is.** That rules out the most likely way for C to win unfairly:
   must not know what the tasks score. *(Decided by Andy, 2026-10-17, before any run.)* The
   annotator is **Opus 5.5 (`claude-opus-5-5`) at high effort** (Andy, 2026-10-17), and the guide's
   trial uses the same, so the trial tests what the real annotation will do. That choice is
-  separate from the model the runs use, which only has to be the same across arms.
+  separate from the model the runs use, which only has to be the same across arms. **One
+  annotation run makes both arms' annotations** (Andy, 2026-10-19): it annotates a checkout
+  shaped like C, and B keeps the same tags, with its glossary generated from the same
+  `claims.ttl`, recording the same fields as plain text (id-design.md).
 - **The only text added is annotation:** ids, plus whatever the vocabulary and graph files hold.
   A diff of B or C against `086dd0f` must show comment annotations, graph and glossary files,
-  the lint or the extractor, and the CLAUDE.md section below. Nothing else.
+  the extractor, and the CLAUDE.md section below. Nothing else.
 
 **Each arm's CLAUDE.md differs by one short section, at most 15 lines,** fixed here before the
-runs. A gets none. B's explains the ids, where the glossary is and how to run the lint. C's
-explains how to run the saved queries. The text is written in stage 5 and recorded here before
-the first run. **T5 exists to catch this section's own effect:** if the arms separate on a task
+runs. A gets none. B's explains the ids and where the glossary is. C's explains how to run the
+saved queries. The text is written in stage 5 and recorded here before the first run. **T5 exists to catch this section's own effect:** if the arms separate on a task
 the annotations don't touch, the instructions are doing the work.
 
 ## The tasks
@@ -116,8 +118,9 @@ each:
 > something about how these elements look or behave when focused. One line each on why. Don't edit
 > any files.
 
-**Scored by recall** against the must-find list below, which must be verified before stage 5.
-Precision is reported too, counting locations listed that have nothing to do with this.
+**Scored by recall** against the must-find list below, **verified by Andy on 2026-10-19 as
+listed** (precondition 2). Precision is reported too, counting locations listed that have nothing
+to do with this.
 
 | Must-find, at `086dd0f`                                                                                  | Why it counts                                                   |
 | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -178,16 +181,22 @@ line as out of date (1). **Expected: every arm scores alike, and costs alike.**
   fixed context, about $0.40, between cache written and cache read, which is far below a 2× gap.
 - Tokens: input, output, cache read and cache write, kept separate.
 - Tool calls.
-- Distinct files read, by any tool.
 - Wall time.
+
+*Distinct files read, by any tool, was dropped (Andy, 2026-10-19). It decided nothing, and
+counting it "by any tool" meant parsing shell commands.*
 
 **Outcome, per run:** the task's score, as defined above.
 
 **Maintenance, measured in stage 6, never in stage 5:**
-- What it costs to build B's and C's annotations, in tokens and time.
-- One maintenance probe on B and C: add a new script-focused element, and measure what it takes
-  to keep the annotations valid, and whether the checks catch it when it isn't annotated.
-- Seconds per run of the lint (B) and the graph checks (C).
+- What it costs to build the annotations, in tokens and time: one run, shared by B and C.
+- Seconds per run of the graph checks (C).
+
+**Deferred until B or C earns its place** (Andy, 2026-10-19): the maintenance probe, and B's lint
+with it. The probe adds a new script-focused element to B and C, and measures what it takes to
+keep the annotations valid, and whether the checks catch it when it isn't annotated. Maintenance
+only matters if there is a gain to weigh it against. The lint only checks that ids resolve, which
+helps no answer-only run find anything, so the probe is its one use.
 
 ## How the runs are done
 
@@ -222,7 +231,7 @@ the trust measures above all.
   or time-of-day drift spreads evenly across arms.
 - **Recorded for every run:** the harness's JSON for it (session id, answer text, tokens, turns,
   time, cost), plus arm, task, run number, model and effort, and the session's transcript for
-  the tool calls and files read. They go in `docs/project-graph/runs/`.
+  the tool calls. They go in `docs/project-graph/runs/`.
 - **Grading:** rubric items are scored against the ground truth by checking the answer text. Andy
   grades with the arm labels removed. **Blinding is partial:** an arm C answer may mention a query,
   which reveals its arm. The objective scores (T2 recall, T3 recall) carry the most weight for that
@@ -265,7 +274,7 @@ order:
    and `node project-graph/*`, which simply does not exist in arm A. Arm C calls
    `node project-graph/graph.mjs` directly, never `pnpm graph`, which settles precondition 6.
 3. **Capture:** the JSON goes to `runs/<run-id>.json` as it is. The session's transcript, which
-   headless runs still save, is copied beside it for the tool calls and files read.
+   headless runs still save, is copied beside it for the tool calls.
 4. **An isolation check on every transcript,** automated: none of "MEMORY.md", "persistent
    file-based memory", "side-session-notes", "Shared notes folder" or "Background (from the
    session that started this one)", and the first user message equal to the prompt. **A run that
@@ -466,7 +475,11 @@ besides:
    inconclusive case did not arise: with every `CLAUDE*` variable removed, a launch from inside a
    session still loads memory when it is allowed to.
 2. **The ground truth is verified.** T2's must-find list and every hard contradiction are read at
-   `086dd0f` by hand. The contradictions are done (inventory.md marks each); T2's list is not.
+   `086dd0f` by hand. The contradictions are done (inventory.md marks each).
+   **MET 2026-10-19:** Andy verified T2's list as listed, with no range changed and nothing added.
+   He read each location's text at `086dd0f`, with three lines of context on either side, the nine
+   `<main>` landing points found by `git grep` rather than taken from the list, and, for whether
+   anything was missing, the inventory's other script-focus locations that no row covers.
 3. **The arm diffs are clean,** checked against the rule above.
 4. **Each arm's CLAUDE.md section and the run order are written into this file.**
 5. **Nothing in `project-graph/` leaks the test** *(added 2026-10-17, with the annotation guide)*.
@@ -487,6 +500,38 @@ besides:
    searches everything. What remains is low: mentions that an experiment, arms and an annotator
    exist, which say nothing about the answers. The list above lives here, not in `project-graph/`,
    because the list is itself a hint.
+
+   **MET 2026-10-19, after one more change.** The search found six hits, all low:
+   - three known from the guide's trial: `graph.mjs:23`, `jena.mjs:41` and `shapes.ttl:238`;
+   - one false positive, `concepts.ttl:188`, where "protocol" is the DevTools protocol;
+   - two in `concepts.ttl`, new because the trial used its own vocabulary: the header named
+     `docs/project-graph/inventory.md` as the concepts' warrant, and the landing-point comment
+     said "The inventory first read it as a second meaning".
+
+   None gives an answer. `086dd0f` has no `docs/project-graph/`, so the path resolves to nothing in
+   an arm's worktree, and a run that reaches the main checkout is invalid. Thirteen more pointers
+   to `docs/project-graph/` sit in the tools' headers, and the trial ran with all of them.
+
+   **The search's word list can't see the vocabulary's scope notes, and four carried answers.**
+   `concepts.ttl` is the one file the annotator and every arm C run read, and B's glossary carries
+   the same definitions. Read against the rubrics:
+   - `landing-point` listed `<main>`, `#result-count`, the card grid and the contact form's state
+     blocks, four of T2's seven must-find rows, and called them focusable "only by script", the
+     losing side of hard contradiction 7;
+   - `scroll-region` said browsers differ on whether one is focusable by default, one side of hard
+     contradiction 5;
+   - `not-applicable` said nothing can override base.css's `!important`, one side of hard
+     contradiction 2;
+   - `styled-away` named the contact form's `.is-shown`, T4's point 4.
+
+   **Trimmed, with the two inventory sentences** (Andy, 2026-10-19). Each definition keeps its
+   meaning, and no id, label or hierarchy changed. C against B is untouched either way; the trim
+   keeps B and C against A readable on T2 and T3. Kept, as taking no side or adding nothing every
+   arm doesn't find anyway: `focus-ring`'s "base.css's two-ring box-shadow", `automated-browser`'s
+   "reports some states differently", and the mechanisms `javascript-only-control` and
+   `forced-reflow` name. **Nothing in `concepts.ttl` says it was trimmed,** since saying so would
+   be a hint. **For any later vocabulary change, read the scope notes against the rubrics too:**
+   the search can't.
 
 6. **No arm pays for an install the others don't** *(added 2026-10-17, found while setting up the
    guide's trial)*. In a fresh worktree with no `node_modules`, the first `pnpm graph …` runs a full
@@ -528,6 +573,7 @@ Then:
 - **If any arm separates from another on T5,** the other results are suspect, and the write-up
   says so before drawing conclusions from them.
 - **Maintenance counts against the gains.** A trust gain that costs more per change than the audit
-  agent costs per run is reported as such.
+  agent costs per run is reported as such. Per-change cost needs the deferred maintenance probe,
+  so it runs before this is judged, and only if B or C has earned its place.
 
 The decision to adopt, trim or drop the graph is Andy's.
