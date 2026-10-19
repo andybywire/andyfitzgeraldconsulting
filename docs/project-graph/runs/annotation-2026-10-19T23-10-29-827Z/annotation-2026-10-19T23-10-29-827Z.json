@@ -1,0 +1,182 @@
+{
+  "id": "annotation-2026-10-19T23-10-29-827Z",
+  "branch": "pg-arm-c",
+  "commit": "8f83f64",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "Annotate the comments in this repository by following `project-graph/annotation-guide.md`. Work only on comments about the concepts in `project-graph/concepts.ttl`.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "25",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Edit Write Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *)"
+  ],
+  "wallMs": 1451485,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 1442074,
+    "stop_reason": "end_turn",
+    "session_id": "11a99a82-dade-4e15-87fe-4714f44dcb35",
+    "total_cost_usd": 11.281951199999995,
+    "usage": {
+      "input_tokens": 166,
+      "cache_creation_input_tokens": 437271,
+      "cache_read_input_tokens": 22168996,
+      "output_tokens": 167466,
+      "output_tokens_details": {
+        "thinking_tokens": 77641
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 437271,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2280,
+          "cache_read_input_tokens": 445163,
+          "cache_creation_input_tokens": 4974,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 4974
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 166,
+        "outputTokens": 167466,
+        "cacheReadInputTokens": 22168996,
+        "cacheCreationInputTokens": 437271,
+        "webSearchRequests": 0,
+        "costUSD": 11.281951199999995,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 77641,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01TM4uo2gzU6u3NnGYXDkPyv",
+        "tool_input": {
+          "command": "cd /Users/andyfitzgerald/.cache/project-graph/runs/annotation-2026-10-19T23-10-29-827Z\nfor pat in \"focus ring|focus indicator|two-ring|offset-then-ring|focus pair|ring pair\" \\\n \"programmatic focus|scripted focus|script-moved focus|moving focus|focus follows|\\.focus\\(\" \\\n \"focus target\" \\\n \"landing point|somewhere to land|focus fallback|tabindex=\\\"-1\\\"|tabindex=-1\" \\\n \"focus loss|dropped focus|focus falls to the body|falls to .?body|focus.{0,20}<body>\" \\\n \"not applicable|hidden attribute|\\[hidden\\]\" \\\n \"styled away|hidden by a class|class-based hiding\" \\\n \"visually hidden|visually-hidden|clip technique|1px clipped box|announced but not drawn\" \\\n \"hidden from assistive technology|aria-hidden|drawn but not announced\" \\\n \"inert content|inert subtree|\\binert\\b\" \\\n \"JavaScript-only control|ships hidden|the contract|html\\.js\" \\\n \"forced reflow|layout flush|offsetWidth|reflow\" \\\n \"scroll region|scrollable region|scroll container\" \\\n \"screen reader announcement|announcement|announce|live region|aria-live\" \\\n \"automated browser|headless\" \\\n \"Browser pane|the pane|in-app browser\"; do\n  echo \"=== $pat\"\n  rg -i -c -e \"$pat\" web/src web/server docs CLAUDE.md DESIGN.md --glob '!docs/project-graph/**' -g '*.{astro,ts,mjs,js,css,md,php}' | sort -t: -k2 -nr | head -25\ndone",
+          "description": "Count concept label matches per file"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_018D7SN3B4iNsQhMKizgu5ri",
+        "tool_input": {
+          "command": "node project-graph/graph.mjs check 2>&1 | tail -12; echo \"---removed lines (excluding claims.ttl):\"; git diff -U0 -- . ':!project-graph' | grep -E '^-[^-]' | sed -E 's/^-//' | sed -E 's/^\\s+//' | sort | uniq -c | sort -rn | head -40",
+          "description": "Run final check and list every removed line"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01L9UG4imV63sLR4RiJJ7daS",
+        "tool_input": {
+          "command": "git diff -U0 --no-color",
+          "description": "Show the full diff with no context lines"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01HZ9uyBhNpcaru3C9nNKpx5",
+        "tool_input": {
+          "command": "git diff --numstat",
+          "description": "Count added and removed lines per file"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01TrTskDWZYHGxZHTPYRdjgX",
+        "tool_input": {
+          "command": "node --input-type=module -e \"\nimport {readFileSync} from 'node:fs'\nimport {extractTags} from './project-graph/extract.mjs'\nconst {locations, errors} = extractTags('.')\nconst cited = new Set(locations.flatMap(l => l.claims))\nconst defined = [...readFileSync('project-graph/claims.ttl','utf8').matchAll(/^claim:([a-z0-9-]+) a model:/gm)].map(m => m[1])\nconsole.log('locations', locations.length, 'errors', errors.length, 'defined', defined.length, 'cited', cited.size)\nconsole.log('uncited:', defined.filter(d => !cited.has(d)).join(' '))\nconsole.log('undefined:', [...cited].filter(c => !defined.includes(c)).join(' '))\n\"",
+          "description": "List claims defined but never cited by a tag"
+        }
+      }
+    ],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 289,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "I've annotated the repository. There are 168 tagged comments across 63 files, and `project-graph/claims.ttl` records about 175 claims. Nothing is committed.\n\n**Check result:** `node project-graph/graph.mjs check` reports one violation, and it is the kind the guide says to leave. `ContactForm.astro:549` relies on \"a script-focused `tabindex=\"-1\"` element draws no focus ring.\" `CardMasonry.astro` records that headless Chrome and the Browser pane reported exactly that, and that real Chrome, Safari and Vivaldi then showed the opposite. So the claim is marked overturned and the ContactForm comment is flagged.\n\n**Superseded claims recorded:**\n- The chip Label in Name failure was first blamed on the comma; the real cause was the missing space between spans (`FacetFilters`, `CLAUDE.md`, the eleventy comparison).\n- The close-search button's old name, \"Close search\", was replaced by \"Close search, esc\".\n- The \"promote the count line to `role=status`\" plan was replaced by a separate region that ships empty.\n\n**One departure from \"only add tag lines\":** 24 comments closed on their last text line (`… text. */`). For those I moved the `*/` onto the new final tag line, because there was nowhere else to put tags inside the comment. The wording of every comment is unchanged.\n\n**Comments I wasn't sure were in scope:**\n- **Left out:**\n  - The `card-index.ts` note that facet chips \"ship disabled\" without JavaScript. It handles a JS-dependent control but contradicts the \"must not appear\" scope note.\n  - Comments that mention focus only in passing (Masthead's `width: 100%` note, the card hover rules).\n  - Uses of \"inert\" that mean \"has no effect\".\n- **Tagged, though the fit is loose:**\n  - `card-index.ts:688`, which uses \"landing point\" for the scroll target. I tagged it because the concept file names that line.\n  - The `data-search-query` flag, tagged as styled-away.\n  - Feed alt-text and iframe-title notes, tagged as screen reader announcement.\n  - Open \"focus ring at radius-1\" items, which got a concept tag only.\n\n**Near-merges and near-splits:**\n- **Merged:**\n  - \"Up to 31 layout flushes\" (card-index) and \"dozens\" (search.ts), as one claim.\n  - \"A minority\" and \"roughly a third\" of WCAG failures, as one claim.\n- **Kept apart, unlinked, because they disagree:**\n  - `search-toggle-ships-hidden` (Andy, 2026-09-12) and `search-toggle-gated-on-html-js` (Masthead).\n  - ThemeToggle's \"a never-visible name uses `aria-label`\" and Masthead's never-visible search label, which uses a clipped `<label>` instead.\n  - The general `fixed-focus-pair-fails-on-accent-band` and Masthead's measured \"the band needs no override\".\n- **Split:** \"Chrome and Firefox make scroll regions focusable\" from \"Safari does not\", and the title tooltip on keyboard focus from on touch.\n- **Attribution:** `card-truncation-keyed-on-html-js` is attributed to Andy because one kickoff says \"Andy approved\", though other comments name nobody.\n\n**Concepts the vocabulary lacks:**\n- Tab order and the focusability of disabled controls (`aria-disabled` vs `disabled`). Left untagged.\n- Automated accessibility checks such as axe and Lighthouse. Tagged with automated browser or headless Chrome.\n- Heading and landmark navigation. Left untagged.\n- Claims about fonts, scroll anchoring and implicit form submission, inside comments that are otherwise in scope. Not recorded, since no concept fits.\n\n**Unclear in the guide:**\n- There is no rule for a comment whose only closing delimiter sits on its last text line.\n- Nothing says whether unattributed decisions may carry a date. I gave the skip-link decision 2026-09-17 because `CLAUDE.md` states it.\n- Nothing says whether to record every claim a long in-scope comment makes, or only those about the vocabulary. I did the latter.\n- It doesn't say whether YAML `#` comments in `DESIGN.md`'s front matter count as comments. I skipped them.\n\nDiff review was blocked here, so I checked coverage by walking the claim list against the tags. `git diff` is the quickest way to confirm the edits are tag lines plus those 24 moved closers.",
+    "ttft_ms": 3787,
+    "type": "result",
+    "duration_ms": 1450495,
+    "uuid": "194de6fd-cdb6-4e04-8e56-fa7ed12fb2c4",
+    "ttft_stream_ms": 3632,
+    "time_to_request_ms": 1558,
+    "first_content_frame_ms": 3633,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "annotation-2026-10-19T23-10-29-827Z.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-project-graph-runs-annotation-2026-10-19T23-10-29-827Z/11a99a82-dade-4e15-87fe-4714f44dcb35.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "worktree": "/Users/andyfitzgerald/.cache/project-graph/runs/annotation-2026-10-19T23-10-29-827Z",
+  "isolated": true,
+  "valid": true
+}

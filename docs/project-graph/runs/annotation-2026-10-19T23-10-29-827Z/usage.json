@@ -1,0 +1,144 @@
+{
+  "model": ["claude-opus-5-5"],
+  "usage": {
+    "input_tokens": 166,
+    "cache_creation_input_tokens": 437271,
+    "cache_read_input_tokens": 22168996,
+    "output_tokens": 167466,
+    "output_tokens_details": {
+      "thinking_tokens": 77641
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 437271,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 2280,
+        "cache_read_input_tokens": 445163,
+        "cache_creation_input_tokens": 4974,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 4974
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "num_turns": 289,
+  "duration_ms": 1450495,
+  "total_cost_usd": 11.281951199999995,
+  "tool_calls": {
+    "Bash": 12,
+    "Read": 76,
+    "Grep": 31,
+    "Write": 1,
+    "Edit": 168
+  },
+  "tool_calls_total": 288,
+  "files_read": {
+    "project-graph/annotation-guide.md": 1,
+    "project-graph/concepts.ttl": 1,
+    "project-graph/model.ttl": 1,
+    "project-graph/extract.mjs": 1,
+    "web/src/styles/base.css": 4,
+    "web/src/scripts/card-index.ts": 1,
+    "web/src/components/ResultsFooter.astro": 1,
+    "web/src/components/cards/CardMasonry.astro": 3,
+    "web/src/components/Masthead.astro": 4,
+    "web/src/scripts/search.ts": 1,
+    "web/src/components/VisuallyHidden.astro": 1,
+    "web/src/layouts/BaseLayout.astro": 2,
+    "web/src/components/ContactForm.astro": 2,
+    "web/src/components/SlideDeck.astro": 2,
+    "web/src/components/Recording.astro": 2,
+    "web/src/components/ThemeToggle.astro": 1,
+    "web/src/components/CardResults.astro": 1,
+    "web/src/components/Button.astro": 1,
+    "web/src/components/Band.astro": 1,
+    "web/src/components/Chip.astro": 1,
+    "web/src/components/Logo.astro": 1,
+    "web/src/components/SearchResults.astro": 1,
+    "web/src/components/FacetFilters.astro": 1,
+    "web/src/components/prose/Code.astro": 2,
+    "web/src/components/prose/highlighter.ts": 1,
+    "web/src/pages/search.astro": 1,
+    "web/src/pages/index.astro": 1,
+    "web/src/components/Footer.astro": 2,
+    "web/src/lib/feed-entries.ts": 3,
+    "web/src/lib/feed-html.ts": 1,
+    "web/src/components/cards/ArticleCard.astro": 1,
+    "web/src/components/cards/SourceCard.astro": 1,
+    "web/src/components/cards/PresentationCard.astro": 1,
+    "web/src/components/cards/presentationCard.ts": 1,
+    "DESIGN.md": 7,
+    "CLAUDE.md": 2,
+    "docs/urls-and-filtering.md": 2,
+    "docs/open-questions.md": 1,
+    "docs/decisions/components.md": 1,
+    "docs/figma-notes.md": 2,
+    "docs/astro-migration/audio-player-kickoff.md": 1,
+    "docs/astro-migration/search-kickoff.md": 1,
+    "docs/astro-migration/contact-page-kickoff.md": 1,
+    "docs/astro-migration/insights-filtering-kickoff.md": 1,
+    "docs/astro-migration/page-template-kickoff.md": 1,
+    "docs/astro-migration/search-index-kickoff.md": 1,
+    "docs/astro-migration/presentations-kickoff.md": 1,
+    "docs/astro-migration/phase-4-kickoff.md": 1,
+    "web/src/components/Rail.astro": 1,
+    "web/server/contact.php": 2
+  },
+  "ran_graph_check": true,
+  "ran_graph_query": true,
+  "permission_denials": [
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01TM4uo2gzU6u3NnGYXDkPyv",
+      "tool_input": {
+        "command": "cd /Users/andyfitzgerald/.cache/project-graph/runs/annotation-2026-10-19T23-10-29-827Z\nfor pat in \"focus ring|focus indicator|two-ring|offset-then-ring|focus pair|ring pair\" \\\n \"programmatic focus|scripted focus|script-moved focus|moving focus|focus follows|\\.focus\\(\" \\\n \"focus target\" \\\n \"landing point|somewhere to land|focus fallback|tabindex=\\\"-1\\\"|tabindex=-1\" \\\n \"focus loss|dropped focus|focus falls to the body|falls to .?body|focus.{0,20}<body>\" \\\n \"not applicable|hidden attribute|\\[hidden\\]\" \\\n \"styled away|hidden by a class|class-based hiding\" \\\n \"visually hidden|visually-hidden|clip technique|1px clipped box|announced but not drawn\" \\\n \"hidden from assistive technology|aria-hidden|drawn but not announced\" \\\n \"inert content|inert subtree|\\binert\\b\" \\\n \"JavaScript-only control|ships hidden|the contract|html\\.js\" \\\n \"forced reflow|layout flush|offsetWidth|reflow\" \\\n \"scroll region|scrollable region|scroll container\" \\\n \"screen reader announcement|announcement|announce|live region|aria-live\" \\\n \"automated browser|headless\" \\\n \"Browser pane|the pane|in-app browser\"; do\n  echo \"=== $pat\"\n  rg -i -c -e \"$pat\" web/src web/server docs CLAUDE.md DESIGN.md --glob '!docs/project-graph/**' -g '*.{astro,ts,mjs,js,css,md,php}' | sort -t: -k2 -nr | head -25\ndone",
+        "description": "Count concept label matches per file"
+      }
+    },
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_018D7SN3B4iNsQhMKizgu5ri",
+      "tool_input": {
+        "command": "node project-graph/graph.mjs check 2>&1 | tail -12; echo \"---removed lines (excluding claims.ttl):\"; git diff -U0 -- . ':!project-graph' | grep -E '^-[^-]' | sed -E 's/^-//' | sed -E 's/^\\s+//' | sort | uniq -c | sort -rn | head -40",
+        "description": "Run final check and list every removed line"
+      }
+    },
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01L9UG4imV63sLR4RiJJ7daS",
+      "tool_input": {
+        "command": "git diff -U0 --no-color",
+        "description": "Show the full diff with no context lines"
+      }
+    },
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01HZ9uyBhNpcaru3C9nNKpx5",
+      "tool_input": {
+        "command": "git diff --numstat",
+        "description": "Count added and removed lines per file"
+      }
+    },
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01TrTskDWZYHGxZHTPYRdjgX",
+      "tool_input": {
+        "command": "node --input-type=module -e \"\nimport {readFileSync} from 'node:fs'\nimport {extractTags} from './project-graph/extract.mjs'\nconst {locations, errors} = extractTags('.')\nconst cited = new Set(locations.flatMap(l => l.claims))\nconst defined = [...readFileSync('project-graph/claims.ttl','utf8').matchAll(/^claim:([a-z0-9-]+) a model:/gm)].map(m => m[1])\nconsole.log('locations', locations.length, 'errors', errors.length, 'defined', defined.length, 'cited', cited.size)\nconsole.log('uncited:', defined.filter(d => !cited.has(d)).join(' '))\nconsole.log('undefined:', [...cited].filter(c => !defined.includes(c)).join(' '))\n\"",
+        "description": "List claims defined but never cited by a tag"
+      }
+    }
+  ]
+}

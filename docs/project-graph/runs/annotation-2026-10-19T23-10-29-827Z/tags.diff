@@ -1,0 +1,1787 @@
+diff --git a/CLAUDE.md b/CLAUDE.md
+index 5b94fd9..a45b3fb 100644
+--- a/CLAUDE.md
++++ b/CLAUDE.md
+@@ -586,6 +586,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
+       elements — without the tabindex a fragment moves the scroll position but not keyboard focus,
+       so the link looks like it works and puts you back in the nav. `specimen.astro` had no `main`
+       landmark at all and gained one.
++      <!-- @concept landing-point programmatic-focus -->
++      <!-- @claim fragment-navigation-moves-focus-only-to-a-focusable-target skip-link-target-is-main-with-tabindex-minus-one tabindex-minus-one-focusable-not-tab-stop -->
+     - ~~Add a "copy to clipboard" icon to RSS feed links.~~ **DEFERRED 2026-09-17 to
+       [issue #4](https://github.com/andybywire/andyfitzgeraldconsulting/issues/4)** — the repo's
+       first, and the pattern for post-launch work that is specified but not launch critical.
+@@ -904,6 +906,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
+      findings and were left for that gate. **It found neither, because neither was real**: the
+      theme toggle's fieldset is named by `aria-label`, and the `<nav>` was inside an inert
+      `<template>`.
++     <!-- @concept inert-content -->
++     <!-- @claim template-content-is-inert -->
+    - **It does not check CSS.** Every `CSS:` message is filtered: the Nu checker's CSS checker
+      does not know `@container style()` or `container-type`, which were 543 of its 565 errors.
+      Warnings are off too — almost all deliberate `role="list"` and `aria-disabled`.
+@@ -925,6 +929,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
+    protocol and runs **axe-core** — pinned exactly, and the only new dependency: no Playwright,
+    no downloaded browser — failing on any of axe's default rules, which are WCAG 2.0–2.2 at A and
+    AA plus best practice. Its header records the reasoning; what is worth not re-deriving:
++   <!-- @concept headless-chrome -->
++   <!-- @claim a11y-check-runs-axe-in-headless-chrome -->
+ 
+    - **Five configurations**: desktop in light, OS dark and toggle dark — the three CSS blocks a
+      token can be wrong in — and phone in light and dark. Every page is checked to have reached
+@@ -932,12 +938,18 @@ Each phase is a branch, merged back once verified — off `next` through the cut
+    - **Reduced motion is on, and it waits for animations to finish.** Without that, 1 run in 10
+      caught links partway through base.css's 0.15s color transition and reported a contrast
+      failure in colors that were no token. A harness artifact: a real page load starts none.
++     <!-- @concept headless-chrome -->
++     <!-- @claim a11y-harness-caught-links-mid-transition real-page-load-starts-no-transition -->
+    - **Test an accessibility fix inside the real page, not in a bare test file.** axe passed the
+      close-search button's failing name in isolation and failed it in `/search/`, with the
+      page's own CSS applied.
++     <!-- @concept headless-chrome screen-reader-announcement -->
++     <!-- @claim axe-passes-close-search-name-in-isolation -->
+    - **A pass is a floor.** Automated checks find roughly a third of WCAG failures. Keyboard use,
+      focus order, what a screen reader announces, whether alt text is any good, and interactive
+      states — search open, the mobile menu expanded — are not tested at all.
++     <!-- @concept headless-chrome screen-reader-announcement -->
++     <!-- @claim automated-checks-find-a-minority-of-accessibility-failures a11y-check-does-not-test-announcements -->
+ 
+    It found two real failures, both WCAG 2.5.3, Label in Name. The **facet chips** read
+    "Structured Content11", because Astro's HTML compression dropped the whitespace between two
+@@ -945,6 +957,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
+    And the **close-search button**, whose visible text is "esc", is now named "Close search,
+    esc", for voice-control users who say what they see. The check takes about 125s on the runner
+    against 45s on a Mac, the slowest gate by far; beside the deploy, that delays only the report.
++   <!-- @concept screen-reader-announcement -->
++   <!-- @claim missing-space-between-chip-spans-caused-label-in-name-failure close-search-named-close-search-esc -->
+ 
+    **BYTE BUDGETS ARE BUILT (2026-10-09)**, the fourth site gate, and with them **the quality
+    gates are complete**: `web/scripts/check-budgets.mjs`, run with `pnpm budgets` after a build.
+diff --git a/DESIGN.md b/DESIGN.md
+index 957615f..8ba4c12 100644
+--- a/DESIGN.md
++++ b/DESIGN.md
+@@ -972,6 +972,8 @@ typography and radius but no box — the same gap the filter chip had).
+   see its note for why it cannot and should not — so the default offset-then-ring order would paint a
+   blue-500 ring onto a blue-500 ground. Reversed, the inner ring reads against the button and the outer
+   white one against the band. Same fix as the mode selector's pill.
++  <!-- @concept focus-ring -->
++  <!-- @claim band-does-not-repoint-focus-ring fixed-focus-pair-fails-on-accent-band accent-band-components-swap-focus-colors -->
+ 
+ **Filter chips.** Rest is a surface with a control border; hover and pressed tint toward the accent;
+ selected is a filled accent pill. **The chip border is its own role, not the card hairline** — a card
+@@ -1027,6 +1029,8 @@ Wrapping an anchor around the card instead would announce the title, genre, date
+ link, and would put a heading inside a link rather than a link inside a heading. The costs are real but
+ small: text in the card can no longer be drag-selected, and a second link inside a card would need
+ lifting above the overlay with `z-index`. No card has one.
++<!-- @concept screen-reader-announcement -->
++<!-- @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element -->
+ 
+ ### Card grids — the breakpoint ladder differs per index
+ 
+@@ -1110,6 +1114,8 @@ short enough that the results are already in view.
+ **Arriving on a filtered URL scrolls to the results.** A fresh navigation to a URL carrying any valid
+ `?topic=` or `?genre=` glides to the results and focuses the card grid. Reload, Back/Forward, in-page
+ chip clicks and a reader who has already scrolled are left alone.
++<!-- @concept landing-point programmatic-focus -->
++<!-- @claim filtered-arrival-scrolls-to-the-cards filtered-arrival-focuses-the-grid -->
+ - **The motion is the wayfinding**, the same as following a heading anchor: it shows where on the page
+   the reader landed and that the page moved them. It is base.css's `scroll-behavior: smooth`, so
+   reduced motion gets a jump. `instant` was tried first and rejected for making the page appear simply
+@@ -1121,6 +1127,8 @@ chip clicks and a reader who has already scrolled are left alone.
+ `tabindex="-1"`, so it is a landing point rather than a tab stop. Its focus ring is suppressed, because
+ a ring around the whole grid reads as a fault, and the next Tab lands on the first card, which draws
+ its own.
++<!-- @concept focus-ring landing-point programmatic-focus -->
++<!-- @claim no-focus-ring-on-landing-grid card-grid-named-by-count-line tabindex-minus-one-focusable-not-tab-stop -->
+ 
+ **A single-tag arrival is labeled above the cards**: "{concept} Insights", "{concept} Presentations" —
+ "Interoperability Insights", "Case Study Insights", "Talk Presentations".
+@@ -1132,6 +1140,8 @@ its own.
+   again, or pressing Back, restores it. A chip clicked on the bare index never shows one.
+ - **A `<p>`, not a heading** — a heading that comes and goes with the filter is a poor thing to
+   navigate by. It reaches assistive tech by joining the grid's accessible name while it is visible.
++  <!-- @concept screen-reader-announcement -->
++  <!-- @claim results-label-is-a-p-not-a-heading -->
+ - **Title case, as specified** — note that the Heading case table lists labels as sentence case. The
+   concept half is the vocabulary's prefLabel either way.
+ 
+@@ -1187,6 +1197,8 @@ harder to see.
+ 
+ The same two colors in both contexts, order swapped. In CSS:
+ `box-shadow: 0 0 0 2px <inner>, 0 0 0 4px <outer>`.
++<!-- @concept focus-ring -->
++<!-- @claim focus-ring-stated-as-relationship -->
+ 
+ **The page header is one component with an optional lead**, and the boolean is required by the rail
+ rather than offered as flexibility. **The gap after the header belongs to the parent band**, not the
+@@ -1401,6 +1413,8 @@ Recorded ahead of the build so the masthead can leave the right seam. **Phase 3
+ - **Fuse.js**, the same engine the previous version of the site used.
+ - **`cmd + k` opens it**, moving focus into the field, and the icon is independently clickable and
+   focusable. Two entry points to one state.
++  <!-- @concept programmatic-focus -->
++  <!-- @claim cmd-k-opens-search-and-focuses-field -->
+ - **On mobile the icon becomes the word "search"** — the masthead restacks at that breakpoint and the
+   nav moves to a full-bleed accent strip, where an icon alone reads as decoration. The Figma file has
+   a mobile search-results screen showing the behavior.
+@@ -1483,6 +1497,8 @@ self-hosting article overflow, the widest at 1344px against a 656px column.**
+ Scrolling brings an obligation: **the `<pre>` carries `tabindex="0"`**, because a scroll region that
+ a pointer can drag and a keyboard cannot reach fails WCAG 2.1.1. No `role`/`aria-label` with it —
+ 21 landmarks in one article would bury the page's real ones.
++<!-- @concept scroll-region -->
++<!-- @claim tabindex-zero-makes-scroll-region-keyboard-reachable unreachable-scroll-region-fails-wcag-2-1-1 code-blocks-get-no-region-role -->
+ 
+ **A per-language wrap policy is possible and not taken.** `data-language` is on every block, so yaml
+ and JavaScript could wrap — their lines are indented, so a break is far less ambiguous — while `sh`
+@@ -1623,6 +1639,8 @@ questioned rather than followed.
+ - **Do** check an interaction ramp's direction against **the page**, never the previous step.
+ - **Do** state the focus ring as a relationship — inner contrasts the control, outer contrasts the
+   surface. A fixed color pair fails on the accent band.
++  <!-- @concept focus-ring -->
++  <!-- @claim focus-ring-stated-as-relationship fixed-focus-pair-fails-on-accent-band -->
+ - **Don't** give tags hover, pressed or focus states. They are markers, not controls.
+ 
+ ## Open questions
+diff --git a/docs/astro-migration/audio-player-kickoff.md b/docs/astro-migration/audio-player-kickoff.md
+index 4b6a76f..76d249e 100644
+--- a/docs/astro-migration/audio-player-kickoff.md
++++ b/docs/astro-migration/audio-player-kickoff.md
+@@ -227,6 +227,8 @@ All of these failed **silently** in this session or the last.
+ 
+ **The browser pane runs with `document.hidden: true`, and it suppresses more than you
+ expect.** Each of these looked like a bug in my code first:
++<!-- @concept browser-pane -->
++<!-- @claim browser-pane-runs-with-document-hidden -->
+ 
+ - `requestAnimationFrame` never fires, so smooth `scrollTo` is a no-op and any
+   rAF-deferred work never runs.
+@@ -237,6 +239,8 @@ expect.** Each of these looked like a bug in my code first:
+ - **`dialog.close()` set `open` to false and fired ZERO `close` events**, with a listener
+   added in the same call counting none. Never established whether that is real platform
+   behaviour or the pane; the code no longer depends on the answer.
++<!-- @concept browser-pane -->
++<!-- @claim browser-pane-never-fires-raf browser-pane-smooth-scroll-is-a-no-op browser-pane-fires-no-scroll-events browser-pane-suppresses-lazy-loading dialog-close-fired-no-close-event-in-the-pane -->
+ 
+ **Layout:**
+ 
+diff --git a/docs/astro-migration/contact-page-kickoff.md b/docs/astro-migration/contact-page-kickoff.md
+index 4108761..a3943cc 100644
+--- a/docs/astro-migration/contact-page-kickoff.md
++++ b/docs/astro-migration/contact-page-kickoff.md
+@@ -222,6 +222,8 @@ reserving the column is a template decision, not content.
+ ### The browser pane lies about anything animated
+ 
+ It runs with `document.hidden: true`, so **animations and transitions never advance.**
++<!-- @concept browser-pane -->
++<!-- @claim browser-pane-runs-with-document-hidden browser-pane-never-advances-transitions -->
+ 
+ - A transitioned property (`border-color` on `.button`) **freezes at its previous value**, so
+   `getComputedStyle` readings lag one interaction behind — in both directions. This was
+@@ -236,6 +238,8 @@ It runs with `document.hidden: true`, so **animations and transitions never adva
+   common. Measure with `getBoundingClientRect` / `getComputedStyle` and hand Andy the eyeball
+   steps. Do not chase a screenshot more than twice.
+ - Images below the fold report `complete: false` because they are lazy. Not a broken image.
++<!-- @concept browser-pane forced-reflow -->
++<!-- @claim browser-pane-never-advances-transitions browser-pane-smooth-scroll-is-a-no-op browser-pane-never-fires-raf reading-layout-property-flushes-style browser-pane-screenshots-unreliable -->
+ 
+ ### Astro scoping — this bit three times in one session
+ 
+diff --git a/docs/astro-migration/eleventy-astro-comparison.md b/docs/astro-migration/eleventy-astro-comparison.md
+index 527af78..d290c67 100644
+--- a/docs/astro-migration/eleventy-astro-comparison.md
++++ b/docs/astro-migration/eleventy-astro-comparison.md
+@@ -231,6 +231,8 @@ Lighthouse on mobile, and axe-core 4.14 in headless Chrome with every rule enabl
+ and 2.2 at A and AA, plus best practice. The new site was run in both color schemes, with identical
+ results. Automated checks find a minority of real accessibility problems, so these results set a
+ floor and do not certify either site.
++<!-- @concept headless-chrome -->
++<!-- @claim automated-checks-find-a-minority-of-accessibility-failures -->
+ 
+ | Page | Lighthouse | axe, Eleventy | axe, Astro |
+ |---|---|---|---|
+@@ -266,6 +268,8 @@ floor and do not certify either site.
+   against axe showed it sets punctuation aside. The real cause was the two spans rendering with no
+   space between them, so the visible text was "Structured Content11". One `{' '}` in
+   `FacetFilters.astro` fixed it, with the name unchanged. The phase 8 accessibility gate found it.
++  <!-- @concept screen-reader-announcement -->
++  <!-- @claim missing-space-between-chip-spans-caused-label-in-name-failure -->
+ - **The rail's "Contents" heading** is an `h3` that skips a level on About and Consulting. The rail
+   shows only at desktop widths, which is why those pages score 99 on desktop and 100 on mobile.
+   **Fixed 2026-10-08:** the rail headings are h2 now, after the phase 8 HTML validator reported the
+@@ -346,6 +350,7 @@ npx lighthouse@12 <url> --only-categories=performance,accessibility,best-practic
+ with Node's built-in `WebSocket`, no puppeteer. Each page loaded in a fresh browser context,
+ scrolled to the bottom in viewport steps, then CacheStorage was read back and `axe.min.js` injected.
+ `Emulation.setEmulatedMedia` provided the dark pass.
++<!-- @concept headless-chrome -->
+ 
+ **Code.** cloc reproduces the totals, and understands `.astro` and `.njk` natively:
+ 
+diff --git a/docs/astro-migration/insights-filtering-kickoff.md b/docs/astro-migration/insights-filtering-kickoff.md
+index 23ecfe6..7240b7d 100644
+--- a/docs/astro-migration/insights-filtering-kickoff.md
++++ b/docs/astro-migration/insights-filtering-kickoff.md
+@@ -70,7 +70,9 @@ than a phase 6 surprise.
+   genres" is the longer label in the narrower column. Judge it on screen.
+ - **Which focus target on reset.** "First facet" is the plan; the group heading with `tabindex="-1"`
+   is the alternative, and announces "Topics" rather than a contextless chip name. Pairs with the next one.
++  <!-- @concept focus-target -->
+ - **The `aria-live` wording.** "12 of 42 shown" is the doc's minimum. Note the count is now 45, not 42.
++  <!-- @concept screen-reader-announcement -->
+ 
+ ### What the spec already settles — don't redesign these
+ 
+@@ -85,6 +87,8 @@ than a phase 6 surprise.
+ - **The accessible name changes by state** — `, add filter` against `, selected, remove filter` — because
+   the same control means opposite things and only the fill says so visually. The script already appends
+   the first half.
++  <!-- @concept screen-reader-announcement -->
++  <!-- @claim chip-accessible-name-changes-by-state -->
+ - **"Insights" cannot be a genre inside Insights.** The board's `Insights 6` chip is a phantom; the real
+   genres are the nine in the data.
+ 
+@@ -103,6 +107,8 @@ exists at all.
+   `.chip { display: inline-flex }` beat it and a `hidden` button rendered while `el.hidden` said true.
+   base.css now has the `!important` guard. Use `[hidden]` for "not applicable" and a class for "styled
+   away".
++  <!-- @concept not-applicable styled-away -->
++  <!-- @claim author-display-rule-overrides-ua-hidden hidden-attribute-forced-with-important hidden-for-not-applicable-class-for-styled-away -->
+ - **`ResizeObserver` watches both axes**, so anything that changes an element's height inside its own
+   observer callback feeds itself. Both observers here are width-guarded. Copy that.
+ - **`ResizeObserver` never fires on `display: contents`** — no box. Observe a child with a box.
+@@ -114,6 +120,8 @@ exists at all.
+   obstacle to verifying in the Browser pane. Twice this session, stale-looking layout turned out to be
+   a deferred rAF rather than a bug. Validate the logic by calling it directly before concluding
+   anything.
++  <!-- @concept browser-pane -->
++  <!-- @claim raf-does-not-fire-in-hidden-document browser-pane-never-fires-raf -->
+ - **TypeScript will not narrow a captured binding into a hoisted `function`.** Pass the non-null
+   element as a parameter.
+ - **Measure, don't reason.** Every wrong number this session came from computing on the wrong input:
+@@ -127,6 +135,8 @@ exists at all.
+   "show all" — side by side, stacked on mobile, both present only while items remain. Needs the
+   `html.js` class added to BaseLayout's synchronous head script (Andy approved; not yet written), so the
+   no-JS page keeps all 45 visible.
++  <!-- @concept javascript-only-control -->
++  <!-- @claim card-truncation-keyed-on-html-js -->
+ - **`grid-auto-flow: dense` is decided but flagged.** 21 of 45 positions differ from tab order, none by
+   more than two slots, DOM order untouched. Reversible in one word. See open-questions.md.
+ - **Three note cards link to 404s** until `[slug].astro` widens to include `note`. It is one route that
+diff --git a/docs/astro-migration/page-template-kickoff.md b/docs/astro-migration/page-template-kickoff.md
+index 5579297..13f43eb 100644
+--- a/docs/astro-migration/page-template-kickoff.md
++++ b/docs/astro-migration/page-template-kickoff.md
+@@ -164,6 +164,8 @@ are all answered above.
+   contact form — the form hid correctly and the confirmation stayed hidden too — and was
+   caught only by reading computed `display` rather than trusting that author styles beat
+   the UA sheet.
++  <!-- @concept not-applicable styled-away -->
++  <!-- @claim hidden-attribute-forced-with-important hidden-for-not-applicable-class-for-styled-away hidden-attribute-rule-is-at-base-css-line-97 important-hidden-outranks-target-rule -->
+ - **A `defineQuery` past a complexity ceiling yields `any`, not an error.** Two Portable
+   Text arrays plus a band fragment is the documented tipping shape, which is exactly what
+   a `page` query is — hence the split in `pages.ts`. **Probe with a deliberate bogus
+@@ -182,6 +184,8 @@ are all answered above.
+   measuring anything that transitions, force reflow with `void el.offsetWidth`, use
+   `{behavior: 'instant'}` for scrolling, and prefer `getBoundingClientRect` and
+   `getComputedStyle` over screenshots.
++  <!-- @concept browser-pane forced-reflow -->
++  <!-- @claim browser-pane-runs-with-document-hidden browser-pane-never-advances-transitions browser-pane-never-fires-raf reading-layout-property-flushes-style browser-pane-screenshots-unreliable -->
+ - **Astro does not route pages whose filename starts with `_`** — a throwaway test page
+   named `__tmp.astro` will 404 and look like a broken route.
+ - **Sanity MCP patches write to drafts; the static build reads published.** Patching
+diff --git a/docs/astro-migration/phase-4-kickoff.md b/docs/astro-migration/phase-4-kickoff.md
+index f236d37..db1e5ad 100644
+--- a/docs/astro-migration/phase-4-kickoff.md
++++ b/docs/astro-migration/phase-4-kickoff.md
+@@ -147,6 +147,7 @@ is a `<button>` rather than a link precisely because search does not navigate.
+   open-questions.md against this phase.
+ - **The focus ring at `radius-1`** is now on screen in the mode selector, which is the check
+   DESIGN.md asked for. Unresolved by eye.
++  <!-- @concept focus-ring -->
+ - **`sizes="auto"` was accepted on spec, not measurement** — see the harness warning above.
+ - **Rail headings have no role**, and rail width at md is 166px, which is where `body-compact`
+   ("a column too narrow for `body`") most likely earns its keep.
+diff --git a/docs/astro-migration/presentations-kickoff.md b/docs/astro-migration/presentations-kickoff.md
+index c971fd7..e426d16 100644
+--- a/docs/astro-migration/presentations-kickoff.md
++++ b/docs/astro-migration/presentations-kickoff.md
+@@ -194,6 +194,8 @@ These are all things that failed **silently** in this session or the last.
+ - **The browser pane opens with zero layout width.** Call `resize_window` explicitly before
+   measuring anything, or every number is meaningless. It also runs with `document.hidden`,
+   so transitions never advance.
++  <!-- @concept browser-pane -->
++  <!-- @claim browser-pane-opens-with-zero-layout-width browser-pane-runs-with-document-hidden browser-pane-never-advances-transitions -->
+ - **base.css's `nav :is(a, button)` reset** strips the resting underline *and* adds the
+   wipe-in `::after`. Never wrap prose links in a `<nav>` unless you intend to re-derive the
+   prose treatment.
+diff --git a/docs/astro-migration/search-index-kickoff.md b/docs/astro-migration/search-index-kickoff.md
+index 543c99f..c9dc937 100644
+--- a/docs/astro-migration/search-index-kickoff.md
++++ b/docs/astro-migration/search-index-kickoff.md
+@@ -169,6 +169,8 @@ were renamed to `search-facet*` / `search-chips` to stay clear of it.
+ **The browser pane, again:** no scroll events, no `requestAnimationFrame`, lazy loading suppressed,
+ and **a synthetic Return does not submit a form** — `requestSubmit()` and a real submit-button click
+ both do. Anything scroll- or keyboard-dependent is Andy's to eyeball.
++<!-- @concept browser-pane -->
++<!-- @claim browser-pane-fires-no-scroll-events browser-pane-never-fires-raf browser-pane-suppresses-lazy-loading browser-pane-synthetic-return-does-not-submit -->
+ 
+ **`defineQuery` past the complexity ceiling yields `any`, not an error.** All four search queries
+ were probed with a bogus property access against a known-good control. Re-probe before adding a
+diff --git a/docs/astro-migration/search-kickoff.md b/docs/astro-migration/search-kickoff.md
+index 889bcd1..331fbec 100644
+--- a/docs/astro-migration/search-kickoff.md
++++ b/docs/astro-migration/search-kickoff.md
+@@ -161,6 +161,8 @@ clickable and focusable. Two entry points to one state." The boards add `[Esc]`
+ close affordance. On mobile the icon becomes the word "search" — the masthead already renders
+ the label as real text at both widths and hides it visually in the inline state, so that markup
+ exists.
++<!-- @concept programmatic-focus visually-hidden -->
++<!-- @claim cmd-k-opens-search-and-focuses-field search-label-visually-hidden-not-removed -->
+ 
+ ### 6. Then the last of the JSON-LD
+ 
+@@ -175,6 +177,8 @@ search accepts a query at, so it could not be written until search had one. One
+ control that needs JavaScript ships hidden, because a control that does nothing is worse than
+ no control. **It currently ships VISIBLE and inert, so today a no-JS visitor sees a Search
+ button that never responds.** That is a live defect this work closes, not a style question.
++<!-- @concept javascript-only-control -->
++<!-- @claim search-toggle-ships-hidden javascript-only-control-must-not-appear-without-javascript -->
+ 
+ **From DESIGN.md → Components → Search (specified 2026-08-21):**
+ 
+@@ -206,6 +210,8 @@ here. Match on clean data rather than rendered text, or run values through `steg
+ **no scroll events fire at all**, and **lazy loading is suppressed entirely**. Each of these
+ looked like a bug in my code first. Sticky-filter behavior in particular cannot be verified
+ there — hand that check to Andy.
++<!-- @concept browser-pane -->
++<!-- @claim browser-pane-runs-with-document-hidden browser-pane-never-fires-raf browser-pane-fires-no-scroll-events browser-pane-suppresses-lazy-loading -->
+ 
+ **A `defineQuery` past the complexity ceiling yields `any`, not an error.** Probe with a
+ deliberate bogus property access against a known-good control; a green `astro check` proves
+@@ -233,6 +239,8 @@ one cost a `border-radius` in the presentations work.
+ **`html.js` is set by a synchronous head script before first paint** (`BaseLayout.astro`), so
+ any rule keyed on it is true from that paint rather than applied as a correction. This is the
+ mechanism for revealing controls without a flash, and it is what the search toggle should use.
++<!-- @concept javascript-only-control -->
++<!-- @claim synchronous-head-script-runs-before-first-paint -->
+ 
+ ## Smaller things left open
+ 
+diff --git a/docs/decisions/components.md b/docs/decisions/components.md
+index 3ca26d1..9dce1b0 100644
+--- a/docs/decisions/components.md
++++ b/docs/decisions/components.md
+@@ -42,11 +42,15 @@ The same two colors in both contexts, order swapped — 5.67 / 5.42 on light, 5.
+ **Rejected: a fixed inner-white / outer-accent ring.** It **fails on the accent band**, where the
+ white inner merges with the white ghost button and the accent outer merges with the band. Stating the
+ rule as a relationship is what makes it survive a context change — and a theme change.
++<!-- @concept focus-ring -->
++<!-- @claim focus-ring-stated-as-relationship fixed-focus-pair-fails-on-accent-band -->
+ 
+ **Radii are derived from the control they wrap** — inner at `radius + 2`, outer at `radius + 4`. The
+ button's inner ring is 5 *because the button is 3*, not because 5 is a value in the system. In CSS
+ this is a real `calc()`, so the dependency stays live. In Figma it can't be, so the derivation lives in
+ the layer name.
++<!-- @concept focus-ring -->
++<!-- @claim focus-ring-radii-derived-from-control figma-focus-ring-radii-raw-with-derivation-in-layer-name -->
+ 
+ **The capsule chip is the one place the derivation collapses.** `border-radius` clamps to half the
+ shorter side, so a ring around a capsule is a capsule at any size — there is nothing left to derive,
+@@ -55,6 +59,8 @@ than as an addition to a radius, which is why the chip's ring layers are named f
+ The rings stay **unbound** in Figma even so: binding them to `radius-full` would be correct only while
+ the chip is a capsule, and a chip that later returned to a numeric radius would silently inherit that
+ radius instead of `radius + 2` — the exact error leaving them raw prevents.
++<!-- @concept focus-ring -->
++<!-- @claim ring-around-capsule-is-a-capsule figma-focus-ring-radii-raw-with-derivation-in-layer-name -->
+ 
+ **Radius tokens are ordinal, and only the terminal value is named** — `radius-1`, `radius-2`,
+ `radius-full`. Two reasons. `radius` rather than `rounded` because it names what the value *is* rather
+diff --git a/docs/figma-notes.md b/docs/figma-notes.md
+index 19c49ff..8812af4 100644
+--- a/docs/figma-notes.md
++++ b/docs/figma-notes.md
+@@ -178,10 +178,14 @@ caveat so the roman is not mistaken for an intention.
+   `spread`, reports it back, and grows `absoluteRenderBounds` by it — then draws nothing. Anything
+   needing a ring or halo has to be real geometry. CSS `box-shadow` handles spread correctly, so this
+   is a drawing limitation, not a design constraint.
++  <!-- @concept focus-ring -->
++  <!-- @claim figma-drop-shadow-spread-draws-nothing -->
+ - **Focus ring radii are raw, with the derivation in the layer name** (`focus ring outer — 6+4`).
+   Figma has no `calc()`, so binding them to a token would freeze the arithmetic and hide the
+   dependency. Moving the chip from radius 5 to 6 required its rings to move 7 → 8 and 9 → 10 to stay
+   concentric, and nothing but that name will tell the next person.
++  <!-- @concept focus-ring -->
++  <!-- @claim figma-focus-ring-radii-raw-with-derivation-in-layer-name focus-ring-radii-derived-from-control -->
+ - **`Note list — 348 outdent (span-4 + 2x card/pad)`** — same device. 348 is the one number Figma
+   cannot derive. If `card/pad` changes, the CSS follows automatically and Figma does not; the frame
+   name is the tripwire.
+@@ -267,6 +271,8 @@ const ok = SIDES.every(s => n.boundVariables[s] && n.boundVariables[s].id === ha
+ **Three things at weight 1 were deliberately not swept**, and the distinction matters:
+ 
+ - **Focus rings sit at weight 2**, and their radii are derived from the control — see above.
++  <!-- @concept focus-ring -->
++  <!-- @claim focus-ring-radii-derived-from-control -->
+ - **The blockquote's other three sides are 0**; only `strokeLeftWeight` carries the bar, bound to
+   `border/quote`.
+ - **~116 nodes at 1.2px named `stroke` / `fill+stroke`** are imported icon vector geometry, not UI
+diff --git a/docs/open-questions.md b/docs/open-questions.md
+index b14e777..666fedd 100644
+--- a/docs/open-questions.md
++++ b/docs/open-questions.md
+@@ -204,9 +204,12 @@ Kept here rather than deleted, because each was an open question long enough to
+   clamp, and static at both ends. DESIGN.md → Typography.
+ - **The focus ring at `radius-1`** now has a real control to judge on: the mode selector. DESIGN.md
+   asked for that check in phase 3 and it is on screen, unresolved by eye.
++  <!-- @concept focus-ring -->
+ - **Whether an accent band's focus ring needs the swapped pair** — yes, and the mode selector is the
+   first component that proves it: `focus-offset` is white and its selected pill is white, so the
+   default order would put an invisible ring on the one control that most needs it.
++  <!-- @concept focus-ring -->
++  <!-- @claim accent-band-components-swap-focus-colors default-focus-order-vanishes-into-selected-theme-pill -->
+ - **The masthead's tablet state**, which the Figma boards never drew. It needed no design: six items in
+   equal columns produce it on the way from two rows to one.
+ 
+diff --git a/docs/urls-and-filtering.md b/docs/urls-and-filtering.md
+index cc86b73..d61f866 100644
+--- a/docs/urls-and-filtering.md
++++ b/docs/urls-and-filtering.md
+@@ -217,6 +217,8 @@ questions, and putting them adjacent would invite reading one as the other.
+ single rule gated on `html.js`, set by BaseLayout's synchronous head script, so it is in force at the
+ first paint rather than applied as a visible collapse — and it never applies to someone who could not
+ undo it. Verified: 24 cards render with the class, 45 without.
++<!-- @concept javascript-only-control -->
++<!-- @claim card-truncation-keyed-on-html-js synchronous-head-script-runs-before-first-paint card-truncation-applies-only-with-html-js -->
+ 
+ ### Chip order is fixed at build time — decided 2026-08-31, on the built page
+ 
+@@ -322,6 +324,8 @@ same number, leaving its scope unclear.
+ Replaced by a **labeled text control per group — "reset topics" / "reset genres" — on the group's
+ heading row, right-aligned, appearing only once that group has a selection.** Clicking it clears that
+ group, restores the facets to their unselected order, and moves focus to the first facet.
++<!-- @concept programmatic-focus focus-target -->
++<!-- @claim reset-focuses-first-facet-in-group -->
+ 
+ **An icon-only control in the chip row was considered and rejected.** It would have sat left of the
+ selected chips, which means inserting a leading item into the row and shifting everything after it —
+@@ -373,14 +377,20 @@ Three consequences that do follow from the element choice:
+   `card-index.ts` and [open-questions.md](open-questions.md) → Settled after cutover.
+ - **The selected state cannot use `aria-pressed`**, which is button-only. `aria-current="true"` is the
+   link equivalent.
++  <!-- @concept screen-reader-announcement -->
++  <!-- @claim aria-pressed-is-button-only -->
+ - **The accessible name has to differ by state**, and this is an improvement rather than a workaround.
+   A selected chip's `href` *removes* its filter while an unselected chip's *adds* it — the same control
+   meaning opposite things. Sighted users read the fill; a screen-reader user needs it said. "Knowledge
+   graphs, 8 results, selected, remove filter" against "Knowledge graphs, 8 results, add filter" carries
+   more than `aria-pressed` would have.
++  <!-- @concept screen-reader-announcement -->
++  <!-- @claim chip-accessible-name-changes-by-state -->
+ 
+ Also mechanical: an anchor is inline by default, so it needs `inline-flex` or `inline-block` for the
+ pill to have a box and for the focus ring not to split into two fragments when it wraps a line.
++<!-- @concept focus-ring -->
++<!-- @claim inline-anchor-focus-ring-splits-across-lines -->
+ 
+ **Where the reset control goes at narrow widths.** A heading with a right-aligned link is comfortable
+ at 1440 and tight at 360, and "reset genres" is the longer of the two. Whether it wraps beneath the
+@@ -393,6 +403,8 @@ would otherwise fall to the body. The alternative is the group heading with `tab
+ announces "Topics" and orients a screen-reader user, where landing on "Knowledge graphs 8" is
+ contextless. **Revisit it with the live region**, not before: the two decisions pair, and a heading
+ that announces its own name is less useful than a chip if the count change is announced anyway.
++<!-- @concept programmatic-focus focus-target focus-loss landing-point screen-reader-announcement -->
++<!-- @claim reset-focuses-first-facet-in-group hiding-the-focused-element-drops-focus-to-body -->
+ 
+ **"Insights" cannot be a genre inside Insights.** A mock shows a genre chip reading "Insights 6"; no
+ such value exists in the data, where the four in use are Perspective (20), Method (12), Case Study (7)
+@@ -421,6 +433,8 @@ fresh entry rather than overwriting the one the visitor just returned to.
+ 
+ ~~**Announcing result changes.**~~ **Built 2026-08-31.** A visible count line *below* the grid, grouped
+ with the reveal controls, plus a visually-hidden `role="status"` region that speaks the same sentence.
++<!-- @concept screen-reader-announcement visually-hidden -->
++<!-- @claim announcement-region-ships-empty -->
+ 
+ - **Below, not above** — the chips report on the whole collection by design, so the number on screen is
+   not something you need before you start; it is what you want at the point you notice the grid ended.
+@@ -441,6 +455,8 @@ with the reveal controls, plus a visually-hidden `role="status"` region that spe
+ - **It does not name the active filters**, and that is deliberate: the chip just clicked is the focused
+   element and its own accessible name already changed to "Method, 14 results, selected, remove filter".
+   Naming the filter in the region would say it twice.
++<!-- @concept screen-reader-announcement -->
++<!-- @claim results-footer-sits-below-grid live-region-announces-wherever-it-sits announcement-region-ships-empty live-region-silent-on-initial-render live-region-cleared-after-speaking populated-live-region-repeats-for-linear-readers result-count-wording-is-andys announcement-does-not-name-the-filter -->
+ 
+ ~~**The empty and unknown states.**~~ **Decided 2026-08-31.** Unknown `?topic=` values are **dropped
+ silently** and the cleaned URL is written back with `replaceState`, so a stale shared link heals
+diff --git a/web/server/contact.php b/web/server/contact.php
+index 629738e..44796a8 100644
+--- a/web/server/contact.php
++++ b/web/server/contact.php
+@@ -252,6 +252,9 @@ $source   = safe_return_path((string) ($_POST['source_page'] ?? '')) ?? FALLBACK
+  * First, so a bot costs nothing — no validation, no Gmail token exchange, no network call.
+  * And logged, because a false positive would be a real person silently turned away, and
+  * the log is the only place that would ever be visible.
++ *
++ * @concept hidden-from-assistive-technology
++ * @claim honeypot-off-screen-aria-hidden-and-untabbable aria-hidden-removes-from-accessibility-tree tabindex-minus-one-focusable-not-tab-stop
+  */
+ if ($honeypot !== '') {
+     fail_generic('honeypot filled from ' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+@@ -384,6 +387,8 @@ if (wants_json()) {
+  * confirmation revealed by `:target`, so a full-page POST can still confirm itself with
+  * no JavaScript at all. That block lands with the client script; until it does, this
+  * redirect returns the visitor to a page that says nothing.
++ *
++ * @concept styled-away
+  */
+ header('Location: ' . $source . '#contact-sent', true, 303);
+ exit;
+diff --git a/web/src/components/Band.astro b/web/src/components/Band.astro
+index 90ac2a1..3631a8e 100644
+--- a/web/src/components/Band.astro
++++ b/web/src/components/Band.astro
+@@ -153,7 +153,9 @@ const {
+        as separate component entries — focus-ring-on-light and focus-ring-on-accent
+        — because which color contrasts "the control" depends on the control, not on
+        the band. base.css carries the on-page-ground default; a control that can
+-       appear on a band swaps the pair itself. */
++       appear on a band swaps the pair itself.
++       @concept focus-ring
++       @claim band-does-not-repoint-focus-ring custom-property-substitution-is-not-sequential accent-band-components-swap-focus-colors */
+ 
+     color: var(--color-text);
+   }
+diff --git a/web/src/components/Button.astro b/web/src/components/Button.astro
+index 78be03c..b8960c5 100644
+--- a/web/src/components/Button.astro
++++ b/web/src/components/Button.astro
+@@ -163,6 +163,9 @@ const Tag = href ? 'a' : 'button'
+    * control that most needs it. Reversed, the inner ring reads against the button and
+    * the outer white one reads against the band. Same fix, same reasoning, as
+    * ThemeToggle's selected pill, which is the precedent.
++   *
++   * @concept focus-ring
++   * @claim band-does-not-repoint-focus-ring custom-property-substitution-is-not-sequential fixed-focus-pair-fails-on-accent-band accent-band-components-swap-focus-colors
+    */
+   .button[data-variant='ghost']:focus-visible {
+     box-shadow:
+diff --git a/web/src/components/CardResults.astro b/web/src/components/CardResults.astro
+index db7cda3..bc9e7e6 100644
+--- a/web/src/components/CardResults.astro
++++ b/web/src/components/CardResults.astro
+@@ -37,6 +37,9 @@
+  *
+  * A fixed id, like <ResultsFooter>'s `result-count`, is safe while a page carries one
+  * of these.
++ *
++ * @concept not-applicable screen-reader-announcement
++ * @claim results-label-ships-hidden results-label-is-a-p-not-a-heading card-grid-named-by-count-line aria-labelledby-reads-hidden-text
+  */
+ interface Props {
+   class?: string
+@@ -65,6 +68,9 @@ const {class: className, ...rest}: Props = Astro.props
+    * base.css's rule for scroll targets: without a margin the content lands flush against
+    * the viewport edge. `--rhythm-band` is the value every other scroll target on the site
+    * takes, and `scrollIntoView` honors it, so no number is restated in the script.
++   *
++   * @concept not-applicable
++   * @claim hidden-element-reports-no-size
+    */
+   .card-results {
+     scroll-margin-block-start: var(--rhythm-band);
+@@ -84,6 +90,9 @@ const {class: className, ...rest}: Props = Astro.props
+    * The space BELOW is the bind — `rhythm-heading-close`, 16 — and it lives on the
+    * label rather than as a gap on the wrapper so that it disappears with it: `hidden` is
+    * `display: none`, and a margin on a box that does not render does not exist.
++   *
++   * @concept not-applicable
++   * @claim hidden-element-reports-no-size
+    */
+   .results-label {
+     color: var(--color-text-muted);
+diff --git a/web/src/components/Chip.astro b/web/src/components/Chip.astro
+index 7b105a0..069f2d6 100644
+--- a/web/src/components/Chip.astro
++++ b/web/src/components/Chip.astro
+@@ -63,6 +63,9 @@ const {as: Tag = 'a', class: className, ...rest}: Props = Astro.props
+    * `inline-flex` because an anchor is inline by default: without it the pill has no
+    * box, and a chip that wrapped a line would have its focus ring split into two
+    * fragments. It also makes a label and a count share a baseline row.
++   *
++   * @concept focus-ring
++   * @claim inline-anchor-focus-ring-splits-across-lines
+    */
+   .chip {
+     display: inline-flex;
+diff --git a/web/src/components/ContactForm.astro b/web/src/components/ContactForm.astro
+index 5442c3f..548e99f 100644
+--- a/web/src/components/ContactForm.astro
++++ b/web/src/components/ContactForm.astro
+@@ -144,6 +144,9 @@ const sourcePage = Astro.url.pathname
+       it a screen reader user gets no signal that anything happened — the button they
+       pressed simply vanishes. Focus rather than `aria-live`, because the content is
+       replacing itself rather than being announced alongside; doing both double-announces.
++
++      @concept landing-point programmatic-focus screen-reader-announcement
++      @claim tabindex-minus-one-focusable-not-tab-stop contact-state-announced-by-focus-not-live-region focus-and-live-region-together-double-announce
+     */
+   }
+   <div class="contact-state contact-sent" id="contact-sent" tabindex="-1">
+@@ -284,6 +287,9 @@ const sourcePage = Astro.url.pathname
+       NOT the `.visually-hidden` pattern, which would be the wrong tool even though it
+       looks similar: that exists for content that SHOULD be announced but not drawn.
+       This is the opposite — drawn nowhere and announced nowhere.
++
++      @concept hidden-from-assistive-technology visually-hidden hiding
++      @claim hidden-or-display-none-honeypot-is-skipped-by-bots tabindex-minus-one-focusable-not-tab-stop aria-hidden-removes-from-accessibility-tree aria-hidden-on-focusable-is-an-aria-violation honeypot-off-screen-aria-hidden-and-untabbable visually-hidden-is-for-announced-but-not-drawn
+     */
+     }
+     <div class="honeypot" aria-hidden="true">
+@@ -476,6 +482,9 @@ const sourcePage = Astro.url.pathname
+    * declared here: base.css's global `:focus-visible` already draws the two-ring
+    * treatment on every focusable element, and a control-specific ring would be a
+    * second answer to a question the global tier has already settled.
++   *
++   * @concept focus-ring
++   * @claim focus-ring-is-global-not-per-control
+    */
+   input:hover,
+   textarea:hover {
+@@ -489,6 +498,9 @@ const sourcePage = Astro.url.pathname
+    * state and the announced state cannot drift apart — there is only one thing to
+    * set, and forgetting it fails loudly in both channels at once rather than quietly
+    * in one.
++   *
++   * @concept screen-reader-announcement
++   * @claim error-state-styled-from-aria-invalid
+    */
+   input[aria-invalid='true'],
+   textarea[aria-invalid='true'] {
+@@ -506,6 +518,9 @@ const sourcePage = Astro.url.pathname
+    *
+    * DESIGN.md: identify errors in text, never by color alone. The color is a second
+    * channel, not the message.
++   *
++   * @concept not-applicable
++   * @claim author-display-rule-overrides-ua-hidden
+    */
+   .field-error {
+     margin: 0;
+@@ -530,6 +545,9 @@ const sourcePage = Astro.url.pathname
+    * programmatically: base.css's global ring is the right treatment if a visitor ever
+    * does reach one, and a `tabindex="-1"` element does not take a visible ring from a
+    * scripted `.focus()` anyway.
++   *
++   * @concept focus-ring landing-point programmatic-focus
++   * @claim contact-state-focus-visible-not-suppressed scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring
+    */
+   /*
+    * ── HIDDEN BY A CLASS, NOT BY THE `hidden` ATTRIBUTE ──────────────────────
+@@ -548,6 +566,9 @@ const sourcePage = Astro.url.pathname
+    *
+    * `display: none` removes these from the accessibility tree exactly as `hidden` would,
+    * so nothing is lost semantically by using a class for it.
++   *
++   * @concept styled-away not-applicable
++   * @claim hidden-for-not-applicable-class-for-styled-away hidden-attribute-forced-with-important important-hidden-outranks-target-rule display-none-removes-from-accessibility-tree hidden-attribute-removes-from-accessibility-tree contact-states-hidden-by-class
+    */
+   .contact-state {
+     display: none;
+@@ -557,6 +578,8 @@ const sourcePage = Astro.url.pathname
+   /*
+    * Two ways in, one appearance. `.is-shown` is the script's; `:target` is the no-JS
+    * path's, reached when the endpoint 303s back to `<the page>#contact-sent`.
++   *
++   * @concept styled-away
+    */
+   .contact-state.is-shown,
+   .contact-sent:target {
+@@ -570,6 +593,9 @@ const sourcePage = Astro.url.pathname
+    *
+    * The script does this with `form.hidden = true` instead, which needs no rule and wins
+    * outright thanks to that same `!important`. The two mechanisms never meet.
++   *
++   * @concept styled-away not-applicable
++   * @claim hidden-attribute-forced-with-important
+    */
+   .contact-sent:target ~ .contact-form {
+     display: none;
+@@ -729,6 +755,9 @@ const sourcePage = Astro.url.pathname
+      * can undo — see the note on `.contact-state`. The reflow is forced before focusing
+      * because a `display: none` element cannot take focus, and the class change and the
+      * `.focus()` call are in the same task.
++     *
++     * @concept forced-reflow programmatic-focus styled-away
++     * @claim hidden-attribute-forced-with-important focus-is-a-no-op-on-display-none-element reading-layout-property-flushes-style force-reflow-before-focusing-just-shown-element
+      */
+     function showState(block: HTMLElement) {
+       block.classList.add('is-shown')
+@@ -746,7 +775,9 @@ const sourcePage = Astro.url.pathname
+       hideState(failed)
+ 
+       /* Validate everything, then focus the FIRST invalid control — not the last, which
+-         is what a naive loop leaves focused, and not the one that happened to be blurred. */
++         is what a naive loop leaves focused, and not the one that happened to be blurred.
++         @concept programmatic-focus focus-target
++         @claim submit-focuses-first-invalid-control */
+       const invalid = controls.filter((el) => !validate(el))
+       if (invalid.length > 0) {
+         invalid[0].focus()
+diff --git a/web/src/components/FacetFilters.astro b/web/src/components/FacetFilters.astro
+index 7f4c50a..d66a846 100644
+--- a/web/src/components/FacetFilters.astro
++++ b/web/src/components/FacetFilters.astro
+@@ -65,6 +65,9 @@ const {facets, basePath, label}: Props = Astro.props
+ 
+             Its href is the current URL minus this group's parameters, which with no
+             selection is the bare index.
++
++            @concept not-applicable
++            @claim facet-reset-hidden-until-selection
+           */}
+           <a class="facet-reset" href={basePath} hidden>
+             {group.reset}
+@@ -98,6 +101,9 @@ const {facets, basePath, label}: Props = Astro.props
+                 Content 15", which the aria-label contains once punctuation is set
+                 aside — the wording above was never the problem, though it was blamed
+                 for it at first. The pill is inline-flex, so the space draws nothing.
++
++                @concept screen-reader-announcement
++                @claim chip-accessible-name-changes-by-state missing-space-between-chip-spans-caused-label-in-name-failure
+               */}
+               <Chip
+                 href={`${basePath}?${group.key}=${facet.slug}`}
+@@ -122,6 +128,9 @@ const {facets, basePath, label}: Props = Astro.props
+             Both are `hidden` at rest and revealed by the script, so the no-JS page
+             carries no control that cannot work. In the markup rather than built in JS so
+             the chip's shape is written once.
++
++            @concept javascript-only-control not-applicable
++            @claim javascript-only-control-must-not-appear-without-javascript
+           */}
+           <li hidden>
+             <Chip as="button" class="chip-more" type="button">
+diff --git a/web/src/components/Footer.astro b/web/src/components/Footer.astro
+index 98649fe..a15fcf7 100644
+--- a/web/src/components/Footer.astro
++++ b/web/src/components/Footer.astro
+@@ -213,6 +213,9 @@ const SOCIAL = [
+       visually-hidden text. Real content in the DOM rather than an attribute —
+       the same preference as the masthead's search label, reached differently
+       because nothing here is ever visible as text.
++
++      @concept screen-reader-announcement
++      @claim svg-role-img-with-title-names-its-link
+     */
+     }
+     <ul class="social" role="list">
+diff --git a/web/src/components/Logo.astro b/web/src/components/Logo.astro
+index 0f641e5..e91c37c 100644
+--- a/web/src/components/Logo.astro
++++ b/web/src/components/Logo.astro
+@@ -29,6 +29,9 @@
+  * a title here would make the link announce its name twice. If it is ever used
+  * without adjacent text, the accessible name belongs on the enclosing link, not
+  * on this SVG.
++ *
++ * @concept hidden-from-assistive-technology screen-reader-announcement
++ * @claim logo-is-decorative-aria-hidden titled-logo-in-home-link-announces-name-twice
+  */
+ interface Props {
+   class?: string
+diff --git a/web/src/components/Masthead.astro b/web/src/components/Masthead.astro
+index 247c1d1..96c781c 100644
+--- a/web/src/components/Masthead.astro
++++ b/web/src/components/Masthead.astro
+@@ -91,6 +91,9 @@ import {Search} from '@lucide/astro'
+  * prefix match for any of the five hrefs, and neither is `/`. The prefix test only
+  * works because every section href is itself a directory ending in `/` — without the
+  * trailing slash, a future `/insight-search/` would light up Insights.
++ *
++ * @concept screen-reader-announcement
++ * @claim aria-current-page-and-true-announce-differently
+  */
+ const here = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : `${Astro.url.pathname}/`
+ 
+@@ -155,6 +158,9 @@ interface Props {
+    * A visitor with no JavaScript never gets the class, so the swap never happens and they
+    * keep the nav. That is the honest state: the field cannot rank anything without a
+    * script, and `/search/` already answers them with the Common Topics list instead.
++   *
++   * @concept javascript-only-control
++   * @claim synchronous-head-script-runs-before-first-paint search-swap-gated-on-html-js
+    */
+   search?: boolean
+ }
+@@ -308,6 +314,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+             have an accessible name without `aria-label`: Lucide marks its own SVG
+             `aria-hidden`, so with `display: none` on the label the button would
+             have no name at all.
++
++            @concept javascript-only-control visually-hidden hidden-from-assistive-technology
++            @claim javascript-only-control-must-not-appear-without-javascript search-item-hidden-as-whole-li search-toggle-gated-on-html-js hidden-attribute-set-by-script-arrives-after-first-paint search-label-visually-hidden-not-removed lucide-marks-its-svg-aria-hidden display-none-removes-from-accessibility-tree
+           */
+           }
+           <button
+@@ -362,6 +371,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+       even the old name: "Close search, esc" and "Esc, close search" pass; "Close search
+       (Esc)" and "Close search, Escape" do not — axe matches whole words, so "Escape" is
+       not "esc", and parentheses defeat it where a comma does not.
++
++      @concept screen-reader-announcement
++      @claim never-visible-name-uses-aria-label close-search-named-close-search-esc axe-passes-close-search-name-in-isolation axe-label-in-name-matches-whole-words
+     */
+     }
+     <form class="search-field" id="masthead-search" role="search" action="/search/" method="get">
+@@ -394,6 +406,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+         the magnifier itself the submit control — visible, conventional, no invisible
+         focus stop — and rejected for now because it would add a hover and focus treatment
+         to an element the design draws as decoration. Worth revisiting on screen.
++
++        @concept visually-hidden
++        @claim search-submit-visually-hidden-in-tab-order
+       */
+       }
+       <button class="search-submit" type="submit">Search</button>
+@@ -519,7 +534,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+      this band the inner 2px is `focus-offset` — white on light, near-black on
+      dark, both legible against the fill — and the outer 2px is `focus-ring`,
+      which blends into it. A tight legible ring rather than an offset one, in both
+-     themes. Verified against both dark values, not assumed. */
++     themes. Verified against both dark values, not assumed.
++     @concept focus-ring
++     @claim masthead-band-needs-no-focus-ring-override */
+ 
+   /* ── Nav ────────────────────────────────────────────────────────────────── */
+ 
+@@ -936,6 +953,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+      *
+      * The icon shift this was reaching for is real, and it is fixed on
+      * `.search-toggle` instead — see the note there.
++     *
++     * @concept visually-hidden hidden-from-assistive-technology
++     * @claim search-label-visually-hidden-not-removed lucide-marks-its-svg-aria-hidden search-label-does-not-use-visually-hidden-component visibility-hidden-removes-from-accessibility-tree display-none-removes-from-accessibility-tree width-zero-does-not-remove-text-from-layout
+      */
+     .search-label {
+       position: absolute;
+@@ -963,6 +983,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+    * `html.js .thing` shape used elsewhere. The positive form would have to restate the
+    * button's `display` and every state that depends on it; the negative form leaves all
+    * of that untouched and simply removes the item when the class never arrives.
++   *
++   * @concept javascript-only-control
++   * @claim search-toggle-gated-on-html-js hidden-attribute-set-by-script-arrives-after-first-paint synchronous-head-script-runs-before-first-paint
+    */
+   html:not(.js) .search-item {
+     display: none;
+@@ -978,6 +1001,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+    * Both halves are gated on `html.js` for the reason above, and it is load-bearing on
+    * the nav specifically: hiding the navigation for a visitor who could never open the
+    * field would leave them a header with nothing in it.
++   *
++   * @concept javascript-only-control styled-away
++   * @claim search-swap-gated-on-html-js
+    */
+   .search-field {
+     display: none;
+@@ -1040,7 +1066,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+ 
+   /* The label is never visible at any width, so this is the case ThemeToggle's rule sends
+      to a clip rather than to `aria-label`: the input needs a real associated <label> that
+-     survives autofill and translation. */
++     survives autofill and translation.
++     @concept visually-hidden
++     @claim never-visible-search-input-label-is-a-clipped-label */
+   .search-field-label {
+     position: absolute;
+     inline-size: 1px;
+@@ -1059,7 +1087,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+   /* Same clip as the label above. It is left IN the tab order deliberately: a control
+      that submits the form is a real control, and removing it with `tabindex="-1"` would
+      hide it from keyboard users while keeping it for the pointer — the wrong way round.
+-     The order it produces is input, Search, Esc, which reads correctly. */
++     The order it produces is input, Search, Esc, which reads correctly.
++     @concept visually-hidden
++     @claim search-submit-visually-hidden-in-tab-order tabindex-minus-one-focusable-not-tab-stop */
+   .search-submit {
+     position: absolute;
+     inline-size: 1px;
+@@ -1099,6 +1129,9 @@ const {microformats = false, photo = null, search = false}: Props = Astro.props
+      * spreads precisely so "the rings stay concentric with whatever radius the control
+      * has". At 0 the ring came out square-cornered inside a field rounded to `radius-1` —
+      * two different corner treatments, 1px apart, on the only control in the header.
++     *
++     * @concept focus-ring
++     * @claim box-shadow-ring-follows-border-radius search-input-carries-radius-for-focus-ring
+      */
+     border-radius: var(--radius-1);
+     background-color: transparent;
+diff --git a/web/src/components/Recording.astro b/web/src/components/Recording.astro
+index 2db260c..b6816ac 100644
+--- a/web/src/components/Recording.astro
++++ b/web/src/components/Recording.astro
+@@ -148,6 +148,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
+     <FacetFilters> use. Inverted from the usual reading and worth saying plainly: with
+     no script this button would do nothing, and a control that does nothing is worse
+     than no control. The poster and the link out are the no-JS state, and they work.
++
++    @concept javascript-only-control
++    @claim javascript-only-control-must-not-appear-without-javascript
+   */
+ }
+ {
+@@ -201,6 +204,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
+ 
+     No `crossorigin`. It would demand CORS headers from the host and break playback
+     silently if they are absent, and nothing here reads the media from script.
++
++    @concept screen-reader-announcement
++    @claim bare-media-control-announces-only-as-player
+   */
+ }
+ {
+@@ -322,6 +328,8 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
+    * The button covers the whole frame, so the poster IS the click target rather than a
+    * small badge being the only hit area. The badge is the visible affordance and is
+    * `aria-hidden`; the accessible name lives on the button.
++   *
++   * @concept hidden-from-assistive-technology
+    */
+   .video-play {
+     position: absolute;
+@@ -371,6 +379,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
+    * a round ring out of that derivation without a single calc. The button's own shadow
+    * is cleared rather than its `outline`: base.css already set `outline: none`, so
+    * clearing the outline would suppress nothing and leave the real ring in place.
++   *
++   * @concept focus-ring
++   * @claim box-shadow-ring-follows-border-radius base-focus-ring-is-box-shadow-with-outline-cleared video-play-focus-ring-moved-to-badge
+    */
+   .video-play:focus-visible {
+     box-shadow: none;
+@@ -453,7 +464,9 @@ const playLabel = `Play ${recording.sourceName ?? 'the recording'}`
+ 
+         /* Focus follows the replacement. The button that had focus no longer exists, so
+            without this the focus ring falls back to the document and a keyboard visitor
+-           is returned to the top of the page by their next Tab. */
++           is returned to the top of the page by their next Tab.
++           @concept programmatic-focus focus-target focus-loss
++           @claim hiding-the-focused-element-drops-focus-to-body video-facade-focus-follows-iframe */
+         iframe.focus()
+       },
+       {once: true},
+diff --git a/web/src/components/ResultsFooter.astro b/web/src/components/ResultsFooter.astro
+index 3440423..f300710 100644
+--- a/web/src/components/ResultsFooter.astro
++++ b/web/src/components/ResultsFooter.astro
+@@ -33,6 +33,9 @@
+  *
+  * `role="status"` rather than a bare `aria-live="polite"`: it carries implicit `polite`
+  * and `atomic`, and is the better-supported of the two.
++ *
++ * @concept screen-reader-announcement
++ * @claim results-footer-sits-below-grid live-region-announces-wherever-it-sits announcement-region-ships-empty live-region-silent-on-initial-render role-status-implies-polite-and-atomic role-status-better-supported-than-aria-live-polite
+  */
+ import Chip from './Chip.astro'
+ import VisuallyHidden from './VisuallyHidden.astro'
+@@ -88,6 +91,9 @@ const totalLabel = `Displaying all ${total} ${total === 1 ? noun.one : noun.many
+     tell. The script reads this attribute rather than restating the value, so the id is
+     written once. A fixed id is safe while a page carries one of these, which both
+     indexes do.
++
++    @concept landing-point focus-loss screen-reader-announcement
++    @claim tabindex-minus-one-focusable-not-tab-stop hiding-the-focused-element-drops-focus-to-body reveal-focus-fallback-ladder card-grid-named-by-count-line
+   */
+   }
+   <p id="result-count" class="result-count" tabindex="-1">{totalLabel}</p>
+@@ -103,6 +109,9 @@ const totalLabel = `Displaying all ${total} ${total === 1 ? noun.one : noun.many
+     shown, not what the URL addresses, and the reveal is deliberately NOT in the URL
+     (Andy, 2026-08-31) — it resets on navigating away. A control with no address is a
+     button.
++
++    @concept not-applicable javascript-only-control
++    @claim reveal-controls-ship-hidden
+   */
+   }
+   <div class="result-controls">
+diff --git a/web/src/components/SearchResults.astro b/web/src/components/SearchResults.astro
+index 1128e7b..ffcbe91 100644
+--- a/web/src/components/SearchResults.astro
++++ b/web/src/components/SearchResults.astro
+@@ -22,6 +22,9 @@
+  * So carrying this on all 62 pages costs the markup and nothing else, which is what makes
+  * "results replace the current page" possible from any page rather than only from
+  * `/search/`.
++ *
++ * @concept inert-content
++ * @claim template-content-is-inert
+  */
+ import {Link} from '@lucide/astro'
+ import Chip from './Chip.astro'
+@@ -36,6 +39,9 @@ import Eyebrow from './Eyebrow.astro'
+       An <h1>, replacing the host page's own — which the controller hides, so exactly one
+       is ever in the accessibility tree. It is the STATE of the view: "8 results for …",
+       "No results for …", and on `/search/` at rest simply "Search".
++
++      @concept not-applicable
++      @claim search-view-h1-replaces-host-h1 hidden-attribute-removes-from-accessibility-tree
+     */
+     }
+     <h1 data-search-title></h1>
+@@ -112,6 +118,8 @@ import Eyebrow from './Eyebrow.astro'
+             Both ship `hidden` and only one is ever shown: "see all" while the group is
+             truncated, "see fewer" once it has been expanded. Neither appears from `lg` up,
+             where the rail shows everything anyway.
++
++            @concept not-applicable
+           */
+           }
+           <li hidden>
+diff --git a/web/src/components/SlideDeck.astro b/web/src/components/SlideDeck.astro
+index f968843..e283736 100644
+--- a/web/src/components/SlideDeck.astro
++++ b/web/src/components/SlideDeck.astro
+@@ -33,6 +33,9 @@
+  * keyboard scrolling are all CSS and the platform. The script below only adds the
+  * buttons, the arrow keys and the counter — which is why they ship `hidden` and are
+  * revealed by it, the same contract <FacetFilters> uses for its disclosure controls.
++ *
++ * @concept javascript-only-control scroll-region
++ * @claim slide-deck-no-script-state-is-a-grid synchronous-head-script-runs-before-first-paint html-js-set-at-baselayout-line-72 deck-track-needs-no-javascript javascript-only-control-must-not-appear-without-javascript
+  */
+ import {ChevronLeft, ChevronRight, Download, Fullscreen, Minimize} from '@lucide/astro'
+ import SanityImage from './SanityImage.astro'
+@@ -91,6 +94,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+     scrollable regions focusable on their own, Safari does not — so without this,
+     arrow-key scrolling is simply unavailable there. Valid on an <ol> given the
+     `aria-label`, and honest: this element really is an interactive scroll region.
++
++    @concept scroll-region
++    @claim tabindex-zero-makes-scroll-region-keyboard-reachable chrome-and-firefox-make-scroll-regions-focusable safari-does-not-make-scroll-regions-focusable
+   */
+   }
+   <ol class="deck-track" role="list" tabindex="0" aria-label={`Slides from ${title}`}>
+@@ -123,6 +129,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+     The pager ships `hidden` and is revealed by the script, the contract <FacetFilters>
+     uses. The download link does NOT — it is a plain anchor that works with no script at
+     all, so hiding it would remove the one control a no-JS visitor can actually use.
++
++    @concept javascript-only-control
++    @claim javascript-only-control-must-not-appear-without-javascript deck-download-link-not-hidden
+   */
+   }
+   <div class="deck-controls">
+@@ -131,7 +140,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+         /* `aria-label` carries the accessible name because the icon is decorative —
+           Lucide marks its own SVG `aria-hidden`. `title` adds the board's annotated
+           tooltip on hover; it does not appear on keyboard focus or touch, which is a
+-          limit of the attribute rather than of this markup. */
++          limit of the attribute rather than of this markup.
++          @concept hidden-from-assistive-technology screen-reader-announcement
++          @claim lucide-marks-its-svg-aria-hidden native-title-does-not-appear-on-keyboard-focus native-title-does-not-appear-on-touch */
+       }
+       <button
+         class="deck-button"
+@@ -159,7 +170,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+         /* The board annotates both with the keyboard shortcut, which is the only place a
+           visitor would learn it. Disabled rather than hidden at the ends, so the row
+           does not reflow as you page — and `disabled` on a real <button> takes it out
+-          of the tab order honestly rather than leaving a dead target. */
++          of the tab order honestly rather than leaving a dead target.
++          @concept hiding
++          @claim deck-pager-disabled-not-hidden-at-ends */
+       }
+       <button
+         class="deck-button"
+@@ -201,6 +214,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+ 
+     No counter and no slide numbers: the board draws none, and inventing one here
+     would be designing rather than building.
++
++    @concept inert-content
++    @claim dialog-brings-focus-trap-and-inert-background
+   */
+   }
+   <dialog class="deck-dialog" data-deck-dialog aria-label={`Slides from ${title}, full screen`}>
+@@ -606,6 +622,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+    * at the ends. The TRACK itself is CSS — swipe, snap, scrollbar and native keyboard
+    * scrolling all work before this runs, which is why the controls ship `hidden` rather
+    * than the track shipping broken.
++   *
++   * @concept javascript-only-control scroll-region
++   * @claim deck-track-needs-no-javascript javascript-only-control-must-not-appear-without-javascript
+    */
+   for (const deck of document.querySelectorAll<HTMLElement>('[data-deck]')) {
+     const track = deck.querySelector<HTMLElement>('.deck-track')
+@@ -662,7 +681,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+       track.scrollTo({left: clamped * track.clientWidth, behavior})
+     }
+ 
+-    /* Disabled at the ends rather than hidden, so neither row reflows mid-page. */
++    /* Disabled at the ends rather than hidden, so neither row reflows mid-page.
++       @concept hiding
++       @claim deck-pager-disabled-not-hidden-at-ends */
+     const syncButtons = () => {
+       const i = indexNow()
+       for (const {prev, next} of pagers) {
+@@ -687,6 +708,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+      *
+      * `preventDefault` because the browser's own arrow-key scrolling would move the track
+      * by a fraction of a slide and fight the snap.
++     *
++     * @concept scroll-region
++     * @claim deck-arrow-keys-scoped-to-track
+      */
+     track.addEventListener('keydown', (event) => {
+       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+@@ -740,7 +764,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+         goTo(i)
+         syncButtons()
+         /* Focus the track rather than leaving it on the button now behind the dialog, so
+-           the arrow keys work immediately on opening. */
++           the arrow keys work immediately on opening.
++           @concept programmatic-focus focus-target
++           @claim deck-fullscreen-focuses-track */
+         track.focus()
+       })
+ 
+@@ -758,6 +784,9 @@ const altFor = (slide: Slide) => slide.assetAlt ?? slide.altText ?? ''
+        * So this does not depend on the answer: the button restores directly, the `close`
+        * event restores as well for Esc, and the parent check makes the second call a
+        * no-op. One of the two always runs.
++       *
++       * @concept browser-pane
++       * @claim dialog-close-fired-no-close-event-in-the-pane browser-pane-never-fires-raf browser-pane-fires-no-scroll-events deck-restore-runs-from-both-paths
+        */
+       const exitFullscreen = () => {
+         if (track.parentElement !== stage) return
+diff --git a/web/src/components/ThemeToggle.astro b/web/src/components/ThemeToggle.astro
+index 3cbcc9a..a2e679a 100644
+--- a/web/src/components/ThemeToggle.astro
++++ b/web/src/components/ThemeToggle.astro
+@@ -25,6 +25,9 @@
+  * masthead's search button, where the label IS visible on the band and only
+  * hidden once the control becomes an icon — there the text has to be real. The
+  * distinction is whether the name is ever seen, not which technique is nicer.
++ *
++ * @concept visually-hidden screen-reader-announcement
++ * @claim never-visible-name-uses-aria-label
+  */
+ import {Monitor, Sun, Moon} from '@lucide/astro'
+ 
+@@ -94,6 +97,9 @@ const MODES = [
+    * hidden label needed the full clip technique: there the thing being hidden was
+    * TEXT, which overflows its box and spills; a 1px transparent form control has
+    * nothing to leak.
++   *
++   * @concept visually-hidden hiding
++   * @claim display-none-or-visibility-hidden-makes-a-control-unfocusable theme-radio-hidden-with-opacity-not-clip
+    */
+   input {
+     position: absolute;
+@@ -139,6 +145,9 @@ const MODES = [
+    * radius-1 the derived focus rings run 3 -> 5 -> 7, so the outer corner is
+    * 2.3x rounder than the control's. This is the first real control to show it.
+    * Judge at 1x, not on a blowup.
++   *
++   * @concept focus-ring
++   * @claim box-shadow-ring-follows-border-radius
+    */
+   input:checked + label {
+     background-color: var(--color-surface);
+@@ -158,6 +167,9 @@ const MODES = [
+    * `outline` rather than `box-shadow` so it cannot collide with the focus ring
+    * below, which is a box-shadow and would replace it outright. Negative offset
+    * so the line hugs the pill instead of floating outside it.
++   *
++   * @concept focus-ring
++   * @claim hover-outline-avoids-focus-ring-collision
+    */
+   input:not(:checked) + label:hover {
+     outline: var(--border-width-hairline) solid var(--color-border-on-accent);
+@@ -177,6 +189,9 @@ const MODES = [
+    * On the two unselected segments the inner ring blends into the band instead
+    * and you get a white ring set 2px off the icon, which is legible and is what
+    * the masthead's nav links already do.
++   *
++   * @concept focus-ring
++   * @claim focus-ring-stated-as-relationship accent-band-components-swap-focus-colors default-focus-order-vanishes-into-selected-theme-pill
+    */
+   input:focus-visible + label {
+     box-shadow:
+@@ -186,7 +201,9 @@ const MODES = [
+     /* Lifted above its neighbours. A box-shadow paints outside the box but stays
+        in flow order, so once the gap closes at lg a later sibling's fill would
+        paint over the ring of the item before it. Harmless while there is a gap;
+-       cheaper to state once than to make conditional. */
++       cheaper to state once than to make conditional.
++       @concept focus-ring
++       @claim later-sibling-fill-paints-over-box-shadow-ring */
+     position: relative;
+     z-index: 1;
+   }
+diff --git a/web/src/components/VisuallyHidden.astro b/web/src/components/VisuallyHidden.astro
+index 3cef65e..7d8828d 100644
+--- a/web/src/components/VisuallyHidden.astro
++++ b/web/src/components/VisuallyHidden.astro
+@@ -57,6 +57,9 @@
+  * the NAV — which is precisely the "make every consumer restate a breakpoint" shape
+  * ArticleCard's header argues against. Two components sharing a technique is the honest
+  * outcome; if a second conditional case ever appears, that is its own component.
++ *
++ * @concept visually-hidden hidden-from-assistive-technology screen-reader-announcement
++ * @claim visually-hidden-is-for-announced-but-not-drawn neither-drawn-nor-announced-uses-aria-hidden-and-display-none visually-hidden-is-a-component-not-a-utility-class visibility-hidden-removes-from-accessibility-tree display-none-removes-from-accessibility-tree hidden-live-region-is-silent width-zero-does-not-remove-text-from-layout clipped-box-is-the-only-way-to-be-invisible-and-in-the-tree search-label-does-not-use-visually-hidden-component
+  */
+ interface Props {
+   /**
+diff --git a/web/src/components/cards/ArticleCard.astro b/web/src/components/cards/ArticleCard.astro
+index 8f89ec9..ecf9856 100644
+--- a/web/src/components/cards/ArticleCard.astro
++++ b/web/src/components/cards/ArticleCard.astro
+@@ -97,6 +97,9 @@ const {
+       description as one link. `text-title` and no underline, per DESIGN.md's Links
+       rule: a block-level link title is identified as a link by position. See the
+       note on `.card-title a::after`.
++
++      @concept screen-reader-announcement
++      @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element
+     */
+     }
+     <Tag class="card-title"><a href={href}>{title}</a></Tag>
+@@ -186,6 +189,9 @@ const {
+    * The cost is that text inside the card can no longer be selected by dragging, and
+    * any second link in a card would need lifting above this with `z-index`. Neither
+    * card has one today.
++   *
++   * @concept screen-reader-announcement
++   * @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element
+    */
+   .card-title a::after {
+     content: '';
+diff --git a/web/src/components/cards/CardMasonry.astro b/web/src/components/cards/CardMasonry.astro
+index ff9f0c3..0101709 100644
+--- a/web/src/components/cards/CardMasonry.astro
++++ b/web/src/components/cards/CardMasonry.astro
+@@ -202,6 +202,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
+    * Both properties, because both can draw a ring: base.css draws with `box-shadow` and
+    * clears `outline`, while a UA stylesheet draws with `outline`. Scoped, this is (0,3,0)
+    * against base.css's (0,1,0), so it wins without `!important`.
++   *
++   * @concept focus-ring landing-point programmatic-focus headless-chrome browser-pane
++   * @claim filtered-arrival-focuses-the-grid no-focus-ring-on-landing-grid tabindex-minus-one-focusable-not-tab-stop scripted-focus-on-tabindex-minus-one-can-draw-focus-visible-ring focus-visible-heuristics-vary-for-programmatic-focus click-in-grid-gutter-focuses-the-grid base-focus-ring-is-box-shadow-with-outline-cleared ua-stylesheet-draws-focus-with-outline
+    */
+   .card-masonry:focus {
+     outline: none;
+@@ -253,6 +256,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
+    * which is a visible collapse rather than a reflow.
+    *
+    * Baseline widely available — Safari 9, Chrome 111, Firefox 113.
++   *
++   * @concept not-applicable
++   * @claim plain-nth-child-counts-hidden-siblings
+    */
+   @container style(--breakpoint-md: true) {
+     .card-masonry {
+@@ -368,6 +374,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
+    *
+    * `:global()` on the child half for the reason every selector here needs it: the cards
+    * are slotted and carry the caller's scope, not this component's.
++   *
++   * @concept javascript-only-control styled-away
++   * @claim synchronous-head-script-runs-before-first-paint card-truncation-keyed-on-html-js javascript-only-control-must-not-appear-without-javascript truncation-hands-over-to-hidden-in-one-pass
+    */
+   html.js .card-masonry[data-truncate]:not([data-hydrated]) > :global(:nth-child(n + 25)) {
+     display: none;
+@@ -426,7 +435,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
+       /* Only what a filter left standing. A hidden card is `display: none`, so it holds
+          no grid cell and reports no height — measuring one would write a span of just
+          the gap. This is also the set the columns are assigned over, so a filtered view
+-         is balanced across its survivors rather than across the full corpus. */
++         is balanced across its survivors rather than across the full corpus.
++         @concept not-applicable
++         @claim hidden-element-reports-no-size */
+       const visible = cards.filter((card) => !card.hidden)
+ 
+       /*
+@@ -443,6 +454,9 @@ const {columns = 3, truncate = false, class: className, ...rest}: Props = Astro.
+        *
+        * Two passes on purpose: read every rect, THEN write. Interleaving would invalidate
+        * layout on each write and force a reflow per card.
++       *
++       * @concept forced-reflow
++       * @claim interleaved-layout-reads-and-writes-force-a-reflow-each
+        */
+       const rects = visible.map((card) => card.getBoundingClientRect())
+       const spans = rects.map((rect) => Math.ceil(rect.height) + gap)
+diff --git a/web/src/components/cards/PresentationCard.astro b/web/src/components/cards/PresentationCard.astro
+index e2fd4cb..3956713 100644
+--- a/web/src/components/cards/PresentationCard.astro
++++ b/web/src/components/cards/PresentationCard.astro
+@@ -108,7 +108,9 @@ const {
+        pseudo-element. Keeps the accessible name to the title rather than announcing
+        title, eyebrow, venue and every tag as one link. See ArticleCard for the full
+        note — including the cost, which is that a second link in here would need
+-       lifting with `z-index`. This card has none. */
++       lifting with `z-index`. This card has none.
++       @concept screen-reader-announcement
++       @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element */
+   }
+   <Tag class="card-title"><a href={href}>{title}</a></Tag>
+ 
+diff --git a/web/src/components/cards/SourceCard.astro b/web/src/components/cards/SourceCard.astro
+index ea768e0..11dd96d 100644
+--- a/web/src/components/cards/SourceCard.astro
++++ b/web/src/components/cards/SourceCard.astro
+@@ -74,6 +74,9 @@ const {href, title, author, source, image, class: className, ...rest}: Props = A
+     NO `target="_blank"`. The board draws an external-link arrow, which is a
+     statement about DESTINATION, not about window management; forcing a new tab takes
+     a choice away from the reader and breaks Back. The arrow is the whole signal.
++
++    @concept screen-reader-announcement hidden-from-assistive-technology
++    @claim card-wrapping-anchor-announces-all-content-as-one-link card-anchor-on-title-with-stretched-pseudo-element lucide-marks-its-svg-aria-hidden
+   */
+   }
+   <p class="source-title">
+diff --git a/web/src/components/prose/Code.astro b/web/src/components/prose/Code.astro
+index adfbe43..335588c 100644
+--- a/web/src/components/prose/Code.astro
++++ b/web/src/components/prose/Code.astro
+@@ -76,6 +76,9 @@
+  * the loudness of the scheme are open decisions. This component is the baseline
+  * either one layers onto: the change would be to the `<code>` contents, not to the
+  * block's own rules.
++ *
++ * @concept scroll-region screen-reader-announcement
++ * @claim unreachable-scroll-region-fails-wcag-2-1-1 tabindex-zero-makes-scroll-region-keyboard-reachable code-blocks-get-no-region-role focusable-pre-announces-its-contents
+  */
+ import type {Props as NodeProps} from 'astro-portabletext/types'
+ import {highlight} from './highlighter'
+diff --git a/web/src/components/prose/highlighter.ts b/web/src/components/prose/highlighter.ts
+index c98a2f1..3ff9b59 100644
+--- a/web/src/components/prose/highlighter.ts
++++ b/web/src/components/prose/highlighter.ts
+@@ -122,7 +122,9 @@ export function highlight(code: string, language?: string | null): string {
+             /* Re-applied here because this `<pre>` is Shiki's, not the one the
+                component used to write. `tabindex` keeps the scroll region keyboard
+                reachable (WCAG 2.1.1) and `data-language` carries the stored value
+-               through to the markup. */
++               through to the markup.
++               @concept scroll-region
++               @claim tabindex-zero-makes-scroll-region-keyboard-reachable unreachable-scroll-region-fails-wcag-2-1-1 */
+             node.properties.tabindex = '0'
+             if (language) node.properties['data-language'] = language
+           },
+diff --git a/web/src/layouts/BaseLayout.astro b/web/src/layouts/BaseLayout.astro
+index ffd0318..94dd1f1 100644
+--- a/web/src/layouts/BaseLayout.astro
++++ b/web/src/layouts/BaseLayout.astro
+@@ -348,11 +348,15 @@ const PLAUSIBLE_INIT =
+       try/catch because reading localStorage THROWS outright (not returns null)
+       when storage is blocked, e.g. Safari with cross-site tracking prevention
+       in some embedded contexts. An exception here would break the whole page.
++
++      @concept javascript-only-control
++      @claim synchronous-head-script-runs-before-first-paint javascript-only-control-must-not-appear-without-javascript card-truncation-keyed-on-html-js html-js-flag-is-global
+     */
+     }
+     <script is:inline>
+       /* First, and outside the try: a localStorage failure must not cost the page
+-         its enhancement flag. */
++         its enhancement flag.
++         @concept javascript-only-control */
+       document.documentElement.classList.add('js')
+ 
+       try {
+@@ -374,7 +378,9 @@ const PLAUSIBLE_INIT =
+          owns the two elements.
+ 
+          Deliberately not `URLSearchParams`: this is the one script on the critical path
+-         before first paint, and a substring test is enough to ask "is there a q". */
++         before first paint, and a substring test is enough to ask "is there a q".
++         @concept styled-away
++         @claim synchronous-head-script-runs-before-first-paint search-query-flag-hides-resting-search-body-before-paint */
+       if (/[?&]q=/.test(location.search)) document.documentElement.dataset.searchQuery = ''
+     </script>
+ 
+@@ -741,6 +747,9 @@ const PLAUSIBLE_INIT =
+       a component — that one is for content announced but never drawn, and this is drawn
+       the moment it matters. Borrowing the mechanism is right; borrowing the semantics
+       would not be.
++
++      @concept landing-point programmatic-focus visually-hidden
++      @claim fragment-navigation-moves-focus-only-to-a-focusable-target main-cannot-hold-focus-by-default tabindex-minus-one-focusable-not-tab-stop skip-link-target-is-main-with-tabindex-minus-one skip-link-does-not-use-visually-hidden-component visually-hidden-is-for-announced-but-not-drawn
+     */
+     }
+     <a class="skip-link" href="#main">Skip to main content</a>
+@@ -803,6 +812,9 @@ const PLAUSIBLE_INIT =
+    *
+    * Declarations are <VisuallyHidden>'s, which documents why each is load-bearing and why
+    * `display: none`, `visibility: hidden` and `width: 0` are all wrong here.
++   *
++   * @concept visually-hidden
++   * @claim display-none-removes-from-accessibility-tree visibility-hidden-removes-from-accessibility-tree width-zero-does-not-remove-text-from-layout
+    */
+   .skip-link:not(:focus) {
+     position: absolute;
+diff --git a/web/src/lib/feed-entries.ts b/web/src/lib/feed-entries.ts
+index e7de0bf..3efe319 100644
+--- a/web/src/lib/feed-entries.ts
++++ b/web/src/lib/feed-entries.ts
+@@ -145,6 +145,9 @@ const usable = <T extends Base>(
+  *
+  * Alt falls back to '' for the reason `feed-html.ts` gives for figures: decorative
+  * is wrong but honest, and there is nothing truer to say.
++ *
++ * @concept screen-reader-announcement
++ * @claim image-link-announces-only-its-alt
+  */
+ function leadImage(
+   image: SanityImageSource | null | undefined,
+@@ -328,6 +331,9 @@ function recordingHtml(
+    * `title` because an iframe needs an accessible name; without one a screen reader
+    * announces an unlabelled frame. 560x315 is YouTube's own 16:9 default rather than
+    * Substack's 728x409, which is sized to their column and not to anyone else's.
++   *
++   * @concept screen-reader-announcement
++   * @claim iframe-without-title-announced-unlabelled
+    */
+   const videoId = recording.kind === 'video' ? youtubeId(recording.url) : null
+   if (videoId) {
+diff --git a/web/src/lib/feed-html.ts b/web/src/lib/feed-html.ts
+index eb0297c..8456ad1 100644
+--- a/web/src/lib/feed-html.ts
++++ b/web/src/lib/feed-html.ts
+@@ -193,7 +193,9 @@ function components(options: FeedHtmlOptions): PortableTextComponents {
+         /* Alt falls back to '' rather than to the caption. An empty alt marks an
+            image as decorative, which is wrong here but honest; repeating the caption
+            would make a screen reader read the same sentence twice. Body figures are
+-           clean anyway — 0 of 142 lack altText. */
++           clean anyway — 0 of 142 lack altText.
++           @concept screen-reader-announcement
++           @claim caption-as-alt-is-read-twice */
+         const alt = escapeHTML(node.altText ?? '')
+         const caption = node.caption ? `<figcaption>${escapeHTML(node.caption)}</figcaption>` : ''
+ 
+diff --git a/web/src/pages/index.astro b/web/src/pages/index.astro
+index 637504b..7194eff 100644
+--- a/web/src/pages/index.astro
++++ b/web/src/pages/index.astro
+@@ -547,6 +547,9 @@ const jsonLd = [
+      * a blue-500 ring onto a blue-500 band, invisible on exactly the control that most
+      * needs it. Reversed, the inner ring reads against the button and the outer white
+      * one against the band.
++     *
++     * @concept focus-ring
++     * @claim fixed-focus-pair-fails-on-accent-band accent-band-components-swap-focus-colors
+      */
+     .button.hero-cta[data-variant='primary'] {
+       background-color: var(--color-surface-accent);
+diff --git a/web/src/pages/search.astro b/web/src/pages/search.astro
+index 1ec1aaf..fc2415f 100644
+--- a/web/src/pages/search.astro
++++ b/web/src/pages/search.astro
+@@ -123,6 +123,9 @@ const commonTopics = selectTopics(topicCounts(entries), COMMON_TOPIC_LIMIT).map(
+     `search` renders the field already open. It only sets an attribute — the swap itself
+     is CSS gated on `html.js`, so this paints correct rather than correcting itself, and
+     a visitor with no script keeps the nav and the Common Topics list below.
++
++    @concept javascript-only-control
++    @claim search-swap-gated-on-html-js synchronous-head-script-runs-before-first-paint
+   */
+   }
+   <Masthead search />
+diff --git a/web/src/scripts/card-index.ts b/web/src/scripts/card-index.ts
+index 97c365b..f381987 100644
+--- a/web/src/scripts/card-index.ts
++++ b/web/src/scripts/card-index.ts
+@@ -65,6 +65,9 @@ const STEP = 24
+  * not depend on how many of its siblings are visible, so instead: reveal everything once,
+  * read every width in a single pass, then simulate the wrap in arithmetic. One layout
+  * read, no thrash.
++ *
++ * @concept forced-reflow
++ * @claim per-chip-fitting-forces-a-layout-flush-per-step chip-width-independent-of-visible-siblings facet-rows-packed-in-arithmetic
+  */
+ function fitRow(list: HTMLElement, budget: number) {
+   const entries = Array.from(list.children) as HTMLElement[]
+@@ -77,7 +80,9 @@ function fitRow(list: HTMLElement, budget: number) {
+ 
+   /* Reveal everything so every width is measurable, then read in one pass. The `more`
+      control has to be measured too: it occupies a slot in the last kept row, so packing
+-     without it would reveal one chip too many. */
++     without it would reveal one chip too many.
++     @concept forced-reflow not-applicable
++     @claim hidden-element-reports-no-size */
+   for (const li of chips) li.hidden = false
+   more.hidden = false
+   fewer.hidden = true
+@@ -164,7 +169,9 @@ function wireFacets() {
+       list.dataset.expanded = 'true'
+       fitRow(list, rowBudget())
+       /* Focus follows the disclosure to the control that replaced it, so a keyboard user
+-         is not dropped at the top of a list that just grew under them. */
++         is not dropped at the top of a list that just grew under them.
++         @concept programmatic-focus focus-target focus-loss
++         @claim disclosure-focus-moves-to-replacing-control hiding-the-focused-element-drops-focus-to-body */
+       fewer?.focus()
+     })
+ 
+@@ -367,6 +374,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+    * emitting bad English — the singular, and zero, which reads "No matching insights"
+    * rather than "Displaying 0". The no-filter branch is mirrored server-side by
+    * <ResultsFooter>; if this sentence changes, that one does.
++   *
++   * @concept screen-reader-announcement
++   * @claim aria-labelledby-name-follows-referenced-text live-region-heard-without-context announcement-does-not-name-the-filter result-count-wording-is-andys
+    */
+   function describe(sel: Selection, shown: number) {
+     if (isFiltered(sel)) {
+@@ -387,6 +397,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+    *
+    * One timer, reset on each call, so a second change inside the window replaces the
+    * message rather than having its own clear cancelled by the first.
++   *
++   * @concept screen-reader-announcement
++   * @claim live-region-cleared-after-speaking populated-live-region-repeats-for-linear-readers
+    */
+   let clearAnnouncement = 0
+   function announce(message: string) {
+@@ -416,7 +429,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+ 
+   /* False for exactly one call — the initial render — because the region must not read a
+      shared `?topic=` link's count out over the page load. Back and Forward DO announce:
+-     the content changed and the visitor asked for it. */
++     the content changed and the visitor asked for it.
++     @concept screen-reader-announcement
++     @claim live-region-silent-on-initial-render */
+   function applySelection(sel: Selection, shouldAnnounce = true) {
+     current = sel
+ 
+@@ -441,7 +456,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+ 
+     /* The handover: from here `hidden` is the only thing truncating, so the pre-paint CSS
+        rule must stop. Set in the same synchronous pass that writes the flags above, so no
+-       frame sees both mechanisms or neither. */
++       frame sees both mechanisms or neither.
++       @concept styled-away not-applicable
++       @claim truncation-hands-over-to-hidden-in-one-pass */
+     grid.dataset.hydrated = ''
+ 
+     /* "Show all" while anything is held back; "Show more" only while a further step would
+@@ -501,6 +518,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+        * selected pill too, since DESIGN.md has the attribute carry the fact.
+        * `aria-disabled` rather than dropping `href`, so a zero-hit chip stays focusable
+        * and discoverable — with the href pointing at the current view, per above.
++       *
++       * @concept screen-reader-announcement
++       * @claim chip-accessible-name-changes-by-state aria-pressed-is-button-only
+        */
+       if (selected) {
+         chip.setAttribute('aria-current', 'true')
+@@ -533,7 +553,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+        hides it and taking that tag away again, or pressing Back, brings it back. The
+        grid's name follows it, joined ahead of the count line: `aria-labelledby` reads
+        referenced text even while it is hidden, so the label's id is only in the list
+-       while the label is on screen. */
++       while the label is on screen.
++       @concept screen-reader-announcement not-applicable
++       @claim aria-labelledby-reads-hidden-text */
+     const labelled = arrivalUrl !== null && urlFor(sel) === arrivalUrl
+     if (resultsLabel) resultsLabel.hidden = !labelled
+     if (countLine?.id) {
+@@ -624,7 +646,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+        replaced has just gone `hidden`, so focus would otherwise fall to the body.
+        `:not([hidden])` because the re-fit above may have re-packed the row. Whether this
+        should be the group HEADING instead, which announces "Topics" where a chip name is
+-       contextless, is still open and pairs with the wording of the live region. */
++       contextless, is still open and pairs with the wording of the live region.
++       @concept programmatic-focus focus-target focus-loss
++       @claim reset-focuses-first-facet-in-group hiding-the-focused-element-drops-focus-to-body */
+     if (isReset) group?.querySelector<HTMLElement>('li:not([hidden]) .chip')?.focus()
+   })
+ 
+@@ -640,6 +664,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+    * starting the page again. The fallback ladder is: the other control if it survived,
+    * otherwise the count line, which is focusable for exactly this and reads out the new
+    * total when focus lands on it.
++   *
++   * @concept focus-loss programmatic-focus landing-point
++   * @claim hiding-the-focused-element-drops-focus-to-body reveal-focus-fallback-ladder count-line-reads-total-on-focus
+    */
+   function reveal(next: number, pressed: HTMLButtonElement) {
+     revealed = Math.min(next, cards.length)
+@@ -688,6 +715,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+    * THE OPENED GROUPS NOW SIT ABOVE THE LANDING POINT, since a filtered arrival scrolls
+    * to the cards (below). Still right: someone who scrolls back up to see what this is a
+    * filter OF is exactly who this was for, and they find it open.
++   *
++   * @concept landing-point
++   * @claim filtered-arrival-opens-both-facet-groups filtered-arrival-scrolls-to-the-cards
+    */
+   if (isFiltered(initial)) {
+     for (const group of groups) {
+@@ -718,6 +748,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+    * `aria-labelledby` itself is written by `applySelection`, not here, because since the
+    * results label arrived it depends on the selection: the label joins the name while it
+    * shows. That makes the one writer the only place the name is decided.
++   *
++   * @concept landing-point programmatic-focus screen-reader-announcement
++   * @claim filtered-arrival-focuses-the-grid div-has-no-role-and-no-name card-grid-named-by-count-line grid-region-set-by-script tabindex-minus-one-focusable-not-tab-stop
+    */
+   const named = Boolean(countLine?.id)
+   if (countLine?.id) {
+@@ -834,6 +867,9 @@ function wireFilter(grid: HTMLElement, nav: HTMLElement) {
+    *
+    * SEARCH NEVER REACHES THIS. It is excluded by construction, not by a route check:
+    * only <FacetFilters> boots this module, and `/search/` composes <SearchResults>.
++   *
++   * @concept landing-point programmatic-focus screen-reader-announcement
++   * @claim filtered-arrival-scrolls-to-the-cards filtered-arrival-focuses-the-grid focus-scrolls-with-nearest-alignment prevent-scroll-focus-does-not-cancel-smooth-scroll live-region-silent-on-initial-render
+    */
+   const navigation = performance.getEntriesByType('navigation')[0] as
+     PerformanceNavigationTiming | undefined
+diff --git a/web/src/scripts/search.ts b/web/src/scripts/search.ts
+index f8a2f16..31f93fe 100644
+--- a/web/src/scripts/search.ts
++++ b/web/src/scripts/search.ts
+@@ -305,6 +305,9 @@ export function initSearch() {
+    * Which elements THIS script hid, rather than "everything in <main>". Restoring by
+    * clearing `hidden` on every child would reveal anything a page had hidden for its own
+    * reasons — and both index pages hide cards past the truncation point.
++   *
++   * @concept not-applicable
++   * @claim search-restores-only-what-it-hid
+    */
+   let hidden: HTMLElement[] = []
+   let view: HTMLElement | null = null
+@@ -324,6 +327,9 @@ export function initSearch() {
+    * own scripts keep their listeners, their ResizeObservers and their state — the Insights
+    * masonry is mid-measurement behind this — so closing search restores a live page rather
+    * than rebuilding one.
++   *
++   * @concept not-applicable
++   * @claim search-hides-page-content-rather-than-removing
+    */
+   const takeOver = () => {
+     const current = ensureView()
+@@ -357,6 +363,9 @@ export function initSearch() {
+      * Two separate faults produced that, and both are fixed: the flag now lifts here, and
+      * `run` is called unconditionally at the end of this file rather than only when a
+      * query is present.
++     *
++     * @concept styled-away
++     * @claim search-query-flag-hides-resting-search-body-before-paint stale-search-query-flag-blanked-search-page
+      */
+     delete document.documentElement.dataset.searchQuery
+   }
+@@ -557,6 +566,9 @@ export function initSearch() {
+    *
+    * The `more` control is measured too and parked at the end of the run — it occupies a
+    * slot in the last kept row, so packing without it reveals one chip too many.
++   *
++   * @concept forced-reflow
++   * @claim per-chip-fitting-forces-a-layout-flush-per-step chip-width-independent-of-visible-siblings facet-rows-packed-in-arithmetic
+    */
+   const fitGroup = (list: HTMLElement, key: FacetKey) => {
+     const items = Array.from(list.children) as HTMLElement[]
+@@ -574,6 +586,9 @@ export function initSearch() {
+      *
+      * `fewer` is hidden for the measurement because it never coexists with `more` — it is
+      * the control for the state where nothing is being packed at all.
++     *
++     * @concept not-applicable forced-reflow
++     * @claim hidden-element-reports-no-size measuring-hidden-more-control-overpacks-by-a-row
+      */
+     for (const li of chips) li.hidden = false
+     more.hidden = false
+@@ -679,7 +694,8 @@ export function initSearch() {
+       if (fewer) list.append(fewer)
+ 
+       /* A group with nothing in it is hidden rather than left as a bare heading — the
+-         Presentation-branch genres simply do not appear in a Document-only result set. */
++         Presentation-branch genres simply do not appear in a Document-only result set.
++         @concept not-applicable */
+       group.hidden = facets[key].length === 0
+       reset.hidden = selected[key].size === 0
+     }
+@@ -828,6 +844,9 @@ export function initSearch() {
+      *
+      * Deliberately not `requestAnimationFrame`: it does not fire in a hidden document,
+      * which is exactly where this would be hardest to notice.
++     *
++     * @concept forced-reflow programmatic-focus focus-loss
++     * @claim focus-is-a-no-op-on-display-none-element reading-layout-property-flushes-style force-reflow-before-focusing-just-shown-element raf-does-not-fire-in-hidden-document
+      */
+     void toggle.offsetWidth
+     toggle.focus()
+@@ -859,6 +878,9 @@ export function initSearch() {
+    *
+    * What it does not do is appear on keyboard focus, which is the honest limitation of
+    * the native affordance. If that matters, it needs a designed tooltip.
++   *
++   * @concept javascript-only-control screen-reader-announcement
++   * @claim javascript-only-control-must-not-appear-without-javascript search-shortcut-hint-is-a-native-title title-becomes-accessible-description native-title-does-not-appear-on-keyboard-focus
+    */
+   const platform =
+     (navigator as {userAgentData?: {platform?: string}}).userAgentData?.platform ||
+@@ -892,6 +914,9 @@ export function initSearch() {
+        *
+        * `expanded` still resets on a new query, so the row also collapses on its own at the
+        * next keystroke; this control is for going back WITHIN a query.
++       *
++       * @concept programmatic-focus focus-target focus-loss
++       * @claim search-reveal-focuses-first-chip hiding-the-focused-element-drops-focus-to-body
+        */
+       const group = reveal.closest<HTMLElement>('[data-search-facet]')!
+       group.querySelector<HTMLElement>('[data-facet-chip]')?.focus()
+@@ -926,6 +951,9 @@ export function initSearch() {
+        * lose their place entirely. open-questions.md records the alternative — the group
+        * heading with `tabindex="-1"` — as something to revisit with a live region, which
+        * search does not have yet.
++       *
++       * @concept programmatic-focus focus-target focus-loss
++       * @claim reset-focuses-first-facet-in-group hiding-the-focused-element-drops-focus-to-body
+        */
+       const group = ensureView().querySelector(`[data-search-facet="${key}"]`)
+       group?.querySelector<HTMLElement>('[data-facet-chip]')?.focus()
+diff --git a/web/src/styles/base.css b/web/src/styles/base.css
+index 5747a8f..29529eb 100644
+--- a/web/src/styles/base.css
++++ b/web/src/styles/base.css
+@@ -93,6 +93,9 @@
+  * legitimate case for a component overriding it, and `[hidden]` cannot outrank an
+  * arbitrary future selector any other way. Same reasoning every mainstream reset
+  * uses. Use `[hidden]` for "not applicable" and a class for "styled away".
++ *
++ * @concept not-applicable styled-away
++ * @claim author-display-rule-overrides-ua-hidden hidden-attribute-forced-with-important hidden-for-not-applicable-class-for-styled-away
+  */
+ [hidden] {
+   display: none !important;
+@@ -468,6 +471,9 @@ code {
+  *
+  * `pre code` RESETS THE SIZE. `code` above sets 0.9em, which would compound
+  * against the block's own step and land at 14.4px.
++ *
++ * @concept scroll-region
++ * @claim tabindex-zero-makes-scroll-region-keyboard-reachable
+  */
+ pre {
+   padding: var(--space-3);
+@@ -672,6 +678,9 @@ video {
+  * Accessibility is Lucide's default and it is the right one: it adds
+  * `aria-hidden="true"` unless you pass an a11y prop, so an icon-only control puts
+  * its name on the BUTTON (`aria-label`) and leaves the glyph decorative.
++ *
++ * @concept hidden-from-assistive-technology
++ * @claim lucide-marks-its-svg-aria-hidden
+  */
+ 
+ svg.lucide {
+@@ -699,6 +708,9 @@ svg.lucide.icon-sm {
+  * whatever radius the control has, with no calc() needed. That is the +2 / +4
+  * derivation happening for free — and the capsule case falls out too, because a
+  * ring around a capsule is a capsule.
++ *
++ * @concept focus-ring
++ * @claim focus-ring-stated-as-relationship fixed-focus-pair-fails-on-accent-band accent-band-components-swap-focus-colors box-shadow-ring-follows-border-radius ring-around-capsule-is-a-capsule
+  */
+ 
+ :focus-visible {

@@ -101,26 +101,11 @@ export function usageFrom(transcriptPath, worktree, result) {
   }
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const prompt = promptFromGuideTrial()
-  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
-  const id = `trial-rerun-${stamp}`
-  const outDir = join(REPO, 'docs', 'project-graph', 'runs', id)
-  console.log(`The guide trial, rerun from ${BRANCH}, into ${outDir}\n\n> ${prompt}\n`)
-
-  const run = runOne({
-    id,
-    branch: BRANCH,
-    outDir,
-    prompt,
-    model: 'claude-opus-5-5',
-    effort: 'high',
-    budgetUsd: 25,
-    allowedTools: ['Read', 'Glob', 'Grep', 'Edit', 'Write', 'Bash(node project-graph/graph.mjs *)'],
-    timeoutMinutes: 30,
-    keepWorktree: true,
-  })
-
+/**
+ * What an annotation leaves, copied from its kept worktree into `outDir`, and then the worktree
+ * removed whatever happened. annotate.mjs collects the real annotation the same way.
+ */
+export function collectAnnotation(run, outDir) {
   const wt = run.worktree
   try {
     writeFileSync(join(outDir, 'tags.diff'), git(wt, 'diff', 'HEAD', '--', '.', ':!project-graph'))
@@ -147,6 +132,30 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   } finally {
     spawnSync('git', ['-C', REPO, 'worktree', 'remove', '--force', wt])
   }
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const prompt = promptFromGuideTrial()
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+  const id = `trial-rerun-${stamp}`
+  const outDir = join(REPO, 'docs', 'project-graph', 'runs', id)
+  console.log(`The guide trial, rerun from ${BRANCH}, into ${outDir}\n\n> ${prompt}\n`)
+
+  const run = runOne({
+    id,
+    branch: BRANCH,
+    outDir,
+    prompt,
+    model: 'claude-opus-5-5',
+    effort: 'high',
+    budgetUsd: 25,
+    allowedTools: ['Read', 'Glob', 'Grep', 'Edit', 'Write', 'Bash(node project-graph/graph.mjs *)'],
+    timeoutMinutes: 30,
+    keepWorktree: true,
+  })
+
+  const wt = run.worktree
+  collectAnnotation(run, outDir)
 
   console.log(
     `${run.cli.version}, ${run.completed ? 'completed' : `DID NOT COMPLETE: ${run.completionProblems.join('; ')}`}, ` +

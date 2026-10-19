@@ -78,6 +78,28 @@ correct it is.** That rules out the most likely way for C to win unfairly:
   annotation run makes both arms' annotations** (Andy, 2026-10-19): it annotates a checkout
   shaped like C, and B keeps the same tags, with its glossary generated from the same
   `claims.ttl`, recording the same fields as plain text (id-design.md).
+
+  That checkout is `pg-arm-c` at `8f83f64`: `086dd0f` plus `project-graph/` from `d8e60ee`,
+  leaving out `project-graph/tests/`, as the guide's trial did. `harness/annotate.mjs` launches
+  it, and reads the prompt from here. **No file list** (Andy, 2026-10-19): the guide's section 1
+  says which files to read and how to find the comments in them, while a list would have to come
+  from the inventory, steering coverage by what is scored. The annotation's whole prompt:
+
+  > Annotate the comments in this repository by following `project-graph/annotation-guide.md`.
+  > Work only on comments about the concepts in `project-graph/concepts.ttl`.
+
+  **Annotated 2026-10-19, and accepted by Andy**, in
+  [runs/annotation-2026-10-19T23-10-29-827Z/](runs/annotation-2026-10-19T23-10-29-827Z/). It was
+  valid and isolated, and cost $11.28 at list price, in 24 minutes and 288 tool calls. It tagged
+  168 comments in 45 files and recorded 176 claims: 93 observations, 78 decisions and 5 repo
+  facts, with 12 attributed to Andy and 4 overturned. Nothing but tags and `claims.ttl` was
+  written. **24 moved closers were accepted with it:** where a comment closed on its last line of
+  text, the annotator moved the `*/` to its new last tag line, and each such line's text was
+  checked to be otherwise identical. The check reports one violation, which the guide says to
+  leave: `ContactForm.astro:549` cites a claim that CardMasonry's measurement overturned. Applied
+  to `pg-arm-c` as `2f29714`, which reproduces the run's tag diff and `claims.ttl` byte for byte,
+  and its check output.
+
 - **The only text added is annotation:** ids, plus whatever the vocabulary and graph files hold.
   A diff of B or C against `086dd0f` must show comment annotations, graph and glossary files,
   the extractor, and the CLAUDE.md section below. Nothing else.

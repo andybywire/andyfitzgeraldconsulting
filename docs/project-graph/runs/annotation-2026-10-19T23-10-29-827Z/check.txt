@@ -1,0 +1,6 @@
+exit 1
+1 shape violation:
+
+Node=_:B978de70639fde1b28e2d19b54829046e
+  Value: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring>
+  Message: web/src/components/ContactForm.astro:549 This comment's @claim tag cites <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring>, which a measurement or a later decision overturned. The comment relies on something known to be no longer true.

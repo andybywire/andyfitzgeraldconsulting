@@ -1,0 +1,955 @@
+@prefix concept: <https://andyfitzgeraldconsulting.com/ns/project-graph/concepts#> .
+@prefix claim: <https://andyfitzgeraldconsulting.com/ns/project-graph/claims#> .
+@prefix model: <https://andyfitzgeraldconsulting.com/ns/project-graph/model#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# ── Focus ring ────────────────────────────────────────────────────────────────
+
+claim:focus-ring-stated-as-relationship a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "The focus ring is stated as a relationship: the inner ring contrasts with the control and the outer ring with the surface, so the same two colors serve both contexts with their order swapped."@en ;
+  model:basis model:unattributed .
+
+claim:fixed-focus-pair-fails-on-accent-band a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "A fixed focus-ring color pair fails on an accent band: base.css's default offset-then-ring order paints a blue-500 ring onto a blue-500 ground."@en ;
+  model:basis model:assumed .
+
+claim:accent-band-components-swap-focus-colors a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "A control that can appear on an accent band swaps the focus-ring pair itself, putting focus-ring inside and focus-offset outside."@en ;
+  model:basis model:unattributed .
+
+claim:band-does-not-repoint-focus-ring a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "<Band tone=\"accent\"> does not re-point the focus-ring tokens, because which color contrasts the control depends on the control, not on the band."@en ;
+  model:basis model:unattributed .
+
+claim:custom-property-substitution-is-not-sequential a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Custom property substitution is not sequential: pointing --color-focus-ring at --color-focus-offset while declaring --color-focus-offset in the same block resolves both against the element's own cascaded value, so the two collapse to one color."@en ;
+  model:basis model:assumed .
+
+claim:box-shadow-ring-follows-border-radius a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "A box-shadow spread grows the shadow's corner radius along with the element's, so the box-shadow focus rings stay concentric with whatever radius the control has."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "On the masthead search input at border-radius 0, the ring came out square-cornered inside a field rounded to radius-1; giving the input radius-1 is what rounded it."@en ] .
+
+claim:ring-around-capsule-is-a-capsule a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "A focus ring around a capsule is itself a capsule, because border-radius clamps to half the shorter side."@en ;
+  model:basis model:assumed .
+
+claim:base-focus-ring-is-box-shadow-with-outline-cleared a model:RepoFact ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "base.css draws the focus ring with box-shadow on :focus-visible and sets outline: none."@en .
+
+claim:focus-ring-is-global-not-per-control a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "The focus ring is drawn by base.css's global :focus-visible rule on every focusable element; a control does not declare a ring of its own unless its context requires it."@en ;
+  model:basis model:unattributed .
+
+claim:ua-stylesheet-draws-focus-with-outline a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "The user-agent stylesheet draws its focus indicator with outline."@en ;
+  model:basis model:assumed .
+
+claim:masthead-band-needs-no-focus-ring-override a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "On the masthead's accent band, base.css's default offset-then-ring order gives a tight, legible ring in both themes with no override: the inner focus-offset ring reads against the fill and the outer ring blends into it."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Verified against both dark values, not assumed."@en ] .
+
+claim:default-focus-order-vanishes-into-selected-theme-pill a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "On the color-mode selector, the default order's white inner focus-offset ring would vanish into the white selected pill."@en ;
+  model:basis model:assumed .
+
+claim:later-sibling-fill-paints-over-box-shadow-ring a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "A box-shadow paints outside its box but stays in flow order, so a later sibling's fill paints over the focus ring of the item before it unless the focused item is lifted."@en ;
+  model:basis model:assumed .
+
+claim:hover-outline-avoids-focus-ring-collision a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "The color-mode selector draws its hover state with outline rather than box-shadow, so the box-shadow focus ring cannot replace it."@en ;
+  model:basis model:unattributed .
+
+claim:inline-anchor-focus-ring-splits-across-lines a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "An inline anchor that wraps a line has its focus ring split into two fragments; inline-flex or inline-block gives it one box."@en ;
+  model:basis model:assumed .
+
+claim:video-play-focus-ring-moved-to-badge a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "The video play button's focus ring is moved onto its round badge rather than tracing the whole poster, using the same two rings and tokens."@en ;
+  model:basis model:unattributed .
+
+claim:search-input-carries-radius-for-focus-ring a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "The masthead search input carries radius-1, though it has no visible box, so its focus ring is rounded to match the field."@en ;
+  model:basis model:unattributed .
+
+claim:no-focus-ring-on-landing-grid a model:Decision ;
+  dcterms:subject concept:focus-ring, concept:landing-point ;
+  dcterms:description "The card grid draws no focus ring when focused: it is a landing point, not a control, and the next Tab lands on the first card, which draws its own."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-30"^^xsd:date .
+
+claim:scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring a model:Observation ;
+  dcterms:subject concept:focus-ring, concept:programmatic-focus, concept:landing-point ;
+  dcterms:description "An element with tabindex=\"-1\" that is focused by script does not match :focus-visible, so it draws no focus ring."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Headless Chrome and the Browser pane both reported :focus-visible false after scripts/card-index.ts programmatically focused the card grid."@en ;
+    prov:used concept:headless-chrome, concept:browser-pane ] .
+
+claim:scripted-focus-on-tabindex-minus-one-can-draw-focus-visible-ring a model:Observation ;
+  dcterms:subject concept:focus-ring, concept:programmatic-focus, concept:landing-point ;
+  dcterms:description "An element with tabindex=\"-1\" that is focused by script can match :focus-visible: base.css's ring drew around the programmatically focused card grid."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Seen in Chrome, Safari and Vivaldi after scripts/card-index.ts focused the card grid on a filtered arrival; real browsers disagreed with headless Chrome and the Browser pane."@en ;
+    dcterms:date "2026-09-30"^^xsd:date ;
+    prov:invalidated claim:scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring ] .
+
+claim:focus-visible-heuristics-vary-for-programmatic-focus a model:Observation ;
+  dcterms:subject concept:focus-ring, concept:programmatic-focus ;
+  dcterms:description "Whether programmatic focus matches :focus-visible varies by engine and by how the page was reached."@en ;
+  model:basis model:assumed .
+
+claim:click-in-grid-gutter-focuses-the-grid a model:Observation ;
+  dcterms:subject concept:landing-point ;
+  dcterms:description "Once the card grid is focusable, a click in the gutters between cards focuses the grid."@en ;
+  model:basis model:assumed .
+
+claim:contact-state-focus-visible-not-suppressed a model:Decision ;
+  dcterms:subject concept:focus-ring, concept:landing-point ;
+  dcterms:description "The contact form's sent and failed blocks keep base.css's :focus-visible ring, though they are focusable only programmatically."@en ;
+  model:basis model:unattributed .
+
+claim:focus-ring-radii-derived-from-control a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Focus-ring radii derive from the control they wrap: the inner ring at radius + 2 and the outer at radius + 4."@en ;
+  model:basis model:unattributed .
+
+claim:figma-focus-ring-radii-raw-with-derivation-in-layer-name a model:Decision ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "In Figma, focus-ring radii are raw values with their derivation written in the layer name, because Figma has no calc()."@en ;
+  model:basis model:unattributed .
+
+claim:figma-drop-shadow-spread-draws-nothing a model:Observation ;
+  dcterms:subject concept:focus-ring ;
+  dcterms:description "Figma accepts a drop-shadow spread and reports it back but draws nothing, so Figma's focus rings are drawn as two rectangles rather than a shadow."@en ;
+  model:basis model:assumed .
+
+# ── Programmatic focus, focus targets, landing points, focus loss ────────────
+
+claim:hiding-the-focused-element-drops-focus-to-body a model:Observation ;
+  dcterms:subject concept:focus-loss ;
+  dcterms:description "When the focused element is hidden or removed, focus falls to <body>, so a keyboard user's next Tab starts again from the top of the page."@en ;
+  model:basis model:assumed .
+
+claim:tabindex-minus-one-focusable-not-tab-stop a model:Observation ;
+  dcterms:subject concept:landing-point ;
+  dcterms:description "tabindex=\"-1\" makes an element focusable programmatically while keeping it out of the Tab order."@en ;
+  model:basis model:assumed .
+
+claim:fragment-navigation-moves-focus-only-to-a-focusable-target a model:Observation ;
+  dcterms:subject concept:programmatic-focus, concept:landing-point ;
+  dcterms:description "Following a fragment link moves the scroll position, but moves keyboard focus only if the target can hold focus."@en ;
+  model:basis model:assumed .
+
+claim:main-cannot-hold-focus-by-default a model:Observation ;
+  dcterms:subject concept:landing-point ;
+  dcterms:description "A <main> element cannot hold focus by default."@en ;
+  model:basis model:assumed .
+
+claim:skip-link-target-is-main-with-tabindex-minus-one a model:Decision ;
+  dcterms:subject concept:landing-point, concept:programmatic-focus ;
+  dcterms:description "The skip link targets <main id=\"main\">, which carries tabindex=\"-1\" on every page so that following the link moves keyboard focus as well as the scroll position."@en ;
+  model:basis model:unattributed ;
+  dcterms:date "2026-09-17"^^xsd:date .
+
+claim:filtered-arrival-focuses-the-grid a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:landing-point ;
+  dcterms:description "A fresh navigation to a filtered index URL moves focus to the card grid."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-30"^^xsd:date .
+
+claim:filtered-arrival-scrolls-to-the-cards a model:Decision ;
+  dcterms:subject concept:landing-point ;
+  dcterms:description "A fresh navigation to a filtered index URL scrolls the results to the top of the viewport; a reload, Back or Forward, a chip click and a reader who has already scrolled are left alone."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-30"^^xsd:date .
+
+claim:filtered-arrival-opens-both-facet-groups a model:Decision ;
+  dcterms:subject concept:landing-point ;
+  dcterms:description "Arriving on a filtered URL opens both facet groups, which then sit above the landing point the arrival scrolls to."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-08-31"^^xsd:date .
+
+claim:card-grid-named-by-count-line a model:Decision ;
+  dcterms:subject concept:landing-point, concept:screen-reader-announcement ;
+  dcterms:description "The card grid is role=\"region\", named by aria-labelledby pointing at the result-count line, so focus landing on it announces the count."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-30"^^xsd:date .
+
+claim:div-has-no-role-and-no-name a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement, concept:landing-point ;
+  dcterms:description "A <div> has no role and so no accessible name: focus landing on one leaves a screen reader to describe it by reading into it."@en ;
+  model:basis model:assumed .
+
+claim:grid-region-set-by-script a model:Decision ;
+  dcterms:subject concept:landing-point ;
+  dcterms:description "The card grid's role and tabindex are set by script on every enhanced load rather than in <CardMasonry>'s markup, because only script ever focuses it."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-30"^^xsd:date .
+
+claim:focus-scrolls-with-nearest-alignment a model:Observation ;
+  dcterms:subject concept:programmatic-focus ;
+  dcterms:description "Focusing an element scrolls it with its own \"nearest\" alignment, which ignores a block: 'start' just requested by scrollIntoView."@en ;
+  model:basis model:assumed .
+
+claim:prevent-scroll-focus-does-not-cancel-smooth-scroll a model:Observation ;
+  dcterms:subject concept:programmatic-focus ;
+  dcterms:description "focus({preventScroll: true}) performs no scroll action, so it does not cancel a smooth scroll already under way."@en ;
+  model:basis model:assumed .
+
+claim:disclosure-focus-moves-to-replacing-control a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:focus-target ;
+  dcterms:description "When a facet group's See all or See fewer control is pressed, focus moves to the control that replaced it."@en ;
+  model:basis model:unattributed .
+
+claim:reset-focuses-first-facet-in-group a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:focus-target ;
+  dcterms:description "A facet group's reset control moves focus to the first visible chip in the group it cleared."@en ;
+  model:basis model:unattributed .
+
+claim:reveal-focus-fallback-ladder a model:Decision ;
+  dcterms:subject concept:focus-target, concept:landing-point ;
+  dcterms:description "When Show more or Show all disappears on being pressed, focus goes to the other control if it survived, otherwise to the result-count line."@en ;
+  model:basis model:unattributed .
+
+claim:count-line-reads-total-on-focus a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement, concept:landing-point ;
+  dcterms:description "Focus landing on the result-count line reads out the new total."@en ;
+  model:basis model:assumed .
+
+claim:search-reveal-focuses-first-chip a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:focus-target ;
+  dcterms:description "When a search facet group's See all or See fewer control is pressed, focus moves to the group's first chip."@en ;
+  model:basis model:unattributed .
+
+claim:focus-is-a-no-op-on-display-none-element a model:Observation ;
+  dcterms:subject concept:programmatic-focus, concept:forced-reflow ;
+  dcterms:description "Calling focus() on an element that is display: none does nothing."@en ;
+  model:basis model:assumed .
+
+claim:reading-layout-property-flushes-style a model:Observation ;
+  dcterms:subject concept:forced-reflow ;
+  dcterms:description "Reading a layout property such as offsetWidth forces the browser to flush pending style recalculation and layout synchronously."@en ;
+  model:basis model:assumed .
+
+claim:force-reflow-before-focusing-just-shown-element a model:Decision ;
+  dcterms:subject concept:forced-reflow, concept:programmatic-focus ;
+  dcterms:description "Before focusing an element that a style change in the same task has just revealed, the script forces a reflow with void el.offsetWidth."@en ;
+  model:basis model:unattributed .
+
+claim:raf-does-not-fire-in-hidden-document a model:Observation ;
+  dcterms:subject concept:forced-reflow, concept:browser-pane ;
+  dcterms:description "requestAnimationFrame does not fire in a hidden document or a background tab."@en ;
+  model:basis model:assumed .
+
+claim:contact-state-announced-by-focus-not-live-region a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:screen-reader-announcement ;
+  dcterms:description "The contact form's sent and failed blocks are announced by moving focus to them, not by aria-live."@en ;
+  model:basis model:unattributed .
+
+claim:focus-and-live-region-together-double-announce a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "Moving focus to content and also announcing it from a live region announces it twice."@en ;
+  model:basis model:assumed .
+
+claim:submit-focuses-first-invalid-control a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:focus-target ;
+  dcterms:description "On a failed contact-form submit, focus moves to the first invalid control."@en ;
+  model:basis model:unattributed .
+
+claim:video-facade-focus-follows-iframe a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:focus-target ;
+  dcterms:description "When the video play button is replaced by the YouTube iframe, focus moves to the iframe."@en ;
+  model:basis model:unattributed .
+
+claim:deck-fullscreen-focuses-track a model:Decision ;
+  dcterms:subject concept:programmatic-focus, concept:focus-target ;
+  dcterms:description "Opening the slide deck full screen moves focus to the track, so the arrow keys work at once."@en ;
+  model:basis model:unattributed .
+
+claim:cmd-k-opens-search-and-focuses-field a model:Decision ;
+  dcterms:subject concept:programmatic-focus ;
+  dcterms:description "cmd + k opens site search and moves focus into the field."@en ;
+  model:basis model:unattributed .
+
+# ── Hiding ────────────────────────────────────────────────────────────────────
+
+claim:author-display-rule-overrides-ua-hidden a model:Observation ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "The user agent implements the hidden attribute as an ordinary [hidden] { display: none } at (0,1,0), so any author rule that sets display on the same element overrides it and the element stays visible."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Caught by the Insights filter chips: .chip { display: inline-flex } left a hidden \"See all genres\" button rendering while el.hidden was true."@en ;
+    dcterms:date "2026-08-31"^^xsd:date ] .
+
+claim:hidden-attribute-forced-with-important a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "base.css declares [hidden] { display: none !important }, so no component rule can override the hidden attribute."@en ;
+  model:basis model:unattributed .
+
+claim:hidden-for-not-applicable-class-for-styled-away a model:Decision ;
+  dcterms:subject concept:not-applicable, concept:styled-away ;
+  dcterms:description "The hidden attribute is used for an element that does not apply, and a class for one that applies but is styled away in this state."@en ;
+  model:basis model:unattributed .
+
+claim:important-hidden-outranks-target-rule a model:Observation ;
+  dcterms:subject concept:not-applicable, concept:styled-away ;
+  dcterms:description "With the hidden attribute on the contact form's confirmation block, base.css's !important outranked the :target rule meant to reveal it, so a no-JS visitor arriving on #contact-sent saw neither the form nor the confirmation."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Caught by reading computed display rather than trusting that author styles beat the UA sheet."@en ] .
+
+claim:hidden-attribute-rule-is-at-base-css-line-97 a model:RepoFact ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "The [hidden] { display: none !important } rule is at base.css:97."@en .
+
+claim:contact-states-hidden-by-class a model:Decision ;
+  dcterms:subject concept:styled-away ;
+  dcterms:description "The contact form's sent and failed blocks are hidden by a class, not by the hidden attribute, so that :target and the script's .is-shown can reveal them."@en ;
+  model:basis model:unattributed .
+
+claim:hidden-element-reports-no-size a model:Observation ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "An element with the hidden attribute is display: none: it has no layout box, so it reports no size and takes up no space."@en ;
+  model:basis model:assumed .
+
+claim:measuring-hidden-more-control-overpacks-by-a-row a model:Observation ;
+  dcterms:subject concept:not-applicable, concept:forced-reflow ;
+  dcterms:description "Measuring the search facets' See all control while it is hidden counts it as zero width, so one chip too many is packed and the group overruns its row budget by one."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured at 375: four rows against a budget of three, and three against two."@en ] .
+
+claim:plain-nth-child-counts-hidden-siblings a model:Observation ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Plain :nth-child counts every sibling, hidden ones included; :nth-child(… of :not([hidden])) counts only the visible ones."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured on Insights before of :not([hidden]) was added: a 1789px ragged bottom against 478 once the count is taken over the visible set alone."@en ] .
+
+claim:display-none-removes-from-accessibility-tree a model:Observation ;
+  dcterms:subject concept:hiding, concept:screen-reader-announcement ;
+  dcterms:description "display: none takes an element out of the accessibility tree, so its text is not announced and contributes nothing to an accessible name."@en ;
+  model:basis model:assumed .
+
+claim:visibility-hidden-removes-from-accessibility-tree a model:Observation ;
+  dcterms:subject concept:hiding, concept:screen-reader-announcement ;
+  dcterms:description "visibility: hidden takes an element out of the accessibility tree as surely as display: none does."@en ;
+  model:basis model:assumed .
+
+claim:hidden-attribute-removes-from-accessibility-tree a model:Observation ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "An element with the hidden attribute is out of the accessibility tree."@en ;
+  model:basis model:assumed .
+
+claim:width-zero-does-not-remove-text-from-layout a model:Observation ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "width: 0 does not remove text from layout; the text spills out of the box instead."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "On the masthead's search label at the nav's right edge, \"Search\" overflowed 54px past it and 6px past the viewport: scrollWidth 1206 against 1200."@en ] .
+
+claim:clipped-box-is-the-only-way-to-be-invisible-and-in-the-tree a model:Observation ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The 1px clipped box is the only way to make content invisible while keeping it in the accessibility tree."@en ;
+  model:basis model:assumed .
+
+claim:visually-hidden-is-for-announced-but-not-drawn a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "<VisuallyHidden> is for content that should be announced but not drawn, and not for content that is drawn when it matters or announced nowhere."@en ;
+  model:basis model:unattributed .
+
+claim:neither-drawn-nor-announced-uses-aria-hidden-and-display-none a model:Decision ;
+  dcterms:subject concept:hidden-from-assistive-technology, concept:visually-hidden ;
+  dcterms:description "Content that should be neither drawn nor announced takes aria-hidden and display: none, not <VisuallyHidden>."@en ;
+  model:basis model:unattributed .
+
+claim:visually-hidden-is-a-component-not-a-utility-class a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The visually-hidden treatment is the <VisuallyHidden> component, not a utility class in base.css."@en ;
+  model:basis model:unattributed .
+
+claim:search-label-does-not-use-visually-hidden-component a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The masthead's search label carries its own copy of the clip declarations rather than using <VisuallyHidden>, because it is hidden only conditionally, from lg."@en ;
+  model:basis model:unattributed .
+
+claim:skip-link-does-not-use-visually-hidden-component a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The skip link borrows <VisuallyHidden>'s declarations but not the component, because it is drawn the moment it is focused."@en ;
+  model:basis model:unattributed .
+
+claim:search-label-visually-hidden-not-removed a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The masthead search button's label stays real text at both widths and is visually hidden, not removed, in the icon-only state, so the button keeps an accessible name without aria-label."@en ;
+  model:basis model:unattributed .
+
+claim:search-submit-visually-hidden-in-tab-order a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The masthead search form has a real submit button that is visually hidden but left in the Tab order."@en ;
+  model:basis model:unattributed .
+
+claim:never-visible-name-uses-aria-label a model:Decision ;
+  dcterms:subject concept:visually-hidden, concept:screen-reader-announcement ;
+  dcterms:description "A name that is never visible at any width is given with aria-label rather than as real text hidden with a clip."@en ;
+  model:basis model:unattributed .
+
+claim:never-visible-search-input-label-is-a-clipped-label a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The masthead search input's label, never visible at any width, is a real associated <label> hidden with a clip, so it survives autofill and translation."@en ;
+  model:basis model:unattributed .
+
+claim:display-none-or-visibility-hidden-makes-a-control-unfocusable a model:Observation ;
+  dcterms:subject concept:hiding ;
+  dcterms:description "display: none or visibility: hidden makes a form control unfocusable and unreachable."@en ;
+  model:basis model:assumed .
+
+claim:theme-radio-hidden-with-opacity-not-clip a model:Decision ;
+  dcterms:subject concept:visually-hidden ;
+  dcterms:description "The color-mode selector's radio inputs are made invisible with opacity: 0 and position: absolute, not the full clip technique, because a 1px transparent form control has no text to spill."@en ;
+  model:basis model:unattributed .
+
+claim:lucide-marks-its-svg-aria-hidden a model:Observation ;
+  dcterms:subject concept:hidden-from-assistive-technology ;
+  dcterms:description "Lucide adds aria-hidden=\"true\" to its SVG unless it is given an a11y prop."@en ;
+  model:basis model:assumed .
+
+claim:aria-hidden-removes-from-accessibility-tree a model:Observation ;
+  dcterms:subject concept:hidden-from-assistive-technology ;
+  dcterms:description "aria-hidden takes an element out of the accessibility tree, so a screen reader user never meets it."@en ;
+  model:basis model:assumed .
+
+claim:aria-hidden-on-focusable-is-an-aria-violation a model:Observation ;
+  dcterms:subject concept:hidden-from-assistive-technology ;
+  dcterms:description "aria-hidden around a focusable element is normally an ARIA violation; tabindex=\"-1\" on the element resolves it."@en ;
+  model:basis model:assumed .
+
+claim:honeypot-off-screen-aria-hidden-and-untabbable a model:Decision ;
+  dcterms:subject concept:hidden-from-assistive-technology ;
+  dcterms:description "The contact form's honeypot is positioned off screen rather than display: none, and carries aria-hidden, tabindex=\"-1\" and autocomplete=\"off\"."@en ;
+  model:basis model:unattributed .
+
+claim:hidden-or-display-none-honeypot-is-skipped-by-bots a model:Observation ;
+  dcterms:subject concept:hiding ;
+  dcterms:description "A hidden or display: none honeypot input is trivially skipped by bots."@en ;
+  model:basis model:assumed .
+
+claim:logo-is-decorative-aria-hidden a model:Decision ;
+  dcterms:subject concept:hidden-from-assistive-technology ;
+  dcterms:description "The logo SVG is decorative by default, with aria-hidden and focusable=\"false\"; an accessible name belongs on the enclosing link."@en ;
+  model:basis model:unattributed .
+
+claim:titled-logo-in-home-link-announces-name-twice a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A title on the logo inside a home link that also carries the wordmark as text would make the link announce its name twice."@en ;
+  model:basis model:assumed .
+
+claim:template-content-is-inert a model:Observation ;
+  dcterms:subject concept:inert-content ;
+  dcterms:description "<template> content is inert: not rendered, not in the accessibility tree, and it makes no requests."@en ;
+  model:basis model:assumed .
+
+claim:dialog-brings-focus-trap-and-inert-background a model:Observation ;
+  dcterms:subject concept:inert-content ;
+  dcterms:description "A modal <dialog> brings a top layer, a focus trap, Esc-to-close, inert background content and ::backdrop."@en ;
+  model:basis model:assumed .
+
+claim:search-hides-page-content-rather-than-removing a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Search results take over <main> by hiding the host page's children rather than removing them, so the host page's scripts keep their listeners and state."@en ;
+  model:basis model:unattributed .
+
+claim:search-restores-only-what-it-hid a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "Closing search un-hides only the elements the search script hid, not every child of <main>."@en ;
+  model:basis model:unattributed .
+
+claim:search-view-h1-replaces-host-h1 a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "The search view's h1 replaces the host page's h1, which the controller hides, so exactly one h1 is in the accessibility tree."@en ;
+  model:basis model:unattributed .
+
+claim:reveal-controls-ship-hidden a model:Decision ;
+  dcterms:subject concept:not-applicable, concept:javascript-only-control ;
+  dcterms:description "Show more and Show all ship hidden, because the static page already shows every card; the script reveals them when it truncates."@en ;
+  model:basis model:unattributed .
+
+claim:results-label-ships-hidden a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "The single-tag results label ships hidden and empty, because without JavaScript there is no filter to name."@en ;
+  model:basis model:unattributed .
+
+claim:facet-reset-hidden-until-selection a model:Decision ;
+  dcterms:subject concept:not-applicable ;
+  dcterms:description "A facet group's reset control is hidden until the group has a selection."@en ;
+  model:basis model:unattributed .
+
+claim:deck-pager-disabled-not-hidden-at-ends a model:Decision ;
+  dcterms:subject concept:hiding ;
+  dcterms:description "The slide deck's previous and next buttons are disabled rather than hidden at the ends of the deck, so the control row does not reflow as you page."@en ;
+  model:basis model:unattributed .
+
+claim:search-query-flag-hides-resting-search-body-before-paint a model:Decision ;
+  dcterms:subject concept:styled-away ;
+  dcterms:description "When a ?q= is present, BaseLayout's head script sets data-search-query before first paint so a rule hides /search/'s resting body, and the search script clears the flag when it restores."@en ;
+  model:basis model:unattributed .
+
+claim:stale-search-query-flag-blanked-search-page a model:Observation ;
+  dcterms:subject concept:styled-away ;
+  dcterms:description "Leaving data-search-query set blanked /search/ for a query under two characters: the page kept its h1 and lost everything below it."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Found on /search/?q= and /search/?q=a."@en ;
+    dcterms:date "2026-09-12"^^xsd:date ] .
+
+# ── JavaScript-only controls ──────────────────────────────────────────────────
+
+claim:javascript-only-control-must-not-appear-without-javascript a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "A control that needs JavaScript does not appear without it, because a control that does nothing is worse than no control."@en ;
+  model:basis model:unattributed .
+
+claim:synchronous-head-script-runs-before-first-paint a model:Observation ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "A synchronous inline script in <head> runs while <head> is still parsing, so a class or attribute it sets on the root element is in place before <body> exists, and a rule keyed on it holds from the first paint."@en ;
+  model:basis model:assumed .
+
+claim:html-js-set-at-baselayout-line-72 a model:RepoFact ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The html.js class is set by BaseLayout's synchronous head script at BaseLayout.astro:72."@en .
+
+claim:hidden-attribute-set-by-script-arrives-after-first-paint a model:Observation ;
+  dcterms:subject concept:javascript-only-control, concept:not-applicable ;
+  dcterms:description "A hidden attribute changed by a script arrives after the first paint, so showing or hiding a control that way is a visible shift."@en ;
+  model:basis model:assumed .
+
+claim:search-toggle-gated-on-html-js a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The masthead's search item is removed by CSS keyed on html.js (html:not(.js) .search-item), not by a hidden attribute that a script removes."@en ;
+  model:basis model:unattributed .
+
+claim:search-toggle-ships-hidden a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The search toggle ships hidden at all sizes and is revealed by the script."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-12"^^xsd:date .
+
+claim:search-swap-gated-on-html-js a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The masthead's swap from the nav to the search field is CSS gated on html.js, so a visitor without JavaScript keeps the nav."@en ;
+  model:basis model:unattributed .
+
+claim:card-truncation-keyed-on-html-js a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The index's pre-paint truncation to the first cards is keyed on html.js, so without JavaScript every card renders."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> .
+
+claim:card-truncation-applies-only-with-html-js a model:Observation ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The Insights index renders 24 cards with the html.js class and all 45 without it."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Verified: 24 cards render with the class, 45 without."@en ] .
+
+claim:truncation-hands-over-to-hidden-in-one-pass a model:Decision ;
+  dcterms:subject concept:styled-away, concept:not-applicable ;
+  dcterms:description "card-index.ts sets data-hydrated in the same synchronous pass in which it starts managing hidden, so exactly one mechanism truncates the cards at any moment."@en ;
+  model:basis model:unattributed .
+
+claim:html-js-flag-is-global a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The html.js flag is set globally in BaseLayout, not per page, because it is about the document rather than a feature."@en ;
+  model:basis model:unattributed .
+
+claim:slide-deck-no-script-state-is-a-grid a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "Without script the slide deck is a grid with every slide visible and no controls that cannot work."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-10"^^xsd:date .
+
+claim:deck-track-needs-no-javascript a model:Observation ;
+  dcterms:subject concept:scroll-region, concept:javascript-only-control ;
+  dcterms:description "The slide deck track's scroll-snap, native swipe, scrollbar and keyboard scrolling all work from CSS and the platform, with no script."@en ;
+  model:basis model:assumed .
+
+claim:deck-download-link-not-hidden a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "The slide deck's download link does not ship hidden, because it is a plain anchor that works with no script."@en ;
+  model:basis model:unattributed .
+
+claim:search-item-hidden-as-whole-li a model:Decision ;
+  dcterms:subject concept:javascript-only-control ;
+  dcterms:description "Without JavaScript the masthead's whole search <li> goes, not just the button, so the stacked nav grid has no empty cell."@en ;
+  model:basis model:unattributed .
+
+claim:search-shortcut-hint-is-a-native-title a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement, concept:javascript-only-control ;
+  dcterms:description "The search toggle's shortcut hint is a native title set by script, which can be correct per platform because the control does not exist without JavaScript."@en ;
+  model:basis model:unattributed .
+
+# ── Forced reflow ─────────────────────────────────────────────────────────────
+
+claim:per-chip-fitting-forces-a-layout-flush-per-step a model:Observation ;
+  dcterms:subject concept:forced-reflow ;
+  dcterms:description "Fitting chips by revealing one, measuring the row count and repeating forces a layout flush per step: dozens per group, up to 31, on every resize."@en ;
+  model:basis model:assumed .
+
+claim:chip-width-independent-of-visible-siblings a model:Observation ;
+  dcterms:subject concept:forced-reflow ;
+  dcterms:description "A facet chip's width does not depend on how many of its siblings are visible."@en ;
+  model:basis model:assumed .
+
+claim:facet-rows-packed-in-arithmetic a model:Decision ;
+  dcterms:subject concept:forced-reflow ;
+  dcterms:description "Facet chip rows are packed by revealing every chip once, reading every width in one pass and simulating the wrap in arithmetic, not by trying layouts."@en ;
+  model:basis model:unattributed .
+
+claim:interleaved-layout-reads-and-writes-force-a-reflow-each a model:Observation ;
+  dcterms:subject concept:forced-reflow ;
+  dcterms:description "Interleaving layout reads with style writes invalidates layout on each write and forces a reflow per element."@en ;
+  model:basis model:assumed .
+
+# ── Scroll regions ────────────────────────────────────────────────────────────
+
+claim:tabindex-zero-makes-scroll-region-keyboard-reachable a model:Observation ;
+  dcterms:subject concept:scroll-region ;
+  dcterms:description "Giving a scroll region tabindex=\"0\" makes it reachable by keyboard, so arrow keys can scroll it."@en ;
+  model:basis model:assumed .
+
+claim:unreachable-scroll-region-fails-wcag-2-1-1 a model:Observation ;
+  dcterms:subject concept:scroll-region ;
+  dcterms:description "A scroll region that a pointer can drag but a keyboard cannot reach fails WCAG 2.1.1."@en ;
+  model:basis model:assumed .
+
+claim:chrome-and-firefox-make-scroll-regions-focusable a model:Observation ;
+  dcterms:subject concept:scroll-region ;
+  dcterms:description "Chrome and Firefox make scrollable regions focusable on their own."@en ;
+  model:basis model:assumed .
+
+claim:safari-does-not-make-scroll-regions-focusable a model:Observation ;
+  dcterms:subject concept:scroll-region ;
+  dcterms:description "Safari does not make scrollable regions focusable on its own, so without tabindex arrow-key scrolling is unavailable there."@en ;
+  model:basis model:assumed .
+
+claim:code-blocks-get-no-region-role a model:Decision ;
+  dcterms:subject concept:scroll-region ;
+  dcterms:description "Focusable code blocks carry no role=\"region\" or aria-label, so that many code blocks in one article do not bury the page's real landmarks."@en ;
+  model:basis model:unattributed .
+
+claim:focusable-pre-announces-its-contents a model:Observation ;
+  dcterms:subject concept:scroll-region, concept:screen-reader-announcement ;
+  dcterms:description "A focusable <pre> announces its own contents."@en ;
+  model:basis model:assumed .
+
+claim:deck-arrow-keys-scoped-to-track a model:Decision ;
+  dcterms:subject concept:scroll-region ;
+  dcterms:description "The slide deck's arrow keys are bound to the focusable track, not to the document."@en ;
+  model:basis model:unattributed .
+
+# ── Screen reader announcement ────────────────────────────────────────────────
+
+claim:live-region-announces-wherever-it-sits a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A live region is announced wherever it sits on the page; position governs who sees it, not who hears it."@en ;
+  model:basis model:assumed .
+
+claim:results-footer-sits-below-grid a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The result count, its live region and the reveal controls sit below the card grid, not above it."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-08-31"^^xsd:date .
+
+claim:promote-count-line-to-status-after-first-render a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The visible result-count line would be promoted to role=\"status\" after the first render, as the earlier plan described it."@en ;
+  model:basis model:unattributed .
+
+claim:announcement-region-ships-empty a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement, concept:visually-hidden ;
+  dcterms:description "Result changes are announced by a separate visually hidden role=\"status\" region that ships empty and is written only on a user-initiated change; the visible count line carries no live role."@en ;
+  model:basis model:unattributed ;
+  prov:wasGeneratedBy [ prov:invalidated claim:promote-count-line-to-status-after-first-render ] .
+
+claim:role-status-implies-polite-and-atomic a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "role=\"status\" carries implicit aria-live=\"polite\" and aria-atomic."@en ;
+  model:basis model:assumed .
+
+claim:role-status-better-supported-than-aria-live-polite a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "role=\"status\" is better supported than a bare aria-live=\"polite\"."@en ;
+  model:basis model:assumed .
+
+claim:live-region-heard-without-context a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A live region's message is heard with no surrounding context, so it has to be self-sufficient."@en ;
+  model:basis model:assumed .
+
+claim:aria-labelledby-name-follows-referenced-text a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "An accessible name computed through aria-labelledby follows the referenced text, so rewriting that text renames the element."@en ;
+  model:basis model:assumed .
+
+claim:aria-labelledby-reads-hidden-text a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement, concept:not-applicable ;
+  dcterms:description "aria-labelledby reads the referenced text even while that element is hidden."@en ;
+  model:basis model:assumed .
+
+claim:announcement-does-not-name-the-filter a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The result announcement does not name the filter that caused the change, because the chip just clicked is focused and its own accessible name already says it."@en ;
+  model:basis model:unattributed .
+
+claim:result-count-wording-is-andys a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The result-count sentence, shown and announced, reads \"Displaying 24 of 45 insights\", \"Displaying all 45 insights\", \"Displaying 14 matching insights\" or \"No matching insights\"."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-08-31"^^xsd:date .
+
+claim:live-region-cleared-after-speaking a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The result live region is cleared three seconds after it speaks, one timer reset on each call."@en ;
+  model:basis model:unattributed .
+
+claim:populated-live-region-repeats-for-linear-readers a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A live region left populated with the visible line's text puts the same sentence twice in a row for anyone reading the page linearly."@en ;
+  model:basis model:assumed .
+
+claim:live-region-silent-on-initial-render a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The result live region does not speak on the initial render, so a shared filter link's count is not read out over the page load; Back and Forward do announce."@en ;
+  model:basis model:unattributed .
+
+claim:chip-accessible-name-changes-by-state a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A facet chip's accessible name changes by state (\", add filter\", \", selected, remove filter\", \", no results, unavailable\"), because the same control means opposite things and only its fill says so visually."@en ;
+  model:basis model:unattributed .
+
+claim:aria-pressed-is-button-only a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "aria-pressed is valid only on buttons, so an anchor chip carries its selected state with aria-current."@en ;
+  model:basis model:assumed .
+
+claim:results-label-is-a-p-not-a-heading a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The single-tag results label is a <p>, not a heading; it reaches assistive technology by joining the grid's accessible name while it is visible."@en ;
+  prov:wasAttributedTo <https://andyfitzgeraldconsulting.com/#person> ;
+  dcterms:date "2026-09-30"^^xsd:date .
+
+claim:aria-current-page-and-true-announce-differently a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "aria-current=\"page\" and aria-current=\"true\" both match [aria-current], so the indicator is identical and only what is announced differs."@en ;
+  model:basis model:assumed .
+
+claim:close-search-named-close-search a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The close-search button's accessible name is \"Close search\" alone, on the grounds that no screen-reader user needs to be told the glyph says E-S-C, as the comment describes the earlier choice."@en ;
+  model:basis model:unattributed .
+
+claim:close-search-named-close-search-esc a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The close-search button is named \"Close search, esc\": the action first, then the visible key name, for voice-control users who say what they see (WCAG 2.5.3, Label in Name)."@en ;
+  model:basis model:unattributed ;
+  dcterms:date "2026-10-08"^^xsd:date ;
+  prov:wasGeneratedBy [ prov:invalidated claim:close-search-named-close-search ] .
+
+claim:axe-passes-close-search-name-in-isolation a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "axe passes the close-search button's failing old name in isolation and fails it inside the real /search/ page, with the page's own CSS applied."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured against axe inside the real /search/ page and in isolation."@en ] .
+
+claim:axe-label-in-name-matches-whole-words a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "axe's Label in Name check matches whole words: \"Close search, esc\" and \"Esc, close search\" pass, while \"Close search (Esc)\" and \"Close search, Escape\" do not."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured against axe inside the real /search/ page."@en ] .
+
+claim:chip-label-wording-caused-label-in-name-failure a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The facet chips' Label in Name failure was caused by the punctuation of their accessible name, the comma breaking axe's contiguous match, as the comments describe the earlier belief."@en ;
+  model:basis model:assumed .
+
+claim:missing-space-between-chip-spans-caused-label-in-name-failure a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "The facet chips failed Label in Name because Astro's HTML compression dropped the whitespace between the label and count spans, so the visible text read \"Structured Content11\"."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Five variants tested against axe showed it sets punctuation aside; the phase 8 accessibility gate found the missing space."@en ;
+    dcterms:date "2026-10-08"^^xsd:date ;
+    prov:invalidated claim:chip-label-wording-caused-label-in-name-failure ] .
+
+claim:title-becomes-accessible-description a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A title attribute on a button that already has an accessible name becomes its description, read after the name rather than replacing it."@en ;
+  model:basis model:assumed .
+
+claim:native-title-does-not-appear-on-keyboard-focus a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A native title tooltip does not appear on keyboard focus."@en ;
+  model:basis model:assumed .
+
+claim:native-title-does-not-appear-on-touch a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A native title tooltip does not appear on touch."@en ;
+  model:basis model:assumed .
+
+claim:bare-media-control-announces-only-as-player a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "An <audio> control with no aria-label announces only as a media player; the heading beside it is not its accessible name."@en ;
+  model:basis model:assumed .
+
+claim:card-wrapping-anchor-announces-all-content-as-one-link a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "An anchor wrapped around a whole card announces all of the card's text as one link."@en ;
+  model:basis model:assumed .
+
+claim:card-anchor-on-title-with-stretched-pseudo-element a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A card's anchor stays on its title and a stretched pseudo-element makes the whole card the click target, so the accessible name stays the title."@en ;
+  model:basis model:unattributed .
+
+claim:svg-role-img-with-title-names-its-link a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "An SVG with role=\"img\" and a <title> gives the link around it an accessible name, with no aria-label and no visually hidden text."@en ;
+  model:basis model:assumed .
+
+claim:image-link-announces-only-its-alt a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "An image link gives a screen reader nothing but the image's alt text to announce as its name."@en ;
+  model:basis model:assumed .
+
+claim:iframe-without-title-announced-unlabelled a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "An iframe without a title is announced as an unlabelled frame."@en ;
+  model:basis model:assumed .
+
+claim:caption-as-alt-is-read-twice a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "An image whose alt repeats its figcaption makes a screen reader read the same sentence twice."@en ;
+  model:basis model:assumed .
+
+claim:error-state-styled-from-aria-invalid a model:Decision ;
+  dcterms:subject concept:screen-reader-announcement ;
+  dcterms:description "A contact-form field's error state is styled from aria-invalid rather than a class, so the visible state and the announced state cannot drift apart."@en ;
+  model:basis model:unattributed .
+
+claim:hidden-live-region-is-silent a model:Observation ;
+  dcterms:subject concept:screen-reader-announcement, concept:visually-hidden ;
+  dcterms:description "A live region hidden with visibility: hidden or display: none is never announced."@en ;
+  model:basis model:assumed .
+
+# ── Automated browsers ────────────────────────────────────────────────────────
+
+claim:browser-pane-runs-with-document-hidden a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "The Browser pane runs with document.hidden true."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while verifying in the Browser pane, where each behavior it suppresses looked like a bug in the code first."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-never-fires-raf a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "requestAnimationFrame never fires in the Browser pane, so any rAF-deferred work never runs."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while verifying in the Browser pane: rAF never fired and hung the tool call until it timed out, and twice stale-looking layout turned out to be a deferred rAF rather than a bug."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-smooth-scroll-is-a-no-op a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "In the Browser pane a smooth scrollTo, including window.scrollTo under the global scroll-behavior: smooth, silently does nothing."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while verifying in the Browser pane."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-fires-no-scroll-events a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "No scroll events fire in the Browser pane, neither scroll nor scrollend, even for an instant programmatic scroll."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while verifying in the Browser pane."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-suppresses-lazy-loading a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "The Browser pane suppresses lazy loading entirely: advancing a carousel loads nothing."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while verifying the slide deck in the Browser pane."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:dialog-close-fired-no-close-event-in-the-pane a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "dialog.close() set open to false and fired no close event, with a listener added in the same call counting zero; whether this is platform behavior or an artifact of the Browser pane was not established."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Measured in the browser, the automated pane, while building the slide deck's full-screen view."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-never-advances-transitions a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "In the Browser pane animations and transitions never advance, so a transitioned property freezes at its previous value and getComputedStyle readings lag one interaction behind."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered on .button's transitioned border-color in the Browser pane, first misdiagnosed as stale dev CSS."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-screenshots-unreliable a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "Browser pane screenshots are unreliable, especially after a programmatic scroll, where blank captures are common."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while measuring in the Browser pane."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-synthetic-return-does-not-submit a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "In the Browser pane a synthetic Return does not submit a form, while requestSubmit() and a real submit-button click both do."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while verifying search in the Browser pane."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:browser-pane-opens-with-zero-layout-width a model:Observation ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "The Browser pane opens with zero layout width until the window is resized explicitly."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "Encountered while measuring the presentations work in the Browser pane."@en ;
+    prov:used concept:browser-pane ] .
+
+claim:deck-restore-runs-from-both-paths a model:Decision ;
+  dcterms:subject concept:browser-pane ;
+  dcterms:description "The slide deck's exit from full screen is idempotent and runs from both the close button and the dialog's close event, so it does not depend on whether close fires."@en ;
+  model:basis model:unattributed .
+
+claim:a11y-check-runs-axe-in-headless-chrome a model:RepoFact ;
+  dcterms:subject concept:headless-chrome ;
+  dcterms:description "The accessibility check, pnpm a11y, loads every page in headless Chrome over the DevTools protocol and runs axe-core."@en .
+
+claim:a11y-harness-caught-links-mid-transition a model:Observation ;
+  dcterms:subject concept:headless-chrome ;
+  dcterms:description "Without reduced motion and a wait for animations, the accessibility check caught links partway through base.css's 0.15s color transition and reported contrast failures in colors that were no token."@en ;
+  prov:wasGeneratedBy [ a model:Measurement ;
+    model:method "1 run in 10 of the accessibility check, which loads pages in headless Chrome."@en ;
+    prov:used concept:headless-chrome ] .
+
+claim:real-page-load-starts-no-transition a model:Observation ;
+  dcterms:subject concept:headless-chrome ;
+  dcterms:description "A real page load starts no color transition, so a contrast failure caught mid-transition is a harness artifact."@en ;
+  model:basis model:assumed .
+
+claim:automated-checks-find-a-minority-of-accessibility-failures a model:Observation ;
+  dcterms:subject concept:automated-browser ;
+  dcterms:description "Automated accessibility checks find only a minority of real accessibility failures, roughly a third of WCAG failures, so a pass is a floor."@en ;
+  model:basis model:assumed .
+
+claim:a11y-check-does-not-test-announcements a model:RepoFact ;
+  dcterms:subject concept:headless-chrome, concept:screen-reader-announcement ;
+  dcterms:description "The accessibility check does not test keyboard use, focus order, what a screen reader announces, alt-text quality, or interactive states such as search open."@en .
