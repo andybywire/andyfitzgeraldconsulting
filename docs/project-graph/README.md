@@ -9,6 +9,7 @@ blind annotator see it; see claim-model.md.
 
 | File                             | What it holds                                                                 |
 | -------------------------------- | ----------------------------------------------------------------------------- |
+| [write-up.md](write-up.md)       | **Start here:** the results, how much weight they bear, and a recommendation  |
 | [protocol.md](protocol.md)       | Hypotheses, predictions, arms, tasks and rubrics, how runs are done and read  |
 | [inventory.md](inventory.md)     | Ground truth at `086dd0f`: claims, where they're stated, contradictions       |
 | [id-design.md](id-design.md)     | Namespaces, slugs, comment tags, what counts as a claim                       |
@@ -42,5 +43,5 @@ Decided by Andy, 2026-10-17, at the start of stage 3:
 | 2. Id design               | Done, `5ce8534`                                          |
 | 3. Vocabulary and checks   | Built: Jena, 18 concepts, SKOS integrity shapes; `node project-graph/graph.mjs check` and `test` (19 planted cases) |
 | 4. Claims and extractor    | Built: model and claim shapes, extractor, six saved queries (now 50 shape cases, 16 query cases, 18 extractor tests); annotation guide drafted; its trial run and reviewed (failures trace to the desktop app); headless harness built, and its canary passed on 2026-10-18 |
-| 5. Arms and runs           | Started 2026-10-19: three cuts decided; the blind annotation run and accepted; arms A, B and C built; preconditions 1 to 5 met. The schedule runner, the spend confirmation and the 15 runs remain |
-| 6. Analysis                | Not started                                              |
+| 5. Arms and runs           | Done 2026-10-19: three cuts decided; the blind annotation run and accepted; arms A, B and C built; preconditions 1 to 5 met; the 15 runs, all valid, $26.47 |
+| 6. Analysis                | Graded blind and written up, 2026-10-20: [write-up.md](write-up.md). B beats A on T3; C does not beat B. The maintenance probe is due before B is adopted |
