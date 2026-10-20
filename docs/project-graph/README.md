@@ -42,5 +42,5 @@ Decided by Andy, 2026-10-17, at the start of stage 3:
 | 2. Id design               | Done, `5ce8534`                                          |
 | 3. Vocabulary and checks   | Built: Jena, 18 concepts, SKOS integrity shapes; `node project-graph/graph.mjs check` and `test` (19 planted cases) |
 | 4. Claims and extractor    | Built: model and claim shapes, extractor, six saved queries (now 50 shape cases, 16 query cases, 18 extractor tests); annotation guide drafted; its trial run and reviewed (failures trace to the desktop app); headless harness built, and its canary passed on 2026-10-18 |
-| 5. Arms and runs           | Started 2026-10-19: three cuts decided, and preconditions 1, 2 and 5 met (the canary, T2's list verified, the leak search with four scope notes trimmed); the arms, the annotation and the runs remain |
+| 5. Arms and runs           | Started 2026-10-19: three cuts decided; the blind annotation run and accepted; arms A, B and C built; preconditions 1 to 5 met. The schedule runner, the spend confirmation and the 15 runs remain |
 | 6. Analysis                | Not started                                              |

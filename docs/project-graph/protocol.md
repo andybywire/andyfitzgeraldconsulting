@@ -106,8 +106,53 @@ correct it is.** That rules out the most likely way for C to win unfairly:
 
 **Each arm's CLAUDE.md differs by one short section, at most 15 lines,** fixed here before the
 runs. A gets none. B's explains the ids and where the glossary is. C's explains how to run the
-saved queries. The text is written in stage 5 and recorded here before the first run. **T5 exists to catch this section's own effect:** if the arms separate on a task
-the annotations don't touch, the instructions are doing the work.
+saved queries. The text is written in stage 5 and recorded here before the first run. **T5 exists
+to catch this section's own effect:** if the arms separate on a task the annotations don't touch,
+the instructions are doing the work.
+
+**Written 2026-10-19, and approved by Andy as drafted.** Each arm's section is `## Comment tags`,
+placed directly before `## Design system`, so it follows "Conventions and constraints". The two
+open with the same paragraph, word for word, and differ only in how an id is looked up. Both name
+the vocabulary's four areas, which tells a run when the tags apply, and when they don't, as on T5.
+C's last bullet is its real advantage: the check flags a comment that relies on an overturned
+claim, where B has to search for the id and read the "Overturns" line itself.
+
+B's, 12 lines:
+
+```markdown
+## Comment tags
+
+Comments about focus, hiding, keyboard reach, screen-reader announcement and automated browsers
+end with tag lines. `@concept` names the terms a comment is about, and `@claim` names each
+statement it makes or relies on, by a stable id. A claim made in several places carries the same
+id in each.
+
+**`project-graph/glossary.md` defines every id:** each concept's labels, broader concept and scope
+note, and each claim's kind, its sentence, how it is known (measured, assumed, unattributed or
+decided) and what it overturns. To find every comment that states or relies on a claim, search
+the repository for its id. To find what is claimed about a concept, search the glossary for the
+concept's id.
+```
+
+C's, 15 lines:
+
+```markdown
+## Comment tags
+
+Comments about focus, hiding, keyboard reach, screen-reader announcement and automated browsers
+end with tag lines. `@concept` names the terms a comment is about, and `@claim` names each
+statement it makes or relies on, by a stable id. A claim made in several places carries the same
+id in each.
+
+**`project-graph/` records every id as a graph:** the concepts in `concepts.ttl` (SKOS), and in
+`claims.ttl` each claim's kind, its sentence, how it is known (measured, assumed, unattributed or
+decided) and what it overturns. Query it with `node project-graph/graph.mjs`, run directly:
+
+- `query` lists the saved queries. Most useful: `query about <concept>`, `query where <concept>`,
+  `query settled <concept>` and `query claim <id>`. A concept query covers its narrower concepts.
+- `check` validates the tags and claims, and reports every comment that relies on a claim since
+  overturned.
+```
 
 ## The tasks
 
@@ -250,7 +295,27 @@ the trust measures above all.
   from the arm's branch: never a session started from the desktop app. The same model and effort
   throughout, recorded with each run.
 - **The order is round-robin across arms,** fixed and written here before the first run, so model
-  or time-of-day drift spreads evenly across arms.
+  or time-of-day drift spreads evenly across arms. **Fixed 2026-10-19, and approved by Andy:**
+  grouped by task, with the arms rotating.
+
+  | Task | 1st         | 2nd         | 3rd         |
+  | ---- | ----------- | ----------- | ----------- |
+  | T1   | A (`r01`)   | B (`r02`)   | C (`r03`)   |
+  | T2   | B (`r04`)   | C (`r05`)   | A (`r06`)   |
+  | T3   | C (`r07`)   | A (`r08`)   | B (`r09`)   |
+  | T4   | A (`r10`)   | B (`r11`)   | C (`r12`)   |
+  | T5   | B (`r13`)   | C (`r14`)   | A (`r15`)   |
+
+  Every comparison is within a task, so a task's three runs are kept minutes apart, and drift
+  falls between tasks rather than between arms. Five tasks can't rotate evenly over three arms:
+  C goes first once, against twice each for A and B. Over a session of about an hour, that is not
+  expected to matter.
+
+  **Run ids and their folder are neutral**, because a run sees the path of the worktree it works
+  in. The ids are `r01` to `r15`, never a task or an arm. The worktrees go under
+  `~/.cache/af-runs/`, set with the harness's `PROJECT_GRAPH_RUNS`, because the default
+  `~/.cache/project-graph/runs/` would put "project-graph" in every run's path, arm A's included,
+  where nothing by that name exists.
 - **Recorded for every run:** the harness's JSON for it (session id, answer text, tokens, turns,
   time, cost), plus arm, task, run number, model and effort, and the session's transcript for
   the tool calls. They go in `docs/project-graph/runs/`.
@@ -503,7 +568,17 @@ besides:
    `<main>` landing points found by `git grep` rather than taken from the list, and, for whether
    anything was missing, the inventory's other script-focus locations that no row covers.
 3. **The arm diffs are clean,** checked against the rule above.
+   **MET 2026-10-19,** by `harness/arm-diff.mjs`, which accounts for every changed line. Outside
+   `project-graph/`, each must be a tag line, a separator leading into tags, one of the accepted
+   moved closers, or the arm's section as recorded above. Inside it, B may add only `glossary.md`,
+   and C's folder must be the tooling at `d8e60ee` without `tests/`, plus the accepted
+   `claims.ttl`. `pg-arm-a` is `086dd0f` itself. `pg-arm-b` and `pg-arm-c` each touch 45 files with
+   325 tag lines, 90 separators and 24 moved closers, and no problems, and only their sections set
+   them apart. The check failed first on planted diffs (a reworded comment, a dropped line, a
+   stray separator, a missing section) and on `pg-guide-trial` judged as if it were C.
 4. **Each arm's CLAUDE.md section and the run order are written into this file.**
+   **MET 2026-10-19:** both sections under "The three arms", committed to `pg-arm-b` and
+   `pg-arm-c`, and the order under "How the runs are done".
 5. **Nothing in `project-graph/` leaks the test** *(added 2026-10-17, with the annotation guide)*.
    The blind annotator works in a checkout where that whole folder is present, so its comments
    must not name a task, a contradiction or a scored finding. Before the annotation runs, search
