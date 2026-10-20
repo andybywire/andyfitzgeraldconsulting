@@ -12,3 +12,4 @@ node_modules/
 # Project Graph run transcripts — each carries the account's email and org id, and with memory
 # on, this checkout's memory index. The run's JSON beside it is the record that gets committed.
 docs/project-graph/runs/**/*.transcript.jsonl
+docs/project-graph/grading/**/*.transcript.jsonl

@@ -1,0 +1,1163 @@
+[
+  {
+    "label": "T1 · answer 1",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "It draws two rings with `box-shadow`, and the outer one is `--color-focus-ring`",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "Screen readers aren't affected: focus still moves, so the message is still announced.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "Use the same fix as the card grid (`web/src/components/cards/CardMasonry.astro:209`)",
+        "note": ""
+      },
+      "4": {
+        "score": 1,
+        "quote": "**The comment that says it can't happen is wrong.**",
+        "note": ""
+      },
+      "5": {
+        "score": 1,
+        "quote": "**`:focus`, not `:focus-visible`**, so it holds however each browser decides.",
+        "note": "Clears both outline and box-shadow."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T1 · answer 2",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "That's the two-ring `box-shadow` at `web/src/styles/base.css:716`.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "the focus move, which is what makes the confirmation get announced, stays exactly as it is.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "There's already a fix for this exact case in `web/src/components/cards/CardMasonry.astro:209`.",
+        "note": ""
+      },
+      "4": {
+        "score": 1,
+        "quote": "That claim was disproved on 2026-09-30.",
+        "note": ""
+      },
+      "5": {
+        "score": 1,
+        "quote": "**`:focus`, not `:focus-visible`**, so it works however each browser decides.",
+        "note": "Clears both properties."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T1 · answer 3",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "`web/src/styles/base.css:704` draws the two-ring `box-shadow` on every element that matches `:focus-visible`.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "focus still moves, so the screen reader announcement, the reason for the `tabindex`, is unaffected.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "That's the lesson `CardMasonry` already learned.",
+        "note": "Copies the grid fix."
+      },
+      "4": {
+        "score": 1,
+        "quote": "That isn't reliably true.",
+        "note": ""
+      },
+      "5": {
+        "score": 1,
+        "quote": "**`:focus`, not `:focus-visible`,** so it holds whatever each browser's rules decide.",
+        "note": "Clears both properties."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T2 · answer 1",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "`web/src/styles/base.css:699-721`: the global `:focus-visible` ring.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "`web/src/components/cards/CardMasonry.astro:186-212`: the grid's local `:focus { outline: none; box-shadow: none }`.",
+        "note": ""
+      },
+      "6": {
+        "score": 1,
+        "quote": "`web/src/scripts/card-index.ts:730-759`: sets the grid's `role` and `tabIndex = -1` from script.",
+        "note": ""
+      },
+      "7": {
+        "score": 1,
+        "quote": "`DESIGN.md:1126-1131`: \"The grid … is never ringed\" is the current one-off rule.",
+        "note": ""
+      },
+      "3a": {
+        "score": 1,
+        "quote": "`web/src/components/ContactForm.astro:143-150, 152, 172`: the comment on the state blocks' markup says why they are focusable.",
+        "note": ""
+      },
+      "3b": {
+        "score": 1,
+        "quote": "`web/src/components/ContactForm.astro:544-551`: **directly contradicts the proposal.**",
+        "note": ""
+      },
+      "4a": {
+        "score": 1,
+        "quote": "`web/src/layouts/BaseLayout.astro:726-752`: the skip link's note on why `<main>` needs `tabindex=\"-1\"`.",
+        "note": ""
+      },
+      "4b": {
+        "score": 1,
+        "quote": "the nine `<main id=\"main\" tabindex=\"-1\">` elements",
+        "note": ""
+      },
+      "5a": {
+        "score": 1,
+        "quote": "`web/src/components/ResultsFooter.astro:80-99`: `#result-count` has no focus style.",
+        "note": ""
+      },
+      "5b": {
+        "score": 1,
+        "quote": "`web/src/scripts/card-index.ts:662-677`: the fallback that focuses the count line.",
+        "note": ""
+      },
+      "s1": {
+        "score": 1,
+        "quote": "`docs/urls-and-filtering.md:400-405`, `web/src/scripts/search.ts:948-957`",
+        "note": ""
+      },
+      "s2": {
+        "score": 1,
+        "quote": "`web/src/scripts/search.ts:948-957`",
+        "note": ""
+      },
+      "s3": {
+        "score": 1,
+        "quote": "`CLAUDE.md:597-603`: the skip-link entry describes focus moving to `<main>`.",
+        "note": ""
+      }
+    },
+    "extra": [
+      {
+        "location": "web/src/components/ContactForm.astro:297 (honeypot)",
+        "why": "Never focused, and the answer says it needs no change; it's only a possible selector collision."
+      },
+      {
+        "location": "web/server/contact.php:257",
+        "why": "Server-side honeypot handling; it says nothing about how script-focused elements look and needs no change."
+      }
+    ],
+    "stoppedShort": false
+  },
+  {
+    "label": "T2 · answer 2",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "`web/src/styles/base.css:690–709`: the global `:focus-visible` ring lives here",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "`web/src/components/cards/CardMasonry.astro:186–209`: the only place the rule already exists",
+        "note": ""
+      },
+      "6": {
+        "score": 1,
+        "quote": "`web/src/scripts/card-index.ts:700–726`: makes the grid focusable from script and names it.",
+        "note": ""
+      },
+      "7": {
+        "score": 1,
+        "quote": "`DESIGN.md:1120–1123`: \"The grid … is never ringed.",
+        "note": ""
+      },
+      "3a": {
+        "score": 1,
+        "quote": "`web/src/components/ContactForm.astro:143–146`: explains why both message blocks have `tabindex=\"-1\"`",
+        "note": ""
+      },
+      "3b": {
+        "score": 1,
+        "quote": "`web/src/components/ContactForm.astro:529–533`: **says the opposite.**",
+        "note": ""
+      },
+      "4a": {
+        "score": 1,
+        "quote": "`web/src/layouts/BaseLayout.astro:720–730`: why `<main>` has `tabindex=\"-1\"`.",
+        "note": ""
+      },
+      "4b": {
+        "score": 1,
+        "quote": "the ten `<main id=\"main\" tabindex=\"-1\">` lines",
+        "note": "Lists nine files but says ten."
+      },
+      "5a": {
+        "score": 1,
+        "quote": "`web/src/components/ResultsFooter.astro:76–93` (comment and markup)",
+        "note": ""
+      },
+      "5b": {
+        "score": 1,
+        "quote": "`web/src/scripts/card-index.ts:638–650`: when a reveal button disappears, focus falls back to the count line.",
+        "note": ""
+      },
+      "s1": {
+        "score": 1,
+        "quote": "`docs/urls-and-filtering.md:390–395` and `docs/astro-migration/insights-filtering-kickoff.md:71–72`",
+        "note": ""
+      },
+      "s2": {
+        "score": 1,
+        "quote": "`web/src/scripts/search.ts:923–928`: names a possible future script-only target",
+        "note": ""
+      },
+      "s3": {
+        "score": 1,
+        "quote": "`CLAUDE.md:585–586`: the skip-link entry",
+        "note": ""
+      }
+    },
+    "extra": [
+      {
+        "location": "web/src/components/ContactForm.astro:273–291 (honeypot)",
+        "why": "Never focused, and the answer says it's harmless; it's only a possible selector collision."
+      },
+      {
+        "location": "web/scripts/check-a11y.mjs:35",
+        "why": "The answer says no change is needed; it records only that focus isn't tested, not how these elements look."
+      }
+    ],
+    "stoppedShort": false
+  },
+  {
+    "label": "T2 · answer 3",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "`web/src/styles/base.css:699-721`: the global `:focus-visible` ring.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "`web/src/components/cards/CardMasonry.astro:186-212`: the only place the ring is hidden now, scoped to the grid.",
+        "note": ""
+      },
+      "6": {
+        "score": 1,
+        "quote": "`web/src/scripts/card-index.ts:729-759`: script sets `grid.tabIndex = -1`.",
+        "note": ""
+      },
+      "7": {
+        "score": 1,
+        "quote": "`DESIGN.md:1126-1131`: \"The grid is a named region, and is never ringed.\"",
+        "note": ""
+      },
+      "3a": {
+        "score": 1,
+        "quote": "`web/src/components/ContactForm.astro:143-149`: explains why the two blocks have `tabindex=\"-1\"`",
+        "note": ""
+      },
+      "3b": {
+        "score": 1,
+        "quote": "`web/src/components/ContactForm.astro:544-551`: says outright that these blocks keep the ring",
+        "note": ""
+      },
+      "4a": {
+        "score": 1,
+        "quote": "`web/src/layouts/BaseLayout.astro:726-736`: why `<main>` has `tabindex=\"-1\"`.",
+        "note": ""
+      },
+      "4b": {
+        "score": 1,
+        "quote": "The 9 page files' `<main id=\"main\" tabindex=\"-1\">`",
+        "note": ""
+      },
+      "5a": {
+        "score": 1,
+        "quote": "`web/src/components/ResultsFooter.astro:80-99`: the count line's `tabindex=\"-1\"` and why it's there.",
+        "note": ""
+      },
+      "5b": {
+        "score": 1,
+        "quote": "`web/src/scripts/card-index.ts:662-678`: the fallback that sends focus to the count line.",
+        "note": ""
+      },
+      "s1": {
+        "score": 1,
+        "quote": "`docs/urls-and-filtering.md:400-407`: the rejected option of a group heading with `tabindex=\"-1\"`",
+        "note": ""
+      },
+      "s2": {
+        "score": 0,
+        "quote": "",
+        "note": "search.ts's record of the deferred option isn't listed."
+      },
+      "s3": {
+        "score": 1,
+        "quote": "`CLAUDE.md:598-606`: the skip-link entry describes how `<main>` takes focus.",
+        "note": ""
+      }
+    },
+    "extra": [
+      {
+        "location": "web/src/components/ContactForm.astro:297 (honeypot)",
+        "why": "Never focused, and the answer says it needs no change; it's only a possible selector collision."
+      }
+    ],
+    "stoppedShort": false
+  },
+  {
+    "label": "T3 · answer 1",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "`web/src/components/ContactForm.astro:529-532` says a scripted `.focus()` on a `tabindex=\"-1\"` element draws no visible ring.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "`ContactForm.astro:503-505` says any `display` declaration would override `hidden`.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "`docs/decisions/components.md:48` says the ring radii are \"a real `calc()`\".",
+        "note": ""
+      },
+      "4": {
+        "score": 0,
+        "quote": "",
+        "note": "No forced-reflow item."
+      },
+      "5": {
+        "score": 0,
+        "quote": "",
+        "note": "Code.astro's scroll-region claim isn't raised."
+      },
+      "6": {
+        "score": 0,
+        "quote": "",
+        "note": "Kickoff notes excluded explicitly."
+      },
+      "7": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "8": {
+        "score": 1,
+        "quote": "`search.ts:926-928` credits the \"group heading with `tabindex=-1`\" idea to `open-questions.md`.",
+        "note": ""
+      },
+      "9": {
+        "score": 1,
+        "quote": "`CLAUDE.md:585-588` says there are ten `<main id=\"main\" tabindex=\"-1\">` elements",
+        "note": ""
+      },
+      "10": {
+        "score": 1,
+        "quote": "`SlideDeck.astro:28` points to `BaseLayout.astro:72` for the script that sets `html.js` before first paint.",
+        "note": ""
+      },
+      "11": {
+        "score": 0,
+        "quote": "",
+        "note": "The sent.hidden bug isn't mentioned."
+      },
+      "12": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "13": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "14": {
+        "score": 0,
+        "quote": "",
+        "note": "VisuallyHidden is cited only for its declaration count."
+      },
+      "15": {
+        "score": 1,
+        "quote": "`docs/urls-and-filtering.md:390-395` and `card-index.ts:625-627` both defer the reset focus target until the live region exists.",
+        "note": ""
+      }
+    },
+    "extra": [
+      {
+        "claim": "ThemeToggle says unselected segments get a white ring set 2px off, like the masthead links; Masthead says its links get a tight ring",
+        "verdict": "real",
+        "why": "ThemeToggle.astro:177-179 vs Masthead.astro:517-522 (\"A tight legible ring rather than an offset one\")."
+      },
+      {
+        "claim": "Masthead says the accent band needs no ring override, while base.css, Band, DESIGN and open-questions say a control on an accent band swaps the pair",
+        "verdict": "real",
+        "why": "base.css:692-695, Band.astro:153-156 and open-questions.md:207-209 vs Masthead.astro:517-522."
+      },
+      {
+        "claim": "card-index moves See all focus to the replacing control to avoid the top of the list; search.ts sends it to the first chip, the top",
+        "verdict": "real",
+        "why": "card-index.ts:166-168 vs search.ts:888-897. The same pattern with opposite reasoning."
+      },
+      {
+        "claim": "open-questions says 6-of-45 and also 21 of 45; both describe dense packing, which was removed",
+        "verdict": "real",
+        "why": "open-questions.md:291 and :301, DESIGN.md:1098-1101 vs CardMasonry.astro:306 (\"dense WAS REMOVED ON 2026-09-17\")."
+      },
+      {
+        "claim": "SearchResults reorders the facet controls with `order`, against DESIGN's rule not to reorder bands with controls",
+        "verdict": "real",
+        "why": "SearchResults.astro:226-247 vs DESIGN.md:665-667."
+      },
+      {
+        "claim": "insights/[slug] says there is no skip link yet",
+        "verdict": "real",
+        "why": "insights/[slug].astro:326-327 vs BaseLayout.astro:746."
+      },
+      {
+        "claim": "BaseLayout says roughly a dozen links precede the content; there are seven focus stops",
+        "verdict": "real",
+        "why": "BaseLayout.astro:709 vs Masthead markup: the identity link, five nav links and the search toggle."
+      },
+      {
+        "claim": "SlideDeck implies the keyboard shortcut is annotated on the buttons, but their titles omit it deliberately",
+        "verdict": "real",
+        "why": "SlideDeck.astro:159-160 vs :168-169 titles and :685-686."
+      },
+      {
+        "claim": "SlideDeck calls the tabindex=0 track an interactive scroll region, but without JS it's a non-scrolling grid",
+        "verdict": "real",
+        "why": "SlideDeck.astro:90-96 vs scrolling only under `html.js .deck-track` at :300-306."
+      },
+      {
+        "claim": "The 'JS control ships hidden' contract, citing FacetFilters, vs card-index and FacetFilters shipping chips visible and disabled",
+        "verdict": "real",
+        "why": "Masthead.astro:293-296, search.astro:14-15 and BaseLayout.astro:338 vs card-index.ts:56-57."
+      },
+      {
+        "claim": "search.ts and SearchResults say the reveal controls disappear from lg up; the code uses md",
+        "verdict": "real",
+        "why": "search.ts:582 and SearchResults.astro:113-114 vs isNarrow at search.ts:547-548 and the note at :534-543."
+      },
+      {
+        "claim": "Comments say Presentations is smaller than one step (four cards), though the corpus is 29",
+        "verdict": "real",
+        "why": "card-index.ts:449-450, ResultsFooter.astro:99-100 and presentations/index.astro:12 and :214 vs STEP=24 and CLAUDE.md's 29 presentations."
+      },
+      {
+        "claim": "VisuallyHidden and Masthead say 'seven declarations'; there are eight, and the heading promises three but gives two",
+        "verdict": "real",
+        "why": "VisuallyHidden.astro:30-49 vs the eight declarations at :81-88."
+      },
+      {
+        "claim": "urls-and-filtering describes a 'Select all' reset that the same doc says was removed",
+        "verdict": "real",
+        "why": "docs/urls-and-filtering.md:176 vs :318."
+      },
+      {
+        "claim": "Reset restores the 'unselected order', but chip order is fixed at build time",
+        "verdict": "real",
+        "why": "docs/urls-and-filtering.md:324 vs :221."
+      },
+      {
+        "claim": "FacetFilters says disabled chips mostly surface only inside See all, but they're the ordinary look in the row",
+        "verdict": "real",
+        "why": "FacetFilters.astro:246-247 vs docs/urls-and-filtering.md:366-369."
+      },
+      {
+        "claim": "CardMasonry's notes still say Insights hasn't adopted it, cite .masonry and onRelayout, and say nothing dispatches relayout; FacetFilters calls it transitional",
+        "verdict": "real",
+        "why": "CardMasonry.astro:12-17, :531 and :538, FacetFilters.astro:8 vs card-index.ts:231 and insights/index.astro composing CardMasonry."
+      },
+      {
+        "claim": "SlideDeck says the Full Screen button isn't built",
+        "verdict": "real",
+        "why": "SlideDeck.astro:118-121 vs the button at :136-145 and the dialog at :206."
+      },
+      {
+        "claim": "SlideDeck says the script adds a counter; the same file says there is none",
+        "verdict": "real",
+        "why": "SlideDeck.astro:34 vs :202."
+      },
+      {
+        "claim": "Masthead and DESIGN say the search toggle is inert",
+        "verdict": "real",
+        "why": "Masthead.astro:51-52 and DESIGN.md:1390-1391 vs the working toggle (Masthead:293-296, search.ts)."
+      },
+      {
+        "claim": "Masthead says the controller intercepts the submit; search.ts deliberately doesn't",
+        "verdict": "real",
+        "why": "Masthead.astro:330-333 vs search.ts:22-27. DESIGN.md:1398 says it is 'not navigated away from'."
+      },
+      {
+        "claim": "BaseLayout and SearchResults say two inert templates; there are three",
+        "verdict": "real",
+        "why": "BaseLayout.astro:754 and SearchResults.astro:3 vs templates at SearchResults.astro:32, 168 and 172."
+      },
+      {
+        "claim": "check-a11y and CLAUDE.md mention a 'mobile menu expanded' state, but no mobile menu exists",
+        "verdict": "real",
+        "why": "check-a11y.mjs:37. The only aria-expanded in Masthead is the search toggle (:316)."
+      },
+      {
+        "claim": "urls-and-filtering plans a JSON facet index, but the DOM is the index",
+        "verdict": "real",
+        "why": "docs/urls-and-filtering.md:283-297 vs card-index.ts:29-36 (\"There is no JSON index\")."
+      },
+      {
+        "claim": "PresentationCard points to a note on .visually-hidden below that doesn't explain hint",
+        "verdict": "real",
+        "why": "PresentationCard.astro:70 vs :374-375. The explanation is near :150-159."
+      },
+      {
+        "claim": "search.astro and DESIGN.md still name Fuse",
+        "verdict": "real",
+        "why": "DESIGN.md:1401 vs search.ts importing MiniSearch."
+      }
+    ],
+    "stoppedShort": false
+  },
+  {
+    "label": "T3 · answer 2",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "`ContactForm.astro:544-547` says a `tabindex=\"-1\"` element never gets a visible ring from scripted `.focus()`.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "`ContactForm.astro:515-517` says an author `display` rule would beat `hidden`.",
+        "note": ""
+      },
+      "3": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "4": {
+        "score": 1,
+        "quote": "`search.ts:830` (open, including cmd+K) and `card-index.ts:175,181` focus just-revealed elements with no flush.",
+        "note": ""
+      },
+      "5": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "6": {
+        "score": 1,
+        "quote": "`docs/astro-migration/search-kickoff.md:175-181` says it ships `hidden` and the script reveals it.",
+        "note": ""
+      },
+      "7": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "8": {
+        "score": 1,
+        "quote": "`search.ts:951-953` says `open-questions.md` records the heading-focus alternative.",
+        "note": ""
+      },
+      "9": {
+        "score": 1,
+        "quote": "CLAUDE.md (skip-link entry) says ten `<main>` elements.",
+        "note": ""
+      },
+      "10": {
+        "score": 1,
+        "quote": "`html.js` is set at `BaseLayout.astro:360`, not `:72` (cited in `SlideDeck.astro:28` and `glossary.md:889`).",
+        "note": ""
+      },
+      "11": {
+        "score": 1,
+        "quote": "the back-button (bfcache) reset runs `sent.hidden = true`",
+        "note": ""
+      },
+      "12": {
+        "score": 0,
+        "quote": "",
+        "note": "Cites Masthead's rejection of hidden but not its two descriptions."
+      },
+      "13": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "14": {
+        "score": 1,
+        "quote": "`VisuallyHidden.astro:7-12` quotes the honeypot as \"drawn nowhere, announced nowhere\", then says such content wants `display: none`.",
+        "note": ""
+      },
+      "15": {
+        "score": 1,
+        "quote": "That doc's trigger, \"revisit with the live region\", has already fired for the indexes, yet `card-index.ts:647-649` still calls the question open.",
+        "note": ""
+      }
+    },
+    "extra": [
+      {
+        "claim": "WorkWithMeBand's :focus-visible box-shadow replaces the global ring from md up",
+        "verdict": "real",
+        "why": "WorkWithMeBand.astro:416-421 overrides the ring's box-shadow, against ContactForm.astro:475-478 (\"a control-specific ring would be a second answer\")."
+      },
+      {
+        "claim": "The masthead search label is described as not never-visible, then as never visible and sent to a clip, against ThemeToggle's rule",
+        "verdict": "real",
+        "why": "Masthead.astro:335-338 vs :1041-1043 vs ThemeToggle.astro:21-24 (never-visible means aria-label)."
+      },
+      {
+        "claim": "base.css, Band and open-questions say accent-band controls swap the ring pair; Masthead and Footer don't",
+        "verdict": "real",
+        "why": "base.css:692-695, Band.astro:153-156 and open-questions.md:207-209 vs Masthead.astro:517-522."
+      },
+      {
+        "claim": "ThemeToggle describes the masthead links as a white ring 2px off; Masthead says it's a tight ring",
+        "verdict": "real",
+        "why": "ThemeToggle.astro:177-179 vs Masthead.astro:521."
+      },
+      {
+        "claim": "Button, index and DESIGN say the default order is invisible on the band; Masthead says it's legible there",
+        "verdict": "real",
+        "why": "Button.astro:161-163 vs Masthead.astro:517-522."
+      },
+      {
+        "claim": "See all and See fewer focus go opposite ways in card-index and search.ts",
+        "verdict": "real",
+        "why": "card-index.ts:166-168 vs search.ts:888-897."
+      },
+      {
+        "claim": "VisuallyHidden's claim that display:none text contributes nothing to an accessible name contradicts aria-labelledby reading hidden text",
+        "verdict": "not real",
+        "why": "VisuallyHidden.astro:35-38 here says nothing about accessible names. The quoted claim comes from a project-graph file that isn't in this checkout."
+      },
+      {
+        "claim": "VisuallyHidden says the clipped box is the only way to stay invisible and in the tree; ThemeToggle uses opacity: 0",
+        "verdict": "real",
+        "why": "VisuallyHidden.astro:44-45 vs ThemeToggle.astro:93-103."
+      },
+      {
+        "claim": "FacetFilters says a disabled chip mostly surfaces inside See all; elsewhere it's the ordinary state",
+        "verdict": "real",
+        "why": "FacetFilters.astro:246-247 vs docs/urls-and-filtering.md:366-369."
+      },
+      {
+        "claim": "open-questions lists the radius-1 focus ring as settled but 'unresolved by eye'",
+        "verdict": "real",
+        "why": "open-questions.md:199-206."
+      },
+      {
+        "claim": "Presentations comments assume a corpus smaller than one step",
+        "verdict": "real",
+        "why": "card-index.ts:449-450, ResultsFooter.astro:99-100 and presentations/index.astro:214 vs STEP=24 and CLAUDE.md's 29."
+      },
+      {
+        "claim": "CardMasonry header says Insights hasn't adopted it; FacetFilters repeats 'transitional'",
+        "verdict": "real",
+        "why": "CardMasonry.astro:12-17 and FacetFilters.astro:8 vs insights/index.astro using CardMasonry and card-index.ts:231 dispatching relayout."
+      },
+      {
+        "claim": "SlideDeck says Full Screen isn't built",
+        "verdict": "real",
+        "why": "SlideDeck.astro:118-121 vs :136-145."
+      },
+      {
+        "claim": "Masthead says the toggle is left inert",
+        "verdict": "real",
+        "why": "Masthead.astro:51-52 vs the working toggle."
+      },
+      {
+        "claim": "[hidden] is at base.css:100, not :97 as kickoff and glossary cite",
+        "verdict": "not real",
+        "why": "In this checkout `[hidden]` is at base.css:97, so the citation is correct."
+      },
+      {
+        "claim": "Masthead and VisuallyHidden say 'seven declarations'; there are eight",
+        "verdict": "real",
+        "why": "VisuallyHidden.astro:49 vs :81-88."
+      },
+      {
+        "claim": "highlighter.ts and Code.astro still describe the old code-block styling and highlighting as not here yet",
+        "verdict": "real",
+        "why": "Code.astro:73 says 'Deliberately unhighlighted for now' but imports and calls highlight (:81, :116)."
+      },
+      {
+        "claim": "base.css says 'four' and 'five' overrides for the same rhythm ramp",
+        "verdict": "real",
+        "why": "base.css:728 ('THE RAMP IS FOUR OVERRIDES') vs :744 ('the five overrides')."
+      }
+    ],
+    "stoppedShort": false
+  },
+  {
+    "label": "T3 · answer 3",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "relies on the overturned claim that a script-focused `tabindex=\"-1\"` element draws no ring.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "warns a `display` rule could beat `[hidden]`, which `!important` now prevents.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "says the ring radii are \"a real `calc()`\". There is none",
+        "note": ""
+      },
+      "4": {
+        "score": 1,
+        "quote": "`open()` does the same reveal and focuses with no reflow, and evidently works",
+        "note": "Cites search.ts, not card-index."
+      },
+      "5": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "6": {
+        "score": 1,
+        "quote": "says the toggle ships `hidden` and a script reveals it.",
+        "note": ""
+      },
+      "7": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "8": {
+        "score": 1,
+        "quote": "cites `open-questions.md` for the alternative focus target",
+        "note": ""
+      },
+      "9": {
+        "score": 1,
+        "quote": "says \"all ten `<main>` elements\" and that `specimen.astro` gained one.",
+        "note": ""
+      },
+      "10": {
+        "score": 1,
+        "quote": "say `html.js` is set at `BaseLayout.astro:72`; it's at line 360.",
+        "note": ""
+      },
+      "11": {
+        "score": 1,
+        "quote": "The back-button (`pageshow`) reset sets `sent.hidden = true` instead of calling `hideState(sent)`",
+        "note": ""
+      },
+      "12": {
+        "score": 1,
+        "quote": "says `[hidden]` \"is applied by a script\"; in that design the script removes it",
+        "note": ""
+      },
+      "13": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "14": {
+        "score": 0,
+        "quote": "",
+        "note": ""
+      },
+      "15": {
+        "score": 1,
+        "quote": "both defer the reset-focus question until the live-region wording is settled, which happened 2026-08-31.",
+        "note": ""
+      }
+    },
+    "extra": [
+      {
+        "claim": "The ghost button's swapped ring reasoning is wrong: its resting fill matches the focus-ring color",
+        "verdict": "real",
+        "why": "Button.astro:136-140 (fill is --color-surface-accent) and tokens.css:68 and :97 (both blue-500), so the swapped inner ring matches the button's own fill (Button.astro:161-171)."
+      },
+      {
+        "claim": "base.css, Button, index and DESIGN say the default order is invisible on an accent band; Masthead says it's legible",
+        "verdict": "real",
+        "why": "Button.astro:161-163 vs Masthead.astro:517-522."
+      },
+      {
+        "claim": "base.css and Band say accent-band controls swap; the footer and masthead links don't",
+        "verdict": "real",
+        "why": "base.css:692-695 and Band.astro:153-156 vs Masthead.astro:517-522."
+      },
+      {
+        "claim": "components.md rejects the inner-white/outer-accent ring that base.css ships, and calls the ghost button white",
+        "verdict": "real",
+        "why": "components.md:42-44 calls the ghost white, but Button.astro:128-140 says its resting fill is the accent. The rejection itself is of a FIXED pair, so that half is weak."
+      },
+      {
+        "claim": "ThemeToggle says the masthead links use a white ring set 2px off; Masthead says a tight ring",
+        "verdict": "real",
+        "why": "ThemeToggle.astro:177-179 vs Masthead.astro:521."
+      },
+      {
+        "claim": "base.css says box-shadow eases stop under reduced motion, but nothing in base.css transitions box-shadow",
+        "verdict": "real",
+        "why": "base.css:384-393 only sets `a` and nav pseudo-elements to transition: none. The box-shadow transitions are on cards (ArticleCard.astro:143)."
+      },
+      {
+        "claim": "ResultsFooter and card-index say focus on the grid announces just the count, but a single-tag arrival puts the results label first",
+        "verdict": "real",
+        "why": "ResultsFooter.astro:85-88 vs card-index.ts:532-541."
+      },
+      {
+        "claim": "concepts.ttl's card-index line references point at unrelated code",
+        "verdict": "not real",
+        "why": "There is no project-graph/ or concepts.ttl in this checkout."
+      },
+      {
+        "claim": "claims.ttl holds both search-toggle-ships-hidden and search-toggle-gated-on-html-js as live",
+        "verdict": "not real",
+        "why": "There is no claims.ttl in this checkout."
+      },
+      {
+        "claim": "search-index-kickoff calls the change a 'ships-hidden fix' when it was CSS gating",
+        "verdict": "not real",
+        "why": "search-index-kickoff.md:45 is a loose table label. The toggle does ship hidden from no-JS visitors, by CSS."
+      },
+      {
+        "claim": "Masthead's label rule inverts ThemeToggle's (never-visible sent to a clip, not aria-label)",
+        "verdict": "real",
+        "why": "Masthead.astro:1041-1043 vs ThemeToggle.astro:21-24."
+      },
+      {
+        "claim": "Masthead says the input label isn't a never-visible name, but it's clipped at every width",
+        "verdict": "real",
+        "why": "Masthead.astro:335-338 vs :1041 ('The label is never visible at any width')."
+      },
+      {
+        "claim": "Masthead says the controller intercepts the submit; search.ts says it doesn't",
+        "verdict": "real",
+        "why": "Masthead.astro:330-333 vs search.ts:22-27."
+      },
+      {
+        "claim": "Masthead still says the toggle is inert",
+        "verdict": "real",
+        "why": "Masthead.astro:51-52."
+      },
+      {
+        "claim": "search.ts and SearchResults say the reveal controls go from lg up; the code tests md",
+        "verdict": "real",
+        "why": "search.ts:582 vs :547-548, and SearchResults.astro:113-114."
+      },
+      {
+        "claim": "search.ts illustrates 'restore only what it hid' with truncated cards, but only main.children are touched",
+        "verdict": "real",
+        "why": "search.ts:305-307 vs takeOver iterating main.children at :330. The cards are deeper descendants."
+      },
+      {
+        "claim": "SearchResults describes h1 texts the code never sets",
+        "verdict": "real",
+        "why": "SearchResults.astro:36-38 ('8 results for …', 'Search') vs search.ts:716, which always sets 'Search results for …'."
+      },
+      {
+        "claim": "search.astro describes the page h1 being rewritten, but it is hidden and replaced by the template's h1",
+        "verdict": "real",
+        "why": "search.astro:257-258 and :317-319 vs takeOver hiding main's children (search.ts:330-333) and SearchResults.astro:36."
+      },
+      {
+        "claim": "BaseLayout and SearchResults say two inert templates; there are three",
+        "verdict": "real",
+        "why": "SearchResults.astro:32, 168 and 172."
+      },
+      {
+        "claim": "contact.php says the confirmation block doesn't exist yet",
+        "verdict": "real",
+        "why": "contact.php:383-386 vs ContactForm's .contact-sent block."
+      },
+      {
+        "claim": "VisuallyHidden and Masthead say seven declarations; there are eight, and the heading promises three but names two",
+        "verdict": "real",
+        "why": "VisuallyHidden.astro:30-49 vs :81-88."
+      },
+      {
+        "claim": "SlideDeck says a counter ships hidden; there is no counter",
+        "verdict": "real",
+        "why": "SlideDeck.astro:34 vs :202."
+      },
+      {
+        "claim": "SlideDeck says the Full Screen button isn't built",
+        "verdict": "real",
+        "why": "SlideDeck.astro:118-121 vs :136-145."
+      },
+      {
+        "claim": "SlideDeck's tabindex=0 track is a Tab stop on a non-scrolling grid without JS",
+        "verdict": "real",
+        "why": "SlideDeck.astro:90-96 vs scrolling only under html.js (:300-306)."
+      },
+      {
+        "claim": "Recording says the video facade lands later, but it's built",
+        "verdict": "real",
+        "why": "Recording.astro:59 vs :68 ('the facade covers it and would work')."
+      },
+      {
+        "claim": "PresentationCard points at a .visually-hidden note below that doesn't exist",
+        "verdict": "real",
+        "why": "PresentationCard.astro:70 vs :374-375."
+      },
+      {
+        "claim": "Presentations reveal-control comments assume four cards",
+        "verdict": "real",
+        "why": "ResultsFooter.astro:99-100, card-index.ts:449-450 and presentations/index.astro:214 vs STEP=24 and CLAUDE.md's 29."
+      },
+      {
+        "claim": "CardMasonry says Insights hasn't adopted it, cites the old selector, and says nothing dispatches relayout",
+        "verdict": "real",
+        "why": "CardMasonry.astro:12-17 and :531 vs card-index.ts:231."
+      },
+      {
+        "claim": "FacetFilters says the script appends ', add filter' on enabling; card-index rewrites the whole label in applySelection",
+        "verdict": "real",
+        "why": "FacetFilters.astro:83-86 vs card-index.ts:152-155 and :505-517."
+      },
+      {
+        "claim": "Chip says selection and count logic stayed in the Insights index",
+        "verdict": "real",
+        "why": "Chip.astro:14-15 vs that logic in card-index.ts and FacetFilters."
+      },
+      {
+        "claim": "urls-and-filtering says reset restores the unselected order, but chip order never changes",
+        "verdict": "real",
+        "why": "docs/urls-and-filtering.md:324 vs :221."
+      },
+      {
+        "claim": "Masthead says parentheses defeat axe; FacetFilters says axe sets punctuation aside",
+        "verdict": "not real",
+        "why": "Masthead.astro:362-364 explicitly distinguishes the comma (passes) from parentheses, and FacetFilters.astro:97-99 concerns a comma. Consistent."
+      },
+      {
+        "claim": "claims.ttl and page-template-kickoff say [hidden] is at base.css:97; it's at 100",
+        "verdict": "not real",
+        "why": "In this checkout `[hidden]` is at base.css:97."
+      },
+      {
+        "claim": "BaseLayout says eight page files",
+        "verdict": "real",
+        "why": "BaseLayout.astro:759 vs the nine pages carrying <main>."
+      },
+      {
+        "claim": "check-a11y says four configurations and one failure, against five configurations and two failures in the same file",
+        "verdict": "real",
+        "why": "check-a11y.mjs:30-31 vs :39-46 and :76-77."
+      },
+      {
+        "claim": "BaseLayout says about a dozen links precede the content; there are about seven Tab stops",
+        "verdict": "real",
+        "why": "BaseLayout.astro:709 vs the Masthead markup."
+      },
+      {
+        "claim": "eleventy-astro-comparison still states the overturned comma explanation and calls the rail heading 'Contents'",
+        "verdict": "real",
+        "why": "eleventy-astro-comparison.md:262 (corrected only at :265) and :269 'Contents'. The rail heading is 'On This Page'."
+      },
+      {
+        "claim": "insights-filtering-kickoff carries settled questions, a reversed sort rule and '21 initially'",
+        "verdict": "real",
+        "why": "insights-filtering-kickoff.md:80 (count-descending sort) and :126 ('21 initially') vs fixed chip order and STEP=24. Historical record."
+      },
+      {
+        "claim": "audio-player-kickoff says audio uses the placeholder; it's now video only",
+        "verdict": "real",
+        "why": "audio-player-kickoff.md:94 vs Recording.astro:57-65. Historical record."
+      }
+    ],
+    "stoppedShort": false
+  },
+  {
+    "label": "T4 · answer 1",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "**No, keep the `!important`.**",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "any author rule that sets `display` beats it",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "That happened on 2026-08-31: `.chip { display: inline-flex }` kept a `hidden` \"See all genres\" button on screen.",
+        "note": ""
+      },
+      "4": {
+        "score": 1,
+        "quote": "The fix was a class (`.contact-state { display: none }`, shown by `.is-shown` or `:target`), not a change to the reset.",
+        "note": ""
+      },
+      "5": {
+        "score": 1,
+        "quote": "scripts own that (`card-index.ts` sets it on chips, cards and reset buttons)",
+        "note": "Thin: it names the script-hidden elements the !important protects."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T4 · answer 2",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "**No, keep it.**",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "Any rule of yours that sets `display` on the same element beats it.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "On 2026-08-31, `.chip { display: inline-flex }` kept a `hidden` \"See all genres\" button visible",
+        "note": ""
+      },
+      "4": {
+        "score": 1,
+        "quote": "The fix was to switch the confirmation blocks to `.contact-state { display: none }` plus `.is-shown`/`:target`",
+        "note": ""
+      },
+      "5": {
+        "score": 1,
+        "quote": "The form itself still uses `form.hidden = true` from script, which wins outright because of that same `!important`.",
+        "note": "Thin: one example of reliance."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T4 · answer 3",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "**No, keep the `!important`.**",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "Any of your own rules that sets `display` on the same element beats it.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "The Insights chips hit exactly this on 2026-08-31",
+        "note": ""
+      },
+      "4": {
+        "score": 1,
+        "quote": "Its states are hidden by a class (`.contact-state { display: none }`) and shown by `.is-shown` or `:target`.",
+        "note": ""
+      },
+      "5": {
+        "score": 1,
+        "quote": "**Other code now depends on it:**",
+        "note": "Lists CardMasonry, ContactForm and search.ts."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T5 · answer 1",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "**No. Keep MiniSearch and fix the spec instead.**",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "**It matches substrings, not words.**",
+        "note": "Also gives design system → 0."
+      },
+      "3": {
+        "score": 1,
+        "quote": "**Update `DESIGN.md:1413`** to name MiniSearch and link to `docs/search-ranking.md`. That doc already explains the reasoning",
+        "note": ""
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T5 · answer 2",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "No, I wouldn't switch.",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "Fuse matches substrings, not words.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "`docs/search-ranking.md` explains all of this.",
+        "note": "Treats DESIGN.md as out of date."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  },
+  {
+    "label": "T5 · answer 3",
+    "items": {
+      "1": {
+        "score": 1,
+        "quote": "**No. The code is right and the spec is out of date, so the fix is to DESIGN.md, not to search.**",
+        "note": ""
+      },
+      "2": {
+        "score": 1,
+        "quote": "Fuse matches substrings, not words, and treats a whole query as one continuous pattern within each field.",
+        "note": ""
+      },
+      "3": {
+        "score": 1,
+        "quote": "**CLAUDE.md line 425** still lists Fuse.js among what the spec covers. The paragraph right after it corrects that",
+        "note": "Also cites docs/search-ranking.md."
+      }
+    },
+    "extra": [],
+    "stoppedShort": false
+  }
+]

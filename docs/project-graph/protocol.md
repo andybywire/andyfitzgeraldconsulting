@@ -203,6 +203,11 @@ to do with this.
 `scripts/search.ts:923-928`, the deferred option of focusing a heading with `tabindex="-1"`; and
 `CLAUDE.md:585`.
 
+**A row with two parts counts as found when either part is** (Andy, 2026-10-20, decided before any
+score existed). Each row is one place, and its parts are two ways of pointing at it. The grader
+scores the parts separately, and the strict count, where every part must be found, is reported
+beside it.
+
 ### T3: find the claims that disagree
 
 > Audit what this repository's code comments and docs say about keyboard focus and about hiding and
@@ -323,6 +328,15 @@ the trust measures above all.
   grades with the arm labels removed. **Blinding is partial:** an arm C answer may mention a query,
   which reveals its arm. The objective scores (T2 recall, T3 recall) carry the most weight for that
   reason.
+
+  **Changed 2026-10-20, after the runs and before any grading** (Andy): a blind headless grader
+  scores the 15 answers, and Andy checks only the T2 and T3 items that could change a verdict.
+  Grading by hand would mean combing all 15 answers against rubrics that are mostly mechanical. The
+  session that ran the experiment can't grade either, because it isn't blind: it built the key,
+  saw the costs by arm, and wrote the predictions above. The grader is launched by
+  `harness/grade.mjs` like any run. It gets the packet's shuffled answers and the rubrics in a
+  checkout of `086dd0f`, so it can check a claimed disagreement against the code. It never sees
+  the key, and it returns every score with a quote from the answer, as JSON.
 
 ## The headless harness *(decided by Andy, 2026-10-18)*
 
