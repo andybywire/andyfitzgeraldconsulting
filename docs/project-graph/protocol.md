@@ -442,7 +442,9 @@ tokens. These rebuild the canary's reported cost to the cent.
   asks for work in small pieces with a pause for review, so a run could stop short and ask whether
   to continue. The trial's rerun, a far longer task, did not. Grading notes any answer that does.
 - **Before the schedule starts,** Andy confirms the spend is covered. That isn't a rule this file
-  can check, so it is listed here, where the schedule runner is built.
+  can check, so it is listed here, where the schedule runner is built. **Confirmed by Andy on
+  2026-10-19**, with $16.78 spent in stage 5 so far and the runner at
+  `harness/schedule.mjs`, whose header records how it stops and how it was proven.
 
 The canary measured the floor: loading the context alone costs about $0.40 a run (see below).
 
