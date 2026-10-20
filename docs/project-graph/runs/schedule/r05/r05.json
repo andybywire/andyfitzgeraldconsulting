@@ -1,0 +1,181 @@
+{
+  "id": "r05",
+  "branch": "pg-arm-c",
+  "commit": "855a064",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "We're considering a rule that elements which only ever receive focus from script, never from the Tab key, should not draw a focus ring anywhere on the site. Before anything changes: list every place in the repository, code and docs, that would need to change, or that currently says something about how these elements look or behave when focused. One line each on why. Don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 120394,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 119094,
+    "stop_reason": "end_turn",
+    "session_id": "f5c480d0-7035-4439-b501-0ea9a4e79ae9",
+    "total_cost_usd": 1.2066393999999998,
+    "usage": {
+      "input_tokens": 26,
+      "cache_creation_input_tokens": 97987,
+      "cache_read_input_tokens": 990397,
+      "output_tokens": 11228,
+      "output_tokens_details": {
+        "thinking_tokens": 3987
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 97987,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2506,
+          "cache_read_input_tokens": 108364,
+          "cache_creation_input_tokens": 2833,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 2833
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 26,
+        "outputTokens": 11228,
+        "cacheReadInputTokens": 990397,
+        "cacheCreationInputTokens": 97987,
+        "webSearchRequests": 0,
+        "costUSD": 1.2066393999999998,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 3987,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_016vSGu4qTKbx5RJLXUAVNrq",
+        "tool_input": {
+          "command": "for c in focus-ring landing-point programmatic-focus; do echo \"=== where $c\"; node project-graph/graph.mjs query where $c; done 2>&1; echo \"=== about focus-ring\"; node project-graph/graph.mjs query about focus-ring; echo \"=== about landing-point\"; node project-graph/graph.mjs query about landing-point",
+          "description": "Query graph for focus-ring and landing-point usages"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01B9RAFeUiQ6iMN8LgtafKLt",
+        "tool_input": {
+          "command": "node /Users/andyfitzgerald/.cache/af-runs/r05/project-graph/graph.mjs query where focus-ring",
+          "description": "Find comments tagged with focus ring"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01Qn227TdLdvfgFtaHuRikGB",
+        "tool_input": {
+          "command": "node /Users/andyfitzgerald/.cache/af-runs/r05/project-graph/graph.mjs query where landing-point",
+          "description": "Find comments tagged with landing point"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_018ntXjfg33giHbyieePjdw2",
+        "tool_input": {
+          "command": "node /Users/andyfitzgerald/.cache/af-runs/r05/project-graph/graph.mjs query about focus-ring",
+          "description": "List claims about focus ring"
+        }
+      },
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01DF56BykC5MAL5GYbcz6WGb",
+        "tool_input": {
+          "command": "node /Users/andyfitzgerald/.cache/af-runs/r05/project-graph/graph.mjs query about landing-point",
+          "description": "List claims about landing point"
+        }
+      }
+    ],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 36,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "Nothing was edited. I couldn't run `project-graph/graph.mjs` in this session (Bash was denied), so I built the list by searching the `@concept`/`@claim` tags and the code directly.\n\n## The elements the rule would cover\n\nThere are four kinds today. Three are focused by script; `<main>` is the odd one out (see question 1 below).\n\n| Element | How it gets focus | Ring today |\n|---|---|---|\n| Card grid (`.card-masonry`) | `grid.focus()` on a filtered arrival, or a click in the gaps between cards | **Already hidden** |\n| Count line (`#result-count`) | Catches focus when \"Show all\" or \"Show more\" removes itself | Draws base.css's ring |\n| Contact form's sent and failed blocks | `block.focus()` after the form is replaced | Draws the ring, **on purpose** |\n| `<main id=\"main\">` on all 9 pages | Following the skip link (a fragment link, not script) | Draws the ring |\n\n## Code\n\n- `web/src/styles/base.css:699-721`: the global `:focus-visible` ring. A site-wide rule would make its exception here, or right next to it.\n- `web/src/components/cards/CardMasonry.astro:186-212`: the only place the ring is hidden now, scoped to the grid. If the rule is promoted, this goes away or points to base.css.\n- `web/src/components/ContactForm.astro:544-551`: says outright that these blocks keep the ring, and cites a claim the graph has since overturned. It would flip.\n- `web/src/components/ContactForm.astro:143-149`: explains why the two blocks have `tabindex=\"-1\"` (focus is how they're announced). The behavior doesn't change, but it's where the rule's reason would go.\n- `web/src/components/ContactForm.astro:752-765`: the forced reflow, then `block.focus()`. This is the trigger. No change unless the comment should say no ring follows.\n- `web/src/components/ResultsFooter.astro:80-99`: the count line's `tabindex=\"-1\"` and why it's there. Nothing hides its ring yet, so it would change.\n- `web/src/components/ResultsFooter.astro:143-150`: `.result-count` styles. This is where a local rule would go if the rule isn't promoted.\n- `web/src/scripts/card-index.ts:662-678`: the fallback that sends focus to the count line. It says what's announced there, but nothing about how it looks.\n- `web/src/scripts/card-index.ts:729-759`: script sets `grid.tabIndex = -1`. That matters if the rule uses a `[tabindex=\"-1\"]` selector, because the attribute only exists after the script runs.\n- `web/src/scripts/card-index.ts:861-881`: the arrival code that focuses the grid. The behavior stays the same.\n- `web/src/layouts/BaseLayout.astro:726-736`: why `<main>` has `tabindex=\"-1\"`. This changes only if `<main>` is in scope.\n- The 9 page files' `<main id=\"main\" tabindex=\"-1\">` (`404`, `[slug]`, `index`, `reviews`, `search`, `insights/index`, `insights/[slug]`, `presentations/index`, `presentations/[slug]`): these change only if the rule is written per element rather than as one global selector.\n- `web/src/components/ContactForm.astro:297`: the honeypot has `tabindex=\"-1\"` but nothing ever focuses it. A selector-based rule would match it harmlessly, and it needs no change.\n\n## Docs\n\n- `DESIGN.md:1126-1131`: \"The grid is a named region, and is never ringed.\" A decision about the grid alone, which would become a general rule.\n- `DESIGN.md:1194-1201`: the focus-ring rule says nothing about which elements it covers. The exception belongs here.\n- `DESIGN.md:1637-1644`: the Components do's and don'ts are the natural home for a \"don't ring a landing point\" line.\n- `docs/decisions/components.md:36-63`: the focus-ring record. Per CLAUDE.md, the new reasoning goes here as a new record that replaces the old one, not into DESIGN.md.\n- `CLAUDE.md:598-606`: the skip-link entry describes how `<main>` takes focus. It also says \"all ten `<main>` elements\", but there are nine now that `specimen.astro` is gone.\n- `docs/urls-and-filtering.md:400-407`: the rejected option of a group heading with `tabindex=\"-1\"` as the focus target on reset. That would be a landing point under the rule if it's ever revisited.\n- `docs/astro-migration/insights-filtering-kickoff.md:71-73`: the same rejected option, in a historical kickoff. Leave it as a record.\n\n## Project graph\n\n- `claims.ttl:96-100`, `no-focus-ring-on-landing-grid`: covers the grid only. It would be broadened, or replaced by a general decision claim.\n- `claims.ttl:127-130`, `contact-state-focus-visible-not-suppressed`: an unattributed decision the rule would overturn.\n- `claims.ttl:102-115`: `…draws-no-focus-visible-ring` is already overturned by `…can-draw-focus-visible-ring`, but `ContactForm.astro:550` still relies on it. `graph.mjs check` should already be reporting that.\n- `claims.ttl:117-120`, `focus-visible-heuristics-vary-for-programmatic-focus`: only assumed, yet it's the reason the grid rule uses `:focus` rather than `:focus-visible`. A site-wide selector would rest on it.\n- `concepts.ttl:66-71`: the `landing-point` scope note defines the term without a rule. It only changes if the rule should become part of the definition.\n\n**Ruled out:** controls that script focuses but that are also in the Tab order keep their ring. These are the search field and toggle, the facet chips and reset, the Recording iframe, the SlideDeck track (`tabindex=\"0\"`), and the contact form's invalid fields. No automated check tests focus styling (`check-a11y.mjs:35` says so).\n\n## Decisions before anything changes\n\n1. **Is `<main>` in scope?** Your wording (\"from script\") leaves it out, but the graph's `programmatic-focus` concept counts fragment links. I'd include it: a ring around the whole page is the same problem the grid rule fixed.\n2. **Promote it or keep it local?** The count line and the contact blocks would be the second and third users, which by CLAUDE.md's own rule means it moves to base.css. The selector choice matters too: `[tabindex=\"-1\"]:focus` matches anything with that attribute, including future elements, while a marker attribute or class matches only what you opt in.\n3. **Pushback on the count line and the contact blocks.** In both cases a keyboard user pressed something and focus moved to a different place. A ring there is the only visual sign of where the next Tab starts. The grid's case for no ring was that the very next Tab lands on a card that draws its own, and that's less clearly true for these two. It may be worth judging them one by one rather than through one rule.",
+    "ttft_ms": 4055,
+    "type": "result",
+    "duration_ms": 119508,
+    "uuid": "f6ba4139-c7af-4a64-b6f2-2e13998c8ade",
+    "ttft_stream_ms": 2467,
+    "time_to_request_ms": 60,
+    "first_content_frame_ms": 2467,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r05.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r05/f5c480d0-7035-4439-b501-0ea9a4e79ae9.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

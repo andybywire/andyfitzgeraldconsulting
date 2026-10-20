@@ -1,0 +1,12 @@
+{
+  "id": "r09",
+  "task": "T3",
+  "arm": "B",
+  "branch": "pg-arm-b",
+  "commit": "821de5f",
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "capUsd": 10,
+  "verdict": "valid",
+  "costForAnalysis": 4.2469084
+}

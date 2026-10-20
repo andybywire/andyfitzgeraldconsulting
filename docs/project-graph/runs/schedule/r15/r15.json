@@ -1,0 +1,140 @@
+{
+  "id": "r15",
+  "branch": "pg-arm-a",
+  "commit": "086dd0f",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "DESIGN.md's search spec names Fuse.js as the search engine. Should we switch site search to Fuse.js so the code matches the spec? Answer and explain; don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 23418,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 22540,
+    "stop_reason": "end_turn",
+    "session_id": "9f32ad66-3df5-467a-938d-c79db0941c6d",
+    "total_cost_usd": 0.4549278,
+    "usage": {
+      "input_tokens": 6,
+      "cache_creation_input_tokens": 48736,
+      "cache_read_input_tokens": 131679,
+      "output_tokens": 1934,
+      "output_tokens_details": {
+        "thinking_tokens": 501
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 48736,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1416,
+          "cache_read_input_tokens": 60296,
+          "cache_creation_input_tokens": 1650,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 1650
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 6,
+        "outputTokens": 1934,
+        "cacheReadInputTokens": 131679,
+        "cacheCreationInputTokens": 48736,
+        "webSearchRequests": 0,
+        "costUSD": 0.4549278,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 501,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 4,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**No. The code is right and the spec is out of date, so the fix is to DESIGN.md, not to search.**\n\n**Why it moved off Fuse.js.** Search was built on Fuse.js on 2026-09-13, as specified, and replaced with MiniSearch the same day. Fuse matches substrings, not words, and treats a whole query as one continuous pattern within each field. That broke ordinary searches, and no threshold setting fixes it. The measurements are recorded in `web/src/scripts/search.ts:100-124`:\n\n| Query | Fuse | MiniSearch | What went wrong under Fuse |\n|---|---|---|---|\n| `design system` | 0 | 8 | \"design\" in a title and \"Systems\" in a topic could never match together |\n| `tent` | 34 | 0 | Same results as \"content\" |\n| `onomy` | 13 | 0 | Same results as \"taxonomy\" |\n| `ia` | 14 | 7 | Included \"Apologia\" |\n\nSwitching back would bring all of that back. It would also throw away what was built on top of word matching since then. The `bodyTerms` field matches article text against the Topic and Genre vocabularies, which took `tree testing` from 0 results to 5 and `information architecture` from 10 to 23 (see `docs/search-ranking.md`). That depends on an engine that splits text into words.\n\n**Why the spec says Fuse anyway.** The bullet at `DESIGN.md:1401` was written on 2026-08-21, before the build. Its only reason is \"the same engine the previous version of the site used\", which was continuity, not a judgment about how it matches. Nothing in it argues for substring matching. The other bullets in that section (expand in place, results replace the page, `cmd + k`, the mobile label) are still accurate.\n\n**I'd push back a little on the framing too.** The engine is an implementation detail. The design rule worth recording is the behavior: queries match whole words, multi-word queries work, and multiword terms come from the vocabularies. If DESIGN.md states that and names MiniSearch as how it's done, the bullet can't go stale the same way again.\n\n**What I'd change (nothing edited, as asked):**\n\n- **`DESIGN.md:1401`:** replace the Fuse.js bullet with the behavioral requirement, name MiniSearch, and link `docs/search-ranking.md`. Under the project's rule for changed decisions, the reasoning goes in a record that supersedes the old one, probably in `docs/decisions/` under components. It shouldn't be written back into DESIGN.md.\n- **`web/src/pages/search.astro:9`:** its comment still says \"Fuse ranks in the browser\". That's a one-word fix.\n- **CLAUDE.md line 425** still lists Fuse.js among what the spec covers. The paragraph right after it corrects that, so it's lower priority, but it will read correctly once DESIGN.md is fixed.\n\nWhether the engine name belongs in DESIGN.md at all, or only in `docs/search-ranking.md`, is your call. I can draft the DESIGN.md wording and the decision record if you want them.",
+    "ttft_ms": 3474,
+    "type": "result",
+    "duration_ms": 22648,
+    "uuid": "a04533cd-d00a-4d0c-9cd5-077bc46fc6fe",
+    "ttft_stream_ms": 2133,
+    "time_to_request_ms": 47,
+    "first_content_frame_ms": 2133,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r15.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r15/9f32ad66-3df5-467a-938d-c79db0941c6d.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

@@ -1,0 +1,149 @@
+{
+  "id": "r09",
+  "branch": "pg-arm-b",
+  "commit": "821de5f",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "Audit what this repository's code comments and docs say about keyboard focus and about hiding and showing elements. List every place where two statements disagree, or where a statement no longer matches the code it describes. Give the locations and one line on each. Don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 269190,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 266968,
+    "stop_reason": "end_turn",
+    "session_id": "fef7b877-fd94-41d5-b50e-adb482965742",
+    "total_cost_usd": 4.2469084,
+    "usage": {
+      "input_tokens": 64,
+      "cache_creation_input_tokens": 300957,
+      "cache_read_input_tokens": 6396382,
+      "output_tokens": 27986,
+      "output_tokens_details": {
+        "thinking_tokens": 18555
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 300957,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 5515,
+          "cache_read_input_tokens": 309750,
+          "cache_creation_input_tokens": 4417,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 4417
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 64,
+        "outputTokens": 27986,
+        "cacheReadInputTokens": 6396382,
+        "cacheCreationInputTokens": 300957,
+        "webSearchRequests": 0,
+        "costUSD": 4.2469084,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 18555,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [
+      {
+        "tool_name": "Bash",
+        "tool_use_id": "toolu_01SL9nq8gcLX1iZQfupzZtd8",
+        "tool_input": {
+          "command": "wc -l project-graph/glossary.md && ls project-graph && git log --oneline -8",
+          "description": "Inspect the glossary size and recent history"
+        }
+      }
+    ],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 52,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "I found 24 problems. One is a live bug; the rest are comments or docs that contradict each other or no longer match the code. I didn't edit anything. I checked every place a tagged id appears, plus the untagged comments near them.\n\n**Worth acting on first**\n\n1. **Live bug.** `web/src/components/ContactForm.astro:858`: the back-button (bfcache) reset runs `sent.hidden = true`, but `:553-563` says these blocks must never use `hidden`. After a restore, the next successful send leaves the form hidden and the confirmation forced hidden too, which is the empty region that comment describes. `hideState(sent)` is the fix.\n2. `web/src/components/bands/WorkWithMeBand.astro:416-421`: from `md` up, the `:focus-visible` box-shadow replaces base.css's focus ring rather than adding to it. That contradicts the \"one global ring\" rule (`ContactForm.astro:481-487`), and ThemeToggle used `outline` (`ThemeToggle.astro:167-169`) to avoid exactly this kind of collision.\n3. `ContactForm.astro:544-547` says a `tabindex=\"-1\"` element never gets a visible ring from scripted `.focus()`. That is the overturned claim; `CardMasonry.astro:189-200` records real browsers drawing that ring.\n\n**Statements that disagree**\n\n4. The masthead search label:\n   - `Masthead.astro:344-347` says the input gets a `<label>` because its name *isn't* never-visible, citing ThemeToggle.\n   - `Masthead.astro:1067-1069` says the label *is* never visible, and that ThemeToggle's rule sends that case to a clip.\n   - ThemeToggle's actual rule (`ThemeToggle.astro:23-27`) sends never-visible names to `aria-label`.\n5. Focus colors on the accent band:\n   - `base.css:703-704`, `Band.astro:155-156` and `open-questions.md:208-210` say a control on the accent band swaps the ring pair.\n   - `Masthead.astro:532-537` says it needs no swap, and the Footer's nav links (on a real accent Band) don't swap either.\n6. `ThemeToggle.astro:189-191` describes the masthead links as \"a white ring set 2px off\". `Masthead.astro:532-537` says they get a tight ring, \"rather than an offset one\".\n7. `Button.astro:161-163`, `pages/index.astro:545-549` and `DESIGN.md:971-974` say the default order is invisible on the band. `Masthead.astro:532-537` says the same default is legible there, \"verified against both dark values\".\n8. The search toggle:\n   - `docs/astro-migration/search-kickoff.md:175-181` says it ships `hidden` and the script reveals it.\n   - The same doc at `:239-241` says to use `html.js` instead.\n   - The code does use `html.js` and explicitly rejects `hidden` (`Masthead.astro:308-310`, `:976-990`).\n9. \"See all / See fewer\" focus goes opposite ways. `card-index.ts:171-175` moves focus to the replacing control \"so a keyboard user is not dropped at the top\". `search.ts:910-913` moves it to the first chip, \"the top of the run either way\".\n10. Forced reflow before focus:\n    - `ContactForm.astro:752-765` and `search.ts:839-852` say `focus()` on a just-revealed element is a no-op unless layout is flushed first.\n    - `search.ts:830` (open, including cmd+K) and `card-index.ts:175,181` focus just-revealed elements with no flush.\n    - Either the claim overstates or those three sites are latent bugs.\n11. The claim `display-none-removes-from-accessibility-tree` (text \"contributes nothing to an accessible name\", e.g. `VisuallyHidden.astro:35-38`) contradicts `card-index.ts:552-558` and `CardResults.astro:35-36`, which say `aria-labelledby` reads hidden text.\n12. `VisuallyHidden.astro:44-45` says the 1px clipped box is \"the only way to be invisible and still in the tree\". `ThemeToggle.astro:91-110` keeps its radios in the tree with `opacity: 0`.\n13. `VisuallyHidden.astro:7-12` quotes the honeypot as \"drawn nowhere, announced nowhere\", then says such content wants `display: none`. `ContactForm.astro:270-273` says `display: none` would defeat the honeypot.\n14. Within FacetFilters itself: `FacetFilters.astro:255-256` says a disabled chip \"mostly only surfaces inside See all\". `:276-278` and `urls-and-filtering.md:371-373` say it is the ordinary state in the visible row.\n15. `open-questions.md:205-206` lists the radius-1 focus ring under \"Settled in phase 3\" but calls it \"unresolved by eye\".\n\n**Statements that no longer match the code**\n\n16. The Presentations corpus is described as smaller than one reveal step of 24 in `card-index.ts:466-467`, `ResultsFooter.astro:103-106`, `CardMasonry.astro:359-362` and `presentations/index.astro:211-214` (\"four cards\"). CLAUDE.md measured 29 on 2026-10-10, so truncation and the reveal buttons should now be active there. I didn't query Sanity to confirm.\n17. `CardMasonry.astro:12-17` says Insights hasn't adopted the component, the truncation rule lives elsewhere (as `.masonry`), and there is an `onRelayout` function. All three are now wrong. `FacetFilters.astro:8` repeats the \"transitional period\".\n18. `SlideDeck.astro:124-127` says the Full Screen button \"is NOT here yet\". It is at `:147-156`.\n19. `Masthead.astro:51-52` says the toggle is left inert. `:299` and `search.ts` say otherwise.\n20. `ContactForm.astro:515-517` says an author `display` rule would beat `hidden`. base.css's `!important` now prevents that.\n21. Two stale line references:\n    - `html.js` is set at `BaseLayout.astro:360`, not `:72` (cited in `SlideDeck.astro:28` and `glossary.md:889`).\n    - `[hidden]` is at `base.css:100`, not `:97` (cited in `page-template-kickoff.md:161` and `glossary.md:811`).\n22. `Masthead.astro:929` and `VisuallyHidden.astro:49` both say \"seven declarations\". There are eight.\n23. CLAUDE.md (skip-link entry) says ten `<main>` elements. There are nine, because `specimen.astro` is gone.\n24. `search.ts:951-953` says `open-questions.md` records the heading-focus alternative. It's in `urls-and-filtering.md:400-405`. That doc's trigger, \"revisit with the live region\", has already fired for the indexes, yet `card-index.ts:647-649` still calls the question open.\n\n**One tension, not a contradiction:** `SlideDeck.astro:171-173` calls disabling the pager at the ends \"honest\". But disabling a focused Next button drops focus to `<body>`, which every other control here deliberately prevents.\n\nTwo problems fall outside focus and hiding, so I left them out of the list:\n- `highlighter.ts:114-115` and `Code.astro:71-78` still describe the old code-block styling: the old background color and syntax highlighting as \"not here yet\".\n- `base.css:740` and `:756` say \"four\" and \"five\" overrides for the same rhythm ramp.",
+    "ttft_ms": 1826,
+    "type": "result",
+    "duration_ms": 268354,
+    "uuid": "a2702269-09f6-474e-82bb-ed6f684e6ff2",
+    "ttft_stream_ms": 789,
+    "time_to_request_ms": 52,
+    "first_content_frame_ms": 789,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r09.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r09/fef7b877-fd94-41d5-b50e-adb482965742.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

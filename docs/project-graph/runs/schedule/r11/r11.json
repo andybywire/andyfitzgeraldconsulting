@@ -1,0 +1,140 @@
+{
+  "id": "r11",
+  "branch": "pg-arm-b",
+  "commit": "821de5f",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "Elements with the `hidden` attribute can't be revealed with a CSS class in this project, because base.css makes `[hidden]` `display: none !important`. Should we drop the `!important`? Answer and explain; don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 40958,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 40081,
+    "stop_reason": "end_turn",
+    "session_id": "5d7df595-5d9b-4add-9441-10022137474c",
+    "total_cost_usd": 0.5723815999999999,
+    "usage": {
+      "input_tokens": 10,
+      "cache_creation_input_tokens": 57634,
+      "cache_read_input_tokens": 272148,
+      "output_tokens": 2842,
+      "output_tokens_details": {
+        "thinking_tokens": 589
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 57634,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1334,
+          "cache_read_input_tokens": 70272,
+          "cache_creation_input_tokens": 572,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 572
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 10,
+        "outputTokens": 2842,
+        "cacheReadInputTokens": 272148,
+        "cacheCreationInputTokens": 57634,
+        "webSearchRequests": 0,
+        "costUSD": 0.5723815999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 589,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 7,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "**No, keep it.** The fact that a class can't reveal a `hidden` element is what the rule is for. The trouble only shows up when `hidden` gets used for a job it wasn't meant for.\n\n### What the `!important` protects against\n\nBrowsers implement `hidden` as `[hidden] { display: none }`, an ordinary low-specificity rule in their default stylesheet. Any rule of yours that sets `display` on the same element beats it. The element then stays on screen even though the markup says `hidden` and `el.hidden` is `true`, and nothing reports a problem.\n\nThis has already happened here. On 2026-08-31, `.chip { display: inline-flex }` kept a `hidden` \"See all genres\" button visible (`web/src/styles/base.css:86`). The fix went into base.css rather than the chip because any component that sets `display` on something it also toggles has the same latent bug. Drop the `!important` and that whole class of bug comes back: quiet, in components that don't exist yet, and found by eye if at all.\n\n`:where()` or cascade layers won't make the `!important` unnecessary. The problem is that the attribute has to beat any `display` rule, and no specificity trick guarantees that.\n\n### Use `hidden` and classes for different things\n\nbase.css already states the rule (`base.css:95`):\n\n- **`hidden` means \"not applicable\":** the element doesn't apply right now, and script decides that. The script reveals it by removing the attribute (`el.hidden = false`), not by adding a class.\n- **A class means \"styled away\":** the element still applies but isn't shown in this state. CSS can toggle it, including through `:target`, `:has()` or a state class.\n\nIf you want CSS to be able to reveal something, it's in the second group, so give it a class from the start. `display: none` from a class takes the element out of the accessibility tree exactly as `hidden` does, so nothing is lost.\n\n### The contact form is the worked example\n\n`ContactForm.astro:553–601` shows the conflict you're describing and how it was settled. The confirmation blocks were first built with `hidden`. The no-JavaScript path reveals them with `.contact-sent:target { display: grid }`, and the `!important` beat that rule. So a visitor without JavaScript who landed on `#contact-sent` saw an empty region: the form hidden correctly, and the confirmation hidden too. The fix was to switch the confirmation blocks to `.contact-state { display: none }` plus `.is-shown`/`:target`, not to weaken base.css. The form itself still uses `form.hidden = true` from script, which wins outright because of that same `!important`. The two mechanisms never meet.\n\nSo if a component wants CSS to reveal an element that has `hidden`, that component has the wrong element. The global rule is fine.\n\n### Two things worth knowing\n\n1. **One case the current rule would break: `hidden=\"until-found\"`.** With that value, the browser uses `content-visibility: hidden` instead of `display: none`, so find-in-page and fragment links can open the content. That suits collapsed sections such as a transcript or FAQ answers. The current rule would force those to `display: none` and quietly break find-in-page. Nothing uses `until-found` today (I checked `web/src`), so this isn't urgent. If you ever adopt it, I'd change the selector to `[hidden]:not([hidden='until-found' i])` rather than dropping the `!important`.\n2. **A stale claim in the glossary.** `hidden-attribute-rule-is-at-base-css-line-97` and `docs/astro-migration/page-template-kickoff.md:161` say the rule is at `base.css:97`. It's now at line 100, because the comment above it grew. Line-number claims go stale exactly like this. It might be better to restate that claim as \"the rule lives in base.css's reset section\" than to keep updating the number. That's your call, since the glossary's ids are yours.",
+    "ttft_ms": 3737,
+    "type": "result",
+    "duration_ms": 40232,
+    "uuid": "000c1eb1-ef8d-4f9a-baeb-20e29ce3f5c8",
+    "ttft_stream_ms": 2927,
+    "time_to_request_ms": 37,
+    "first_content_frame_ms": 2928,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r11.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r11/5d7df595-5d9b-4add-9441-10022137474c.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

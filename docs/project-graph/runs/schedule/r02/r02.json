@@ -1,0 +1,140 @@
+{
+  "id": "r02",
+  "branch": "pg-arm-b",
+  "commit": "821de5f",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "After a message is sent on the contact page, a blue focus ring appears around the \"Thanks for reaching out!\" message and the sentences after it. How would I suppress it? Explain where it comes from and what you'd change, but don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 46796,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 45649,
+    "stop_reason": "end_turn",
+    "session_id": "b430b986-638e-425b-9c69-61e2109f7fc6",
+    "total_cost_usd": 0.6871091999999999,
+    "usage": {
+      "input_tokens": 10,
+      "cache_creation_input_tokens": 68356,
+      "cache_read_input_tokens": 285106,
+      "output_tokens": 4160,
+      "output_tokens_details": {
+        "thinking_tokens": 1985
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 68356,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2374,
+          "cache_read_input_tokens": 79535,
+          "cache_creation_input_tokens": 2031,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 2031
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 10,
+        "outputTokens": 4160,
+        "cacheReadInputTokens": 285106,
+        "cacheCreationInputTokens": 68356,
+        "webSearchRequests": 0,
+        "costUSD": 0.6871091999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1985,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 6,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "## Where the ring comes from\n\nIt's the site-wide focus ring, and it's showing because the comment that says it won't is out of date.\n\n1. **The success block is focusable, on purpose.** `.contact-sent` has `tabindex=\"-1\"` (`web/src/components/ContactForm.astro:152`). After a successful send, `showState(sent)` calls `block.focus()` (`:765`) so a screen reader announces the confirmation. Without that, the Send button would just disappear with no signal.\n2. **base.css draws the ring on anything that matches `:focus-visible`.** That's the two-ring `box-shadow` at `web/src/styles/base.css:716`. The ring surrounds the heading and paragraph because it's drawn around the whole block.\n3. **The component deliberately leaves that ring in place.** The comment at `ContactForm.astro:544-550` says \"a `tabindex=\"-1\"` element does not take a visible ring from a scripted `.focus()` anyway,\" tagged with the claim `scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring`.\n\nThat claim was disproved on 2026-09-30. `project-graph/glossary.md:1227` records it being overturned by `scripted-focus-on-tabindex-minus-one-can-draw-focus-visible-ring`: headless Chrome said no ring, but real Chrome, Safari and Vivaldi drew one around the card grid. The card grid was fixed; this comment still relies on the disproved version. Whether a browser shows the ring after a scripted focus depends on its own rules and on how the user got there, such as keyboard or mouse. That's why you see it and the earlier test didn't.\n\nThe no-JavaScript path can do the same thing. Landing on `#contact-sent` focuses the block, because it's focusable.\n\n## What I'd change\n\nThere's already a fix for this exact case in `web/src/components/cards/CardMasonry.astro:209`. I'd copy it into the `.contact-state` section of the component's `<style>`, right after the `.contact-state` rule:\n\n```css\n.contact-state:focus {\n  outline: none;\n  box-shadow: none;\n}\n```\n\nWhy it's written this way (the same reasons the card grid gives):\n\n- **`:focus`, not `:focus-visible`**, so it works however each browser decides. A `:focus-visible` rule would depend on the same browser behavior that just proved unreliable.\n- **Both properties.** base.css draws its ring with `box-shadow` and clears `outline`, but a browser's default styles draw with `outline`. Clearing only one leaves the other.\n- **No `!important`.** The component's scoped selector is (0,3,0) against base.css's (0,1,0), so it already wins.\n- **On `.contact-state`, not just `.contact-sent`.** The error block is focused the same way and would get the same ring.\n\nThe surrounding notes would also need updating, since they carry the reasoning:\n\n- **The comment at `:544-550`:** rewrite it to say the ring is suppressed and why. The block is a landing point, not a control: it's never in the tab order, and screen readers announce it either way. Swap the overturned claim id for `scripted-focus-on-tabindex-minus-one-can-draw-focus-visible-ring`.\n- **The glossary:** `contact-state-focus-visible-not-suppressed` is a recorded decision, so it should be replaced, not deleted. That means a new decision id (something like `no-focus-ring-on-contact-state`) that overturns it, mirroring `no-focus-ring-on-landing-grid`.\n\n## The part that's your call\n\nThis reverses a recorded accessibility decision, so I'd count it as one of your decisions rather than mine. I recommend making it:\n\n- The precedent is yours: you made the same call for the card grid.\n- The ring around a whole message looks like a bug, not a focus position.\n- Hiding it costs very little. A sighted keyboard user loses the visual marker on a block they can't interact with. Their next Tab still moves on from that point and lands on something with its own ring.\n\nScreen readers aren't affected: the focus move, which is what makes the confirmation get announced, stays exactly as it is.\n\nI haven't edited anything, as you asked.",
+    "ttft_ms": 2260,
+    "type": "result",
+    "duration_ms": 46043,
+    "uuid": "19a63959-1b28-4ede-8249-0766a7e5fe12",
+    "ttft_stream_ms": 2099,
+    "time_to_request_ms": 39,
+    "first_content_frame_ms": 2100,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r02.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r02/b430b986-638e-425b-9c69-61e2109f7fc6.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

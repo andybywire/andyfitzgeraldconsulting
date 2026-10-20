@@ -1,0 +1,82 @@
+{
+  "model": ["claude-opus-5-5"],
+  "usage": {
+    "input_tokens": 64,
+    "cache_creation_input_tokens": 300957,
+    "cache_read_input_tokens": 6396382,
+    "output_tokens": 27986,
+    "output_tokens_details": {
+      "thinking_tokens": 18555
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 300957,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 5515,
+        "cache_read_input_tokens": 309750,
+        "cache_creation_input_tokens": 4417,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 4417
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "num_turns": 52,
+  "duration_ms": 268354,
+  "total_cost_usd": 4.2469084,
+  "tool_calls": {
+    "Bash": 1,
+    "Read": 27,
+    "Grep": 21,
+    "Glob": 2
+  },
+  "tool_calls_total": 51,
+  "files_read": {
+    "project-graph/glossary.md": 1,
+    "web/src/styles/base.css": 1,
+    "web/src/layouts/BaseLayout.astro": 1,
+    "docs/astro-migration/page-template-kickoff.md": 1,
+    "web/src/components/VisuallyHidden.astro": 1,
+    "web/src/components/Masthead.astro": 1,
+    "web/src/components/ThemeToggle.astro": 1,
+    "web/src/components/ContactForm.astro": 2,
+    "web/src/scripts/card-index.ts": 1,
+    "web/src/components/ResultsFooter.astro": 1,
+    "web/src/components/CardResults.astro": 1,
+    "web/src/components/cards/CardMasonry.astro": 2,
+    "web/src/pages/presentations/index.astro": 1,
+    "web/src/components/FacetFilters.astro": 1,
+    "web/src/scripts/search.ts": 1,
+    "web/src/pages/search.astro": 1,
+    "web/src/components/SlideDeck.astro": 2,
+    "../../../.claude/projects/-Users-andyfitzgerald--cache-af-runs-r09/fef7b877-fd94-41d5-b50e-adb482965742/tool-results/toolu_01UsbmFRGvEJzBhmcQYSZPKR.txt": 1,
+    "web/src/components/Footer.astro": 2,
+    "web/src/components/bands/WorkWithMeBand.astro": 2,
+    "../../../.claude/projects/-Users-andyfitzgerald--cache-af-runs-r09/fef7b877-fd94-41d5-b50e-adb482965742/tool-results/toolu_012C6rrC3FDCLHiXFShvqLdS.txt": 2
+  },
+  "ran_graph_check": false,
+  "ran_graph_query": false,
+  "permission_denials": [
+    {
+      "tool_name": "Bash",
+      "tool_use_id": "toolu_01SL9nq8gcLX1iZQfupzZtd8",
+      "tool_input": {
+        "command": "wc -l project-graph/glossary.md && ls project-graph && git log --oneline -8",
+        "description": "Inspect the glossary size and recent history"
+      }
+    }
+  ]
+}

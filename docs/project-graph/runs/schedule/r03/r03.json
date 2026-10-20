@@ -1,0 +1,140 @@
+{
+  "id": "r03",
+  "branch": "pg-arm-c",
+  "commit": "855a064",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "After a message is sent on the contact page, a blue focus ring appears around the \"Thanks for reaching out!\" message and the sentences after it. How would I suppress it? Explain where it comes from and what you'd change, but don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 59498,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 55502,
+    "stop_reason": "end_turn",
+    "session_id": "79383efb-94d1-4d38-9a3e-42f5b2ffed5c",
+    "total_cost_usd": 0.8131326,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 72834,
+      "cache_read_input_tokens": 616343,
+      "output_tokens": 5356,
+      "output_tokens_details": {
+        "thinking_tokens": 2140
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 72834,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 1849,
+          "cache_read_input_tokens": 83737,
+          "cache_creation_input_tokens": 2307,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 2307
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 18,
+        "outputTokens": 5356,
+        "cacheReadInputTokens": 616343,
+        "cacheCreationInputTokens": 72834,
+        "webSearchRequests": 0,
+        "costUSD": 0.8131326,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2140,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 10,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "The ring is base.css's site-wide focus ring. It draws because the script moves focus onto the success message, and the comment that says this wouldn't happen relies on a claim the project has already recorded as wrong. No files were changed.\n\n## Where it comes from\n\nThree pieces work together:\n\n1. **The script moves focus to the message.** On a successful send, `showState(sent)` at `web/src/components/ContactForm.astro:762` adds `.is-shown` and calls `block.focus()`. That works because the wrapper at `ContactForm.astro:152` has `tabindex=\"-1\"`. This is on purpose: it's how a screen reader learns the form was replaced (`contact-state-announced-by-focus-not-live-region`).\n2. **Every focused element gets the ring.** The global rule at `web/src/styles/base.css:716` applies to anything matching `:focus-visible`. It draws two rings with `box-shadow`, and the outer one is `--color-focus-ring`, which is the blue you're seeing. The ring goes around the whole `.contact-sent` div, so it encloses the heading and the paragraph.\n3. **The comment that says it can't happen is wrong.** `ContactForm.astro:544–550` deliberately leaves the ring in place, on the grounds that \"a `tabindex=\"-1\"` element does not take a visible ring from a scripted `.focus()` anyway.\" That sentence cites `scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring`, and the project graph lists that claim as **overturned**:\n\n   > overturnedBy `scripted-focus-on-tabindex-minus-one-can-draw-focus-visible-ring` — Seen in Chrome, Safari and Vivaldi after scripts/card-index.ts focused the card grid … real browsers disagreed with headless Chrome and the Browser pane.\n\n   The card grid ran into this on 2026-09-30, but the contact form's comment was never updated. Browsers use their own rules to decide whether focus set by a script counts as `:focus-visible`. A likely factor here is that the Send button is disabled while the message sends, so nothing has focus when `.focus()` runs after the `await`. I haven't measured that. The precedent already found that headless checks don't reliably show this, so test it in a real browser.\n\n## What I'd change\n\nUse the same fix as the card grid (`web/src/components/cards/CardMasonry.astro:209`), which DESIGN.md:1126 records as a decision. In the component's `<style>`:\n\n```css\n.contact-state:focus {\n  outline: none;\n  box-shadow: none;\n}\n```\n\n- **`:focus`, not `:focus-visible`**, so it holds however each browser decides. It also covers a click on the message, which would focus it now that it's focusable.\n- **Both properties**, because base.css draws the ring with `box-shadow`, while the browser's own default would draw it with `outline`.\n- **No `!important` needed.** With Astro's scoping attribute it's (0,3,0) against base.css's (0,1,0).\n- **It covers the error message too.** That gets the same scripted focus and would show the same ring. It's a place focus is moved to, not a control, so the reasoning that applies to the grid applies here as well.\n\nScreen readers aren't affected: focus still moves, so the message is still announced. You only lose a visible ring on something you can't operate.\n\nAlong with the CSS:\n- Rewrite the paragraph at `ContactForm.astro:544–550` to give the actual reason, pointing to the card grid's history.\n- Update the tags: drop `contact-state-focus-visible-not-suppressed` and the overturned claim, and cite `scripted-focus-on-tabindex-minus-one-can-draw-focus-visible-ring` and `focus-visible-heuristics-vary-for-programmatic-focus`. Also add a new decision claim to `claims.ttl`, something like `no-focus-ring-on-contact-state`. `node project-graph/graph.mjs check` should currently be flagging this comment for relying on an overturned claim.\n\n## A decision for you: local or shared\n\nThis would be the **second** place that hides the ring on an element focus is moved to, which by your own rule is when a shared rule should be considered. There's also a third candidate: all ten `<main id=\"main\" tabindex=\"-1\">` elements that the skip link focuses, plus `#result-count` in `ResultsFooter.astro`.\n\n**My recommendation is to keep it local.** A global `[tabindex=\"-1\"]:focus` rule would also catch the honeypot input and anything added later. And whether a ring around `<main>` after using the skip link is a fault or useful feedback is a separate question I don't think is settled. You decide whether this gets promoted.\n\n## Unrelated bug nearby\n\n`ContactForm.astro:858`, in the back-button restore handler, sets `sent.hidden = true`. The file's own comment warns against this: base.css's `[hidden] { display: none !important }` beats `.is-shown`. So after a visitor goes back to the page and sends a second message, the success message never appears, and `.focus()` on it silently does nothing. It should be `hideState(sent)`, matching the line below it.\n\n## What you'd check after the change\n\nSend a message in Chrome, Safari and Vivaldi, once by clicking Send and once by pressing Enter on it. Each time, the thank-you message should show with no ring, and the next Tab should land on the first focusable element after the form. Then force a failure (go offline in DevTools) and confirm the error message shows no ring either.",
+    "ttft_ms": 1226,
+    "type": "result",
+    "duration_ms": 58792,
+    "uuid": "2948d1a0-5faf-46be-b7f4-8571bc197f57",
+    "ttft_stream_ms": 724,
+    "time_to_request_ms": 51,
+    "first_content_frame_ms": 724,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r03.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r03/79383efb-94d1-4d38-9a3e-42f5b2ffed5c.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

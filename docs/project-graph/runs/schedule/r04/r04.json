@@ -1,0 +1,140 @@
+{
+  "id": "r04",
+  "branch": "pg-arm-b",
+  "commit": "821de5f",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "We're considering a rule that elements which only ever receive focus from script, never from the Tab key, should not draw a focus ring anywhere on the site. Before anything changes: list every place in the repository, code and docs, that would need to change, or that currently says something about how these elements look or behave when focused. One line each on why. Don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 105510,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 104200,
+    "stop_reason": "end_turn",
+    "session_id": "da7d9380-317d-4735-9360-a0a47c9ff19a",
+    "total_cost_usd": 1.2191616,
+    "usage": {
+      "input_tokens": 18,
+      "cache_creation_input_tokens": 107953,
+      "cache_read_input_tokens": 734028,
+      "output_tokens": 10433,
+      "output_tokens_details": {
+        "thinking_tokens": 4750
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 107953,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 2790,
+          "cache_read_input_tokens": 115724,
+          "cache_creation_input_tokens": 5439,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 5439
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 18,
+        "outputTokens": 10433,
+        "cacheReadInputTokens": 734028,
+        "cacheCreationInputTokens": 107953,
+        "webSearchRequests": 0,
+        "costUSD": 1.2191616,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 4750,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 23,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "I made no edits. Here's the inventory. The glossary tags did most of the finding, and I filled in the rest with searches for `tabindex`, `.focus()`, `:focus` and `focus-visible` across the code and docs.\n\n## Elements the rule would cover today\n\nThere are four, all with `tabindex=\"-1\"`:\n\n| Element | How focus reaches it |\n|---|---|\n| `<main id=\"main\">` on 9 pages | the skip link, which is a fragment link, not script |\n| The card grid | `card-index.ts` on a filtered arrival, or a click in the gutters |\n| `#result-count` | `card-index.ts`, when a Show more or Show all button disappears |\n| The contact form's sent and failed blocks | `ContactForm.astro`'s script, or for no-JS visitors, `:target` on `#contact-sent` |\n\nOnly the grid suppresses its ring today. The other three get base.css's ring whenever a browser decides they match `:focus-visible`.\n\n## Code\n\n- `web/src/styles/base.css:699-721`: the global `:focus-visible` ring. A site-wide exception would go here, and the comment would need to name it.\n- `web/src/components/cards/CardMasonry.astro:186-212`: the grid's local `:focus { outline: none; box-shadow: none }`. A global rule would make it redundant, but its comment holds the measurement the rule depends on.\n- `web/src/components/ContactForm.astro:544-551`: **directly contradicts the proposal.** It keeps the ring on the state blocks on purpose. It also argues from `scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring`, a claim the glossary already marks as overturned, so this comment is wrong today whatever you decide.\n- `web/src/components/ContactForm.astro:143-150, 152, 172`: the comment on the state blocks' markup says why they are focusable. It would need a sentence on how they look when focused.\n- `web/src/components/ContactForm.astro:757-765`: the script's `block.focus()` after the swap, which is the moment the ring would appear.\n- `web/src/components/ResultsFooter.astro:80-99`: `#result-count` has no focus style. Under the rule it needs suppressing (or the global rule covers it), and its comment says nothing about appearance.\n- `web/src/scripts/card-index.ts:662-677`: the fallback that focuses the count line. The comment describes what that focus does.\n- `web/src/scripts/card-index.ts:730-759`: sets the grid's `role` and `tabIndex = -1` from script. This is what makes the grid a landing point.\n- `web/src/scripts/card-index.ts:872-881`: `grid.focus({preventScroll: true})`, the call that drew the ring the grid's rule now suppresses.\n- `web/src/layouts/BaseLayout.astro:726-752`: the skip link's note on why `<main>` needs `tabindex=\"-1\"`. It describes focus behavior but not appearance, and it would need a line on that.\n- `web/src/pages/{index,[slug],404,reviews,search}.astro`, `insights/{index,[slug]}.astro`, `presentations/{index,[slug]}.astro`: the nine `<main id=\"main\" tabindex=\"-1\">` elements. They only change if the rule is applied per element rather than globally.\n- `web/src/components/ContactForm.astro:297` and `web/server/contact.php:257`: the honeypot has `tabindex=\"-1\"` but is never focused. It needs no change, but a global `[tabindex=\"-1\"]` selector would match it, harmlessly.\n\n## Docs\n\n- `DESIGN.md:1126-1131`: \"The grid … is never ringed\" is the current one-off rule. It would become an example of the site-wide rule.\n- `DESIGN.md:1194-1201` and `1640-1643`: the focus-ring section and the do's and don'ts. DESIGN.md is the authority on rules, so the new rule belongs here.\n- `docs/decisions/components.md:36-63`: the record of the focus-ring decision. The new rule would be a new decision record, or it would supersede part of this one.\n- `CLAUDE.md:597-603`: the skip-link entry describes focus moving to `<main>`. It also says \"all ten `<main>` elements\", but I count nine.\n- `docs/urls-and-filtering.md:400-405`, `web/src/scripts/search.ts:948-957`, `docs/astro-migration/insights-filtering-kickoff.md:71`: these record a *proposed* landing point, a facet group heading with `tabindex=\"-1\"`. The rule would apply to it if that's ever built.\n\n## Glossary (`project-graph/glossary.md`)\n\n- `no-focus-ring-on-landing-grid`: overturned, or widened into a new site-wide claim. The new rule needs its own id.\n- `contact-state-focus-visible-not-suppressed`: overturned outright.\n- `focus-ring-is-global-not-per-control`: \"on every focusable element\" stops being true, so the sentence needs a carve-out.\n- `landing-point`: the concept's scope note would gain \"and draws no focus ring\".\n- `scripted-focus-on-tabindex-minus-one-draws-no-focus-visible-ring`: already overturned. Its only live citation is the ContactForm comment above.\n\n## Excluded\n\nThese get focus from script but can also be reached with Tab, so they keep their rings: the search input and toggle, the facet chips, the slide deck's track (`tabindex=\"0\"`), the YouTube iframe, and invalid form fields.\n\n## Questions to settle before building\n\n- **Scope.** \"From script\" doesn't match the cases exactly. `<main>` and `#contact-sent` also get focus from fragment links, and any `tabindex=\"-1\"` element takes focus on a click. The glossary's `programmatic-focus` already includes fragment navigation, so I'd write the rule as \"landing points draw no ring\" and mean the `landing-point` concept, not \"script-focused\".\n- **Where the rule lives.** You already have four consumers, which passes the project's second-consumer test for promotion. My recommendation is one global rule in base.css, keyed on `:focus` rather than `:focus-visible` and clearing both `outline` and `box-shadow`, for the reasons CardMasonry measured. A `[tabindex=\"-1\"]` selector is a stand-in for the concept, though. It would also catch a real control given `-1`, such as a roving-tabindex widget. None exists today.\n- **Not yet measured.** Nobody has checked whether `<main>`, the count line or the contact blocks currently draw a ring in real browsers. The grid's history suggests they can, and headless Chrome is the wrong tool to check it with.",
+    "ttft_ms": 3873,
+    "type": "result",
+    "duration_ms": 104668,
+    "uuid": "62951999-8603-40c3-865d-47835650f931",
+    "ttft_stream_ms": 2854,
+    "time_to_request_ms": 46,
+    "first_content_frame_ms": 2855,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r04.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r04/da7d9380-317d-4735-9360-a0a47c9ff19a.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

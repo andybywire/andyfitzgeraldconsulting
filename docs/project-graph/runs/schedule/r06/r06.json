@@ -1,0 +1,140 @@
+{
+  "id": "r06",
+  "branch": "pg-arm-a",
+  "commit": "086dd0f",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "We're considering a rule that elements which only ever receive focus from script, never from the Tab key, should not draw a focus ring anywhere on the site. Before anything changes: list every place in the repository, code and docs, that would need to change, or that currently says something about how these elements look or behave when focused. One line each on why. Don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 78213,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 77237,
+    "stop_reason": "end_turn",
+    "session_id": "90a0eaf3-16b6-4258-bf0c-140f37f8f58a",
+    "total_cost_usd": 0.8421158000000001,
+    "usage": {
+      "input_tokens": 16,
+      "cache_creation_input_tokens": 73377,
+      "cache_read_input_tokens": 521079,
+      "output_tokens": 7541,
+      "output_tokens_details": {
+        "thinking_tokens": 2312
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 73377,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 3642,
+          "cache_read_input_tokens": 85736,
+          "cache_creation_input_tokens": 851,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 851
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 16,
+        "outputTokens": 7541,
+        "cacheReadInputTokens": 521079,
+        "cacheCreationInputTokens": 73377,
+        "webSearchRequests": 0,
+        "costUSD": 0.8421158000000001,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 2312,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "subagent_stats": {
+      "spawned": 0,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 0
+      },
+      "started_in_background": 0,
+      "max_depth": 0,
+      "spawned_by_subagents": 0,
+      "completed": 0,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {}
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 25,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "I found four elements that only script focuses, plus `<main>`, which gets focus a different way and needs a scope decision. Two comments in the code disagree with each other about whether these elements draw a ring at all. Nothing was edited.\n\n## The elements in question\n\n| Element | How it gets focus |\n|---|---|\n| Card grid `.card-masonry` (Insights, Presentations) | Script, on arrival at a filtered URL; also a click in the gaps between cards |\n| Results count line `#result-count` | Script, when \"Show more\" or \"Show all\" removes itself |\n| Contact form's sent message `.contact-sent` | Script, after a JS send. **Also** by URL fragment (`#contact-sent`) when JS is off, so it's not script-only |\n| Contact form's error message `.contact-failed` | Script only |\n| `<main id=\"main\" tabindex=\"-1\">` on all ten pages | Not script: following the skip link (a URL fragment) moves focus there. Literally outside the rule, but it's the most common `tabindex=\"-1\"` element on the site |\n\n## Code that would change\n\n- `web/src/styles/base.css:690–709`: the global `:focus-visible` ring lives here, so a site-wide exemption would go here too. Its comment would need to say so.\n- `web/src/components/cards/CardMasonry.astro:186–209`: the only place the rule already exists, as a local `.card-masonry:focus { outline: none; box-shadow: none }`. A site-wide rule would make this redundant: it would either move up into base.css or be deleted.\n- `web/src/components/ContactForm.astro:529–533`: **says the opposite.** It leaves the ring on deliberately, and claims a scripted `.focus()` on a `tabindex=\"-1\"` element doesn't show one anyway. CardMasonry's comment records that same claim as \"measured wrong first\": real Chrome, Safari and Vivaldi did draw the ring. This comment would need rewriting, and it's also stale today.\n- `web/src/components/ContactForm.astro:143–146`: explains why both message blocks have `tabindex=\"-1\"` (so script can focus them). It says nothing about how they look, but it's where the change would land.\n- `web/src/components/ResultsFooter.astro:76–93` (comment and markup) plus `.result-count` at `:134`: the count line is a script-only target with no rule about its focus look today, so it currently gets the global ring.\n\n## Code that describes how these elements behave when focused\n\n- `web/src/scripts/card-index.ts:700–726`: makes the grid focusable from script and names it. It points to BaseLayout's skip link for the same reasoning.\n- `web/src/scripts/card-index.ts:638–650`: when a reveal button disappears, focus falls back to the count line.\n- `web/src/scripts/card-index.ts:845`: the `grid.focus()` call on a filtered arrival.\n- `web/src/components/ContactForm.astro:726–737`: `showState()` and the reflow it forces before `.focus()`.\n- `web/src/layouts/BaseLayout.astro:720–730`: why `<main>` has `tabindex=\"-1\"`. It matters only if the rule is read as covering `<main>`.\n- `web/src/pages/{index,[slug],404,reviews,search}.astro`, `insights/{index,[slug]}.astro`, `presentations/{index,[slug]}.astro`: the ten `<main id=\"main\" tabindex=\"-1\">` lines. They're affected if the rule is written as a `[tabindex=\"-1\"]` selector.\n- `web/src/scripts/search.ts:923–928`: names a possible future script-only target (a facet group heading with `tabindex=\"-1\"`). The rule would decide how it looks.\n- `web/src/components/ContactForm.astro:273–291`: the honeypot field. It has `tabindex=\"-1\"` and is never focused at all, but a `[tabindex=\"-1\"]` selector would match it. Harmless, but worth knowing.\n\n## Docs\n\n- `DESIGN.md:1120–1123`: \"The grid … is never ringed. Its focus ring is suppressed…\" This is the only rule of this kind in DESIGN.md today. It would become one case of a general rule.\n- `DESIGN.md:1184–1189`: the focus-ring rule (inner and outer rings) says nothing about exemptions. A general exemption belongs here.\n- `DESIGN.md:1624–1626`: the standing do's and don'ts list the focus ring and tags. A new rule would likely add a line here.\n- `docs/decisions/components.md:36–57`: the decision record for the focus ring. Under CLAUDE.md's process, the reasoning for a new rule goes here (or in a record that replaces it), not into DESIGN.md.\n- `docs/decisions/README.md:15`: the index row for components.md lists \"the focus-ring relationship\". Update it if the record's scope grows.\n- `docs/urls-and-filtering.md:390–395` and `docs/astro-migration/insights-filtering-kickoff.md:71–72`: both describe the \"group heading with `tabindex=\"-1\"`\" alternative, a future target this rule would cover.\n- `CLAUDE.md:585–586`: the skip-link entry, describing `<main>`'s `tabindex=\"-1\"` and how focus moves. It matters only if `<main>` is in scope.\n- `web/scripts/check-a11y.mjs:35`: no change needed. It records that keyboard and focus behavior aren't tested, so nothing automated would check the new rule.\n\n## Checked and left out (all reachable by Tab)\n\n- The `<pre>` code blocks and the slide-deck track (both `tabindex=\"0\"`).\n- The recording iframe.\n- The search field and its toggle.\n- The facet chips that get focus after a reset.\n- The ring overrides on the buttons, chips, cards and footer.\n\n## Two questions to settle before writing the rule\n\n1. **Is it a rule about how focus arrives, or about `tabindex=\"-1\"`?** `<main>` and the no-JS `#contact-sent` both get focus from a URL fragment. A `[tabindex=\"-1\"]` selector would include them; \"script-only\" as worded would not. **My recommendation: decide by `tabindex=\"-1\"`.** In both cases the next Tab press goes somewhere that draws its own ring, which is the reasoning CardMasonry gives for the grid.\n2. **Where does it live?** Moving the rule into base.css is a call about where a value lives, so it's yours to make. The project's \"second consumer\" test supports moving it up: the contact messages and the count line would make three consumers. The new rule should keep CardMasonry's two hard-won details: match `:focus` rather than `:focus-visible`, because browsers decide differently when focus comes from script, and clear both `outline` and `box-shadow`.",
+    "ttft_ms": 3092,
+    "type": "result",
+    "duration_ms": 77426,
+    "uuid": "c40277af-55d4-4441-bd3f-00c551ee4609",
+    "ttft_stream_ms": 2128,
+    "time_to_request_ms": 56,
+    "first_content_frame_ms": 2129,
+    "queued_turn_count": 0,
+    "result_index": 0
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r06.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r06/90a0eaf3-16b6-4258-bf0c-140f37f8f58a.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}

@@ -1,0 +1,147 @@
+{
+  "id": "r08",
+  "branch": "pg-arm-a",
+  "commit": "086dd0f",
+  "cli": {
+    "path": "/Users/andyfitzgerald/.local/share/claude/versions/2.1.302",
+    "version": "2.1.302 (Claude Code)"
+  },
+  "memoryOff": true,
+  "args": [
+    "-p",
+    "Audit what this repository's code comments and docs say about keyboard focus and about hiding and showing elements. List every place where two statements disagree, or where a statement no longer matches the code it describes. Give the locations and one line on each. Don't edit any files.",
+    "--model",
+    "claude-opus-5-5",
+    "--effort",
+    "high",
+    "--output-format",
+    "json",
+    "--max-budget-usd",
+    "10",
+    "--permission-mode",
+    "dontAsk",
+    "--strict-mcp-config",
+    "--allowedTools",
+    "Read Glob Grep Bash(node project-graph/graph.mjs *)",
+    "--disallowedTools",
+    "Bash(git *) Bash(pnpm *) Bash(npm *) Bash(npx *) Edit Write NotebookEdit"
+  ],
+  "wallMs": 368590,
+  "exit": 0,
+  "result": {
+    "duration_api_ms": 434483,
+    "stop_reason": "end_turn",
+    "session_id": "4831964d-298e-4c70-b97e-e22c80d0fb20",
+    "total_cost_usd": 5.337695999999999,
+    "usage": {
+      "input_tokens": 4,
+      "cache_creation_input_tokens": 5086,
+      "cache_read_input_tokens": 509088,
+      "output_tokens": 5437,
+      "output_tokens_details": {
+        "thinking_tokens": 2211
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 5086,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "global",
+      "iterations": [
+        {
+          "input_tokens": 2,
+          "output_tokens": 4862,
+          "cache_read_input_tokens": 256371,
+          "cache_creation_input_tokens": 1432,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 1432
+          },
+          "type": "message"
+        }
+      ],
+      "speed": "standard",
+      "fallback_credit": null
+    },
+    "modelUsage": {
+      "claude-opus-5-5": {
+        "inputTokens": 100,
+        "outputTokens": 43114,
+        "cacheReadInputTokens": 7792310,
+        "cacheCreationInputTokens": 436555,
+        "webSearchRequests": 0,
+        "costUSD": 5.337695999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 25353,
+        "canonicalModel": "claude-opus-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "terminal_reason": "completed",
+    "fast_mode_state": "off",
+    "fast_mode_disabled_reason": "sdk_opt_in_required",
+    "origin": {
+      "kind": "task-notification",
+      "producer": "session-task",
+      "runId": "0mvfy8qlp-82798b28"
+    },
+    "subagent_stats": {
+      "spawned": 1,
+      "requested": {
+        "background": 0,
+        "foreground": 0,
+        "unset": 1
+      },
+      "started_in_background": 1,
+      "max_depth": 1,
+      "spawned_by_subagents": 0,
+      "completed": 1,
+      "failed": 0,
+      "killed": {
+        "parent": 0,
+        "user": 0,
+        "system": 0
+      },
+      "refused": {
+        "depth_limit": 0,
+        "concurrency_limit": 0,
+        "budget": 0
+      },
+      "by_type": {
+        "general-purpose": 1
+      }
+    },
+    "safety_stops": 0,
+    "is_error": false,
+    "num_turns": 3,
+    "subtype": "success",
+    "api_error_status": null,
+    "result": "I found 33 places where comments or docs disagree with each other or with the code. Nothing was edited. I read both sides of every item myself, except the docs rows I mark \"(helper)\", which a helper agent checked. Three are marked \"plausible\": I couldn't confirm those without a live count or a browser.\n\n## Keyboard focus\n\n**Statements that disagree**\n- `web/src/components/ContactForm.astro:529-532` says a scripted `.focus()` on a `tabindex=\"-1\"` element draws no visible ring. `CardMasonry.astro:186-200` says that's exactly what Chrome, Safari and Vivaldi did on the grid.\n- `web/src/components/ThemeToggle.astro:177-179` says the unselected segments get \"a white ring set 2px off the icon… what the masthead's nav links already do.\" `Masthead.astro:517-522` says the nav links get a tight ring with no gap.\n- `Masthead.astro:517-522` keeps the default ring order on the accent band (\"needs NO override\"). `base.css:694-695`, `Band.astro:152-156`, `DESIGN.md:1184-1189` and `docs/open-questions.md:207-209` all say a control on an accent band swaps the two rings. (helper)\n- `docs/decisions/components.md:48` says the ring radii are \"a real `calc()`\". `DESIGN.md:918-924` and `base.css:699` say no `calc()` is involved because `box-shadow` derives them. (helper)\n- `card-index.ts:166-168` sends focus after \"See all\" to the control that replaced it, so the user isn't \"dropped at the top of a list\". `search.ts:888-897` sends it to the group's first chip, which is the top of the list, for the same control.\n- `docs/open-questions.md:301` says \"6-of-45\"; `:291` and `DESIGN.md:1101` say 21 of 45 cards are out of tab order. All three describe `dense` packing, which `CardMasonry.astro:306-316` says was removed. (helper)\n- `SearchResults.astro:240-247` uses `order` to move the facet chip buttons ahead of the results on mobile. That breaks the rule in `DESIGN.md:665-667` and `insights/[slug].astro:357-358` against reordering anything focusable. (helper)\n\n**Statements that no longer match the code**\n- `web/src/pages/insights/[slug].astro:326-327` says there is no skip link yet. `BaseLayout.astro:746` ships one on every page.\n- `CLAUDE.md:585-588` says there are ten `<main id=\"main\" tabindex=\"-1\">` elements, including one in `specimen.astro`. There are nine, and there is no specimen page. (helper)\n- `BaseLayout.astro:709` says the masthead puts \"roughly a dozen links\" before the content. It has seven focus stops: the identity link, five nav links and the search toggle.\n- `search.ts:926-928` credits the \"group heading with `tabindex=-1`\" idea to `open-questions.md`. It actually lives in `docs/urls-and-filtering.md:390-395`.\n- `docs/urls-and-filtering.md:390-395` and `card-index.ts:625-627` both defer the reset focus target until the live region exists. It does exist, at `card-index.ts:391-399`. (helper)\n- `SlideDeck.astro:159-160` implies the arrow-key shortcut is shown on the buttons. Their `title`s don't include it, and `:685-686` says that's deliberate.\n- Plausible: `SlideDeck.astro:90-93` says the `tabindex=\"0\"` track \"really is an interactive scroll region\". Without JavaScript it's a plain grid that doesn't scroll, so it's a tab stop that does nothing.\n\n## Hiding and showing\n\n**Statements that disagree**\n- The \"a control that needs JavaScript ships hidden\" rule:\n  - **Says hidden:** `Masthead.astro:294-296`, `search.astro:14-15` and `BaseLayout.astro:338` state the rule, and two of them cite `<FacetFilters>` as following it.\n  - **Says visible but disabled:** `card-index.ts:56-57` says the opposite (\"a control that cannot work should say so\"), and `FacetFilters` ships its chips visible with `aria-disabled`.\n- `ContactForm.astro:503-505` says any `display` declaration would override `hidden`. `base.css:97` makes `[hidden]` `!important`, and the same file's `:537-547` says so.\n- `search.ts:582` and `SearchResults.astro:113-114` say the \"see all / see fewer\" controls go away \"from `lg` up\". The code (`search.ts:547-548`) and its own note at `:529-546` use `md`.\n- Plausible: several places say Presentations has fewer than 24 cards, so nothing is truncated and no reveal buttons show:\n  - **Fewer than 24:** `ResultsFooter.astro:97-100`, `card-index.ts:449-450`, `CardMasonry.astro:353-356`, and `presentations/index.astro:211-214` and `:246-249` (\"four cards\").\n  - **Over 24:** `CLAUDE.md` counts 29, and `CardMasonry.astro:94-96` measures at 24 and 25.\n  - **Consequence:** at 29, \"Show all\" would show.\n- `VisuallyHidden.astro:49` and `Masthead.astro:912` both say \"the same seven declarations\". There are eight. The heading at `VisuallyHidden.astro:30` also promises three points and gives two.\n- `docs/urls-and-filtering.md:176` describes a \"Select all\" reset. The same file's `:318-335` says it was removed in favor of per-group resets. (helper)\n- `docs/urls-and-filtering.md:324` says reset restores the chips' \"unselected order\". The same file's `:221-242` says chip order is fixed at build time and never changes. (helper)\n- `FacetFilters.astro:246-247` says disabled chips mostly appear only inside \"See all\". `docs/urls-and-filtering.md:244-249` says they're now the normal look in the visible row. (helper)\n\n**Statements that no longer match the code**\n- `CardMasonry.astro` still describes the time before Insights adopted it:\n  - `:12-17` says Insights hasn't adopted the component, quotes a `.masonry` selector, and names an `onRelayout` that doesn't exist.\n  - `:520-531` says nothing sends the relayout event, but `card-index.ts:231` does.\n  - `:536-538` mentions a `.masonry` \"that Insights still owns\".\n  - `FacetFilters.astro:8` still describes CardMasonry as transitional.\n- `SlideDeck.astro:118-121` says the Full Screen button isn't built yet. It is, along with its dialog, at `:136-145` and `:206`.\n- `SlideDeck.astro:34` says the script adds \"the counter\". The same file at `:202` says there is no counter.\n- `SlideDeck.astro:28` points to `BaseLayout.astro:72` for the script that sets `html.js` before first paint. That script is now at `:356`.\n- `Masthead.astro:51-52` and `DESIGN.md:1390-1391` say the search toggle is inert. It opens the field.\n- `Masthead.astro:330-333` says search intercepts the form submit to swap in results. `search.ts:22-27` deliberately doesn't. `DESIGN.md:1397-1400` (\"not navigated away from\") also misses that pressing Return loads `/search/?q=`.\n- `BaseLayout.astro:754` and `SearchResults.astro:3` say \"two inert `<template>`s\". There are three: the view, the chip and the result row.\n- `CLAUDE.md:940` and `web/scripts/check-a11y.mjs:37` mention a \"mobile menu expanded\" state. There's no mobile menu; the only `aria-expanded` is on the search toggle. (helper)\n- `docs/urls-and-filtering.md:283-299` plans a JSON facet index and a later card index for show more/show all. The page's own HTML is the index (`card-index.ts:29-37`), and the reveal un-hides cards the server already rendered. (helper)\n- `PresentationCard.astro:70` points to \"the note on `.visually-hidden` below\" for what `hint` is for. That note (`:374`) doesn't explain it; the explanation is at `:150-159`.\n\nTwo stale statements fall outside your scope: `search.astro:9` and `DESIGN.md:1401` still name Fuse as the search engine, but it's MiniSearch. I left out the `docs/astro-migration/` kickoff notes, where the differences read as history rather than as current claims.",
+    "ttft_ms": 4091,
+    "type": "result",
+    "duration_ms": 47782,
+    "uuid": "fdad42f4-101c-4ba7-b082-951a82aa6879",
+    "ttft_stream_ms": 1227,
+    "time_to_request_ms": 11,
+    "first_content_frame_ms": 1227,
+    "queued_turn_count": 0,
+    "result_index": 1
+  },
+  "stderr": "",
+  "completionProblems": [],
+  "completed": true,
+  "transcript": "r08.transcript.jsonl",
+  "sourceTranscript": "/Users/andyfitzgerald/.claude/projects/-Users-andyfitzgerald--cache-af-runs-r08/4831964d-298e-4c70-b97e-e22c80d0fb20.jsonl",
+  "isolationProblems": [],
+  "memoryChanged": [],
+  "notesChanged": [],
+  "isolated": true,
+  "valid": true
+}
