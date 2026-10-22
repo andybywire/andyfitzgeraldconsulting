@@ -77,13 +77,46 @@ const LOCAL_PREVIEW = 'http://localhost:4321'
 const previewUrlFor = (studioOrigin: string) =>
   new URL(studioOrigin).hostname === 'localhost' ? LOCAL_PREVIEW : PREVIEW_HOST
 
+/**
+ * ── THE LAB DATASET: ONE ENV VAR, SET BY ONE SCRIPT ───────────────────────────────────────
+ *
+ * `recommendations-lab` is where the recommendations research retags content and restructures the
+ * taxonomy without touching the live site (docs/recommendations-research/plan.md). Andy works in
+ * it through `pnpm --filter studio dev:lab`, which sets SANITY_STUDIO_DATASET and nothing else does.
+ *
+ * The comment above rejects an env var for the preview URL because one that leaked into
+ * `sanity deploy` would ship a broken Studio. This one carries the same risk, and is accepted
+ * because the variable lives only in the `dev:lab` script, never in a `.env` file. A deploy can
+ * point at the lab only if someone types the variable in front of it. If that ever happens, the
+ * title says LAB on every screen.
+ *
+ * A second WORKSPACE was the other option. It changes the deployed Studio to meet a need that is
+ * only local: every workspace in this config ships with `sanity deploy`, addressed by its own
+ * `basePath`, and stega's edit links name paths on that deployed host. The env var leaves the
+ * deployed Studio exactly as it was.
+ *
+ * Unknown values THROW rather than fall through: a typo would otherwise open a Studio against a
+ * dataset that does not exist, which looks like an empty project rather than an error.
+ *
+ * Presentation is dropped in the lab. It previews `production-26` — the preview build reads that
+ * dataset, not this one — so every overlay would edit the wrong document.
+ */
+const DATASETS = ['production-26', 'recommendations-lab'] as const
+const dataset = process.env.SANITY_STUDIO_DATASET ?? 'production-26'
+if (!(DATASETS as readonly string[]).includes(dataset)) {
+  throw new Error(
+    `[studio] unknown SANITY_STUDIO_DATASET "${dataset}"; expected ${DATASETS.join(' or ')}`,
+  )
+}
+const isLab = dataset === 'recommendations-lab'
+
 export default defineConfig({
   name: 'default',
-  title: 'AF Consulting',
+  title: isLab ? 'AF Consulting · LAB' : 'AF Consulting',
   icon: StudioIcon,
 
   projectId: '7v0qvet6',
-  dataset: 'production-26',
+  dataset,
 
   mediaLibrary: {
     enabled: true,
@@ -113,13 +146,17 @@ export default defineConfig({
           ])
       },
     }),
-    presentationTool({
-      previewUrl: {
-        initial: ({origin}) => previewUrlFor(origin),
-      },
-      // Which document a URL is about, and where a document shows — see ./resolve.ts.
-      resolve,
-    }),
+    ...(isLab
+      ? []
+      : [
+          presentationTool({
+            previewUrl: {
+              initial: ({origin}) => previewUrlFor(origin),
+            },
+            // Which document a URL is about, and where a document shows — see ./resolve.ts.
+            resolve,
+          }),
+        ]),
     taxonomyManager({
       baseUri: 'https://andyfitzgeraldconsulting.com/',
     }),

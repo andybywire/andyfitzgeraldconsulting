@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "sanity dev --port=3030",
+    "dev:lab": "SANITY_STUDIO_DATASET=recommendations-lab sanity dev --port=3031",
     "build": "sanity build",
     "deploy": "sanity deploy",
     "typegen": "sanity schemas extract --force && sanity typegen generate",
