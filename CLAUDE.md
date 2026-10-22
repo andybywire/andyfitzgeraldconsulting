@@ -360,6 +360,16 @@ and **declined**: Andy is publishing little or nothing before cutover, and hand-
 articles is cheaper than maintaining and debugging a migration suite. At cutover, `production-26`
 becomes the live dataset.
 
+**The old `production` dataset is GONE** (Andy deleted it on 2026-10-22 to free the Free plan's
+second slot). It was exported first to
+`~/Archives/afc/2022-production-dataset-2026-10-22/production.tar.gz`, with drafts and assets, and
+checked against the live dataset before the delete. **The second slot now holds
+`recommendations-lab`**, a copy of `production-26` for the recommendations research, where tags are
+rewritten and the taxonomy is restructured without touching the live site.
+`docs/recommendations-research/plan.md` is the record. Run its Studio with
+`pnpm --filter studio dev:lab` on :3031. The project's one webhook is scoped to `production-26`, so
+nothing written to the lab deploys anything.
+
 ### Phase sequence
 
 Each phase is a branch, merged back once verified — off `next` through the cutover, off `main` since
@@ -529,8 +539,10 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    positions, methods and case studies per service. `page` buys room to work out the positioning
    first. The 4 orphan `service` documents (Structured Content Design, Information Architecture,
    Content Strategy, Knowledge Graph Engineering) were the obvious content for that. **Phase 7
-   deleted them from `production-26`; the old `production` dataset still holds all four**
-   (checked 2026-10-08), so that is where to read them when Consulting's positioning is worked out.
+   deleted them from `production-26`, and all four survive in the export of the old `production`
+   dataset** at `~/Archives/afc/2022-production-dataset-2026-10-22/production.tar.gz` (the dataset
+   itself was deleted 2026-10-22). Read them there when Consulting's positioning is worked out:
+   `data.ndjson` inside the tarball, `_type == "service"`.
 
    **`note` is ONE type, and the vocabulary decided that** — Note is a *branch* with Clipping and Book
    Note beneath it, so `genre` discriminates the three. Built 2026-08-26 with two optional objects
@@ -728,8 +740,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    - ~~**Retire the two deprecated schemes**~~ **DONE.** Only Genre (12 concepts) and Topic (55)
      remain, and no concept sits outside a scheme (verified 2026-10-08).
    - ~~**Resolve the orphan types**, `service` (4 documents) and `collection` (2)~~ **DONE: deleted,
-     not adopted** — though the old `production` dataset still has both; see Consulting under
-     phase 4. **A third orphan turned up while checking:** `media.tag`, one "banner" tag left by the
+     not adopted** — though the export of the old `production` dataset still has both; see
+     Consulting under phase 4. **A third orphan turned up while checking:** `media.tag`, one "banner" tag left by the
      old `sanity-plugin-media`, weakly referenced by 8 old 5088×800 banner assets that no document
      used. Tag and assets were deleted on 2026-10-08.
    - ~~**Shrink `hiddenDocTypes`**~~ **DONE** — down to `sanity.videoAsset`, a workaround for a

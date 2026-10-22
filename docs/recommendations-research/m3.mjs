@@ -8,8 +8,14 @@
 import {readFileSync, writeFileSync} from 'node:fs'
 import {branchForType, genresForBranch, rankRelated} from '../../web/src/lib/related.ts'
 
-const API =
-  'https://7v0qvet6.api.sanity.io/v2026-08-18/data/query/production-26?perspective=published'
+/* The dataset comes from corpus.json, never from the environment — see fetch-corpus.mjs. A corpus
+   written before the field existed came from production-26. */
+const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url)))
+const DATASET = corpus.dataset ?? 'production-26'
+/* production-26 keeps the committed report's name; any other dataset writes beside it. */
+const reportFile = `./report-m3${DATASET === 'production-26' ? '' : `.${DATASET}`}.md`
+
+const API = `https://7v0qvet6.api.sanity.io/v2026-08-18/data/query/${DATASET}?perspective=published`
 const groq = async (query, params = {}) => {
   const res = await fetch(API, {
     method: 'POST',
@@ -20,7 +26,6 @@ const groq = async (query, params = {}) => {
   return (await res.json()).result
 }
 
-const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url)))
 const {pool, genres} = corpus
 const byId = new Map(pool.map((d) => [d._id, d]))
 
@@ -103,7 +108,7 @@ const groups = {
 p(`# Related content: M3, embeddings vs the intended set`)
 p()
 p(
-  `Corpus fetched ${corpus.fetchedAt}; embeddings queried ${new Date().toISOString()}. Intended set = the site's ranker. Embeddings = \`text::semanticSimilarity()\` with each page's title + summary as the query.`,
+  `Dataset \`${DATASET}\`. Corpus fetched ${corpus.fetchedAt}; embeddings queried ${new Date().toISOString()}. Intended set = the site's ranker. Embeddings = \`text::semanticSimilarity()\` with each page's title + summary as the query.`,
 )
 p()
 for (const [g, rs] of Object.entries(groups)) {
@@ -187,5 +192,5 @@ const agreeAll = rows.filter((r) => !r.fallback && r.overlap === 3).map((r) => r
 p(`## Full agreement (${agreeAll.length} pages, not listed above)`)
 p()
 p(agreeAll.join(', '))
-writeFileSync(new URL('./report-m3.md', import.meta.url), out.join('\n') + '\n')
+writeFileSync(new URL(reportFile, import.meta.url), out.join('\n') + '\n')
 console.log(out.slice(0, out.indexOf('## For review, least agreement first')).join('\n'))

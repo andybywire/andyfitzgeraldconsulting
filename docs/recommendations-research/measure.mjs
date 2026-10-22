@@ -5,6 +5,10 @@ import {readFileSync, writeFileSync} from 'node:fs'
 import {branchForType, genresForBranch, rankRelated} from '../../web/src/lib/related.ts'
 
 const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url)))
+/* The dataset comes from corpus.json — see fetch-corpus.mjs. Older corpora came from production-26,
+   which also keeps the committed report's name; any other dataset writes beside it. */
+const DATASET = corpus.dataset ?? 'production-26'
+const reportFile = `./report-m1-m2${DATASET === 'production-26' ? '' : `.${DATASET}`}.md`
 const {pool, genres, topicScheme} = corpus
 const byId = new Map(pool.map((d) => [d._id, d]))
 const topicsOf = (d) => (d.topics ?? []).filter((t) => t && t._id)
@@ -177,7 +181,7 @@ const p = (s = '') => out.push(s)
 p(`# Related content: M1 and M2`)
 p()
 p(
-  `Corpus fetched ${corpus.fetchedAt} from \`production-26\`, published perspective. ${pages} documents render a Related band.`,
+  `Corpus fetched ${corpus.fetchedAt} from \`${DATASET}\`, published perspective. ${pages} documents render a Related band.`,
 )
 p()
 p(
@@ -251,5 +255,5 @@ for (const r of rows) {
     `| ${r.self.slug} | ${r.self._type} | ${r.topicCount} | ${r.eligibleCount} | ${r.fallback ? 'Recent' : `Related ${r.cards.length}`} | ${cards} | ${r.fallback ? '—' : r.intendedNotInFlat} | ${r.fallback ? '—' : r.hierarchyChanges} |`,
   )
 }
-writeFileSync(new URL('./report-m1-m2.md', import.meta.url), out.join('\n') + '\n')
+writeFileSync(new URL(reportFile, import.meta.url), out.join('\n') + '\n')
 console.log(out.slice(0, out.indexOf('## Per page')).join('\n'))

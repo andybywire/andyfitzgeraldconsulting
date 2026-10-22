@@ -1,0 +1,3 @@
+# Written by fetch-corpus.mjs on every run. A snapshot of whichever dataset was fetched last,
+# regenerated rather than kept; see the header of fetch-corpus.mjs.
+corpus.json
