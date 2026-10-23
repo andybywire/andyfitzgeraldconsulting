@@ -60,6 +60,7 @@ export default defineType({
           marks: MARKS,
         },
         {type: 'figure'},
+        {type: 'caseStudyRef'},
       ],
     }),
     defineField({
