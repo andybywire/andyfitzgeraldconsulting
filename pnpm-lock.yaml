@@ -3288,10 +3288,6 @@ packages:
     resolution: {integrity: sha512-6LvBQymm2ErkqD9VY+VQt3IJKFm9vr3drWIEu2WmVzjoyh15zSJWxpLOGRELoEopETQsua9GQedHt5w3OOg1Xg==}
     engines: {node: '>=22.12.0'}
 
-  '@sanity/client@8.9.0':
-    resolution: {integrity: sha512-V6kFNH6xvz29ot66zTVVyzZ34dIGzVJHzQJXEV2ljGVZEelHRoMayhErsTDac/ZR7ej8Spz39qEMYCaJWg176g==}
-    engines: {node: '>=22.12.0'}
-
   '@sanity/code-input@7.3.9':
     resolution: {integrity: sha512-xMEqVVb8I1Z6gfYV8e9vUam//qmcUq3yqEyKhD929bglVJP93eyWVpq5+T88hlCOLMccpqEI75MXl9A2yBFK3g==}
     engines: {node: '>=20.19 <22 || >=22.12'}
@@ -9165,7 +9161,7 @@ snapshots:
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.14
+      '@codemirror/view': 6.43.15
       '@lezer/common': 1.5.3
 
   '@codemirror/commands@6.11.1':
@@ -9255,7 +9251,7 @@ snapshots:
     dependencies:
       '@codemirror/state': 6.7.6
       '@codemirror/streamparser': 6.0.0
-      '@codemirror/view': 6.43.14
+      '@codemirror/view': 6.43.15
       '@lezer/common': 1.5.3
       '@lezer/highlight': 1.2.5
       '@lezer/lr': 1.4.11
@@ -9268,13 +9264,13 @@ snapshots:
   '@codemirror/lint@6.9.7':
     dependencies:
       '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.14
+      '@codemirror/view': 6.43.15
       crelt: 1.0.7
 
   '@codemirror/search@6.7.2':
     dependencies:
       '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.14
+      '@codemirror/view': 6.43.15
       crelt: 1.0.7
 
   '@codemirror/state@6.7.6':
@@ -9287,7 +9283,7 @@ snapshots:
     dependencies:
       '@codemirror/language': 6.13.1
       '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.14
+      '@codemirror/view': 6.43.15
       '@lezer/highlight': 1.2.5
 
   '@codemirror/view@6.43.13':
@@ -11558,7 +11554,7 @@ snapshots:
     dependencies:
       '@inquirer/prompts': 8.7.3(@types/node@26.2.0)
       '@oclif/core': 4.14.0
-      '@sanity/client': 8.9.0
+      '@sanity/client': 8.10.1
       boxen: 8.0.1
       empathic: 2.1.0
       get-it: 9.6.1
@@ -11817,15 +11813,6 @@ snapshots:
     transitivePeerDependencies:
       - vitest
 
-  '@sanity/client@8.9.0':
-    dependencies:
-      eventsource: 5.1.2
-      get-it: 9.6.1
-      obug: 3.0.0
-      rxjs: 7.8.2
-    transitivePeerDependencies:
-      - vitest
-
   '@sanity/code-input@7.3.9(82639f6fc0f7dce2cd163a38a2477edc)':
     dependencies:
       '@codemirror/lang-html': 6.4.12
@@ -12067,17 +12054,17 @@ snapshots:
 
   '@sanity/media-library-types@1.6.0': {}
 
-  '@sanity/media-library-types@1.7.1(@sanity/types@5.31.2(@types/react@19.3.0))':
-    dependencies:
-      '@sanity/types': 5.31.2(@types/react@19.3.0)
-
   '@sanity/media-library-types@1.7.1(@sanity/types@6.18.0(@types/react@19.2.18))':
     dependencies:
       '@sanity/types': 6.18.0(@types/react@19.2.18)
 
-  '@sanity/media-library-types@1.7.1(@sanity/types@6.20.0(@types/react@19.3.0))':
+  '@sanity/media-library-types@1.8.0(@sanity/types@5.31.2(@types/react@19.3.0))':
     dependencies:
-      '@sanity/types': 6.20.0(@types/react@19.3.0)
+      '@sanity/types': 5.31.2(@types/react@19.3.0)
+
+  '@sanity/media-library-types@1.8.0(@sanity/types@6.20.0(@types/react@19.2.18))':
+    dependencies:
+      '@sanity/types': 6.20.0(@types/react@19.2.18)
 
   '@sanity/media-library-types@1.8.0(@sanity/types@6.20.0(@types/react@19.3.0))':
     dependencies:
@@ -12311,7 +12298,7 @@ snapshots:
       '@sanity/blueprints-parser': 0.5.0
       '@sanity/cli-build': 5.2.0(@babel/core@7.29.7(supports-color@8.1.1))(@babel/runtime@7.29.10)(@noble/hashes@2.3.0)(@types/node@26.2.0)(@types/react@19.2.18)(esbuild@0.28.2)(jiti@2.7.0)(rolldown@1.2.15)(supports-color@8.1.1)(tsx@4.23.12)(typescript@6.0.3)(yaml@2.9.0)
       '@sanity/cli-core': 3.0.0(@noble/hashes@2.3.0)(@types/node@26.2.0)(esbuild@0.28.2)(supports-color@8.1.1)(yaml@2.9.0)
-      '@sanity/client': 8.9.0
+      '@sanity/client': 8.10.1
       adm-zip: 0.6.0
       array-treeify: 0.2.0
       cardinal: 2.1.1
@@ -12440,7 +12427,7 @@ snapshots:
       '@sanity/message-protocol': 0.23.0
       '@sanity/mutate': 0.18.2(xstate@5.32.5)
       '@sanity/telemetry': 1.1.0(react@19.2.8)
-      '@sanity/types': 6.18.0(@types/react@19.2.18)
+      '@sanity/types': 6.20.0(@types/react@19.2.18)
       groq: 3.88.1-typegen-experimental.0
       groq-js: 2.0.0
       reselect: 5.3.0
@@ -12547,21 +12534,29 @@ snapshots:
   '@sanity/types@5.31.2(@types/react@19.3.0)':
     dependencies:
       '@sanity/client': 7.27.0
-      '@sanity/media-library-types': 1.7.1(@sanity/types@5.31.2(@types/react@19.3.0))
+      '@sanity/media-library-types': 1.8.0(@sanity/types@5.31.2(@types/react@19.3.0))
       '@types/react': 19.3.0
 
   '@sanity/types@6.18.0(@types/react@19.2.18)':
     dependencies:
-      '@sanity/client': 8.9.0
+      '@sanity/client': 8.10.1
       '@sanity/media-library-types': 1.7.1(@sanity/types@6.18.0(@types/react@19.2.18))
+      '@types/react': 19.2.18
+    transitivePeerDependencies:
+      - vitest
+
+  '@sanity/types@6.20.0(@types/react@19.2.18)':
+    dependencies:
+      '@sanity/client': 8.10.1
+      '@sanity/media-library-types': 1.8.0(@sanity/types@6.20.0(@types/react@19.2.18))
       '@types/react': 19.2.18
     transitivePeerDependencies:
       - vitest
 
   '@sanity/types@6.20.0(@types/react@19.3.0)':
     dependencies:
-      '@sanity/client': 8.9.0
-      '@sanity/media-library-types': 1.7.1(@sanity/types@6.20.0(@types/react@19.3.0))
+      '@sanity/client': 8.10.1
+      '@sanity/media-library-types': 1.8.0(@sanity/types@6.20.0(@types/react@19.3.0))
       '@types/react': 19.3.0
     transitivePeerDependencies:
       - vitest
@@ -14051,13 +14046,13 @@ snapshots:
 
   codemirror@6.0.2:
     dependencies:
-      '@codemirror/autocomplete': 6.20.3
+      '@codemirror/autocomplete': 6.20.4
       '@codemirror/commands': 6.11.1
       '@codemirror/language': 6.13.1
       '@codemirror/lint': 6.9.7
       '@codemirror/search': 6.7.2
       '@codemirror/state': 6.7.6
-      '@codemirror/view': 6.43.14
+      '@codemirror/view': 6.43.15
 
   color-convert@2.0.1:
     dependencies:
