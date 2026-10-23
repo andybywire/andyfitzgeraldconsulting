@@ -6,6 +6,7 @@ import type {
   FEED_PRESENTATIONS_QUERY_RESULT,
 } from '../../sanity.types'
 import {atomFeed, escapeXml, toRfc3339, type AtomEntry} from './atom'
+import {formatYear} from './date'
 import {feedImageAttrs, type SanityImageSource} from '../sanity/image'
 import {highlightsHeading} from './presentation'
 import {recordingHeading, recordingVerb, sourceLabelFor, youtubeId} from './recording'
@@ -107,15 +108,16 @@ const usable = <T extends Base>(
   Boolean(row.slug && row.title && row.pubDate)
 
 /**
- * The image an entry OPENS with — an article's hero, a presentation's poster.
+ * The image an entry OPENS with — an article's hero, a presentation's poster, a note's
+ * source image.
  *
  * ── THE QUESTION THAT WAS DECIDED BY OMISSION, NOW DECIDED ───────────────────
  *
  * The feeds shipped (2026-09-13) without heroes, and
  * docs/astro-migration/feeds-kickoff.md recorded that as never having been a decision. Andy made it one on 2026-10-02: entries
  * looked spare in a reader, so the image the page leads with now leads the entry
- * too. Notes have no hero, and case studies are not in any feed, so this reaches
- * articles and presentations only.
+ * too. Notes have no hero and joined on 2026-10-22 with their source's image instead —
+ * see `noteLead`. Case studies are not in any feed.
  *
  * ── 16:9 FOR BOTH, BECAUSE THE PAGE DRAWS BOTH AT 16:9 ───────────────────────
  *
@@ -145,19 +147,91 @@ const usable = <T extends Base>(
  *
  * Alt falls back to '' for the reason `feed-html.ts` gives for figures: decorative
  * is wrong but honest, and there is nothing truer to say.
+ *
+ * `caption` is HTML, already escaped by whoever built it, and becomes a <figcaption>.
+ * Only a note passes one. With no usable image the caption still stands, as a plain
+ * paragraph: the source a note comments on is worth naming whether or not there is a
+ * picture of it.
  */
 function leadImage(
   image: SanityImageSource | null | undefined,
-  options: {aspect?: string} = {},
+  options: Parameters<typeof feedImageAttrs>[1] = {},
+  caption = '',
 ): string {
   const img = image ? feedImageAttrs(image, options) : null
-  if (!img) return ''
+  if (!img) return caption ? `<p>${caption}</p>` : ''
   const alt = escapeXml(image?.altText ?? '')
   return (
     `<figure>` +
     `<img src="${escapeXml(img.src)}" width="${img.width}" height="${img.height}" alt="${alt}" />` +
+    (caption ? `<figcaption>${caption}</figcaption>` : '') +
     `</figure>`
   )
+}
+
+type NoteRow = FEED_NOTES_QUERY_RESULT[number]
+
+/** A title, linked when there is somewhere to link it to. Both halves escaped. */
+function linked(href: string | null, text: string): string {
+  return href ? `<a href="${escapeXml(href)}">${escapeXml(text)}</a>` : escapeXml(text)
+}
+
+/**
+ * What a note's entry leads with: its source's image, and a caption that names and
+ * links that source (Andy, 2026-10-22).
+ *
+ * ── THE CAPTION IS THE POINT AS MUCH AS THE IMAGE ───────────────────────────
+ *
+ * Until this, a Web Clipping's entry never said what it was commenting on. The page
+ * has the source card in its rail, and the feed had nothing, so a reader got Andy's
+ * response with the thing it responds to left out. The caption carries the rail card's
+ * facts in the card's order:
+ *
+ *   Web Clipping   <a>{clip title}</a>, {publisher}
+ *   Book Note      <a>{book title}</a>, by {author}. {publisher}, {year}
+ *
+ * Each part drops out when its field is empty, as on the page. The image stays unlinked,
+ * like a hero; the caption's link goes OUT to the source, and the entry's title already
+ * goes to the note.
+ *
+ * ── TWO SHAPES, EACH FOR A REASON ────────────────────────────────────────────
+ *
+ *   clip image   16:9 by its hotspot: what heroes use here, and what the page's source
+ *                card draws it at.
+ *   book cover   the SHARE CARD's image: the cover padded into 1200/630 with the color
+ *                chosen in the Studio, the same URL `og:image` emits. A cover at its own
+ *                shape would be a tall portrait, and a reader would scroll past it before
+ *                reaching a word of the note (Andy, 2026-10-22).
+ *
+ * A plain Note has neither ref and leads with nothing, as before.
+ */
+function noteLead(row: NoteRow): string {
+  const {clipRef: clip, bookRef: book} = row
+  if (clip) {
+    const caption = clip.title
+      ? [linked(clip.clipUrl, clip.title), clip.publisher && escapeXml(clip.publisher)]
+          .filter(Boolean)
+          .join(', ')
+      : ''
+    return leadImage(clip.img, {aspect: '16/9'}, caption)
+  }
+  if (book) {
+    const imprint = [book.publisher, formatYear(book.pubDate)].filter(Boolean).join(', ')
+    const caption = book.title
+      ? [
+          linked(book.bookUrl, book.title) + (book.author ? `, by ${escapeXml(book.author)}` : ''),
+          imprint && escapeXml(imprint),
+        ]
+          .filter(Boolean)
+          .join('. ')
+      : ''
+    return leadImage(
+      book.img,
+      {aspect: '1200/630', fit: 'contain', background: book.img?.cardBackgroundHex},
+      caption,
+    )
+  }
+  return ''
 }
 
 export function articleEntries(rows: FEED_ARTICLES_QUERY_RESULT, site: URL): AtomEntry[] {
@@ -191,8 +265,9 @@ export function noteEntries(rows: FEED_NOTES_QUERY_RESULT, site: URL): AtomEntry
       summary: row.shortDescription,
       categories: categories(row.genre, row.topics),
       ...dates(row.pubDate),
-      /* No `lede` — that field exists only on `article`. A note is its body. */
-      content: toFeedHtml(row.bodyText ?? [], {permalink: url}),
+      /* No `lede` — that field exists only on `article`. A note is its body, led by
+         its source where it has one. */
+      content: noteLead(row) + toFeedHtml(row.bodyText ?? [], {permalink: url}),
     }
   })
 }

@@ -1461,7 +1461,7 @@ export type FEED_ARTICLES_QUERY_RESULT = Array<{
 
 // Source: ../web/src/sanity/queries/feeds.ts
 // Variable: FEED_NOTES_QUERY
-// Query: *[_type == "note" && defined(slug.current) && defined(pubDate)]		| order(pubDate desc)[0...20] {				_id,	_type,	"slug": slug.current,				"genre": genre->prefLabel,	"topics": topic[]->prefLabel,			pubDate,			title,			shortDescription,			bodyText		}
+// Query: *[_type == "note" && defined(slug.current) && defined(pubDate)]		| order(pubDate desc)[0...20] {				_id,	_type,	"slug": slug.current,				"genre": genre->prefLabel,	"topics": topic[]->prefLabel,			pubDate,			title,			shortDescription,			bodyText,			clipRef {				clipUrl,				publisher,				title,				img { asset, crop, hotspot, altText }			},			bookRef {				bookUrl,				title,				author,				publisher,				pubDate,				img { asset, crop, hotspot, altText, 	"cardBackgroundHex": select(		cardBackground == "dominant" => asset->metadata.palette.dominant.background,		cardBackground == "darkMuted" => asset->metadata.palette.darkMuted.background,		cardBackground == "lightMuted" => asset->metadata.palette.lightMuted.background	) }			}		}
 export type FEED_NOTES_QUERY_RESULT = Array<{
   _id: string
   _type: 'note'
@@ -1494,6 +1494,31 @@ export type FEED_NOTES_QUERY_RESULT = Array<{
         _key: string
       }
   > | null
+  clipRef: {
+    clipUrl: string | null
+    publisher: string | null
+    title: string | null
+    img: {
+      asset: SanityImageAssetReference | null
+      crop: SanityImageCrop | null
+      hotspot: SanityImageHotspot | null
+      altText: string | null
+    } | null
+  } | null
+  bookRef: {
+    bookUrl: string | null
+    title: string | null
+    author: string | null
+    publisher: string | null
+    pubDate: string | null
+    img: {
+      asset: SanityImageAssetReference | null
+      crop: SanityImageCrop | null
+      hotspot: SanityImageHotspot | null
+      altText: string | null
+      cardBackgroundHex: string | null
+    } | null
+  } | null
 }>
 
 // Source: ../web/src/sanity/queries/feeds.ts
@@ -2942,7 +2967,7 @@ declare global {
     '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\tshortDescription,\n\t\tdescription,\n\t\tclient->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText}\n\t\t},\n\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tatGlance,\n\t\twhatDid,\n\t\tprojectGoal,\n\t\tbeforeImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tprojectApproach,\n\t\tprojectOutcome,\n\t\tafterImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n, outline },\n\t\treview->{\n\t\t\tauthor,\n\t\t\ttitle,\n\t\t\t"slug": slug.current,\n\t\t\t"employer": employer->name,\n\t\t\tcondensedBody\n\t\t}\n\t}\n': CASE_STUDY_DETAIL_QUERY_RESULT
     '\n\t*[_type == "caseStudy" && slug.current == $slug][0] {\n\t\t\n\t"workBand": coalesce(\n\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].bandOverrides[documentType == ^._type][0].overrideBands[_type == "bandWorkWithMe"][0],\n\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': CASE_STUDY_BAND_QUERY_RESULT
     '\n\t*[_type == "article" && defined(slug.current) && defined(pubDate)]\n\t\t| order(pubDate desc)[0...20] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\tpubDate,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\theroImage { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\tlede,\n\t\t\tbodyText\n\t\t}\n': FEED_ARTICLES_QUERY_RESULT
-    '\n\t*[_type == "note" && defined(slug.current) && defined(pubDate)]\n\t\t| order(pubDate desc)[0...20] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\tpubDate,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\tbodyText\n\t\t}\n': FEED_NOTES_QUERY_RESULT
+    '\n\t*[_type == "note" && defined(slug.current) && defined(pubDate)]\n\t\t| order(pubDate desc)[0...20] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\tpubDate,\n\t\t\ttitle,\n\t\t\tshortDescription,\n\t\t\tbodyText,\n\t\t\tclipRef {\n\t\t\t\tclipUrl,\n\t\t\t\tpublisher,\n\t\t\t\ttitle,\n\t\t\t\timg { asset, crop, hotspot, altText }\n\t\t\t},\n\t\t\tbookRef {\n\t\t\t\tbookUrl,\n\t\t\t\ttitle,\n\t\t\t\tauthor,\n\t\t\t\tpublisher,\n\t\t\t\tpubDate,\n\t\t\t\timg { asset, crop, hotspot, altText, \n\t"cardBackgroundHex": select(\n\t\tcardBackground == "dominant" => asset->metadata.palette.dominant.background,\n\t\tcardBackground == "darkMuted" => asset->metadata.palette.darkMuted.background,\n\t\tcardBackground == "lightMuted" => asset->metadata.palette.lightMuted.background\n\t)\n }\n\t\t\t}\n\t\t}\n': FEED_NOTES_QUERY_RESULT
     '\n\t*[_type == "presentation" && defined(slug.current) && defined(pubDate)]\n\t\t| order(pubDate desc)[0...20] {\n\t\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\t\tpubDate,\n\t\t\ttitle,\n\t\t\tdescription,\n\t\t\tposter { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t\tbodyText,\n\t\t\thighlights,\n\t\t\t\n\t"recording": (eventDetail[]->eventRecordings[])[0]{\n\t\tkind,\n\t\turl,\n\t\tsourceName,\n\t\tduration,\n\t\tposter { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n }\n\t}\n\n\t\t}\n': FEED_PRESENTATIONS_QUERY_RESULT
     '\n\t{\n\t\t"older": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate < $pubDate || (pubDate == $pubDate && _id < $id))\n\t\t] | order(pubDate desc, _id desc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t},\n\t\t"newer": *[\n\t\t\t_type in $types\n\t\t\t&& defined(slug.current)\n\t\t\t&& defined(pubDate)\n\t\t\t&& genre->prefLabel == $genre\n\t\t\t&& (pubDate > $pubDate || (pubDate == $pubDate && _id > $id))\n\t\t] | order(pubDate asc, _id asc)[0] {\n\t\t\t_type,\n\t\t\t"slug": slug.current,\n\t\t\ttitle\n\t\t}\n\t}\n': GENRE_NAV_QUERY_RESULT
     '\n\t{\n\t\t"topConcepts": *[_type == "skosConceptScheme" && title == "Genre"][0].topConcepts[]->{\n\t\t\t_id,\n\t\t\tprefLabel\n\t\t},\n\t\t"concepts": *[_type == "skosConcept"]{\n\t\t\t_id,\n\t\t\tprefLabel,\n\t\t\t"broader": broader[]._ref\n\t\t}\n\t}\n': GENRE_TREE_QUERY_RESULT
