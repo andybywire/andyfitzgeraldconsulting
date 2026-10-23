@@ -299,6 +299,24 @@ const jsonLd = [
       : null,
   }),
 ]
+
+/**
+ * ── THE LINK-PREVIEW CARD'S IMAGE ────────────────────────────────────────────
+ *
+ * The document's own picture, whichever kind it has. These never compete: a hero
+ * exists only on `article` and `caseStudy`, the two refs only on `note`, and a note
+ * carries one ref or neither. Before notes passed theirs (2026-10-22) every note
+ * shared as the site icon, which Bluesky and Mastodon draw large.
+ *
+ * A BOOK COVER IS PADDED, everything else is cropped. That keys on what the image IS,
+ * not on its measured shape: a cover is "the one image where the whole rectangle is
+ * the content", as NoteEntry puts it, while a clipping's image is the source page's
+ * own share card — already about the card's shape, so the hotspot crop suits it as it
+ * suits a hero. The comparison is by identity, so the fit follows whichever image
+ * actually won the line above.
+ */
+const shareImage = insight.heroImage ?? insight.clipRef?.img ?? insight.bookRef?.img
+const shareImageFit = shareImage && shareImage === insight.bookRef?.img ? 'contain' : 'cover'
 ---
 
 {
@@ -314,7 +332,8 @@ const jsonLd = [
   canonical={insight.canonical ?? undefined}
   jsonLd={jsonLd}
   cardDescription={insight.shortDescription}
-  image={insight.heroImage}
+  image={shareImage}
+  imageFit={shareImageFit}
   article={{published: insight.pubDate, modified: insight._updatedAt}}
 >
   <Masthead />
