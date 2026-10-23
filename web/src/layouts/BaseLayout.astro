@@ -16,7 +16,7 @@ import {FEEDS, type FeedMeta} from '../lib/feeds'
 import {PUBLIC_SITE_MODE} from 'astro:env/client'
 import SearchResults from '../components/SearchResults.astro'
 import {SITE_FACTS, serializeGraph, siteGraph, type GraphNode} from '../lib/linked-data'
-import {feedImageAttrs, parseHex, type SanityImageSource} from '../sanity/image'
+import {feedImageAttrs, type SanityImageSource} from '../sanity/image'
 
 import '../styles/tokens.css'
 import '../styles/base.css'
@@ -97,7 +97,7 @@ interface Props {
    * pads the frame, which is what a book cover needs — see `fit` in sanity/image.ts.
    */
   imageFit?: 'cover' | 'contain'
-  /** The padding color for `contain`, as a hex. Anything else gets CARD_NEUTRAL below. */
+  /** The padding color for `contain`, as a hex. Null or anything else pads gray. */
   imageBackground?: string | null
   /** Document-branch pages only: `og:type` becomes `article`, carrying these dates. */
   article?: {published?: string | null; modified?: string | null}
@@ -161,27 +161,12 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
  * Cropping a 2:3 cover to 1200 x 630 keeps a strip from its middle, with no title in
  * it. So a page passes `imageFit="contain"` and the cover is fitted whole, with the
  * frame's spare width filled by `imageBackground`. The reasoning and the arithmetic
- * are beside `fit` in sanity/image.ts.
- *
- * ── CARD_NEUTRAL: THE PADDING WHEN NOTHING ELSE IS CHOSEN ───────────────────────
- *
- * `--neutral-200`'s value, and it has to be written out: this color goes into an
- * image URL, where `var()` means nothing. A quiet gray because it is the one choice
- * that can never merge into a cover or clash with one — the cover always reads as an
- * object on a surface (measured against all four covers, 2026-10-22). It is the
- * fallback for an unset choice and for a value that does not parse as a hex.
- *
- * Declared here rather than in sanity/image.ts because this is its one consumer, and
- * a value with one consumer is not a token.
+ * are beside `fit` in sanity/image.ts, and so is CARD_NEUTRAL, the gray that pads when
+ * `imageBackground` is null. It was declared here until the feeds needed it too.
  */
-const CARD_NEUTRAL = '#e9eaea'
 const shareImage = image
   ? imageFit === 'contain'
-    ? feedImageAttrs(image, {
-        aspect: '1200/630',
-        fit: 'contain',
-        background: parseHex(imageBackground) ?? CARD_NEUTRAL,
-      })
+    ? feedImageAttrs(image, {aspect: '1200/630', fit: 'contain', background: imageBackground})
     : feedImageAttrs(image, {aspect: '1200/630'})
   : null
 const card = shareImage

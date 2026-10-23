@@ -72,6 +72,39 @@ export const IMAGE = /* groq */ `
 `
 
 /**
+ * A book cover's share-card color, as a hex. Projected INSIDE `bookRef.img`, beside
+ * `asset`, which it dereferences.
+ *
+ * `cardBackground` stores a swatch NAME — `dominant`, `darkMuted`, `lightMuted` or
+ * `neutral` — so a replaced cover re-derives its color (see the field in
+ * studio/schemas/documents/note.ts). This turns the name into the current asset's hex,
+ * so a consumer receives a color and never has to know the palette's shape.
+ *
+ * ── ONE `select()` ARM PER SWATCH, NOT `palette[cardBackground]` ─────────────
+ *
+ * The shorter form returns the right color at runtime, and TypeGen types it
+ * `Array<never> | null`: it reads brackets after an attribute as a FILTER, not as a key
+ * lookup (both measured 2026-10-22). The arms type as `string | null`. They also limit
+ * the result to the swatches the field offers: a stored `vibrant`, written through the
+ * API, say, gets the gray, not that swatch.
+ *
+ * `neutral`, unset, and a swatch the palette lacks all come back null, and null is
+ * `feedImageAttrs`' cue for CARD_NEUTRAL — the fallback is in sanity/image.ts, beside
+ * the padding it fills.
+ *
+ * PROMOTED WITH ITS SECOND CONSUMER (Andy, 2026-10-22): written inline in
+ * INSIGHT_DETAIL_QUERY until the notes feed needed it too. A `const`, never a function —
+ * see the box above BAND_RSS for what a function here would cost.
+ */
+export const CARD_BACKGROUND_HEX = /* groq */ `
+	"cardBackgroundHex": select(
+		cardBackground == "dominant" => asset->metadata.palette.dominant.background,
+		cardBackground == "darkMuted" => asset->metadata.palette.darkMuted.background,
+		cardBackground == "lightMuted" => asset->metadata.palette.lightMuted.background
+	)
+`
+
+/**
  * SKOS labels. Both fields are references, so both need dereferencing.
  *
  * `genre` is the semantic-type vocabulary — it distinguishes kinds that share a single

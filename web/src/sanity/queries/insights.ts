@@ -1,5 +1,5 @@
 import {defineQuery} from 'groq'
-import {BAND_RSS, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
+import {BAND_RSS, CARD_BACKGROUND_HEX, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
 
 /**
  * Insights — `article`, `caseStudy` and `note`.
@@ -91,22 +91,8 @@ export const INSIGHTS_INDEX_QUERY = defineQuery(`
  * would add a permanently-null field. (IMAGE's claim that every image field in this schema
  * carries all five does not hold here either.)
  *
- * ── `cardBackgroundHex`: THE COVER'S SHARE-CARD COLOR, RESOLVED HERE ─────────
- *
- * `bookRef.img.cardBackground` stores a swatch NAME — `dominant`, `darkMuted`,
- * `lightMuted` or `neutral` — so a replaced cover re-derives its color (see the field in
- * studio/schemas/documents/note.ts). This turns the name into the current asset's hex,
- * so the page receives a color and never has to know the palette's shape.
- *
- * `select()` with one arm per swatch, NOT `palette[cardBackground]`. The shorter form
- * returns the right color at runtime, and TypeGen types it `Array<never> | null`: it reads
- * brackets after an attribute as a FILTER, not as a key lookup (both measured 2026-10-22).
- * The arms type as `string | null`. They also limit the result to the swatches the field
- * offers: a stored `vibrant`, written through the API, say, gets the gray, not that swatch.
- *
- * `neutral`, unset, and a swatch the palette lacks all come back null, and null is
- * BaseLayout's cue for its neutral gray: the fallback lives in one place, beside the card
- * it colors.
+ * `bookRef.img` adds CARD_BACKGROUND_HEX, the cover's share-card color resolved from its
+ * stored swatch name. See that fragment for why it is a `select()`.
  *
  * ── KEEP COMMENTS OUT OF THE QUERY STRING ────────────────────────────────────
  *
@@ -140,17 +126,7 @@ export const INSIGHT_DETAIL_QUERY = defineQuery(`
 			author,
 			publisher,
 			pubDate,
-			img {
-				asset,
-				crop,
-				hotspot,
-				altText,
-				"cardBackgroundHex": select(
-					cardBackground == "dominant" => asset->metadata.palette.dominant.background,
-					cardBackground == "darkMuted" => asset->metadata.palette.darkMuted.background,
-					cardBackground == "lightMuted" => asset->metadata.palette.lightMuted.background
-				)
-			}
+			img { asset, crop, hotspot, altText, ${CARD_BACKGROUND_HEX} }
 		}
 	}
 `)

@@ -43,8 +43,8 @@ import {set, useClient, useFormValue, type StringInputProps} from 'sanity'
    here as it does in the build. */
 const API_VERSION = '2026-08-18'
 
-/* CARD_NEUTRAL in web/src/layouts/BaseLayout.astro: the gray an unset choice gets. The
-   two packages share no module, so it is repeated. Change both or neither. */
+/* CARD_NEUTRAL in web/src/sanity/image.ts: the gray an unset choice gets. The two
+   packages share no module, so it is repeated. Change both or neither. */
 const NEUTRAL = '#e9eaea'
 
 type AssetFacts = {

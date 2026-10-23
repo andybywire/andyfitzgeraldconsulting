@@ -112,10 +112,28 @@ export function parseAspect(aspect: string | null | undefined) {
  * never sent to the CDN at all. Sanity's palette metadata stores its colors WITH the
  * `#`, so the obvious way to pass one would break without an error.
  */
-export function parseHex(value: string | null | undefined) {
+function parseHex(value: string | null | undefined) {
   const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value ?? '')
   return match ? match[1].toLowerCase() : null
 }
+
+/**
+ * ── CARD_NEUTRAL: THE PADDING WHEN NOTHING ELSE IS CHOSEN ───────────────────────
+ *
+ * `--neutral-200`'s value (#e9eaea), and it has to be written out: this color goes into
+ * an image URL, where `var()` means nothing. Kept in the `bg` parameter's own form, no
+ * `#`. A quiet gray because it is the one choice that can never merge into a cover or
+ * clash with one — the cover always reads as an object on a surface (measured against
+ * all four covers, 2026-10-22). It pads for an unset choice, for `neutral`, for a
+ * swatch the palette lacks, and for a value that does not parse.
+ *
+ * IT LIVES HERE BECAUSE IT GAINED A SECOND CONSUMER (Andy, 2026-10-22). It was born in
+ * <BaseLayout>, its one consumer then, and moved when the feeds began padding covers
+ * too. As the padded mode's own default, the fallback is written once, beside the
+ * padding it fills, rather than once per caller. The Studio's swatch input repeats it,
+ * since the two packages share no module.
+ */
+const CARD_NEUTRAL = 'e9eaea'
 
 /**
  * The widest output that does not upscale, and the maths worth understanding.
@@ -358,11 +376,11 @@ export function imageAttrs(
 }
 
 /**
- * `feedImageAttrs`' options. A union so that `contain` cannot be asked for without the
- * color that fills the padding: `astro check` says so, rather than the build.
+ * `feedImageAttrs`' options. A union so that `background` can only be passed with
+ * `contain`, the one mode that has padding for it to fill.
  */
 type FeedImageOptions = {width?: number; aspect?: string | null} & (
-  {fit?: 'cover'; background?: never} | {fit: 'contain'; background: string}
+  {fit?: 'cover'; background?: never} | {fit: 'contain'; background?: string | null}
 )
 
 /**
@@ -453,12 +471,16 @@ type FeedImageOptions = {width?: number; aspect?: string | null} & (
  * URL. Caught by calling this function directly before any page used it, which is
  * worth repeating for the next change here: read the URL, not only the picture.
  *
- * `background` IS REQUIRED, AND IT IS CHECKED. The type will not accept `contain`
- * without one, and a value that is not a hex color throws rather than degrading: the
- * caller is expected to resolve its own fallback with `parseHex` first, so a bad value
- * reaching here is a code defect, not a content one. `aspect` is needed too, since
- * without a frame shape there is nothing to pad to; `contain` with no `aspect` simply
- * serves the image at its own shape, as no `aspect` always has.
+ * `background` IS OPTIONAL, AND ANYTHING UNUSABLE PADS WITH CARD_NEUTRAL. Callers pass
+ * the color as they have it — a palette hex from a query, or null. This read
+ * "`background` IS REQUIRED, AND IT IS CHECKED" until the feeds became a second caller:
+ * each caller was resolving its own fallback, and a malformed value threw. Two callers
+ * meant the same fallback twice, and a throw on a color that comes from CONTENT could
+ * fail a production build on a publish, which the site gates are arranged never to do.
+ *
+ * `aspect` is still needed, since without a frame shape there is nothing to pad to;
+ * `contain` with no `aspect` simply serves the image at its own shape, as no `aspect`
+ * always has.
  *
  * Returns null on a malformed or missing `asset._ref`, mirroring what
  * <SanityImage> does with the same case: emit nothing rather than a broken <img>.
@@ -472,12 +494,7 @@ export function feedImageAttrs(
   if (fit === 'contain' && ratio) {
     const original = parseRef(image?.asset?._ref)
     if (!original) return null
-    const hex = parseHex(background)
-    if (!hex) {
-      throw new Error(
-        `[feedImageAttrs] fit 'contain' needs a hex background, got ${JSON.stringify(background)}`,
-      )
-    }
+    const hex = parseHex(background) ?? CARD_NEUTRAL
 
     /* The editor's crop as pixels, rounded as urlForImage rounds it. The frame is sized
        from THIS rectangle rather than from `maxRenderableWidth`, whose floored width
