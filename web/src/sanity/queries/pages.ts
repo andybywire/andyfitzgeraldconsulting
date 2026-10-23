@@ -48,10 +48,32 @@ export const PAGE_SLUGS_QUERY = defineQuery(`
  * prop is `lede` and takes Portable Text, so nothing is renamed at the call site. The
  * singleton queries are the ones that have to map.
  *
- * `lede` and `bodyText` are both projected BARE. They are Portable Text — an array comes
- * back whole, so blocks and marks survive without a projection, and adding one would only
- * be a way to drop a block type by omission. `bodyText` can also contain images. See the
- * note on IMAGE in fragments.ts.
+ * `lede` is projected BARE. It is Portable Text — an array comes back whole, so blocks and
+ * marks survive without a projection, and adding one would only be a way to drop a block
+ * type by omission.
+ *
+ * ── `bodyText` WAS BARE TOO, UNTIL IT HELD A REFERENCE ─────────────────────
+ *
+ * A `caseStudyRef` block stores a REFERENCE, and a bare projection returns a reference as
+ * `{_ref}` — nothing a card can render. So `bodyText` now has a projection, and it is
+ * built so the omission trap above cannot happen:
+ *
+ *   - `...` FIRST returns every member whole, exactly as the bare projection did. Blocks,
+ *     marks and `figure` images (with `asset`, `crop` and `hotspot` intact — see the note
+ *     on IMAGE in fragments.ts) pass through untouched.
+ *   - The conditional applies only to `caseStudyRef`. Its two keys replace the stored
+ *     ones: `title` becomes the RESOLVED title, `caseStudy` the dereferenced document.
+ *
+ * THE FALLBACK TITLE LIVES HERE AND NOWHERE ELSE. `coalesce()` takes the editor's custom
+ * title, and the case study's own when there is none, so the card receives one string and
+ * never knows which it got. The Studio preview repeats the rule for display only.
+ *
+ * The client's `logo` and `tile` are image FIELDS, so they are projected as objects —
+ * IMAGE's trap, which drops crop and hotspot. Inline rather than through `${IMAGE}` for the
+ * reason BAND_WORK_WITH_ME gives: `client` images carry no `caption`.
+ *
+ * A case study that does not resolve comes back `caseStudy: null`, and the card renders
+ * nothing. See StudyCards.astro.
  *
  * `heroImg` is the opposite case and is exactly the trap that note names: a named image
  * FIELD needs the fragment, because a bare projection is fine but `heroImg.asset->url`
@@ -70,6 +92,12 @@ export const PAGE_SLUGS_QUERY = defineQuery(`
  *
  * Probe again before adding a fourth field. The failure is silent, and this page hands
  * `heroImg` straight to a component with no callback over the result to reveal it.
+ *
+ * RE-PROBED when `bodyText` gained its projection (2026-10-23), which is the largest
+ * change this query has had: two nested dereferences and two image objects inside a
+ * conditional. Still typed. Three bogus accesses, three ts(2339)s — on `page`, on the
+ * client inside a narrowed `caseStudyRef` member, and on `bands` as the control. So the
+ * union discriminates on `_type` and the dereferenced shapes are real, not `any`.
  */
 export const PAGE_QUERY = defineQuery(`
 	*[_type == "page" && slug.current == $slug][0] {
@@ -78,7 +106,20 @@ export const PAGE_QUERY = defineQuery(`
 		lede,
 		"description": pt::text(lede),
 		heroImg { ${IMAGE} },
-		bodyText
+		bodyText[] {
+			...,
+			_type == "caseStudyRef" => {
+				"title": coalesce(title, caseStudy->title),
+				"caseStudy": caseStudy->{
+					"slug": slug.current,
+					"client": client->{
+						name,
+						"logo": logo{asset, crop, hotspot, altText},
+						"tile": tile{asset, crop, hotspot, altText}
+					}
+				}
+			}
+		}
 	}
 `)
 

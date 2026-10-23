@@ -68,6 +68,16 @@
  *
  * A Quote with no attribution after it is untouched and renders exactly as before.
  *
+ * ── A SECOND PASS: RUNS OF CASE STUDY CARDS ──────────────────────────────────
+ *
+ * Adjacent `caseStudyRef` blocks are a set, and render as one `<ul>` of cards. Same
+ * reason, same shape: `groupCaseStudyRefs` (caseStudyRefs.ts) replaces each run with a
+ * single `caseStudyRefList` node and StudyCards.astro renders it. The list is one block
+ * among the others, so the output stays flat.
+ *
+ * It runs AFTER `groupQuotations` and the order does not matter — the two match disjoint
+ * block types — but chaining them in one place keeps every pre-pass visible here.
+ *
  * ── ONE TYPE LEFT UNBUILT ────────────────────────────────────────────────────
  *
  * `table`, which the `article` schema allows and which NO published document
@@ -120,8 +130,10 @@ import Figure from './Figure.astro'
 import Code from './Code.astro'
 import Heading from './Heading.astro'
 import Quotation from './Quotation.astro'
+import StudyCards from './StudyCards.astro'
 import {MARK_COMPONENTS} from './marks'
 import {groupQuotations} from './quotations'
+import {groupCaseStudyRefs} from './caseStudyRefs'
 
 interface Props {
   /** A Portable Text array. Null and empty both render nothing, which is what a
@@ -135,13 +147,14 @@ const {value} = Astro.props
 {
   value && value.length > 0 && (
     <PortableText
-      value={groupQuotations(value)}
+      value={groupCaseStudyRefs(groupQuotations(value))}
       components={{
         /* Keyed by the stored `_type`, which now matches the generated union —
            this member was named `pre` until 2026-08-26 and both the schema and the
-           25 existing blocks were corrected. See Code.astro. `quotation` is the
-           exception: no stored block has that type; groupQuotations makes it. */
-        type: {figure: Figure, code: Code, quotation: Quotation},
+           25 existing blocks were corrected. See Code.astro. `quotation` and
+           `caseStudyRefList` are the exceptions: no stored block has either type;
+           the two pre-passes make them. */
+        type: {figure: Figure, code: Code, quotation: Quotation, caseStudyRefList: StudyCards},
         /* Keyed by block STYLE, where `type` above is keyed by `_type`. One component
            serves both; it reads `node.style` for its tag. */
         block: {h2: Heading, h3: Heading},

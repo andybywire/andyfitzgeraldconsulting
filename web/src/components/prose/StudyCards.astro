@@ -1,0 +1,389 @@
+---
+/**
+ * A run of case study cards — the `caseStudyRefList` node that caseStudyRefs.ts builds
+ * from adjacent `caseStudyRef` blocks. Figma: Components → Cards → "study card"
+ * (2914:3340), used on both Consulting boards.
+ *
+ * ── A LIST OF LINKS, AND NO HEADINGS ─────────────────────────────────────────
+ *
+ * Settled with Andy (2026-10-23). Each card is ONE `<a>`, and the run is a `<ul>`:
+ *
+ *   - NOT A HEADING, though the title is set at h3's size. A card in prose sits under
+ *     whatever heading an editor put above it, so any level written here is a guess — and
+ *     a wrong guess fails `pnpm validate`, which rejects a skipped level. It would also
+ *     put every card in the page's heading outline, where it is not a section.
+ *   - A LIST, so a screen reader announces "list, 2 items" before the first card. That is
+ *     the one thing that says these belong together, which the eye gets from the stack.
+ *   - `role="list"` because `list-style: none` drops list semantics in Safari — the same
+ *     note as `.work-logos` in WorkWithMeBand.
+ *
+ * The link's accessible name is its text, "Case Study Content Structure and…" — Chrome puts
+ * the space between the label's <p> and the title for us, because a block boundary is a
+ * word boundary in name computation. The images are decorative (`alt=""`, Andy's call):
+ * the title names the work, and both board examples name the client in it. That matters
+ * for voice control, where people say what they see — most of all below md, where the
+ * tile is the only thing showing. See `.study-tile`.
+ *
+ * ── NO HIDDEN COLON AFTER THE LABEL, THOUGH ONE WAS PLANNED ──────────────────
+ *
+ * "Case Study: Content…" would read better, and a visually hidden ":" was the plan.
+ * Measured in Chrome's accessibility tree (2026-10-23), every placement — inside the
+ * label's span, after its <p>, at the start of the title — produced "Case Study : Content…".
+ * The hiding recipe is `position: absolute`, which makes the colon a block of its own, and
+ * a block gets a space on both sides. Speech reads the two alike; braille shows the stray
+ * space. Not worth a hidden element that half works.
+ *
+ * ── WHAT IS HARDCODED, AND WHY THAT IS RIGHT ─────────────────────────────────
+ *
+ * "Case Study" is not content. This type can only ever reference a `caseStudy`, so the
+ * label is an invariant of the TYPE — the reasoning WorkWithMeBand gives for its own
+ * heading: a field per invariant is a field that can be set wrong. It goes through
+ * <Eyebrow>, which already IS DESIGN.md's `label` role, so the role has one definition.
+ *
+ * ── THE TITLE ARRIVES RESOLVED ───────────────────────────────────────────────
+ *
+ * PAGE_QUERY has already chosen between the editor's custom title and the case study's
+ * own, so `title` is simply what to show. Nothing here knows there was a choice.
+ *
+ * `/insights/{slug}/` is built from `slug`, which stega never encodes — the key is on its
+ * denylist (see load-query.ts) — so the href is clean in the preview build too.
+ */
+import type {Props as NodeProps} from 'astro-portabletext/types'
+import type {SanityImageSource} from '../../sanity/image'
+import SanityImage from '../SanityImage.astro'
+import Eyebrow from '../Eyebrow.astro'
+
+/* Structural, not the generated query type — matching Figure.astro and every serializer
+   here. A component depends on a shape. */
+type CaseStudyRefNode = {
+  _type: 'caseStudyRef'
+  _key?: string
+  title?: string | null
+  caseStudy?: {
+    slug?: string | null
+    client?: {
+      name?: string | null
+      logo?: SanityImageSource | null
+      tile?: SanityImageSource | null
+    } | null
+  } | null
+}
+
+type CaseStudyRefListNode = {
+  _type: 'caseStudyRefList'
+  _key?: string
+  items: CaseStudyRefNode[]
+}
+
+type Props = NodeProps<CaseStudyRefListNode>
+
+const {node} = Astro.props
+
+/**
+ * ── A CARD THAT CANNOT LINK IS DROPPED, LOUDLY ───────────────────────────────
+ *
+ * `caseStudy` is null when the reference does not resolve — an unpublished case study
+ * reached through a content release, say, which weakens the reference (see the schema).
+ * A card is a link and nothing else, so with no destination there is nothing honest to
+ * render. The warning names the block, since this component never knows the document.
+ *
+ * A missing LOGO is different, and degrades rather than drops: the card renders its label
+ * and title with no picture, which is what the text-only frames under Content Operations
+ * on the mobile board draw.
+ */
+const cards = node.items.flatMap((item) => {
+  const slug = item.caseStudy?.slug
+  if (!slug) {
+    console.warn(
+      `[StudyCards] caseStudyRef ${item._key ?? '(no key)'} has no published case study to link to — not rendered`,
+    )
+    return []
+  }
+  return [
+    {
+      key: item._key,
+      href: `/insights/${slug}/`,
+      title: item.title ?? '',
+      logo: item.caseStudy?.client?.logo?.asset ? item.caseStudy.client.logo : null,
+      tile: item.caseStudy?.client?.tile?.asset ? item.caseStudy.client.tile : null,
+    },
+  ]
+})
+---
+
+{
+  cards.length > 0 && (
+    <ul class="study-cards" role="list">
+      {cards.map((card) => (
+        <li>
+          {/* `data-tile` says the mobile variant has a picture to show, and is what lets
+              the text hide below md. Without a tile the text stays visible there instead —
+              the text-only card the Content Operations frames on the mobile board draw. */}
+          <a class="study-card" href={card.href} data-tile={card.tile ? '' : undefined}>
+            {card.logo && <SanityImage image={card.logo} aspect="1/1" alt="" class="study-logo" />}
+            {card.tile && <SanityImage image={card.tile} alt="" class="study-tile" />}
+            {/* A <div>, not a <span>: <Eyebrow> renders a <p>, and a <p> inside a <span>
+                is invalid HTML that `pnpm validate` rejects. An <a> takes its content
+                model from its parent, and inside an <li> that allows a <div>. */}
+            <div class="study-text">
+              <Eyebrow genre="Case Study" />
+              <span class="study-title">{card.title}</span>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+<style>
+  /*
+   * ── NO `margin` HERE, AND THAT IS LOAD-BEARING ──────────────────────────────
+   *
+   * The space ABOVE the list is the rhythm ramp's: 16 after the h3 it follows, which is
+   * `rhythm-heading-close` and exactly what the board draws. base.css's reset has already
+   * zeroed the UA margins. A `margin: 0` here would be (0,2,0) with the scope attribute
+   * and beat the ramp's (0,1,1), silently — WorkWithMeBand lost its stacked gap to the
+   * same shorthand.
+   *
+   * `padding: 0` removes the UA list indent, which base.css keeps for prose lists.
+   */
+  .study-cards {
+    padding: 0;
+    list-style: none;
+
+    display: grid;
+
+    /*
+     * ── ONE TRACK, PINNED TO THE LIST'S WIDTH ─────────────────────────────────
+     *
+     * Not decoration. With no template the grid makes one IMPLICIT `auto` track, and an
+     * auto track grows to its items' content — here a card asking for 350px. So at 375
+     * the track came out 350 in a 343 list, and the card's `max-inline-size: 100%` capped
+     * it at… 350, the track it was itself inflating. Measured: every card 7px past the
+     * column's right edge. `minmax(0, 1fr)` makes the track the list's width whatever is
+     * in it, and only then does the 100% mean the column.
+     *
+     * Work With Me hit the same circle in a flex column, and broke it on the <li>.
+     */
+    grid-template-columns: minmax(0, 1fr);
+
+    /*
+     * 16 between cards, the board's subsection gap. `gap` rather than sibling margins
+     * because this list is the component's own container — the ramp's no-`gap` rule is
+     * about Portable Text's flat sequence, which has none. `rhythm-item` is DESIGN.md's
+     * name for the space between items in a list.
+     */
+    row-gap: var(--rhythm-item);
+  }
+
+  /*
+   * ── THE CARD BOX ────────────────────────────────────────────────────────────
+   *
+   * Every value is a board binding: `card-pad` 16, `card-media` 24 between picture and
+   * text, `radius-2`, a hairline in `color-border` on `color-surface`. The same box
+   * <NoteCard> draws at rest below md — but boxed at EVERY width here, because both
+   * board variants are, and there is no unboxed card beside it to contrast with.
+   */
+  .study-card {
+    display: flex;
+    align-items: start;
+    gap: var(--card-media);
+
+    padding: var(--card-pad);
+    border: var(--border-width-hairline) solid var(--color-border);
+    border-radius: var(--radius-2);
+    background-color: var(--color-surface);
+
+    /*
+     * ── 350 BELOW md, THE WHOLE COLUMN FROM md ───────────────────────────────
+     *
+     * Andy's call (2026-10-23), and Work With Me's value and mechanism. Below md the card
+     * is a picture of a client and nothing else, and at the full column width — 735 on a
+     * small tablet — a wordmark is outsized. From md it carries text beside a 100px logo,
+     * and fills the prose column as the board draws it; the md block hands that back.
+     *
+     * `max-inline-size: 100%` makes 350 a CEILING: at 375 the column is 343, and the card
+     * fills it and stops. The 100% resolves against the <li>, and that is only the column's
+     * width because the list pins its track — see `.study-cards`, and the 7px it cost to
+     * learn that.
+     *
+     * Left-aligned, where Work With Me centers its tiles: those stand alone in a band,
+     * and this sits in running prose whose left edge it shares.
+     */
+    inline-size: 350px;
+    max-inline-size: 100%;
+
+    /* base.css underlines every link, and that underline is the inline affordance. A
+       block-level link title takes none — DESIGN.md → Links — and the box is the
+       affordance instead. */
+    text-decoration: none;
+
+    /* Replaces base.css's `color` transition on links rather than adding to it: the label
+       and title set their own colors, so nothing here inherits one to animate. */
+    transition: box-shadow 0.15s;
+  }
+
+  /*
+   * ── HOVER, BUT NOT ON KEYBOARD FOCUS ────────────────────────────────────────
+   *
+   * The board's Hover variant: the blunt 2px accent shadow <NoteCard> uses. The plan was
+   * to give `:focus-visible` the same, and it would have been a regression: base.css draws
+   * the focus ring AS a `box-shadow`, and this rule is (0,2,0) against its (0,1,0), so the
+   * shadow would REPLACE the ring rather than join it. A keyboard user would lose the one
+   * indicator every other control on the site shows.
+   *
+   * So focus keeps the system ring, and `:not(:focus-visible)` keeps hover from stealing
+   * it while the pointer happens to rest on a focused card.
+   *
+   * Hover at every width rather than from md, as NoteCard does. Both board variants draw
+   * it, and below md a boxed card that lifts under a pointer is still true — a narrow
+   * desktop window has one.
+   */
+  .study-card:hover:not(:focus-visible) {
+    box-shadow: 2px 2px 0 0 var(--color-accent);
+  }
+
+  /*
+   * 100px square, the board's. In `rem` for the reason Figure.astro gives its thumbnail:
+   * the text beside it scales with the reader's font size, and a picture fixed in px would
+   * take a shrinking share of a scaled-up card. 6.25 x 16 = 100.
+   *
+   * `radius-1`, as on the Work With Me tiles, and for their reason: a logo with a white
+   * ground and no dark variant sits as a light square on the dark surface, and a hard
+   * corner is what makes it read as pasted on. The board draws none; it is drawn in light.
+   *
+   * `none` here and `block` from md: the logo is the desktop variant's picture only.
+   */
+  .study-logo {
+    display: none;
+    flex: none;
+    inline-size: 6.25rem;
+    border-radius: var(--radius-1);
+  }
+
+  .study-text {
+    display: grid;
+    align-content: start;
+    row-gap: var(--card-gap);
+
+    /* A flex item will not shrink below its content's min-content width by default, and a
+       long unbroken title would push the card past the column. */
+    min-inline-size: 0;
+  }
+
+  /*
+   * ── h3's SIZE, NOT AN h3 ────────────────────────────────────────────────────
+   *
+   * The board sets the title in `Header/H3`. The element is a span — see the header — so
+   * the role's declarations are stated here: Lato 700 at the 3 step, leading 1.3, which is
+   * what base.css gives `h3` and what <NoteCard>'s title takes.
+   *
+   * `text-title`, NOT the board's `color/page/text`. DESIGN.md gives block-level link
+   * titles `text-title`, and docs/figma-notes.md lists `Header/*` nodes bound to
+   * `color/page/text` among the board's known mis-bindings. The two differ by one step in
+   * light and diverge in dark.
+   */
+  .study-title {
+    color: var(--color-text-title);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-3);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  /*
+   * ── THE TILE IS THE WHOLE CARD BELOW md ─────────────────────────────────────
+   *
+   * The client's `tile`, the lockup Work With Me shows, filling the card inside its
+   * `card-pad`. No `aspect`, so each tile keeps its own shape as it does there — which
+   * today means 20:9 for most clients, 3:2 for UW Medicine and about 9:5 for Shoreline,
+   * so stacked cards differ in height by client. The tiles' own whitespace is uneven
+   * too; that is the asset's to fix, not a crop's.
+   *
+   * `radius-1`, for the reason the logo gives.
+   *
+   * ── VOICE CONTROL IS WHERE alt="" COSTS SOMETHING ───────────────────────────
+   *
+   * The tile is a picture of the client's NAME, and it is all a sighted user sees. With
+   * `alt=""` (Andy's call) the link is named "Case Study <title>", so someone saying
+   * "click World Health Organization" reaches it only if the title names the client —
+   * WCAG 2.5.3, Label in Name. All four drafts do, and so do both board examples. No
+   * gate can check it: axe's rule for this compares TEXT, and an image of text is not
+   * text. It is an editorial rule, and the Custom Title field is where it is kept.
+   */
+  .study-tile {
+    inline-size: 100%;
+    border-radius: var(--radius-1);
+  }
+
+  /*
+   * ── THE TEXT LEAVES THE SCREEN BELOW md, NOT THE PAGE ───────────────────────
+   *
+   * Only on a card that HAS a tile to show instead (`data-tile`); without one the text
+   * stays visible and the card is text-only.
+   *
+   * The recipe is VisuallyHidden.astro's, verbatim. Kept in the accessibility tree,
+   * because the text IS the link's name: `display: none` would leave a link named by an
+   * empty alt — nothing at all — which axe fails as `link-name`. Not the `title`
+   * attribute either, which screen readers announce inconsistently and a keyboard user
+   * never sees.
+   */
+  .study-card[data-tile] .study-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /*
+   * ── FROM md: LOGO AND TEXT, AND THE TILE GOES ───────────────────────────────
+   *
+   * TWO <img>s TOGGLED HERE, NOT ONE <picture>. `<source media="(min-width: 48rem)">`
+   * would choose the file in an HTML attribute that cannot read a token — a second copy
+   * of md's width, which is exactly what tokens.css exists to prevent, and what
+   * SanityImage's header refuses to do for `sizes`. Here the breakpoint stays the flag.
+   *
+   * It costs no bytes because both images are lazy, and a lazy image with
+   * `display: none` has no box to scroll into view, so it is never requested. Measured in
+   * Chrome (2026-10-23): at 375 the network log shows the three tiles and no logo, and at
+   * 768 the three logos and no tile. Crossing md in a live window fetches the other set
+   * once, which is the only time both arrive.
+   *
+   * ── THE TEXT RETURNS BY UNDOING THE HIDE, ON PURPOSE ────────────────────────
+   *
+   * Seven resets is the price of mobile-first. `@container not style(--breakpoint-md:
+   * true)` would scope the hide to narrow widths and need no undoing, but an engine that
+   * cannot evaluate style queries would then drop the hide and give a PHONE the tile and
+   * the text together. tokens.css's rule is that such an engine keeps the phone layout,
+   * so the phone is the base and md undoes it — the failure lands on a desktop in an
+   * old browser instead, which gets the tile card: degraded, and still right.
+   */
+  @container style(--breakpoint-md: true) {
+    .study-card {
+      inline-size: auto;
+    }
+
+    .study-logo {
+      display: block;
+    }
+
+    .study-tile {
+      display: none;
+    }
+
+    .study-card[data-tile] .study-text {
+      position: static;
+      width: auto;
+      height: auto;
+      margin: 0;
+      overflow: visible;
+      clip-path: none;
+      white-space: normal;
+    }
+  }
+</style>

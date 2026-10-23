@@ -375,7 +375,8 @@ components:
     borderColor: "{colors.border}"
     radius: "{radius.2}"
     padding: "{spacing.card-pad}"
-  # The hover highlight, shared by BOTH card types. A hard 2px offset down and to
+  # The hover highlight, shared by EVERY card type — article, note, and the case study
+  # card in prose. A hard 2px offset down and to
   # the right — no blur, no spread — so it reads as a sharp accent edge rather than
   # as elevation. See Elevation & Depth for why that is not a breach of "no shadows".
   card-hover:
@@ -1028,6 +1029,9 @@ link, and would put a heading inside a link rather than a link inside a heading.
 small: text in the card can no longer be drag-selected, and a second link inside a card would need
 lifting above the overlay with `z-index`. No card has one.
 
+**Case study cards in prose are the one exception**, because neither reason holds for them — see
+Case study cards below.
+
 ### Card grids — the breakpoint ladder differs per index
 
 The card infers horizontal or vertical from its **own width**, so what each index page has to decide is
@@ -1388,6 +1392,44 @@ air removed on 2026-09-02, and below md, where the figure is an ordinary block i
 base 24. Until 2026-09-02 the two matched by luck: the `rhythm-block` pair gave a `figure` 48, as
 `* + h3` gives the heading, and this paragraph called that free. When the pair went, every cover sat
 24px proud of its title until the rule was written into base.css.
+
+### Case study cards — a list of links in prose
+
+Settled 2026-10-23. A `caseStudyRef` block, offered in `page.bodyText` only, renders the Figma "study
+card" (Components → Cards, 2914:3340): the label "Case Study" and a title the editor may frame for the
+page, falling back to the case study's own, with a picture of the client. Built in
+`web/src/components/prose/StudyCards.astro`, which records the measurements behind each rule.
+
+| | Below `md` | From `md` |
+|---|---|---|
+| picture | the client's `tile`, filling the card | the client's square `logo`, 100px |
+| label and title | visually hidden, and still the link's name | visible beside the logo |
+| width | 350px at most | the prose column |
+
+**One `<a>` wraps the whole card, which is the exception to the click-target rule under Components.**
+That rule keeps the anchor on the title so a card never announces its genre, date and description as
+one link, and never puts a heading inside a link. This card has neither. It carries nothing but the label
+and the title, so its name — "Case Study <title>" — is exactly what it should say. And its title is
+not a heading: a level written into a block an editor can place anywhere is a guess, a wrong guess
+fails `pnpm validate`, and a card is not a section of the page.
+
+**Adjacent cards are one list.** A pre-pass groups each run into a `<ul>`, so assistive tech announces
+the set as a set. The 16px between cards is the list's own `rhythm-item` gap, not a rhythm-ramp rule.
+
+**The pictures are decorative, so the title carries Label in Name.** Below `md` the tile — an image of
+the client's name — is all a sighted user sees, and with `alt=""` someone saying the client's name to
+voice control reaches the card only if the title names the client. **That is an editorial rule for the
+Custom Title field**, and no automated check can see it.
+
+**The breakpoint stays a flag.** Two lazy `<img>`s are toggled by `--breakpoint-md` rather than chosen
+by `<picture media>`, which would restate md's width in an HTML attribute. A lazy image with
+`display: none` is never requested, so each width fetches one set of pictures.
+
+**Boxed at every width,** with `card`'s values, and `card-hover`'s highlight **on hover but not on
+keyboard focus**: the focus ring is itself a `box-shadow`, and the highlight would replace it.
+
+**A client with no picture for the current width gets a text-only card**, label and title visible —
+what the mobile board's Content Operations frames draw.
 
 ### Search — specified 2026-08-21, built in phase 4
 

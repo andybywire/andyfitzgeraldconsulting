@@ -15,6 +15,7 @@ import recording from './objects/recording'
 import bandRss from './objects/bandRss'
 import bandWorkWithMe from './objects/bandWorkWithMe'
 import bandGetInTouch from './objects/bandGetInTouch'
+import caseStudyRef from './objects/caseStudyRef'
 
 export const schemaTypes = [
   note,
@@ -33,4 +34,5 @@ export const schemaTypes = [
   bandRss,
   bandWorkWithMe,
   bandGetInTouch,
+  caseStudyRef,
 ]

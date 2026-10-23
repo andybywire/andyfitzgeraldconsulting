@@ -15,6 +15,19 @@
 export declare const internalGroqTypeReferenceTo: unique symbol
 
 // Source: schema.json
+export type CaseStudyReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'caseStudy'
+}
+
+export type CaseStudyRef = {
+  _type: 'caseStudyRef'
+  caseStudy?: CaseStudyReference
+  title?: string
+}
+
 export type BandGetInTouch = {
   _type: 'bandGetInTouch'
   message?: Array<{
@@ -365,6 +378,9 @@ export type Page = {
     | ({
         _key: string
       } & Figure)
+    | ({
+        _key: string
+      } & CaseStudyRef)
   >
   pageBands?: Array<string>
   customBands?: Array<
@@ -1143,6 +1159,8 @@ export type Geopoint = {
 }
 
 export type AllSanitySchemaTypes =
+  | CaseStudyReference
+  | CaseStudyRef
   | BandGetInTouch
   | ClientReference
   | BandWorkWithMe
@@ -2092,7 +2110,7 @@ export type PAGE_SLUGS_QUERY_RESULT = Array<{
 
 // Source: ../web/src/sanity/queries/pages.ts
 // Variable: PAGE_QUERY
-// Query: *[_type == "page" && slug.current == $slug][0] {		_id,		title,		lede,		"description": pt::text(lede),		heroImg { 	asset,	crop,	hotspot,	altText,	caption },		bodyText	}
+// Query: *[_type == "page" && slug.current == $slug][0] {		_id,		title,		lede,		"description": pt::text(lede),		heroImg { 	asset,	crop,	hotspot,	altText,	caption },		bodyText[] {			...,			_type == "caseStudyRef" => {				"title": coalesce(title, caseStudy->title),				"caseStudy": caseStudy->{					"slug": slug.current,					"client": client->{						name,						"logo": logo{asset, crop, hotspot, altText},						"tile": tile{asset, crop, hotspot, altText}					}				}			}		}	}
 export type PAGE_QUERY_RESULT = {
   _id: string
   title: string | null
@@ -2123,9 +2141,6 @@ export type PAGE_QUERY_RESULT = {
     caption: null
   } | null
   bodyText: Array<
-    | ({
-        _key: string
-      } & Figure)
     | {
         children?: Array<{
           marks?: Array<string>
@@ -2143,6 +2158,41 @@ export type PAGE_QUERY_RESULT = {
         level?: number
         _type: 'block'
         _key: string
+      }
+    | {
+        _key: string
+        _type: 'caseStudyRef'
+        caseStudy: {
+          slug: string | null
+          client: {
+            name: string | null
+            logo: {
+              asset: SanityImageAssetReference | null
+              crop: SanityImageCrop | null
+              hotspot: SanityImageHotspot | null
+              altText: string | null
+            } | null
+            tile: {
+              asset: SanityImageAssetReference | null
+              crop: SanityImageCrop | null
+              hotspot: SanityImageHotspot | null
+              altText: string | null
+            } | null
+          } | null
+        } | null
+        title: string | null
+      }
+    | {
+        _key: string
+        _type: 'figure'
+        asset?: SanityImageAssetReference
+        media?: unknown
+        hotspot?: SanityImageHotspot
+        crop?: SanityImageCrop
+        caption?: string
+        altText?: string
+        outline?: boolean
+        thumbnail?: boolean
       }
   > | null
 } | null
@@ -2980,7 +3030,7 @@ declare global {
     '\n\t*[_type in ["article", "caseStudy"] && defined(slug.current)] | order(pubDate desc) {\n\t\t_type,\n\t\t"slug": slug.current,\n\t\ttitle,\n\t\tpubDate,\n\t\t"genre": genre->prefLabel,\n\t\t"blocks": coalesce(count(bodyText), 0),\n\t\t"blockTypes": array::unique(bodyText[]._type),\n\t\t"styles": array::unique(bodyText[_type == "block"].style),\n\t\t"hasNestedList": coalesce(count(bodyText[level >= 2]), 0) > 0,\n\t\t"hasUnderline": coalesce(count(bodyText[_type == "block" && "underline" in children[].marks[]]), 0) > 0,\n\t\t"hasInlineCode": coalesce(count(bodyText[_type == "block" && "code" in children[].marks[]]), 0) > 0,\n\t\t"hasHero": defined(heroImage.asset)\n\t}\n': INSIGHTS_REVIEW_QUERY_RESULT
     '\n\t*[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': INSIGHT_SLUGS_QUERY_RESULT
     '\n\t*[_type == "page" && defined(slug.current)] {\n\t\t"params": {"slug": slug.current}\n\t}\n': PAGE_SLUGS_QUERY_RESULT
-    '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\tlede,\n\t\t"description": pt::text(lede),\n\t\theroImg { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tbodyText\n\t}\n': PAGE_QUERY_RESULT
+    '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t_id,\n\t\ttitle,\n\t\tlede,\n\t\t"description": pt::text(lede),\n\t\theroImg { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\tbodyText[] {\n\t\t\t...,\n\t\t\t_type == "caseStudyRef" => {\n\t\t\t\t"title": coalesce(title, caseStudy->title),\n\t\t\t\t"caseStudy": caseStudy->{\n\t\t\t\t\t"slug": slug.current,\n\t\t\t\t\t"client": client->{\n\t\t\t\t\t\tname,\n\t\t\t\t\t\t"logo": logo{asset, crop, hotspot, altText},\n\t\t\t\t\t\t"tile": tile{asset, crop, hotspot, altText}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n': PAGE_QUERY_RESULT
     '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t\n\t"touchBand": select(\n\t\t"bandGetInTouch" in coalesce(pageBands, []) => coalesce(\n\t\t\tcustomBands[_type == "bandGetInTouch"][0],\n\t\t\t*[_type == "settings"][0].defaultBands[_type == "bandGetInTouch"][0]\n\t\t)\n\t){message, bandCopy}\n\n\t}\n': PAGE_GET_IN_TOUCH_BAND_QUERY_RESULT
     '\n\t*[_type == "page" && slug.current == $slug][0] {\n\t\t\n\t"workBand": select(\n\t\t"bandWorkWithMe" in coalesce(pageBands, []) => coalesce(\n\t\t\tcustomBands[_type == "bandWorkWithMe"][0],\n\t\t\t*[_type == "settings"][0].defaultBands[_type == "bandWorkWithMe"][0]\n\t\t)\n\t){\n\t\tmessage,\n\t\t"clientLogos": clientLogos[]->{\n\t\t\tname,\n\t\t\t"image": tile{asset, crop, hotspot, altText},\n\t\t\t"caseStudy": *[_type == "caseStudy" && client._ref == ^._id]\n\t\t\t\t| order(pubDate desc)[0].slug.current\n\t\t}\n\t}\n\n\t}\n': PAGE_WORK_WITH_ME_BAND_QUERY_RESULT
     '\n\t*[_type == "presentation" && defined(slug.current)] | order(pubDate desc) {\n\t\t\n\t_id,\n\t_type,\n\t"slug": slug.current\n,\n\t\t\n\tpubDate,\n\t_updatedAt\n,\n\t\t\n\t"genre": genre->prefLabel,\n\t"topics": topic[]->prefLabel\n,\n\t\ttitle,\n\t\t"poster": coalesce(\n\t\t\tposter,\n\t\t\t(eventDetail[]->eventRecordings[])[defined(poster)][0].poster\n\t\t) { \n\tasset,\n\tcrop,\n\thotspot,\n\taltText,\n\tcaption\n },\n\t\t"venue": eventDetail[0]->{\n\t\t\t"name": event,\n\t\t\t"online": location.online,\n\t\t\t"city": location.city,\n\t\t\t"state": location.state,\n\t\t\t"country": location.country\n\t\t},\n\t\t"eventCount": count(eventDetail),\n\t\t"hasTranscript": defined(transcript),\n\t\t"hasDeck": defined(presentationDeck.asset),\n\t\t"recordingKinds": (eventDetail[]->eventRecordings[])[defined(kind)].kind\n\t}\n': PRESENTATIONS_INDEX_QUERY_RESULT
