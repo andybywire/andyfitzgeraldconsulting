@@ -8,6 +8,7 @@ import {defineType, defineField} from 'sanity'
 import {uniqueBandTypes} from '../validation'
 import {BODY_STYLES, MARKS} from '../portableText'
 import {slugField} from '../slug'
+import {CardBackgroundInput} from '../../components/CardBackgroundInput'
 
 export default defineType({
   name: 'note',
@@ -188,6 +189,7 @@ export default defineType({
                 ],
                 layout: 'radio',
               },
+              components: {input: CardBackgroundInput},
               hidden: ({parent}) => !parent?.asset,
             },
           ],
