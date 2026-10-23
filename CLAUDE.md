@@ -157,8 +157,9 @@ check itself — never on a deploy or a publish. See phase 8.
 
 Deploy is `.github/workflows/deploy-astro.yml` — builds the static site and the PHP dependencies,
 tars a two-directory release (`public/` + `server/`), scps it to the droplet and swaps an atomic
-symlink at `/var/www/afc-production/html`. Triggered by pushes to `main` touching `web/**` and by
-Sanity `repository_dispatch` webhooks per document type. A `site` job runs the site gates against
+symlink at `/var/www/afc-production/html`. Triggered by pushes to `main` touching `web/**`,
+`pnpm-lock.yaml`, `pnpm-workspace.yaml` or the workflow itself, and by Sanity
+`repository_dispatch` webhooks per document type. A `site` job runs the site gates against
 the same release **beside** the deploy, so a failure turns the run red without holding the site —
 see phase 8.
 **nginx config is deployed separately and by hand**, with `nginx/deploy.sh` — its header says why
@@ -168,10 +169,16 @@ at the cutover.
 The preview is `.github/workflows/deploy-preview.yml` — builds the SSR site with its server
 dependencies bundled, runs the release from a directory with no `node_modules` against every sitemap
 URL before shipping it, then activates it under the `afc-preview` user unit on `127.0.0.1:8081`,
-health-checks it and rolls back if it is not serving. Triggered by pushes to `main` touching `web/**`
-and by `workflow_dispatch` on any ref — **no** `repository_dispatch`, since SSR reads drafts per
-request. A push to `main` touching `web/` therefore deploys BOTH hosts. So does a merge that edits
+health-checks it and rolls back if it is not serving. Triggered by pushes to `main` touching `web/**`,
+`pnpm-lock.yaml`, `pnpm-workspace.yaml` or the workflow itself, and by `workflow_dispatch` on any
+ref — **no** `repository_dispatch`, since SSR reads drafts per request. A push to `main` touching
+`web/`, the lockfile or the workspace file therefore deploys BOTH hosts. So does a merge that edits
 either deploy workflow, for its own host: each lists its own file under `paths:`.
+
+**A dependency change is a deploy, even one made only for the Studio**, because the lockfile is
+shared by both packages. This passage said "touching `web/**`" alone until 2026-10-22, when a
+Studio-only lockfile fix was wrongly expected not to deploy. The workflows' `paths:` lists are the
+authority; read them rather than this paragraph if the two ever disagree.
 
 **The workflows' actions and tokens are locked down** (Andy, 2026-10-10). Every action not owned by
 GitHub is pinned to a full commit SHA with its release as a trailing comment, `actions/*` stays on
@@ -1277,7 +1284,8 @@ removes both the attribute and the `localStorage` key, so there is no third stat
 ### Branching and verification
 
 **`main` is the site** (since the phase 6 cutover, 2026-09-28). `deploy-astro.yml` deploys it to
-production on every push to `main` touching `web/**` and on every Sanity publish webhook — so **a
+production on every push to `main` touching `web/**` or the pnpm lockfile or workspace file, and on
+every Sanity publish webhook — so **a
 push to `main` IS a production deploy**, which is one more reason commit and push are Andy's call.
 
 - **`main`** — the only long-lived branch.
@@ -1287,7 +1295,8 @@ push to `main` IS a production deploy**, which is one more reason commit and pus
   the Astro site was built beside the live 11ty one, and it deployed the static staging rehearsal.
   Don't build on it, or on `origin/dev` (Aug 2025), which was abandoned before it.
 - **The preview host tracks `main`** (since 2026-09-29): `deploy-preview.yml` deploys it on every
-  push to `main` touching `web/**`, with `workflow_dispatch` on any ref to rehearse a branch before
+  push to `main` touching `web/**` or the pnpm lockfile or workspace file, with `workflow_dispatch`
+  on any ref to rehearse a branch before
   merging it (Andy, 2026-09-28). GitHub runs `workflow_dispatch` only for a workflow file that
   exists on the default branch, which is why the first run was the merge.
 
