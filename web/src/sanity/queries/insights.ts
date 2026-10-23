@@ -1,5 +1,5 @@
 import {defineQuery} from 'groq'
-import {BAND_RSS, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
+import {BAND_RSS, CARD_BACKGROUND_HEX, DATES, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
 
 /**
  * Insights — `article`, `caseStudy` and `note`.
@@ -91,6 +91,9 @@ export const INSIGHTS_INDEX_QUERY = defineQuery(`
  * would add a permanently-null field. (IMAGE's claim that every image field in this schema
  * carries all five does not hold here either.)
  *
+ * `bookRef.img` adds CARD_BACKGROUND_HEX, the cover's share-card color resolved from its
+ * stored swatch name. See that fragment for why it is a `select()`.
+ *
  * ── KEEP COMMENTS OUT OF THE QUERY STRING ────────────────────────────────────
  *
  * This note started inside the template literal and broke the build twice over. Backticks
@@ -123,7 +126,7 @@ export const INSIGHT_DETAIL_QUERY = defineQuery(`
 			author,
 			publisher,
 			pubDate,
-			img { asset, crop, hotspot, altText }
+			img { asset, crop, hotspot, altText, ${CARD_BACKGROUND_HEX} }
 		}
 	}
 `)

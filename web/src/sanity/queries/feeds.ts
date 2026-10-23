@@ -1,5 +1,5 @@
 import {defineQuery} from 'groq'
-import {IDENTITY, IMAGE, TAXONOMY} from '../fragments'
+import {CARD_BACKGROUND_HEX, IDENTITY, IMAGE, TAXONOMY} from '../fragments'
 
 /**
  * The queries behind the Atom feeds. Two document types, one query each.
@@ -85,7 +85,15 @@ export const FEED_ARTICLES_QUERY = defineQuery(`
 		}
 `)
 
-/** No `lede` — that field exists only on `article` (30 of 30 carry one; 0 notes do). */
+/**
+ * No `lede` — that field exists only on `article` (30 of 30 carry one; 0 notes do).
+ *
+ * `clipRef` and `bookRef` carry what an entry LEADS with: the source's image and the
+ * caption that names and links it (Andy, 2026-10-22). Each `img` is the object, for the
+ * crop and hotspot as above, and the cover's adds CARD_BACKGROUND_HEX, the color its
+ * padding takes. Same projection as INSIGHT_DETAIL_QUERY's, so the feed draws what the
+ * share card draws.
+ */
 export const FEED_NOTES_QUERY = defineQuery(`
 	*[_type == "note" && defined(slug.current) && defined(pubDate)]
 		| order(pubDate desc)[0...${FEED_LIMIT}] {
@@ -94,7 +102,21 @@ export const FEED_NOTES_QUERY = defineQuery(`
 			pubDate,
 			title,
 			shortDescription,
-			bodyText
+			bodyText,
+			clipRef {
+				clipUrl,
+				publisher,
+				title,
+				img { asset, crop, hotspot, altText }
+			},
+			bookRef {
+				bookUrl,
+				title,
+				author,
+				publisher,
+				pubDate,
+				img { asset, crop, hotspot, altText, ${CARD_BACKGROUND_HEX} }
+			}
 		}
 `)
 

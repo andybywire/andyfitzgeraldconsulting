@@ -86,10 +86,19 @@ interface Props {
    */
   cardDescription?: string | null
   /**
-   * The page's own image, a hero or a poster, as the image OBJECT so its crop and
-   * hotspot can shape the card. Absent, the page gets the small card.
+   * The page's own image — a hero, a poster, or a note's book cover or clipped image —
+   * as the image OBJECT so its crop and hotspot can shape the card. Absent, the page
+   * gets the small card.
    */
   image?: SanityImageSource | null
+  /**
+   * How `image` meets the card frame, in CSS `object-fit`'s terms. `cover`, the
+   * default, crops to the frame by the hotspot. `contain` keeps the whole image and
+   * pads the frame, which is what a book cover needs — see `fit` in sanity/image.ts.
+   */
+  imageFit?: 'cover' | 'contain'
+  /** The padding color for `contain`, as a hex. Null or anything else pads gray. */
+  imageBackground?: string | null
   /** Document-branch pages only: `og:type` becomes `article`, carrying these dates. */
   article?: {published?: string | null; modified?: string | null}
 }
@@ -103,6 +112,8 @@ const {
   feeds = [],
   cardDescription,
   image,
+  imageFit = 'cover',
+  imageBackground,
   article,
 } = Astro.props
 
@@ -144,8 +155,20 @@ const graph = serializeGraph([...siteGraph(Astro.site), ...(jsonLd ?? [])])
  * `feedImageAttrs` because it is the module's one-URL builder, not because this is a
  * feed — see its note on `aspect`. A null return (no usable asset ref) falls through
  * to the icon.
+ *
+ * ── A BOOK COVER IS PADDED INTO THE FRAME, NOT CROPPED TO IT ────────────────────
+ *
+ * Cropping a 2:3 cover to 1200 x 630 keeps a strip from its middle, with no title in
+ * it. So a page passes `imageFit="contain"` and the cover is fitted whole, with the
+ * frame's spare width filled by `imageBackground`. The reasoning and the arithmetic
+ * are beside `fit` in sanity/image.ts, and so is CARD_NEUTRAL, the gray that pads when
+ * `imageBackground` is null. It was declared here until the feeds needed it too.
  */
-const shareImage = image ? feedImageAttrs(image, {aspect: '1200/630'}) : null
+const shareImage = image
+  ? imageFit === 'contain'
+    ? feedImageAttrs(image, {aspect: '1200/630', fit: 'contain', background: imageBackground})
+    : feedImageAttrs(image, {aspect: '1200/630'})
+  : null
 const card = shareImage
   ? {...shareImage, alt: image?.altText ?? ''}
   : {
@@ -546,10 +569,15 @@ const PLAUSIBLE_INIT =
       platforms to build those two cards from the original page.
 
       THE LARGE CARD NEEDS A REAL IMAGE. `summary_large_image` only when the page has
-      its own hero or poster, cropped to the card's shape by its hotspot (see
-      `shareImage` above). Everything else gets the 512px square icon on a small
+      its own: a hero or poster, cropped to the card's shape by its hotspot, or a note's
+      clipped image (cropped the same way) or book cover (padded, not cropped). See
+      `shareImage` above. Everything else gets the 512px square icon on a small
       `summary` card. Putting the icon in a large card would stretch a 512px square
       across a 1200px frame, which is worse than the small card.
+
+      NOT EVERY PLATFORM HONORS `summary`. Bluesky and Mastodon draw the icon large
+      anyway, which is what made notes share so badly before they passed their images
+      (2026-10-22). Pages with no image of their own still do.
 
       `og:site_name` IS `personName`, as the tab suffix and the wordmark are: it is the
       label a reader sees on the card, and the reader-facing name is the person. The
