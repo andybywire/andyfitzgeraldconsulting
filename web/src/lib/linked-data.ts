@@ -97,14 +97,30 @@ const AUTHOR_IMAGE_REF = 'image-09e1fa5707b3fa56ad1522de8a923ff1d0182732-1262x82
  * `auto=format` lets the CDN negotiate — WebP in practice here, measured during the deck
  * work. No crop or hotspot: this is an identifying image for a machine, not a rendered
  * one, and applying a crop would need the image object rather than just its ref.
+ *
+ * ── THE WIDTH IS A CEILING, NOT A DEMAND ────────────────────────────────────
+ *
+ * Sanity's CDN UPSCALES. `w=1200` on a 334 x 500 book cover returns 1200 x 1796
+ * (measured 2026-10-22), so a bare `w=` blows a small image up to the cap: a bigger
+ * file with no more detail in it. Before this was capped, one hero and four posters
+ * narrower than 1200 were being served that way, and the book covers would have joined
+ * them. Google's 1200 is guidance about the image you HAVE; upscaling to meet it adds
+ * bytes, not pixels anyone can use.
+ *
+ * So the request is capped at the source's own width, which the ref already carries —
+ * `image-<id>-334x500-png`. `feedImageAttrs` in sanity/image.ts follows the same rule
+ * for the same reason. A ref whose dimensions do not parse keeps the plain cap rather
+ * than failing: the URL is still valid, only possibly upscaled.
  */
 function assetUrl(ref: string, width = 1200): string | null {
   const parts = ref.split('-')
   if (parts.length < 4 || parts[0] !== 'image') return null
   const [, id, dimensions, extension] = parts
+  const sourceWidth = Number(dimensions.split('x')[0])
+  const w = sourceWidth > 0 ? Math.min(width, sourceWidth) : width
   return (
     `https://cdn.sanity.io/images/${PUBLIC_SANITY_PROJECT_ID}/${PUBLIC_SANITY_DATASET}/` +
-    `${id}-${dimensions}.${extension}?w=${width}&auto=format`
+    `${id}-${dimensions}.${extension}?w=${w}&auto=format`
   )
 }
 
