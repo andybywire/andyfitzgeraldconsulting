@@ -104,6 +104,20 @@ export function parseAspect(aspect: string | null | undefined) {
 }
 
 /**
+ * `'#E82976'` → `'e82976'`, the form the CDN's `bg` parameter takes. Null for anything
+ * that is not a three- or six-digit hex color.
+ *
+ * THE `#` HAS TO GO. The builder writes `bg=` into the URL exactly as it is given, and
+ * a `#` there starts the URL's fragment: the color, and every parameter after it, is
+ * never sent to the CDN at all. Sanity's palette metadata stores its colors WITH the
+ * `#`, so the obvious way to pass one would break without an error.
+ */
+export function parseHex(value: string | null | undefined) {
+  const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(value ?? '')
+  return match ? match[1].toLowerCase() : null
+}
+
+/**
  * The widest output that does not upscale, and the maths worth understanding.
  *
  * Two steps, in this order:
@@ -344,6 +358,14 @@ export function imageAttrs(
 }
 
 /**
+ * `feedImageAttrs`' options. A union so that `contain` cannot be asked for without the
+ * color that fills the padding: `astro check` says so, rather than the build.
+ */
+type FeedImageOptions = {width?: number; aspect?: string | null} & (
+  {fit?: 'cover'; background?: never} | {fit: 'contain'; background: string}
+)
+
+/**
  * One image, one URL, and dimensions that describe THAT url — for the Atom feeds and
  * for link-preview cards (`og:image`), the two places an image leaves the page without
  * a srcset.
@@ -377,6 +399,8 @@ export function imageAttrs(
  *                             picture the page shows, cropped by the same hotspot.
  *   share card       1200/630 the card frame; the reason is beside the call in
  *                             <BaseLayout>.
+ *   share card,      1200/630 the same frame, but the image is FITTED inside it and
+ *   book cover                padded rather than cropped. See `fit` below.
  *
  * This read "No `aspect` parameter, deliberately" until the heroes came into the
  * feeds (2026-10-02). The share card had its own sibling, `shareImageAttrs`, on the
@@ -388,14 +412,99 @@ export function imageAttrs(
  * `width` is a CEILING, not a demand. An image narrower than the target is served at
  * its own width rather than upscaled, per `maxRenderableWidth`.
  *
+ * ── `fit: 'contain'` PADS THE FRAME INSTEAD OF CROPPING TO IT ───────────────────
+ *
+ * The names are CSS `object-fit`'s, because the choice is the same one: `cover` fills
+ * the frame and loses what overflows, `contain` keeps the whole image and leaves the
+ * rest of the frame empty. Here the empty part is filled with `background`.
+ *
+ * It exists for book covers. A cover is about 2:3 and the card is about 1.9:1, so
+ * cropping one to the card keeps a horizontal strip from its middle: the 1200 x 630
+ * crop of *Designing and Implementing Semantic Data Layers* shows half of "DATA
+ * LAYERS" and some of the artwork, and no title or author (measured 2026-10-22). A
+ * cover is the one image where the whole rectangle is the content, as NoteEntry says
+ * of the rail.
+ *
+ * THE FRAME IS SIZED TO THE IMAGE, NOT THE OTHER WAY ROUND. The image is drawn at its
+ * own size or smaller, never larger, and the frame takes the card's shape around it:
+ *
+ *     frame width = min(width, max(cropW, cropH * ratio))
+ *
+ * A 334 x 500 cover gets a 952 x 500 frame with the cover at full height. A 600 x 904
+ * one hits the 1200 ceiling and is scaled down into 1200 x 630. Either way the cover
+ * fills the card's height, which is what makes it legible at the size a card is drawn.
+ *
+ * `fillmax` IS NOT THIS, though its description sounds like it ("never scaling the
+ * image up"). It keeps the requested 1200 x 630 frame and leaves the image at its own
+ * size inside it, so the 284 x 400 SHACL cover came back as a small rectangle with
+ * padding on all four sides (measured 2026-10-22). `fill` with a frame computed here
+ * is what puts the cover edge to edge vertically.
+ *
+ * ┌────────────────────────────────────────────────────────────────────────────┐
+ * │  THE BUILDER CROPS ANYWAY, UNLESS IT IS HANDED A `rect`. Give it a width    │
+ * │  AND a height and it works out its own crop to that shape, from the        │
+ * │  hotspot, whatever `fit` says. The first draft of this branch emitted       │
+ * │  `rect=0,163,334,175&…&fit=fill`: a strip of the cover, padded.            │
+ * └────────────────────────────────────────────────────────────────────────────┘
+ *
+ * `@sanity/image-url` skips that step only when the spec already carries a `rect`,
+ * so the editor's own crop is passed as one, computed the way the builder computes
+ * it. With no crop the rect is the whole image and the builder leaves it out of the
+ * URL. Caught by calling this function directly before any page used it, which is
+ * worth repeating for the next change here: read the URL, not only the picture.
+ *
+ * `background` IS REQUIRED, AND IT IS CHECKED. The type will not accept `contain`
+ * without one, and a value that is not a hex color throws rather than degrading: the
+ * caller is expected to resolve its own fallback with `parseHex` first, so a bad value
+ * reaching here is a code defect, not a content one. `aspect` is needed too, since
+ * without a frame shape there is nothing to pad to; `contain` with no `aspect` simply
+ * serves the image at its own shape, as no `aspect` always has.
+ *
  * Returns null on a malformed or missing `asset._ref`, mirroring what
  * <SanityImage> does with the same case: emit nothing rather than a broken <img>.
  */
 export function feedImageAttrs(
   image: SanityImageSource,
-  {width = 1200, aspect}: {width?: number; aspect?: string | null} = {},
+  {width = 1200, aspect, fit = 'cover', background}: FeedImageOptions = {},
 ): {src: string; width: number; height: number} | null {
   const ratio = parseAspect(aspect)
+
+  if (fit === 'contain' && ratio) {
+    const original = parseRef(image?.asset?._ref)
+    if (!original) return null
+    const hex = parseHex(background)
+    if (!hex) {
+      throw new Error(
+        `[feedImageAttrs] fit 'contain' needs a hex background, got ${JSON.stringify(background)}`,
+      )
+    }
+
+    /* The editor's crop as pixels, rounded as urlForImage rounds it. The frame is sized
+       from THIS rectangle rather than from `maxRenderableWidth`, whose floored width
+       left a cropped cover a pixel short of its frame (951 x 499 for 952 x 500). */
+    const left = Math.round((image.crop?.left ?? 0) * original.width)
+    const top = Math.round((image.crop?.top ?? 0) * original.height)
+    const cropW = Math.round(original.width * (1 - (image.crop?.right ?? 0))) - left
+    const cropH = Math.round(original.height * (1 - (image.crop?.bottom ?? 0))) - top
+
+    const w = Math.floor(Math.min(width, Math.max(cropW, cropH * ratio)))
+    const h = Math.round(w / ratio)
+
+    return {
+      src: builder
+        .image(image)
+        .rect(left, top, cropW, cropH)
+        .width(w)
+        .height(h)
+        .fit('fill')
+        .bg(hex)
+        .auto('format')
+        .url(),
+      width: w,
+      height: h,
+    }
+  }
+
   const bounds = maxRenderableWidth(image?.asset?._ref, image?.crop, ratio)
   if (!bounds) return null
 
