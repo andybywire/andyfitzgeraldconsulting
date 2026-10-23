@@ -265,6 +265,8 @@ export interface ClipSource {
   url?: string | null
   title?: string | null
   publisher?: string | null
+  /** The clipped piece's own image (its share image, saved to Sanity), as an asset `_ref`. */
+  imageRef?: string | null
 }
 
 /** A note's `bookRef` — the book it is about. */
@@ -274,6 +276,8 @@ export interface BookSource {
   author?: string | null
   publisher?: string | null
   pubDate?: string | null
+  /** The book's cover, as an asset `_ref`. */
+  imageRef?: string | null
 }
 
 export interface DocumentNodeInput {
@@ -297,7 +301,10 @@ export interface DocumentNodeInput {
   updatedAt?: string | null
   genre?: string | null
   topics?: string[]
-  /** The hero's asset `_ref`, or null. Notes have no hero. */
+  /**
+   * The hero's asset `_ref`, or null. Notes have no hero; a note's image arrives as
+   * `clip.imageRef` or `book.imageRef` instead, and becomes the same `#primaryimage`.
+   */
   heroRef?: string | null
   /** Case study only — the client the work was for. */
   clientName?: string | null
@@ -358,7 +365,11 @@ export interface DocumentNodeInput {
  */
 export function documentNode(input: DocumentNodeInput): GraphNode {
   const {site, permalink} = input
-  const image = input.heroRef ? assetUrl(input.heroRef) : null
+  /* The three never compete: a hero is never on a note, and a note carries one ref at
+     most. What each one depicts is under ONE IMAGE NODE below. */
+  const imageRef = input.heroRef ?? input.clip?.imageRef ?? input.book?.imageRef ?? null
+  const image = imageRef ? assetUrl(imageRef) : null
+  const primaryImage = {'@id': `${permalink}#primaryimage`}
 
   const node: GraphNode = {
     '@id': `${permalink}#article`,
@@ -405,10 +416,28 @@ export function documentNode(input: DocumentNodeInput): GraphNode {
   if (input.genre) node.genre = input.genre
   if (input.topics?.length) node.keywords = input.topics
 
+  /**
+   * ── ONE IMAGE NODE, AND A NOTE'S IS ALSO ITS SOURCE'S ───────────────────────
+   *
+   * A hero depicts the article. A note's image depicts what the note is ABOUT: a book's
+   * cover, or the clipped piece's own share image. Both statements are true of it, so
+   * both are made, and the image is declared once and linked rather than repeated — the
+   * pattern the presentation branch uses for a poster its events point at.
+   *
+   *   Article.image                  the ImageObject, `#primaryimage`
+   *   about.image / isBasedOn.image  `{"@id": "…#primaryimage"}`
+   *
+   * Declared on the Article rather than on the Book because `image` is a property
+   * Google reads on an Article, and Search Console warns when it is missing. The Book
+   * still says the cover is its picture, by reference (Andy, 2026-10-22).
+   *
+   * The reference is added only when the image really came from that source, which
+   * the comparison of refs checks, rather than whenever the source exists.
+   */
   if (image) {
     node.image = {
       '@type': 'ImageObject',
-      '@id': `${permalink}#primaryimage`,
+      ...primaryImage,
       inLanguage: 'en-US',
       url: image,
     }
@@ -424,6 +453,7 @@ export function documentNode(input: DocumentNodeInput): GraphNode {
       ...(input.clip.publisher
         ? {publisher: {'@type': 'Organization', name: input.clip.publisher}}
         : {}),
+      ...(image && imageRef === input.clip.imageRef ? {image: primaryImage} : {}),
     }
   }
 
@@ -439,6 +469,7 @@ export function documentNode(input: DocumentNodeInput): GraphNode {
         ? {publisher: {'@type': 'Organization', name: input.book.publisher}}
         : {}),
       ...(input.book.pubDate ? {datePublished: input.book.pubDate} : {}),
+      ...(image && imageRef === input.book.imageRef ? {image: primaryImage} : {}),
     }
   } else if (input.clientName) {
     node.about = {'@type': 'Organization', name: input.clientName}

@@ -286,6 +286,7 @@ const jsonLd = [
           url: insight.clipRef.clipUrl,
           title: insight.clipRef.title,
           publisher: insight.clipRef.publisher,
+          imageRef: insight.clipRef.img?.asset?._ref ?? null,
         }
       : null,
     book: insight.bookRef
@@ -295,6 +296,7 @@ const jsonLd = [
           author: insight.bookRef.author,
           publisher: insight.bookRef.publisher,
           pubDate: insight.bookRef.pubDate,
+          imageRef: insight.bookRef.img?.asset?._ref ?? null,
         }
       : null,
   }),
