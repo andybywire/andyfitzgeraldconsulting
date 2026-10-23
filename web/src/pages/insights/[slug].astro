@@ -336,6 +336,7 @@ const shareImageFit = shareImage && shareImage === insight.bookRef?.img ? 'conta
   cardDescription={insight.shortDescription}
   image={shareImage}
   imageFit={shareImageFit}
+  imageBackground={insight.bookRef?.img?.cardBackgroundHex}
   article={{published: insight.pubDate, modified: insight._updatedAt}}
 >
   <Masthead />

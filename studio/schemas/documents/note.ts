@@ -157,6 +157,39 @@ export default defineType({
               type: 'string',
               title: 'Alt Text',
             },
+            /*
+             * The color beside the cover on a link-preview card. A cover is padded into
+             * the card's frame rather than cropped to it (see `fit` in
+             * web/src/sanity/image.ts), and this picks what fills the padding.
+             *
+             * It stores a SWATCH NAME, not a color (Andy, 2026-10-22). The values are
+             * the keys of Sanity's own `metadata.palette`, so they keep its spelling, and
+             * the query resolves a name against whichever asset is current. Replace the
+             * cover and the choice re-derives its color from the new one; a stored hex
+             * would go on describing the old image. Hotspot is the precedent: an
+             * editor's presentation choice, kept on the image it applies to.
+             *
+             * Unset means neutral gray, the fallback for a swatch the palette lacks too.
+             * `vibrant` is not offered: it was the same color as `dominant` on three of
+             * the four covers when this was built.
+             */
+            {
+              name: 'cardBackground',
+              type: 'string',
+              title: 'Share card background',
+              description:
+                'The color beside the cover when a link to this note is shared. Leave unset for neutral gray.',
+              options: {
+                list: [
+                  {title: 'Dominant', value: 'dominant'},
+                  {title: 'Dark muted', value: 'darkMuted'},
+                  {title: 'Light muted', value: 'lightMuted'},
+                  {title: 'Neutral gray', value: 'neutral'},
+                ],
+                layout: 'radio',
+              },
+              hidden: ({parent}) => !parent?.asset,
+            },
           ],
         }),
         defineField({
