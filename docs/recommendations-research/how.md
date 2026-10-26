@@ -86,12 +86,35 @@ site publishing while the experiments run.
 - **Point a local Studio at the lab without changing the deployed one.** Here that's an env var
   that only a `dev:lab` script sets, plus a "LAB" title, so the two are never confused.
 
+### Back up the tags, and prove the restore, before any bulk write
+
+**Working.** An auto-tagger rewrites a field on every document at once. So the way back has to
+exist, and be shown to work, before the tagger does.
+
+- **Back up exactly what the tagger writes,** and nothing else: here, `topic` and the score field.
+  Keep the array `_key`s, so a restore is exact, not merely equivalent.
+- **Restore absence too.** A field the backup didn't have is removed. That is how a restore undoes
+  a score field the tagger added later.
+- **Make the restore a dry run unless told otherwise.** It should print what would change in human
+  terms, using concept labels rather than IDs.
+- **Test it on one document,** changed the way the tagger will change it. Run a dry run that
+  should flag that one document alone, then a write, then a full dry run that should report
+  nothing.
+- **Use the CLI's login rather than a token.** `sanity exec --with-user-token` passes the
+  script your login token in an environment variable, so there's no token for you or an LLM to
+  paste anywhere.
+- **Make the live dataset hard to write to by accident.** Here a script refuses to write to
+  `production-26` unless `--allow-production` is on the command line.
+
 ### Still to work out
 
 Each is **untested**:
 
-- Back up the tags, with a restore that is tested on one document.
 - Normalize semantic scores into a scale a tagging threshold can use (the score spike).
+- Set a tagging policy before auto-tagging. Here, a concept never sits beside its own broader
+  concept, and when both qualify the more specific one wins. A model scores a parent and its child
+  high together, so without a rule the pair fills two slots with one idea. The parent isn't lost:
+  a ranker can infer it, as this one's "nearer" tier does.
 - Auto-tag with match scores and a bump rule that never removes author tags.
 - Rank across categories with a strong-match bar.
 - Revise the taxonomy: new terms, structure, examples, `related`.

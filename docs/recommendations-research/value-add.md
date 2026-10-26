@@ -169,3 +169,10 @@ Add as they come up.
 - **Small categories.** The note pool of six produced the one insight fallback.
 - **Maintenance cost.** A taxonomy needs an owner, while embeddings need none, but also take no
   direction.
+- **A hierarchy helps only the consumers that infer from it.** Here the ranker infers: its "nearer"
+  tier matches a child against its parent. The facet browse doesn't: it filters on direct tags
+  only.
+  - **The cost of that gap, measured 2026-10-26:** the *Content Strategy* chip lists 0 documents
+    while 26 are tagged with one of its children.
+  - **What the same structure does in each consumer:** it strengthens one and leaves the other
+    thin. So where the inference happens is a design choice, not a property of the taxonomy.

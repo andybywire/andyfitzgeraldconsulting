@@ -1,6 +1,6 @@
 # Recommendations research: plan
 
-*Living document. Started 2026-10-21; this version 2026-10-22. Branch: `recommendations-research`.*
+*Living document. Started 2026-10-21; this version 2026-10-26. Branch: `recommendations-research`.*
 
 ## What this is
 
@@ -15,12 +15,31 @@ Manager starter prompt come at the end.
 | [value-add.md](value-add.md) | The "why": what a taxonomy adds over embeddings, and where it doesn't |
 | [how.md](how.md) | The "how": the steps a reader should take, as we discover them, including what failed |
 | `report-m1-m2.md`, `report-m3.md` | Measurements from 2026-10-21, before any taxonomy work |
-| `*.mjs` | Measurement scripts. Run `fetch-corpus.mjs` first; it writes `corpus.json` beside itself |
+| `fetch-corpus.mjs`, `measure.mjs`, `m3.mjs` | Measurement scripts, read-only. Run `fetch-corpus.mjs` first; it writes `corpus.json` beside itself |
+| `lab-api.mjs` | The authenticated client the writing scripts share: token from `sanity exec`, and writes to `production-26` refused |
+| `tags-backup.mjs`, `tags-restore.mjs` | Snapshot every document's tag fields, and put them back exactly. Restore is a dry run unless given `--write` |
+| `backups/` | Committed tag snapshots: the revert points |
 
 ## Decisions
 
 Newest first.
 
+- **2026-10-26.** **When a concept and its broader both qualify, the more specific one is kept**
+  (Andy). This is the indexing rule of specificity, and the ranker's "nearer" tier already infers
+  the parent. A **rule of N** stays a configurable variant, **off in round 0**: a document
+  qualifying for N or more children of one broader concept gets the broader concept instead.
+- **2026-10-26.** Six open questions settled (Andy):
+  - **The Best row in M3.n is left blank,** and Andy pastes ✅ into the cell of the version he
+    judges best. It is easy to scan, and the extract script can read it.
+  - **The embeddings column** is the unrestricted top 3. It is computed once in M3.0 and reused,
+    because the experiment changes no content text, only tags and concepts.
+  - **The Hand tags column** is in M3.0, as the baseline.
+  - **No document carries both a concept and its own broader concept.** The parent can be
+    inferred, so carrying both is redundant. The hand tags already nearly follow this rule: 7
+    pairs on 5 of 73 documents, measured in the lab on 2026-10-26.
+  - **`topicScores` is read-only and collapsed** in Studio.
+  - **Quota** is about 55 tagging queries a round, plus refreshes. Embeddings results are cached
+    across M3 runs.
 - **2026-10-22.** **The lab is set up: `recommendations-lab`**, a faithful copy of `production-26`.
   See "Where the experiments run" for how it was made and checked.
 - **2026-10-22.** **The experiments run in a lab dataset** (Andy). The old `production` dataset was
@@ -101,8 +120,25 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 - [x] Decide where the experiments run: a lab dataset (above)
 - [x] Set up the lab: copy `production-26` with its assets, enable embeddings, add a local Studio
       switch, and parameterize the scripts by dataset
-- [ ] **Back up tags**: write `{_id, topic}` for every document to `backups/tags-<date>.json`, and
-      write a restore script. Test the restore on one document before any bulk write.
+- [x] **Back up tags** (2026-10-26). The first backup is
+      `backups/tags-recommendations-lab-20261026T234921Z.json`: 73 documents, 71 tagged, no drafts.
+      - **Checked** against public reads of both the lab and `production-26`, with every `topic`
+        identical and array `_key`s kept.
+      - **Restore tested on one document:** `proust-and-the-squid`'s tag was swapped and a
+        `topicScores` entry added. A dry run flagged that document alone, `--write` put back the
+        original tag with its original `_key` and removed the scores, and a full dry run then
+        reported 0 differences.
+      - **The guard holds:** writes to `production-26` are refused without `--allow-production`.
+
+      Run both from the repo root:
+
+      ```bash
+      pnpm --dir studio exec sanity exec ../docs/recommendations-research/tags-backup.mjs --with-user-token
+      pnpm --dir studio exec sanity exec ../docs/recommendations-research/tags-restore.mjs --with-user-token -- --id <documentId>
+      ```
+
+      **Take a fresh backup before every tagging round.** Restore picks the newest lab backup
+      unless given `--file`.
 - [ ] **Score spike**: score every document against every Topic concept, look at the distributions,
       choose a normalization, then Andy sets the starting thresholds (see Tagger)
 
@@ -194,6 +230,12 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
   - **Auto tags** fill the remaining slots by score.
   - **A new candidate** above the threshold takes a free slot, or bumps the lowest auto tag it
     outscores.
+  - **No concept beside its own broader.** An auto tag may not be the parent or a child of any
+    other tag on the document, author or auto. Author tags are exempt from removal, so a pair
+    containing one can survive. When two auto candidates both qualify, **the more specific one
+    wins**.
+  - **Rule of N:** a configurable variant, off in round 0. With it on, N or more qualifying
+    children of one broader concept give way to the broader concept.
 - **Incremental.** When a concept is added or changed, only that concept is re-queried, and the
   bump rule is applied per document.
 - **Write.** Through `sanity exec --with-user-token`, which uses Andy's CLI login, so no token is
@@ -208,9 +250,11 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
   run. On a re-run, only flagged resources need evaluating.
 - **The table.**
   - **Columns:** `Embeddings | Hand tags | Taxonomy v0 | v1 | …`.
+  - **The Embeddings column** is the unrestricted top 3. It is computed once and reused, unless a
+    document's content text changes.
   - **Header cells:** each gives that column's agreement with the column before it, as `(agree n/3)`.
-  - **Rows:** three for the cards, then a **Best** row with `[ ]` in each column, then a **Notes**
-    row.
+  - **Rows:** three for the cards, then a **Best** row left blank, where Andy pastes ✅ under the
+    best version, then a **Notes** row.
   - **Unchanged columns:** a column identical to the previous version reads "no change".
 - **Carry-forward.** Every run carries the earlier columns forward, with their Best marks and notes.
 - **Comparisons that skip a run** go below the table, and only for truly interesting cases.
@@ -221,16 +265,19 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 
 Each has a default in place until Andy says otherwise.
 
-- **Checkboxes in Obsidian.** Obsidian makes checkboxes clickable only in list items, not inside
-  table cells. *Default:* the Best row in the table holds `[ ]`, which you edit to `[x]`. *The
-  alternative* is a clickable task list below each table.
-- **The embeddings column.** *Default:* unrestricted top 3, meaning what embeddings alone would show.
-  It is computed in M3.0 and reused, since embeddings depend only on content text. It is refreshed
-  when content changes.
-- **The Hand tags column.** *Default:* included in M3.0 as the baseline, so we can see whether
-  auto-tagging alone helped.
-- **A concept and its own broader on one document.** *Default:* allowed in round 0. We'll watch
-  whether it is redundant.
-- **The `topicScores` field in Studio.** *Default:* read-only and collapsed.
-- **Quota.** Each round is about 55 tagging queries plus refreshes. Embeddings results are cached
-  across M3 runs.
+- **When to try the rule of N.**
+  - **The case for it:** it frees slots, and it says "this is about the area as a whole".
+  - **The cost:** a document tagged with the broader concept matches documents tagged with one of
+    its children only at the "nearer" tier, not "shared".
+  - *Default:* try it only if slot crowding shows up in the M3 evaluations, meaning several
+    children of one broader concept filling most of a document's tags.
+- **Facets and the broader concepts.** This came up in the 2026-10-26 measurement. It is not
+  caused by the rule above.
+  - **The problem:** facets filter on direct tags with no roll-up (`docs/urls-and-filtering.md`),
+    so a mid-level chip lists only documents tagged with it directly. *Content Strategy* has 0
+    such documents, against 26 tagged only with one of its children. *Information Architecture*
+    has 6 against 20.
+  - **How the rule bears on it:** dropping parents keeps that gap where it is. Only inference at
+    the facet would close it.
+  - **Status:** out of scope for this experiment unless Andy brings it in. It belongs to the URL
+    contract, which is Andy's, and the promotion step is where it would come up.
