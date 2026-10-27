@@ -127,6 +127,21 @@ concept A against its score under concept B. So measure before choosing a thresh
 - *Also found:* thin documents, meaning short notes and presentations with little text, score low
   against everything. A threshold leaves them untagged unless a rule says otherwise.
 
+### Find out how much of a query is read
+
+**Measured.** "Find documents like this one" has to be a semantic *search* with this document's
+text, so how much of that text the search reads matters.
+
+- **Measure it.** Send progressively longer openings of one long document, and watch its score
+  against itself.
+- **Repeat an identical query to learn the noise** before reading anything into small changes.
+  Here identical queries varied by up to 0.003.
+- *Found here:* Sanity read about the first 2,000–2,500 characters. Longer queries raised no error
+  and changed nothing beyond the noise. Document-side chunks, by contrast, run to about 5,000
+  characters.
+- *So:* cap the query at what is read (here 2,500 characters: title, summary, then the body), and
+  say so. A longer query only hides the limit.
+
 ### Still to work out
 
 Each is **untested**:
@@ -135,6 +150,16 @@ Each is **untested**:
   concept, and when both qualify the more specific one wins. A model scores a parent and its child
   high together, so without a rule the pair fills two slots with one idea. The parent isn't lost:
   a ranker can infer it, as this one's "nearer" tier does.
+- **Evaluate without writing.** A ranker that is a pure function can run over *simulated* tags:
+  the tagger produces a tag set per version as a file, and the comparison reads it in memory. Tags
+  only need to reach the dataset when a person has to see or edit them, at the audit, and at
+  promotion. It took a direct question from Andy to see that writing wasn't needed.
+- **Make the embeddings-only baseline fair** before comparing anything against it.
+  - **Give it its best reasonable query:** title, summary and the opening of the body, not the
+    title alone.
+  - **Run it under the same category rules as the taxonomy,** as well as unrestricted, so the
+    comparison measures the vocabulary rather than the category policy.
+  - **Why it matters:** a weak baseline makes the taxonomy look better than it is.
 - Auto-tag with match scores and a bump rule that never removes author tags.
 - Rank across categories with a strong-match bar.
 - Revise the taxonomy: new terms, structure, examples, `related`.

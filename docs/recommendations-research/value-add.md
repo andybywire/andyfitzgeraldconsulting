@@ -5,6 +5,19 @@
 The framing is **what you get by using a taxonomy**, not "why taxonomy is better." Embeddings will
 win some cases, and this doc records those too.
 
+**What is really being compared** (2026-10-26). In this project the taxonomy's tags come from
+embeddings too: the tagger scores every document against every concept. So the contest is not
+"embeddings against a taxonomy". It is **direct similarity against similarity routed through a
+vocabulary**. Whatever the vocabulary adds on the way is the taxonomy's value:
+
+- the choice of what counts
+- the hierarchy
+- the category rules
+- the governance
+
+That is also why the baseline runs under the taxonomy's own category rules as well as
+unrestricted: the category rules belong to the comparison, not to the vocabulary.
+
 Each claim below carries four things:
 
 - the claim itself
@@ -156,6 +169,13 @@ Recorded so the article stays honest.
   and Linked Data: a case for embeddings proposing tags rather than replacing them.
 - **The same work in two forms.** For example, the *Boutique Knowledge Graphs* talk and its article.
   Embeddings find these across categories. The cross-category rule may close this gap.
+  - **Measured in the baseline** (2026-10-27): these pairs are embeddings' *strongest* crossings,
+    at 0.78–0.98 on the anchored scale. Others are *Conversations with Robots*, *Domain Modeling*
+    and *Deskilling*.
+  - **A taxonomy finds such a pair only if both versions carry the same tags.** Embeddings find
+    it from the words alone.
+  - **There's a modeling alternative to either:** say outright that two documents are one work,
+    with a reference between them. That's a content-model question, so it's Andy's.
 
 ## Combinations worth testing
 

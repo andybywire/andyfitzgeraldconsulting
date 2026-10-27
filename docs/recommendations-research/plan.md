@@ -21,11 +21,25 @@ Manager starter prompt come at the end.
 | `backups/` | Committed tag snapshots: the revert points |
 | `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept (spends quota), and its analysis (spends none) |
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
+| `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
 
 ## Decisions
 
 Newest first.
 
+- **2026-10-27.** **"Embeddings, same rules" crosses at `crossMin` 0.70, with at most one cross
+  card** (Andy). That's 9 of 44 insight pages and 10 of 29 presentations. At 0.80 only exact
+  same-work pairs crossed; the band down to 0.70 was still mostly topical.
+- **2026-10-26.** **Evaluation is simulated, and the baseline is made fair** (Andy):
+  - **Tag rounds are simulated in memory.** The tagger turns a score matrix into a tag set per
+    version, saved as a file, and the site's real ranker runs over it. No tags are written to the
+    dataset until the manual audit and promotion. So the `topicScores` schema field waits until
+    then. *The plan said "tag resources" from the start, and it was taken to mean "write tags"
+    without asking whether evaluation needed it. It doesn't.*
+  - **M3.0 has two embeddings columns:** unrestricted, which is what embeddings alone would show,
+    and the same category rules as the taxonomy, which isolates what the vocabulary adds.
+  - **The embeddings baseline searches with the title, summary and opening of the body**, not the
+    title and summary alone. That way the baseline isn't a strawman.
 - **2026-10-26.** **The tagger's scale, thresholds and minimum** (Andy), after the score spike:
   - **The anchored 0–1 scale.** Accuracy was the same as raw (AUC 0.765 against 0.767); this one
     is readable.
@@ -122,7 +136,12 @@ Newest first.
 
 ## Phases
 
-Each phase is one or more review stops. "Retag" always means run the tagger, then run the next M3.n.
+Each phase is one or more review stops. **"Retag" means:**
+1. re-score whatever concepts changed
+2. run the tagger to produce the next tag-set file, *simulated, with nothing written*
+3. generate the next M3.n from it
+
+Tags reach the dataset only in phase 5.
 
 ### 0. Setup
 
@@ -175,11 +194,36 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 
 ### 1. Pre-test (Taxonomy v0)
 
-- [ ] **Cross-category ranking** in `web/src/lib/related.ts` and `RelatedBand.astro` (see spec)
-- [ ] **Tagger**, local, in this folder (see spec). It may later move into Taxonomy Manager.
-- [ ] **`topicScores` schema field**. The shape is decided; who writes the schema edit is Andy's call.
-- [ ] Tag round 0 (from scratch)
-- [ ] **M3.0** in the new evaluation format (see spec)
+- [x] **The embeddings baseline** (2026-10-27). `baseline.mjs` ran 73 queries, one per page, and
+      cached the raw rankings in `scores/baseline-recommendations-lab-20261027T004131Z.json`.
+      `baseline-columns.mjs` derives both columns from that file at no cost. What it found:
+      - **A query is read up to about 2,000–2,500 characters, and the rest is ignored without an
+        error.** Measured on a 30,944-character article: its self-score went flat by about 2,000
+        characters, and everything from 2,500 to 31,000 fell within the noise. So the query is
+        title, summary and body opening, **capped at 2,500**.
+      - **Identical queries vary by up to 0.003.** That's the reason to compute once and cache.
+      - **The yardstick works.** 72 of 73 pages match themselves best. The exception, the *Yes,
+        And* keynote, matches a related document more closely.
+      - **Presentations give thin queries:** median 734 characters, against the cap of 2,500 for
+        every article and case study. The baseline is weaker for them, and that comes from the
+        content, not the method.
+      - **Unrestricted embeddings cross categories all the time:** 24 of 44 insight pages, and 29
+        of 29 presentations.
+      - **The strongest crossings are the same work in two forms**, with anchored scores of
+        0.78–0.98. *Conversations with Robots* appears as an article and a talk, *Boutique
+        Knowledge Graphs* as a method and a talk, and *Domain Modeling* and *Deskilling* in two
+        versions each.
+- [x] **Andy set `crossMin` 0.70** for the same-rules column (2026-10-27). It's recorded as `CROSS`
+      in `baseline-columns.mjs`, with at most one cross card. Both columns are now settled, and
+      they're derived from the cached rankings whenever M3 needs them.
+- [ ] **Cross-category ranking** in `web/src/lib/related.ts` (see spec). This is site code, and it
+      is the ranker the simulation runs, so what gets evaluated is what would ship.
+      `RelatedBand.astro`'s labels come with it.
+- [ ] **Tagger**, as a pure function in this folder (see spec): score matrix, config and author
+      tags in; a tag set per document out. It may later move into Taxonomy Manager.
+- [ ] **Tag set v0**, simulated from scratch with the round-0 config
+- [ ] **M3.0** in the new evaluation format: `Embeddings | Embeddings, same rules | Hand tags |
+      Taxonomy v0`
 
 ### 2. Taxonomy revision 1
 
@@ -190,8 +234,10 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 
 ### 3. Taxonomy revision 2: examples
 
-- [ ] Add text examples to `skos:example`, at the embeddings' chunk size. Chunk size is measurable
-      from the `_embeddings` start and end positions in results.
+- [ ] Add text examples to `skos:example`, at the embeddings' chunk size. **Measured 2026-10-27:
+      about 5,000 characters a chunk** (from `_embeddings` positions on the longest article). Note
+      that a *query* is read only to about 2,500 characters, so an example's length has to work
+      for both ends.
 - [ ] **Decide the source.** The plan is excerpts from the best-matching resources. Two risks:
   - **unevenness:** concepts with examples are favored over concepts without
   - **circularity:** a resource matches its own excerpt almost perfectly, which guarantees it the
@@ -208,9 +254,12 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 
 ### 5. Manual audit
 
-- [ ] Andy reviews the tags for ones the tagger missed. Those become author tags, which are never
-      bumped.
-- [ ] **M3.4**
+- [ ] **Write the chosen tag set into the lab,** with a backup first and a dry run first. This is
+      where the tags first reach the dataset, and where the **`topicScores` schema field** lands.
+      Its shape is decided; who writes the schema edit is Andy's call.
+- [ ] Andy reviews the tags in the lab Studio for ones the tagger missed. Those become author
+      tags, which are never bumped.
+- [ ] **M3.4**, from the tags in the dataset
 
 ## Specs
 
@@ -280,9 +329,11 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
     children of one broader concept give way to the broader concept.
 - **Incremental.** When a concept is added or changed, only that concept is re-queried, and the
   bump rule is applied per document.
-- **Write.** Through `sanity exec --with-user-token`, which uses Andy's CLI login, so no token is
-  handled. There is a dry-run mode that prints the diffs first. Writes go to published documents in
-  the chosen dataset.
+- **Output: a tag-set file per version,** `tagsets/<version>.json`, holding each document's tags
+  with their scores. The ranker and M3.n read it in memory. Rounds 0–3 never write to the dataset.
+- **Write, at phase 5 and promotion only.** Through `lab-api.mjs` under
+  `sanity exec --with-user-token`, so no token is handled. A backup comes first and a dry run
+  before any write.
 
 ### M3.n evaluation reports
 
@@ -291,9 +342,19 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 - **One section per resource,** with a **CHANGED** flag when any column differs from the previous
   run. On a re-run, only flagged resources need evaluating.
 - **The table.**
-  - **Columns:** `Embeddings | Hand tags | Taxonomy v0 | v1 | …`.
-  - **The Embeddings column** is the unrestricted top 3. It is computed once and reused, unless a
-    document's content text changes.
+  - **Columns:** `Embeddings | Embeddings, same rules | Hand tags | Taxonomy v0 | v1 | …`.
+  - **The two embeddings columns** are the baseline: no taxonomy at all.
+    - **Query text:** each page's title, summary and the opening of its body, so the search
+      approximates a comparison of whole documents. GROQ has no direct way to compare two
+      documents.
+    - **Embeddings:** the unrestricted top 3, meaning what embeddings alone would show.
+    - **Embeddings, same rules:** the taxonomy ranker's category policy, applied to semantic
+      scores. Home-category documents come first, and a document from the other category enters
+      only if it is strong. "Strong" is measured as in the spike: the page's own document goes in
+      the query as the yardstick, scores are anchored to it, and a crossing document must clear
+      `crossMinSemantic` and outscore the weakest home card. This column isolates what the
+      vocabulary adds.
+    - Both are computed once and cached, since the experiment changes no content text.
   - **Header cells:** each gives that column's agreement with the column before it, as `(agree n/3)`.
   - **Rows:** three for the cards, then a **Best** row left blank, where Andy pastes ✅ under the
     best version, then a **Notes** row.
@@ -306,6 +367,12 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 ## Open questions
 
 Each has a default in place until Andy says otherwise.
+
+- **The taxonomy ranker's crossing bar, `crossMinShared`.** It sits on a different scale from the
+  embeddings column's `crossMin`, which is 0.70 and crosses on 19 of 73 pages.
+  - *Default:* set it so that a similar number of pages cross. Then the two columns are equally
+    willing to cross, and the comparison measures the vocabulary rather than which bar is looser.
+  - Decided when the ranker is built.
 
 - **When to try the rule of N.**
   - **The case for it:** it frees slots, and it says "this is about the area as a whole".
