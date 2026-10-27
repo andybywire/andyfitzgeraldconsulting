@@ -106,11 +106,31 @@ exist, and be shown to work, before the tagger does.
 - **Make the live dataset hard to write to by accident.** Here a script refuses to write to
   `production-26` unless `--allow-production` is on the command line.
 
+### Measure the score scale before setting a threshold
+
+**Working.** Sanity's semantic `_score` has no stated scale, and its docs say not to compare
+scores across queries. A tagger has to do exactly that: compare one document's score under
+concept A against its score under concept B. So measure before choosing a threshold.
+
+- **Score every document against every concept once and save the matrix.** Run the analysis from
+  the saved file, so trying another normalization costs no quota.
+- **Put the concept's own document in each query.** It is embedded from the same text, so it is
+  the best match a query can have, and the yardstick for the others.
+- **Judge each normalization against the tags you already have**, even incomplete ones. Use
+  separation across all pairs (AUC), and how many of each document's tags land in its top few.
+- **Reject any normalization that depends on the rest of the corpus,** such as min-max, z-scores
+  or percentiles. Each new document would move every concept's scale, so stored scores would go
+  stale.
+- *Found here:* raw scores were nearly comparable already, and no corpus-independent
+  normalization beat them. The scale was chosen for readability. Note too that a score's floor is
+  far from zero, so a "0.8" on a naive ratio means much less than it sounds.
+- *Also found:* thin documents, meaning short notes and presentations with little text, score low
+  against everything. A threshold leaves them untagged unless a rule says otherwise.
+
 ### Still to work out
 
 Each is **untested**:
 
-- Normalize semantic scores into a scale a tagging threshold can use (the score spike).
 - Set a tagging policy before auto-tagging. Here, a concept never sits beside its own broader
   concept, and when both qualify the more specific one wins. A model scores a parent and its child
   high together, so without a rule the pair fills two slots with one idea. The parent isn't lost:

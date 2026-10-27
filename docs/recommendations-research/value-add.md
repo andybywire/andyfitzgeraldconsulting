@@ -35,6 +35,11 @@ and leaving out what doesn't, you decide which connections are favored.
 - **None of the 73 concepts uses `skos:related`.** Two documents in different top branches can relate
   only through a tag they share, so the hierarchy cannot connect them.
 
+- **The same blurring shows up when embeddings are used to tag.** In the score spike, broad
+  concepts were hubs: *Information Architecture*'s definition put it in 23 documents' top 4,
+  though it is hand-tagged on 6. Similarity to a broad definition is not aboutness. The
+  hierarchy and the specificity rule are what keep it from taking over.
+
 **What would show it.** After revisions 1–3 and retagging, the taxonomy columns win the cases that
 embeddings won in M3. Topical matches deep in the archive appear without the form-matching noise.
 
@@ -146,7 +151,9 @@ Recorded so the article stays honest.
 
 - **Many M3 cases** (Andy, 2026-10-21). The specific ones go into the M3.0 evaluation.
 - **Untagged documents.** Two presentations have no tags; the taxonomy can show them only "Recent",
-  while embeddings return plausible lists.
+  while embeddings return plausible lists. Embeddings also *tag* them well. In the score spike,
+  *Knowledge Graphs and IA*'s top three concepts were Knowledge Graphs, Information Architecture
+  and Linked Data: a case for embeddings proposing tags rather than replacing them.
 - **The same work in two forms.** For example, the *Boutique Knowledge Graphs* talk and its article.
   Embeddings find these across categories. The cross-category rule may close this gap.
 

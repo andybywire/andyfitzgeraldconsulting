@@ -19,11 +19,21 @@ Manager starter prompt come at the end.
 | `lab-api.mjs` | The authenticated client the writing scripts share: token from `sanity exec`, and writes to `production-26` refused |
 | `tags-backup.mjs`, `tags-restore.mjs` | Snapshot every document's tag fields, and put them back exactly. Restore is a dry run unless given `--write` |
 | `backups/` | Committed tag snapshots: the revert points |
+| `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept (spends quota), and its analysis (spends none) |
+| `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 
 ## Decisions
 
 Newest first.
 
+- **2026-10-26.** **The tagger's scale, thresholds and minimum** (Andy), after the score spike:
+  - **The anchored 0–1 scale.** Accuracy was the same as raw (AUC 0.765 against 0.767); this one
+    is readable.
+  - **Round-0 bands:** up to 3 tags at ≥ 0.45, then up to 3 more at ≥ 0.54.
+  - **At least one tag per document.** A thin document that clears neither band keeps its best
+    concept. Andy's call, over the recommendation to leave it untagged and flagged. The trade is
+    some wrong tags, like *Proust and the Squid*'s top match (*Discoverability*), against no
+    document falling back to "Recent". Such a tag stays bumpable, so later rounds can correct it.
 - **2026-10-26.** **When a concept and its broader both qualify, the more specific one is kept**
   (Andy). This is the indexing rule of specificity, and the ranker's "nearer" tier already infers
   the parent. A **rule of N** stays a configurable variant, **off in round 0**: a document
@@ -139,8 +149,29 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 
       **Take a fresh backup before every tagging round.** Restore picks the newest lab backup
       unless given `--file`.
-- [ ] **Score spike**: score every document against every Topic concept, look at the distributions,
-      choose a normalization, then Andy sets the starting thresholds (see Tagger)
+- [x] **Score spike** (2026-10-26). `score-spike.mjs` scored 73 documents against 55 concepts (55
+      queries) into `scores/spike-recommendations-lab-20261026T235419Z.json`. `spike-report.mjs`
+      reads that matrix, spends no quota, and writes `report-spike.md`. What it found:
+      - **Raw scores are nearly comparable across concepts after all.** Every concept's floor sits
+        between 5.0 and 6.1, never at zero, but the spread inside a concept (2–3 points) dwarfs the
+        spread between concepts (about 1).
+      - **No normalization that ignores the corpus beats raw.** Global AUC against the hand tags:
+        raw 0.767, a fixed-floor 0–1 scale 0.765, self ratio 0.762. The best number, 0.774, needs
+        each concept's lowest document score, so it moves whenever something is published, which
+        the incremental tagger can't live with. **So the scale is chosen for readability, not
+        accuracy.**
+      - **The signal is moderate:** 0.78 AUC within a concept, and 46% of hand tags in a
+        document's top 4. The hand tags are incomplete, so that is a floor. M3.0 is the real test.
+      - **The matches look sensible in the examples.** *Knowledge Graphs and IA* has no tags, and
+        its top three are Knowledge Graphs, Information Architecture and Linked Data.
+      - **Thin documents clear nothing.** At a cutoff covering the top 10% of pairs, six get no
+        tags: short notes, and presentations whose text is only a description and highlights.
+      - **Hubs are broad concepts.** Information Architecture is in 23 documents' top 4 and
+        hand-tagged on 6. The specificity rule tames this: in 26 documents, a concept and its
+        parent sit together in the top 4.
+- [x] **Andy chose the scale, the starting thresholds and the minimum** (2026-10-26): the anchored
+      0–1 scale, bands of 3 at ≥ 0.45 and 3 more at ≥ 0.54, and at least one tag per document.
+      See Decisions and Tagger.
 
 ### 1. Pre-test (Taxonomy v0)
 
@@ -217,16 +248,27 @@ Each phase is one or more review stops. "Retag" always means run the tagger, the
 - **Score.** One query per concept, about 55 a round:
   - **query:** the concept's `prefLabel`, `definition` and `scopeNote`, with examples added from r2
   - **result:** every document is scored against it
-  - **normalization:** chosen in the spike
+  - **normalization:** the anchored scale, `(score − 4.9) / (self − 4.9)`, where `self` is the
+    concept's own document in the same query. 0 means as unrelated as anything in the corpus; 1
+    means the concept's own words. The floor of 4.9 is frozen from the spike, so the scale
+    doesn't depend on the corpus. Re-derive it if Sanity updates its model.
   - **cache:** the full concept × document matrix is kept per round as a local file. It is the raw
     material for trend charts, and lets a freed slot be refilled without re-querying.
 - **Select per document.** The configuration is adjustable:
 
   ```js
-  {target: 4, bands: [{count: 3, min: 0.7}, {count: 3, min: 0.8}]}
+  {floor: 4.9, bands: [{count: 3, min: 0.45}, {count: 3, min: 0.54}], minimum: 1, ruleOfN: null}
   ```
 
-  - **Author tags** (in `topic` with no score) count toward `target` and are never bumped.
+  The round-0 values were set by Andy on 2026-10-26, from the spike's threshold table:
+  ≥ 0.45 is about the top 15% of pairs, and ≥ 0.54 about the top 5%.
+
+  - **Slots run in band order, at most six.** Author tags (in `topic` with no score) take slots
+    from the front and are never bumped. Any band-1 slots left take auto tags scoring ≥ 0.45;
+    band-2 slots take auto tags scoring ≥ 0.54.
+  - **Minimum one tag.** A document that clears no band and has no author tag still gets its
+    single best concept, even below 0.45. It is an ordinary auto tag: its stored score shows it was
+    below the bar, and a later candidate that clears a band bumps it.
   - **Auto tags** fill the remaining slots by score.
   - **A new candidate** above the threshold takes a free slot, or bumps the lowest auto tag it
     outscores.

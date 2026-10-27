@@ -9,10 +9,11 @@ web/.astro/
 studio/dist/
 studio/schema.json
 
-# Tag backups, written by docs/recommendations-research/tags-backup.mjs and committed as revert
-# points. They are records: restore reads them back exactly, so a reformat would be churn in a
-# file nobody edits by hand.
+# Tag backups and score matrices, written by the scripts in docs/recommendations-research/ and
+# committed as records: restore reads a backup back exactly, and the analysis reads a matrix.
+# A reformat would be churn in files nobody edits by hand.
 docs/recommendations-research/backups/
+docs/recommendations-research/scores/
 
 # Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
 # .gitignore, never a nested one — so a local `prettier --check .` failed on it while CI, which
