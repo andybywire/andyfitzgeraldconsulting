@@ -23,6 +23,8 @@ Manager starter prompt come at the end.
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
 | `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`: categories, the effect of the category change, and crossing counts by threshold (spends none) |
+| `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags, and its runner, which writes one simulated tag set (spends none, writes no dataset) |
+| `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 
 ## Ground rules
 
@@ -44,6 +46,20 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-10-28.** **v0 keeps "more specific wins," and the overlap it exposed goes to revision
+  1** (Andy). The rule drops some broader concepts that are plainly a document's subject: *What
+  Is Information Architecture?* loses Information Architecture (0.814, its best match) to
+  Navigation Design (0.571). The cause is the vocabulary, not the rule: Navigation Design's
+  definition reads like IA in general, so it shadows IA on IA-centric pages. Revision 1 fixes the
+  definition, which tests what the taxonomy contributes. Changing the rule would have the tagger
+  cover for a weak definition.
+  - **Measured, the alternative:** when a pair collides, keep the higher score. That changes 15
+    documents and restores IA on the IA-titled pages, putting IA on 15 documents and Navigation
+    Design on 8. But it reproduces fewer hand tags: 83 of 207, against v0's 90. Hand tags tend to
+    be specific, so they favor the current rule, and they're a weak benchmark.
+  - **The cost, accepted:** until revision 1, v0 shows IA missing from IA pages, and M3.0 will
+    reflect it.
 
 - **2026-10-28.** **The page wiring moves to promotion, and the two ground rules above were set**
   (Andy). Simulated runs call `rankAcross` from `lib/related.ts` directly, so the pages never
@@ -80,8 +96,10 @@ Newest first.
   - **Round-0 bands:** up to 3 tags at ≥ 0.45, then up to 3 more at ≥ 0.54.
   - **At least one tag per document.** A thin document that clears neither band keeps its best
     concept. Andy's call, over the recommendation to leave it untagged and flagged. The trade is
-    some wrong tags, like *Proust and the Squid*'s top match (*Discoverability*), against no
-    document falling back to "Recent". Such a tag stays bumpable, so later rounds can correct it.
+    some wrong tags, like *Proust and the Squid*'s top match, against no document falling back to
+    "Recent". Such a tag stays bumpable, so later rounds can correct it. *That match is
+    Discoverability on raw scores, the order report-spike.md lists them in, and Responsive Design
+    on the anchored scale the tagger uses: 0.272 against 0.259.*
 - **2026-10-26.** **When a concept and its broader both qualify, the more specific one is kept**
   (Andy). This is the indexing rule of specificity, and the ranker's "nearer" tier already infers
   the parent. A **rule of N** stays a configurable variant, **off in round 0**: a document
@@ -276,9 +294,40 @@ phase 6, and phase 6 waits for Andy's go-ahead.
         crosses.
       - **The hand tags miss the same-work pairs that embeddings rank strongest.** For example,
         the *Conversations With Robots* talk crosses to *Flying Cars*, not to its own article.
-- [ ] **Tagger**, as a pure function in this folder (see spec): score matrix, config and author
-      tags in; a tag set per document out. It may later move into Taxonomy Manager.
-- [ ] **Tag set v0**, simulated from scratch with the round-0 config
+- [x] **Tagger** (2026-10-28), as a pure function in this folder (see spec): score matrix, config
+      and author tags in; a tag set per document out. It may later move into Taxonomy Manager.
+      - `tagger.mjs` holds it, with no I/O. `tagset.mjs` runs it over a cached matrix and writes
+        `tagsets/<version>.json`.
+      - **Two pieces are not built:** the rule of N, which throws if switched on, and the
+        incremental bump. Round 0 retags from scratch, so it needs neither. See Open questions.
+      - **"Both qualify" is read as "both earned a slot"**, which Andy should confirm. See the
+        Tagger spec.
+- [x] **Tag set v0** (2026-10-28), simulated from scratch with the round-0 config, in
+      `tagsets/v0.json`. It reuses the spike matrix, which ran the round-0 query, so it spent no
+      quota.
+      - **231 tags on 73 documents:** 190 in band 1, 37 in band 2, and 4 on the minimum. 39
+        documents have three tags, 8 have six, and 9 have one.
+      - **On the minimum,** all below 0.45: *Proust and the Squid* (Responsive Design, 0.273),
+        *Why Shortcuts Aren't the Road* (Content Analysis, 0.424), *Design for the Human Scale*
+        (Interaction Design, 0.433) and *IA, the Current and the Future* (Information
+        Architecture, 0.445). The spike predicted 4 documents clearing no bar at 0.456.
+      - **The specificity rule changed 22 documents,** dropping 23 broader concepts.
+        `tagset.mjs` lists them, widest gap first.
+        - **13 outscored the child that replaced them, and 8 were the document's best match.**
+          Three were hand tags.
+        - **Information Architecture was dropped 10 times, 7 of them for Navigation Design.**
+          That includes *What Is Information Architecture?* (0.814 against 0.571) and *When Do
+          You Need an Information Architect?* (0.685 against 0.523).
+        - **Content Strategy was dropped 6 times,** but in 4 its child scored higher. That's the
+          rule working as meant.
+        - Andy kept the rule; see Decisions, 2026-10-28.
+      - **The hubs moved.** *Content Analysis* is on 21 documents (5 by hand), *Search* on 11 (0
+        by hand), *Sanity* on 14 (4), *Navigation Design* on 14 (3). *Information Architecture*
+        is on 8 (6 by hand), down from 23 documents' raw top four.
+      - **90 of the 207 hand tags were reproduced**, so 141 of v0's 231 tags are new. Whether
+        they are better is what M3.0 is for.
+      - **Checked:** no tag beside its broader, every tag clears its slot's bar, band 2 fills only
+        after band 1, and no document has more than six tags or a duplicate.
 - [ ] **Calibrate the crossing rule on v0**: re-run `cross-dryrun.mjs` against the tag set
 - [ ] **M3.0** in the new evaluation format: `Embeddings | Embeddings, same rules | Hand tags |
       Taxonomy v0`
@@ -286,6 +335,18 @@ phase 6, and phase 6 waits for Andy's go-ahead.
 *The page wiring was listed here until 2026-10-28. It is in phase 6.*
 
 ### 2. Taxonomy revision 1
+
+**Inputs found so far,** from evaluating earlier rounds:
+
+- **Navigation Design overlaps Information Architecture** (v0, 2026-10-28). Its definition
+  describes IA in general: "an intuitive, efficient, and user-friendly system for finding
+  content", "structuring and arranging" to give "easy access to information". So it scores high
+  wherever IA does, and the specificity rule then drops IA for it on 7 documents, including
+  *What Is Information Architecture?*. Narrow the definition to the navigation system itself, or
+  add a scope note that says what belongs to IA instead.
+  - **How to tell it worked:** re-score Navigation Design alone (one query) and re-run
+    `tagset.mjs`. IA should stop appearing in the dropped list against Navigation Design on the
+    IA-titled pages.
 
 - [ ] Generate candidate single-word terms (NLP / LLM). The existing `web/scripts/phrase-candidates.mjs`
       proposes multiword terms and is a starting point.
@@ -416,6 +477,13 @@ touches `production-26` or the site's pages.
     other tag on the document, author or auto. Author tags are exempt from removal, so a pair
     containing one can survive. When two auto candidates both qualify, **the more specific one
     wins**.
+    - **"Both qualify" means both earned a slot on score** (proposed 2026-10-28; Andy to
+      confirm). The broader gives its slot up and the next candidate takes it. The other reading
+      is that any narrower concept clearing 0.45 evicts its broader, whether or not it would have
+      had a slot. That reading changes 12 of 73 documents in v0, and often for the worse: it
+      takes *Information Architecture* off *What's It Like to Work with an Information
+      Architect?* for *User Interviews*, because a child of IA cleared 0.45 without earning a
+      slot.
   - **Rule of N:** a configurable variant, off in round 0. With it on, N or more qualifying
     children of one broader concept give way to the broader concept.
 - **Incremental.** When a concept is added or changed, only that concept is re-queried, and the
@@ -467,6 +535,17 @@ Each has a default in place until Andy says otherwise.
     vocabulary rather than which bar is looser.
   - **Why it waits:** with 2–4 hand tags a document, crossing jumped from 32 pages to 2 between a
     ratio of 0.50 and 0.67. Requiring two shared tags left no crossing at all above 0.50.
+
+- **How a later round retags: from scratch, or by bumping.** Rounds 1–3 re-score only the
+  concepts that changed. The tagger can then re-run from scratch over the updated matrix, or
+  apply the spec's bump rule to the previous tag set.
+  - **They differ when a changed concept's score drops.** From scratch, the tag goes if it no
+    longer earns its slot. A bump never removes a tag, so the old one stays until something
+    outscores it.
+  - *Default:* from scratch. It is deterministic, and it is what promotion does ("re-run the
+    tagger there"). The bump rule matters for the live site, where content and concepts change
+    one at a time, so it can be built for the Taxonomy Manager prompt rather than for the
+    simulation.
 
 - **When to try the rule of N.**
   - **The case for it:** it frees slots, and it says "this is about the area as a whole".

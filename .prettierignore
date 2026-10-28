@@ -9,11 +9,13 @@ web/.astro/
 studio/dist/
 studio/schema.json
 
-# Tag backups and score matrices, written by the scripts in docs/recommendations-research/ and
-# committed as records: restore reads a backup back exactly, and the analysis reads a matrix.
+# Tag backups, score matrices and tag sets, written by the scripts in docs/recommendations-research/
+# and committed as records: restore reads a backup back exactly, and the analysis reads a matrix
+# or a tag set.
 # A reformat would be churn in files nobody edits by hand.
 docs/recommendations-research/backups/
 docs/recommendations-research/scores/
+docs/recommendations-research/tagsets/
 # Gitignored by that folder's own .gitignore, which Prettier never reads (see studio/.sanity/
 # below): a fetch-corpus.mjs snapshot that a local check would otherwise flag.
 docs/recommendations-research/corpus.json

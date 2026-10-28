@@ -142,14 +142,33 @@ text, so how much of that text the search reads matters.
 - *So:* cap the query at what is read (here 2,500 characters: title, summary, then the body), and
   say so. A longer query only hides the limit.
 
+### Turn scores into tags: slots, bars and a specificity rule
+
+**Working.** The first tag set, v0, was simulated on 2026-10-28.
+
+- **Fill slots in score order, with a bar for each slot.** Here, three slots need 0.45 and three
+  more need 0.54, so a document earns extra tags only by matching more strongly. Author tags take
+  slots first and are never bumped.
+- **Set a policy for a concept and its broader concept before auto-tagging.** Here the two never
+  sit together, and the more specific one wins. A model scores a parent and its child high
+  together, so without a rule the pair fills two slots with one idea. The parent isn't lost: a
+  ranker can infer it, as this one's "nearer" tier does.
+- **Then say what "both qualify" means.** Here both had to earn a slot on score. The looser
+  reading, where any narrower concept that clears the bar evicts its broader, changed 12 of 73
+  documents, often for the worse. It took *Information Architecture* off *What's It Like to Work
+  with an Information Architect?*.
+- **Give every document at least one tag, and keep its score with it.** Four of 73 landed there,
+  all below the bar, and the stored score says so.
+- **Keep the tagger pure and its output a file.** It reads a cached score matrix and writes a tag
+  set, so a run costs no quota and touches no dataset.
+- *Found here:* the tags don't look like the hand tags. 90 of 207 hand tags came back, and the hubs
+  moved: *Content Analysis* landed on 21 documents (5 by hand) and *Search* on 11 (none by hand).
+  Whether that is better is a question for the evaluation, not for the tag counts.
+
 ### Still to work out
 
 Each is **untested**:
 
-- Set a tagging policy before auto-tagging. Here, a concept never sits beside its own broader
-  concept, and when both qualify the more specific one wins. A model scores a parent and its child
-  high together, so without a rule the pair fills two slots with one idea. The parent isn't lost:
-  a ranker can infer it, as this one's "nearer" tier does.
 - **Evaluate without writing.** A ranker that is a pure function can run over *simulated* tags:
   the tagger produces a tag set per version as a file, and the comparison reads it in memory. Tags
   only need to reach the dataset when a person has to see or edit them, at the audit, and at
@@ -160,7 +179,8 @@ Each is **untested**:
   - **Run it under the same category rules as the taxonomy,** as well as unrestricted, so the
     comparison measures the vocabulary rather than the category policy.
   - **Why it matters:** a weak baseline makes the taxonomy look better than it is.
-- Auto-tag with match scores and a bump rule that never removes author tags.
+- An incremental bump rule that never removes author tags, for a live site where content and
+  concepts change one at a time.
 - Rank across categories with a strong-match bar.
   - **Calibrate it on the tags you'll actually have.** With only 2–4 hand tags a document, a
     shared-tag ratio takes few values, and its bar jumped from 32 pages crossing to 2 between two
@@ -172,6 +192,13 @@ Each is **untested**:
 
 ## What didn't work
 
+- **Changing the site before the evaluation needed it** (2026-10-28). The detail pages were moved
+  to the new cross-category ranker and verified on all 73 pages.
+  - **Why it was wasted:** a simulated evaluation runs the ranker in memory, and nothing in it
+    reads a page. Verifying the pages also meant building against the live dataset.
+  - **What happened to it:** rolled back, and kept for promotion.
+  - *Lesson:* keep the site out of the experiment until results are promoted. For each step, ask
+    whether the evaluation needs it.
 - **An asset-free copy of the dataset** (2026-10-22). The lab was first made with `--no-assets`, to
   avoid uploading 1.1 GB of images an experiment about text would never show.
   - **What it did:** it also removed every image **figure** from the body text of 17 of 73
