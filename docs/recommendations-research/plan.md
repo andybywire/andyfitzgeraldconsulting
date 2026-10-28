@@ -1,6 +1,6 @@
 # Recommendations research: plan
 
-*Living document. Started 2026-10-21; this version 2026-10-26. Branch: `recommendations-research`.*
+*Living document. Started 2026-10-21; this version 2026-10-28. Branch: `recommendations-research`.*
 
 ## What this is
 
@@ -24,9 +24,36 @@ Manager starter prompt come at the end.
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
 | `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`: categories, the effect of the category change, and crossing counts by threshold (spends none) |
 
+## Ground rules
+
+Andy, 2026-10-28. These hold until he lifts them, and they outrank anything later in this file.
+
+- **Nothing in this project touches the live site or `production-26` until Andy explicitly says
+  so.** That covers reads as well as writes:
+  - **Scripts use the lab only.** `DATASET=production-26` stays unused, and `lab-api.mjs` keeps
+    refusing writes there without `--allow-production`. The reports committed on 2026-10-21 were
+    made from `production-26` before this rule existed.
+  - **No site builds.** `pnpm --filter web build` reads `production-26`, so the site's checks
+    (`links`, `validate`, `a11y`, `budgets`) are out too. So is a push of this branch, which runs
+    the same build in `checks.yml`. Pushes were already Andy's call.
+  - **No merge to `main`.** A merge touching `web/**` deploys production.
+- **No changes to the site's pages or templates until the test is finished and the results are
+  being rolled in.** The research runs the ranker in memory against simulated tag sets, and that
+  needs no page to change. Page work happens in the Promotion phase.
+
 ## Decisions
 
 Newest first.
+
+- **2026-10-28.** **The page wiring moves to promotion, and the two ground rules above were set**
+  (Andy). Simulated runs call `rankAcross` from `lib/related.ts` directly, so the pages never
+  needed to change for the research.
+  - *The wiring was built and verified anyway (73 of 73 built pages matched the ranker). It came
+    from following this plan's Phase 1 list without asking whether M3.0 needed it, which is the
+    same mistake as the 2026-10-26 "tag resources" one.*
+  - It was rolled back and kept as a git stash for promotion; see phase 6.
+  - Verifying it read `production-26` twice, with a corpus fetch and a site build. Both were
+    reads, and both came before the rule.
 
 - **2026-10-27.** **The taxonomy's crossing rule also needs a minimum count of shared tags,
   `crossMinCount`** (Andy). A ratio alone let one shared tag between two thinly tagged documents
@@ -126,7 +153,8 @@ Newest first.
     with Presentation left out, since it previews `production-26`. The deployed Studio is
     unchanged; `studio/sanity.config.ts` says why this is an env var and not a second workspace.
   - **Scripts:** `node fetch-corpus.mjs` reads the lab by default, and `DATASET=production-26` reads
-    the live dataset. `measure.mjs` and `m3.mjs` take the dataset from `corpus.json`. Reports from
+    the live dataset, which is not to be used without Andy's go-ahead (see Ground rules).
+    `measure.mjs` and `m3.mjs` take the dataset from `corpus.json`. Reports from
     any dataset other than `production-26` are named `report-*.<dataset>.md`, so the committed
     reports are never overwritten.
 - **Cost.**
@@ -148,7 +176,8 @@ Each phase is one or more review stops. **"Retag" means:**
 2. run the tagger to produce the next tag-set file, *simulated, with nothing written*
 3. generate the next M3.n from it
 
-Tags reach the dataset only in phase 5.
+Tags reach the lab dataset only in phase 5. Nothing reaches `production-26` or the site before
+phase 6, and phase 6 waits for Andy's go-ahead.
 
 ### 0. Setup
 
@@ -247,14 +276,14 @@ Tags reach the dataset only in phase 5.
         crosses.
       - **The hand tags miss the same-work pairs that embeddings rank strongest.** For example,
         the *Conversations With Robots* talk crosses to *Flying Cars*, not to its own article.
-- [ ] **Cross-category ranking: the wiring.** The insight and presentation pages move to
-      `rankAcross`. `RelatedBand.astro` gets the new labels and links each card to its own
-      collection. The old branch rule and the `parent` projection are then removed.
 - [ ] **Tagger**, as a pure function in this folder (see spec): score matrix, config and author
       tags in; a tag set per document out. It may later move into Taxonomy Manager.
 - [ ] **Tag set v0**, simulated from scratch with the round-0 config
+- [ ] **Calibrate the crossing rule on v0**: re-run `cross-dryrun.mjs` against the tag set
 - [ ] **M3.0** in the new evaluation format: `Embeddings | Embeddings, same rules | Hand tags |
       Taxonomy v0`
+
+*The page wiring was listed here until 2026-10-28. It is in phase 6.*
 
 ### 2. Taxonomy revision 1
 
@@ -292,6 +321,33 @@ Tags reach the dataset only in phase 5.
       tags, which are never bumped.
 - [ ] **M3.4**, from the tags in the dataset
 
+### 6. Promotion
+
+**Nothing in this phase starts until Andy explicitly gives the go-ahead** (see Ground rules). It
+is where the results are rolled into the live site, and it is the first time this project
+touches `production-26` or the site's pages.
+
+- [ ] **Andy's go-ahead**
+- [ ] **Move the concept and scheme documents into `production-26`,** then re-run the tagger there
+      and write the tags and `topicScores` through `lab-api.mjs --allow-production`, with a backup
+      first. See "Where the experiments run" → Cost.
+- [ ] **Cross-category ranking: the wiring.** The insight and presentation pages move to
+      `rankAcross`. `RelatedBand.astro` gets the new labels and links each card to its own
+      collection. The old branch rule and the `parent` projection are then removed.
+      - **It is already written:** `git stash list` shows it as "recommendations-research:
+        cross-category wiring of pages and RelatedBand, for promotion (2026-10-28)". It changes
+        four files: `RelatedBand.astro`, both `[slug].astro` pages, and a comment in
+        `lib/related.ts`. On 2026-10-28 it passed `astro check`, the build, `links`, `validate`
+        and `a11y`, and all 73 built pages matched the ranker exactly. Re-verify after
+        applying it: the corpus and `CROSS_RULE` will have moved.
+      - **Removing the old rule breaks three research scripts.** `measure.mjs`, `m3.mjs` and
+        `cross-dryrun.mjs` import `branchForType`, `genresForBranch` and `rankRelated`, which are
+        the rule the committed M1, M2 and first M3 reports measured. The proposal is a frozen copy
+        in this folder: the old rule is `rankAcross` with the eligible genres as the home set
+        and crossing off, so the copy reuses the real scorer and the reports stay reproducible.
+        Andy's call.
+- [ ] **Merge to `main`**, which deploys. Andy's call, as always.
+
 ## Specs
 
 ### Cross-category ranking
@@ -321,7 +377,9 @@ Tags reach the dataset only in phase 5.
 - **A card links to its own collection.** That reverses the reasoning recorded on `RelatedBand`'s
   `basePath` prop, which says a link's collection is "a fact about the PAGE". The comment changes
   with the code.
-- **This is site code, on this branch.** It deploys only when merged.
+- **The ranking logic is on this branch; the page wiring waits for promotion.** No page uses
+  `rankAcross` until phase 6, so the research can run it in memory without changing what any
+  page shows.
 
 ### Tagger
 
