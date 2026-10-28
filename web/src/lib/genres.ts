@@ -11,7 +11,6 @@ import type {GENRE_TREE_QUERY_RESULT} from '../../sanity.types'
  */
 
 type Tree = GENRE_TREE_QUERY_RESULT
-type Concept = Tree['concepts'][number]
 
 /**
  * The two top concepts of the Genre scheme are the content model's own top-level division:
@@ -40,11 +39,22 @@ const NOTE = 'Note'
  * it. Without the guard a mis-authored loop is an infinite walk at build time, which fails
  * as a hang rather than as an error. It also handles poly-hierarchy — a concept with two
  * parents inside the same subtree is visited once.
+ *
+ * ── EXPORTED SINCE THE RELATED-CONTENT RANKER BECAME ITS SECOND CONSUMER ────
+ *
+ * lib/related.ts sorts documents into two categories that are whole Genre subtrees, so it
+ * needs exactly this walk (2026-10-27). The parameter type is structural rather than one
+ * query's result type, so either caller can pass its own query rows. Nulls are tolerated
+ * because a dereferenced `concepts[]->` yields null for a dangling reference.
  */
-function subtree(concepts: Concept[], rootId: string): Set<string> {
+export type BroaderConcept = {_id: string | null; broader?: (string | null)[] | null}
+
+export function subtree(concepts: readonly (BroaderConcept | null)[], rootId: string): Set<string> {
   const childrenOf = new Map<string, string[]>()
   for (const concept of concepts) {
+    if (!concept?._id) continue
     for (const parent of concept.broader ?? []) {
+      if (!parent) continue
       const siblings = childrenOf.get(parent)
       if (siblings) siblings.push(concept._id)
       else childrenOf.set(parent, [concept._id])
