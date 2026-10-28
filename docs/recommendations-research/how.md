@@ -162,6 +162,11 @@ Each is **untested**:
   - **Why it matters:** a weak baseline makes the taxonomy look better than it is.
 - Auto-tag with match scores and a bump rule that never removes author tags.
 - Rank across categories with a strong-match bar.
+  - **Calibrate it on the tags you'll actually have.** With only 2–4 hand tags a document, a
+    shared-tag ratio takes few values, and its bar jumped from 32 pages crossing to 2 between two
+    adjacent settings.
+  - **A ratio alone lets one shared tag between two thinly tagged documents count as strong.**
+    A minimum count of shared tags guards against that.
 - Revise the taxonomy: new terms, structure, examples, `related`.
 - Run the evaluation loop (M3.n) and read the trends.
 

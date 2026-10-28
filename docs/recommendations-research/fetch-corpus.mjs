@@ -14,7 +14,7 @@ const DATASET = process.env.DATASET ?? 'recommendations-lab'
 const query = `{
   "genres": *[_type == "skosConceptScheme" && title == "Genre"][0] {
     "tops": topConcepts[]->{_id, prefLabel},
-    "concepts": concepts[]->{_id, prefLabel, "parent": broader[0]._ref}
+    "concepts": concepts[]->{_id, prefLabel, "parent": broader[0]._ref, "broader": broader[]._ref}
   },
   "topicScheme": *[_type == "skosConceptScheme" && title == "Topic"][0] {
     title,

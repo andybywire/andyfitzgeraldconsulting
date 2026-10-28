@@ -22,10 +22,17 @@ Manager starter prompt come at the end.
 | `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept (spends quota), and its analysis (spends none) |
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
+| `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`: categories, the effect of the category change, and crossing counts by threshold (spends none) |
 
 ## Decisions
 
 Newest first.
+
+- **2026-10-27.** **The taxonomy's crossing rule also needs a minimum count of shared tags,
+  `crossMinCount`** (Andy). A ratio alone let one shared tag between two thinly tagged documents
+  count as strong. Provisionally, `CROSS_RULE` in `lib/related.ts` is `crossMinShared` 0.5,
+  `crossMinCount` 2 and `crossMax` 1. On the hand tags that crosses on 26 of 73 pages. Both
+  values are calibrated on tag set v0.
 
 - **2026-10-27.** **"Embeddings, same rules" crosses at `crossMin` 0.70, with at most one cross
   card** (Andy). That's 9 of 44 insight pages and 10 of 29 presentations. At 0.80 only exact
@@ -216,9 +223,33 @@ Tags reach the dataset only in phase 5.
 - [x] **Andy set `crossMin` 0.70** for the same-rules column (2026-10-27). It's recorded as `CROSS`
       in `baseline-columns.mjs`, with at most one cross card. Both columns are now settled, and
       they're derived from the cached rankings whenever M3 needs them.
-- [ ] **Cross-category ranking** in `web/src/lib/related.ts` (see spec). This is site code, and it
-      is the ranker the simulation runs, so what gets evaluated is what would ship.
-      `RelatedBand.astro`'s labels come with it.
+- [x] **Cross-category ranking: the logic** (2026-10-27). `rankAcross`, `genresByCategory` and
+      `categoryForType` are in `web/src/lib/related.ts`, *beside* the old branch rule, so the pages
+      still build. The changes:
+      - **One genre walk.** `lib/genres.ts`'s `subtree` is exported, since the ranker is its
+        second consumer.
+      - **One query change.** `RELATED_POOL_QUERY` projects each genre's full `broader`, and
+        TypeGen was re-run.
+      - **One import with a `.ts` extension,** the first in `src/`, so the research can load the
+        ranker under plain Node.
+      - **Checked:** `astro check` reports 0 errors, warnings or hints. M1/M2's guard confirms
+        the old ranker is unchanged on 73 of 73 pages.
+
+      `cross-dryrun.mjs` ran it on the hand tags:
+      - **The categories are right.** Insights is Document and 7 genres; Presentations is
+        Presentation and 5. No page sits outside a category or disagrees with its type.
+      - **The category change alone changes 12 of 73 lists** (6 notes, 6 articles).
+      - **The crossing bar is coarse on hand tags.** Pages crossing go 52, 46, 35, 32 at a bar of
+        0.25, 0.33, 0.40, 0.50, then 2 at 0.67. With 2–4 tags per document, the shared ratio
+        takes few values, so nothing lands near the embeddings column's 19.
+      - **What crosses at 0.50 is mixed.** Many crossings hang on one shared tag. Requiring two
+        shared tags trims 32 to 26, but a pair like *UW Medicine* ↔ *Taxonomy Management* still
+        crosses.
+      - **The hand tags miss the same-work pairs that embeddings rank strongest.** For example,
+        the *Conversations With Robots* talk crosses to *Flying Cars*, not to its own article.
+- [ ] **Cross-category ranking: the wiring.** The insight and presentation pages move to
+      `rankAcross`. `RelatedBand.astro` gets the new labels and links each card to its own
+      collection. The old branch rule and the `parent` projection are then removed.
 - [ ] **Tagger**, as a pure function in this folder (see spec): score matrix, config and author
       tags in; a tag set per document out. It may later move into Taxonomy Manager.
 - [ ] **Tag set v0**, simulated from scratch with the round-0 config
@@ -272,12 +303,14 @@ Tags reach the dataset only in phase 5.
 - **Home category first,** ranked as it is now: tiers, union-normalized, lexicographic.
 - **Crossing is a strong match only.** A candidate from the other category enters only if all of
   these hold:
-  - it shares at least one tag
+  - it shares at least `crossMinCount` tags, and never fewer than one
   - its shared ratio is at least `crossMinShared`
   - it outranks the weakest home card it would displace, strictly
   - at most `crossMax` cross cards are shown
 
-  All of these are adjustable. The starting values are set after a dry run on the corpus.
+  All of these are adjustable, and both pages read them from `CROSS_RULE` in `lib/related.ts`.
+  **The values are provisional** (Andy, 2026-10-27): `crossMinShared` 0.5, `crossMinCount` 2,
+  `crossMax` 1. They are calibrated on tag set v0.
 - **Labels.**
 
   | Page | No cross cards | With a cross card | Fallback |
@@ -368,11 +401,14 @@ Tags reach the dataset only in phase 5.
 
 Each has a default in place until Andy says otherwise.
 
-- **The taxonomy ranker's crossing bar, `crossMinShared`.** It sits on a different scale from the
-  embeddings column's `crossMin`, which is 0.70 and crosses on 19 of 73 pages.
-  - *Default:* set it so that a similar number of pages cross. Then the two columns are equally
-    willing to cross, and the comparison measures the vocabulary rather than which bar is looser.
-  - Decided when the ranker is built.
+- **Calibrating the taxonomy ranker's crossing bar on tag set v0.** `CROSS_RULE` is provisional:
+  `crossMinShared` 0.5, `crossMinCount` 2. On the hand tags it crosses on 26 of 73 pages, against
+  the embeddings column's 19 at `crossMin` 0.70.
+  - *Default:* once tag set v0 exists, re-run `cross-dryrun.mjs` against it and set both values so
+    that about as many pages cross as in the embeddings column. Then the comparison measures the
+    vocabulary rather than which bar is looser.
+  - **Why it waits:** with 2–4 hand tags a document, crossing jumped from 32 pages to 2 between a
+    ratio of 0.50 and 0.67. Requiring two shared tags left no crossing at all above 0.50.
 
 - **When to try the rule of N.**
   - **The case for it:** it frees slots, and it says "this is about the area as a whole".

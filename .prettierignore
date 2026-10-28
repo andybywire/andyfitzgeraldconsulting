@@ -14,6 +14,9 @@ studio/schema.json
 # A reformat would be churn in files nobody edits by hand.
 docs/recommendations-research/backups/
 docs/recommendations-research/scores/
+# Gitignored by that folder's own .gitignore, which Prettier never reads (see studio/.sanity/
+# below): a fetch-corpus.mjs snapshot that a local check would otherwise flag.
+docs/recommendations-research/corpus.json
 
 # Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
 # .gitignore, never a nested one — so a local `prettier --check .` failed on it while CI, which

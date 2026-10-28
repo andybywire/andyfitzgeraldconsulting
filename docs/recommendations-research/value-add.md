@@ -174,6 +174,10 @@ Recorded so the article stays honest.
     and *Deskilling*.
   - **A taxonomy finds such a pair only if both versions carry the same tags.** Embeddings find
     it from the words alone.
+  - **Measured on the hand tags** (cross-category dry run, 2026-10-27), the two versions often
+    don't carry the same tags. The *Conversations With Robots* talk crosses to *Flying Cars*,
+    not to its own article. That's a tagging-consistency gap, which the tagger may close: both
+    versions score against the same concepts.
   - **There's a modeling alternative to either:** say outright that two documents are one work,
     with a reference between them. That's a content-model question, so it's Andy's.
 
