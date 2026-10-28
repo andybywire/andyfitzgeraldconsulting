@@ -25,6 +25,8 @@ Manager starter prompt come at the end.
 | `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none) |
 | `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags, and its runner, which writes one simulated tag set (spends none, writes no dataset) |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
+| `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under `TAXONOMY_CROSS` (spends none) |
+| `m3-report.mjs`, `m3.0.md` | The M3.n report generator, and its first report, which Andy marks up (spends none, never overwrites a report) |
 
 ## Ground rules
 
@@ -369,6 +371,19 @@ phase 6, and phase 6 waits for Andy's go-ahead.
         on the hand tags.
 - [ ] **M3.0** in the new evaluation format: `Embeddings | Embeddings, same rules | Hand tags |
       Taxonomy v0`
+      - **Generated 2026-10-28,** `m3.0.md`, and waiting on Andy's marks. Its summary:
+
+        | Column | Pages with a cross card | "Recent" fallbacks | Mean agreement with the column to its left |
+        |---|---|---|---|
+        | Embeddings | 53 | 0 | — |
+        | Embeddings, same rules | 19 | 0 | 2.01 of 3 |
+        | Hand tags | 6 | 2 | 0.78 of 3 |
+        | Taxonomy v0 | 15 | 0 | 0.62 of 3 |
+
+      - **The hand tags cross on only 6 pages under `TAXONOMY_CROSS`,** since few hand-tagged
+        pairs share 3 tags. That's the fixed rule applied to them, not a separate setting.
+      - **v0 agrees with the hand tags on 0.62 cards of 3.** The two tag sets rank quite
+        differently, so the Best marks are what say which is better.
 
 *The page wiring was listed here until 2026-10-28. It is in phase 6.*
 
@@ -564,6 +579,16 @@ touches `production-26` or the site's pages.
   - **Unchanged columns:** a column identical to the previous version reads "no change".
 - **Carry-forward.** Every run carries the earlier columns forward, with their Best marks and notes.
 - **Comparisons that skip a run** go below the table, and only for truly interesting cases.
+- **The generator** (`m3-report.mjs`, built 2026-10-28):
+  - **It never overwrites a report**, since a report holds Andy's marks. `--overwrite` is only for
+    one he hasn't touched.
+  - **Carry-forward is not built yet.** It needs a parser for the previous report, as the extract
+    script does, so both come with M3.1. Until then the generator refuses any n above 0.
+  - **Each page's id sits in an HTML comment under its heading,** hidden in Obsidian, so the
+    parser can find a page whatever its title.
+  - **"No change" applies within the taxonomy versions** (v0 against the hand tags, v1 against
+    v0, and so on). The embeddings columns always list their cards.
+  - **Prose is one line per paragraph,** not wrapped, for Obsidian.
 - **Extract script.** It parses every `m3.*.md` into one table of resource, version, agreement, best
   and note, for charting trends.
 

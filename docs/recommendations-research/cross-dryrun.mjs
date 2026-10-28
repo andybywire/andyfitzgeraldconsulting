@@ -22,6 +22,7 @@
 // values. A tag set, with up to six, is what calibrates it.
 import {readFileSync} from 'node:fs'
 import {TAXONOMY_CROSS} from './baseline-columns.mjs'
+import {checkShape, topicShaper, withTagSet} from './taxonomy-columns.mjs'
 import {
   branchForType,
   categoryForType,
@@ -45,40 +46,16 @@ const exampleRule =
       )
 const tagSetPath = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--rule')
 
-/* A topic in the shape RELATED_POOL_QUERY projects, rebuilt from the Topic scheme: its first
-   parent, and whether that parent is a top concept, which is true when the parent has no parent
-   of its own. That is the query's `!defined(broader[0]->broader[0]._ref)`. */
-const parentOf = new Map(corpus.topicScheme.concepts.map((c) => [c._id, c.parents?.[0] ?? null]))
-const topicShape = (id) => {
-  const parent = parentOf.get(id) ?? null
-  return {_id: id, parent, parentIsTop: !parentOf.get(parent)}
-}
-
-/* Rebuilding the hand tags must give back exactly what the query projected, or a tag set would be
-   ranked on a different shape than the site's. Only the three fields the ranker reads are
-   compared: fetch-corpus.mjs adds a `prefLabel` for its reports. */
-const key = (ts) =>
-  JSON.stringify(
-    (ts ?? [])
-      .filter(Boolean)
-      .map(({_id, parent, parentIsTop}) => [_id, parent, parentIsTop])
-      .sort(),
-  )
-const misshapen = corpus.pool.filter(
-  (d) => key(d.topics) !== key((d.topics ?? []).filter(Boolean).map((t) => topicShape(t._id))),
-)
-if (misshapen.length) {
-  throw new Error(`rebuilt topics differ from the query's on ${misshapen.map((d) => d.slug)}`)
-}
+/* A tag set's tags are rebuilt in the query's topic shape, and the rebuild is first proved
+   against the hand tags; see taxonomy-columns.mjs. */
+const shape = topicShaper(corpus.topicScheme)
+checkShape(corpus.pool, shape)
 
 let pool = corpus.pool
 let source = 'the hand tags'
 if (tagSetPath) {
   const tagSet = JSON.parse(readFileSync(new URL(tagSetPath, `file://${process.cwd()}/`)))
-  const tagsFor = new Map(tagSet.documents.map((d) => [d._id, d.tags.map((t) => t.concept)]))
-  const missing = pool.filter((d) => !tagsFor.has(d._id))
-  if (missing.length) throw new Error(`the tag set has no entry for ${missing.map((d) => d.slug)}`)
-  pool = pool.map((d) => ({...d, topics: tagsFor.get(d._id).map(topicShape)}))
+  pool = withTagSet(pool, tagSet, shape)
   source = `tag set ${tagSet.version} (${tagSet.dataset})`
 }
 
