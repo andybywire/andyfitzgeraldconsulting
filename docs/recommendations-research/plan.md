@@ -22,7 +22,7 @@ Manager starter prompt come at the end.
 | `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept (spends quota), and its analysis (spends none) |
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
-| `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`: categories, the effect of the category change, and crossing counts by threshold (spends none) |
+| `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none) |
 | `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags, and its runner, which writes one simulated tag set (spends none, writes no dataset) |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 
@@ -46,6 +46,17 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-10-28.** **The taxonomy's crossing rule is at least 3 shared tags, a shared ratio of at
+  least 0.40, and at most 1 cross card** (Andy). It is calibrated on tag set v0 and held fixed
+  through revisions 1–3, so each M3.n column measures the vocabulary, not a moved bar.
+  - **Where it lives:** `TAXONOMY_CROSS` in `baseline-columns.mjs`, beside the embeddings rule
+    `CROSS`. `CROSS_RULE` in `lib/related.ts` keeps its provisional values (0.5, 2, 1) until
+    promotion, when it takes the research's final rule.
+  - **Why 3 tags:** it crosses on 15 pages against the embeddings column's 19, and 12 of the 15
+    also cross under embeddings. It recovers 5 of the 12 strongest embeddings crossings, most of
+    them the same work in two forms; the hand tags recovered none. Requiring 2 tags can't get near
+    19 (see Phase 1).
 
 - **2026-10-28.** **v0 keeps "more specific wins," and the overlap it exposed goes to revision
   1** (Andy). The rule drops some broader concepts that are plainly a document's subject: *What
@@ -222,9 +233,7 @@ phase 6, and phase 6 waits for Andy's go-ahead.
 
       **Take a fresh backup before every tagging round.** Restore picks the newest lab backup
       unless given `--file`.
-- [x] **Score spike** (2026-10-26). `score-spike.mjs` scored 73 documents against 55 concepts (55
-      queries) into `scores/spike-recommendations-lab-20261026T235419Z.json`. `spike-report.mjs`
-      reads that matrix, spends no quota, and writes `report-spike.md`. What it found:
+- [x] **Score spike** (2026-10-26). `score-spike.mjs` scored 73 documents against 55 concepts (55 queries) into `scores/spike-recommendations-lab-20261026T235419Z.json`. `spike-report.mjs` reads that matrix, spends no quota, and writes `report-spike.md`. What it found:
       - **Raw scores are nearly comparable across concepts after all.** Every concept's floor sits
         between 5.0 and 6.1, never at zero, but the spread inside a concept (2–3 points) dwarfs the
         spread between concepts (about 1).
@@ -328,7 +337,36 @@ phase 6, and phase 6 waits for Andy's go-ahead.
         they are better is what M3.0 is for.
       - **Checked:** no tag beside its broader, every tag clears its slot's bar, band 2 fills only
         after band 1, and no document has more than six tags or a duplicate.
-- [ ] **Calibrate the crossing rule on v0**: re-run `cross-dryrun.mjs` against the tag set
+- [x] **Calibrate the crossing rule on v0** (2026-10-28). `cross-dryrun.mjs` now ranks on a tag
+      set, after checking that the topics it rebuilds from the Topic scheme match the query's
+      projection exactly. The target was the embeddings same-rules column: 19 pages crossing.
+
+      | Rule (ratio, shared tags) | Pages crossing | Also cross under embeddings | Same card | Strongest 12 found |
+      |---|---|---|---|---|
+      | 0.50, 2 (the provisional `CROSS_RULE`) | 28 | 11 | 4 | 4 |
+      | 0.52 to 0.60, 2 | 7 | 3 | 0 | 0 |
+      | **0.40, 3 (chosen)** | **15** | **12** | **6** | **5** |
+      | 0.50, 3 | 11 | 9 | 4 | 4 |
+
+      - **There's a cliff at 2 shared tags.** No v0 pair has a ratio strictly between 0.50 and
+        0.60, so crossings fall from 28 to 7, and nothing in between is reachable.
+      - **At 3 shared tags the ratio barely matters:** anything from 0.01 to 0.40 gives the same
+        15. The 0.40 guards against two heavily tagged documents sharing 3 of 9.
+      - **What crosses:**
+        - **Same-work pairs:** both *Domain Modeling* pairs, both *Boutique Knowledge Graphs*
+          pairs, and *Structured Content Design Workflow 2022* to *Structured Content in Product
+          Design*.
+        - **The other 10 are topical.** For example, *Deskilling Large Language Models* goes to
+          *AI Assisted Content Operations*, and *Taxonomy Management in Sanity Studio* to
+          *Purpose-Driven Taxonomy Design*.
+        - **Still missed:** the *Conversations With Robots* talk crosses to *Boutique Knowledge
+          Graphs*, not to its own article.
+      - **"Strongest 12"** are the pages whose best cross-category match scores ≥ 0.78 anchored in
+        the embeddings baseline. Most are the same work in two forms. Two are close neighbors
+        instead: *AI Assisted Content Operations* → *Self-Hosting Sanity Studio*, and *Ranked
+        Lists of Related Content* → *Sanity Studio Taxonomy Migration*.
+      - **With crossing off, v0 changes 15 of 73 lists against the old branch rule,** against 12
+        on the hand tags.
 - [ ] **M3.0** in the new evaluation format: `Embeddings | Embeddings, same rules | Hand tags |
       Taxonomy v0`
 
@@ -395,6 +433,8 @@ touches `production-26` or the site's pages.
 - [ ] **Cross-category ranking: the wiring.** The insight and presentation pages move to
       `rankAcross`. `RelatedBand.astro` gets the new labels and links each card to its own
       collection. The old branch rule and the `parent` projection are then removed.
+      - **`CROSS_RULE` takes the research's final rule,** `TAXONOMY_CROSS` from
+        `baseline-columns.mjs`, and its comment is rewritten to match.
       - **It is already written:** `git stash list` shows it as "recommendations-research:
         cross-category wiring of pages and RelatedBand, for promotion (2026-10-28)". It changes
         four files: `RelatedBand.astro`, both `[slug].astro` pages, and a comment in
@@ -425,9 +465,13 @@ touches `production-26` or the site's pages.
   - it outranks the weakest home card it would displace, strictly
   - at most `crossMax` cross cards are shown
 
-  All of these are adjustable, and both pages read them from `CROSS_RULE` in `lib/related.ts`.
-  **The values are provisional** (Andy, 2026-10-27): `crossMinShared` 0.5, `crossMinCount` 2,
-  `crossMax` 1. They are calibrated on tag set v0.
+  All of these are adjustable.
+  - **The research uses `TAXONOMY_CROSS`** in `baseline-columns.mjs`: `crossMinShared` 0.40,
+    `crossMinCount` 3, `crossMax` 1. It was calibrated on tag set v0 and is held fixed through
+    revisions 1–3 (Andy, 2026-10-28).
+  - **The pages will read `CROSS_RULE`** in `lib/related.ts`. It keeps its provisional values
+    (0.5, 2, 1, from 2026-10-27) until promotion, and its comment there is out of date until
+    then too.
 - **Labels.**
 
   | Page | No cross cards | With a cross card | Fallback |
@@ -526,15 +570,6 @@ touches `production-26` or the site's pages.
 ## Open questions
 
 Each has a default in place until Andy says otherwise.
-
-- **Calibrating the taxonomy ranker's crossing bar on tag set v0.** `CROSS_RULE` is provisional:
-  `crossMinShared` 0.5, `crossMinCount` 2. On the hand tags it crosses on 26 of 73 pages, against
-  the embeddings column's 19 at `crossMin` 0.70.
-  - *Default:* once tag set v0 exists, re-run `cross-dryrun.mjs` against it and set both values so
-    that about as many pages cross as in the embeddings column. Then the comparison measures the
-    vocabulary rather than which bar is looser.
-  - **Why it waits:** with 2–4 hand tags a document, crossing jumped from 32 pages to 2 between a
-    ratio of 0.50 and 0.67. Requiring two shared tags left no crossing at all above 0.50.
 
 - **How a later round retags: from scratch, or by bumping.** Rounds 1–3 re-score only the
   concepts that changed. The tagger can then re-run from scratch over the updated matrix, or

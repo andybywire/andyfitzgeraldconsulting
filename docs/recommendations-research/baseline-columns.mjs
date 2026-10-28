@@ -3,7 +3,8 @@
 //   node docs/recommendations-research/baseline-columns.mjs [scores/baseline-<…>.json]
 //
 // Imported by the M3.n generator. Run directly, it prints the crossing counts across a range of
-// thresholds, for revisiting CROSS below.
+// thresholds, for revisiting CROSS below. TAXONOMY_CROSS, the taxonomy columns' crossing rule,
+// sits beside CROSS so the two bars are read together.
 //
 // ── TWO COLUMNS, BECAUSE TWO THINGS ARE BEING MEASURED ───────────────────────────────────────
 //
@@ -46,6 +47,23 @@ export const DOC_FLOOR = 5.1
  * one card from the other category, which is the value the counts were measured at.
  */
 export const CROSS = {crossMin: 0.7, crossMax: 1}
+
+/**
+ * The crossing rule for the taxonomy columns, Taxonomy v0 and on (Andy, 2026-10-28). It lives
+ * here, beside the embeddings rule, so the two can be read together; it is in rankAcross's
+ * shape (web/src/lib/related.ts → CrossRule).
+ *
+ * Calibrated on tag set v0 against CROSS's 19 pages: at least 3 shared tags crosses on 15 pages,
+ * 12 of which also cross under embeddings, and recovers 5 of the 12 strongest embeddings
+ * crossings. With 2 shared tags there is no setting near 19: v0 has no pair with a ratio strictly
+ * between 0.50 and 0.60, so crossings fall from 28 to 7. At 3 shared tags the ratio changes
+ * nothing on v0 between 0.01 and 0.40; 0.40 guards against heavily tagged documents sharing 3 of
+ * 9 tags.
+ *
+ * HELD FIXED across revisions 1–3, so each M3.n column measures the vocabulary, not a moved bar.
+ * CROSS_RULE in related.ts keeps its provisional values until promotion (plan.md → phase 6).
+ */
+export const TAXONOMY_CROSS = {crossMinShared: 0.4, crossMinCount: 3, crossMax: 1}
 
 export const category = (type) => (type === 'presentation' ? 'presentations' : 'insights')
 
