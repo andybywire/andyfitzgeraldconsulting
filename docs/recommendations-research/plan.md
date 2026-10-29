@@ -27,6 +27,8 @@ Manager starter prompt come at the end.
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under `TAXONOMY_CROSS` (spends none) |
 | `m3-report.mjs`, `m3.0.md` | The M3.n report generator, and its first report, which Andy marks up (spends none, never overwrites a report) |
+| `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
+| `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
 
 ## Ground rules
 
@@ -48,6 +50,16 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-10-29.** **M3.0 is marked, and revision 1 is planned** (Andy).
+  - **The marks:** one ✅ on each of the 73 pages. The best list came from an embeddings column on
+    47 pages and from a taxonomy column on 25, with one tie. See Phase 1 → M3.0.
+  - **Revision 1 edits the lab's Topic scheme in place,** not a new scheme, which keeps the wiring
+    simple. Andy sorts three lists in Miro first: the bigram list, the new single-word list and
+    the taxonomy CSV.
+  - **M3.1 flags only lists that are new.** A page is flagged when its v1 cards, in any order,
+    match none of the lists already shown for it. Andy re-evaluates only those, against the Best
+    he has already chosen. Every other page keeps its mark. See M3.n evaluation reports.
 
 - **2026-10-28.** **The taxonomy's crossing rule is at least 3 shared tags, a shared ratio of at
   least 0.40, and at most 1 cross card** (Andy). It is calibrated on tag set v0 and held fixed
@@ -369,9 +381,32 @@ phase 6, and phase 6 waits for Andy's go-ahead.
         Lists of Related Content* → *Sanity Studio Taxonomy Migration*.
       - **With crossing off, v0 changes 15 of 73 lists against the old branch rule,** against 12
         on the hand tags.
-- [ ] **M3.0** in the new evaluation format: `Embeddings | Embeddings, same rules | Hand tags |
-      Taxonomy v0`
-      - **Generated 2026-10-28,** `m3.0.md`, and waiting on Andy's marks. Its summary:
+- [x] **M3.0** in the new evaluation format: `Embeddings | Embeddings, same rules | Hand tags |
+      Taxonomy v0`. Generated 2026-10-28 and **marked by Andy on 2026-10-29**: one ✅ per page,
+      no notes.
+
+      | Best list | Pages |
+      |---|---|
+      | Embeddings | 24 |
+      | Embeddings, same rules | 24 |
+      | Hand tags | 13 |
+      | Taxonomy v0 | 12 |
+
+      - **By method:** an embeddings column on 47 pages, a taxonomy column on 25, and 1 page where
+        the chosen list appears in both.
+      - **By type:**
+
+        | Type | Embeddings | Taxonomy | Tie |
+        |---|---|---|---|
+        | Articles (31) | 15 | 15 | 1 |
+        | Case studies (7) | 5 | 2 | 0 |
+        | Notes (6) | 5 | 1 | 0 |
+        | Presentations (29) | 22 | 7 | 0 |
+
+      - **Shared lists:** on 13 pages the chosen list was identical in both embeddings columns,
+        and on 1 more it was identical in those two and the hand tags. A ✅ lands in one column
+        only, so the per-column counts split those pages.
+      - **What the generator reported at generation:**
 
         | Column | Pages with a cross card | "Recent" fallbacks | Mean agreement with the column to its left |
         |---|---|---|---|
@@ -401,10 +436,41 @@ phase 6, and phase 6 waits for Andy's go-ahead.
     `tagset.mjs`. IA should stop appearing in the dropped list against Navigation Design on the
     IA-titled pages.
 
-- [ ] Generate candidate single-word terms (NLP / LLM). The existing `web/scripts/phrase-candidates.mjs`
-      proposes multiword terms and is a starting point.
-- [ ] Andy structures the flat list into the scheme
-- [ ] Retag round 1, then **M3.1**, with only the changed resources flagged for evaluation
+- [x] **Three lists to sort in Miro** (2026-10-29):
+  - **Both term lists come from `term-candidates.mjs`,** in one fetch of the lab's 73 documents,
+    so they cover the same content the research tags.
+  - **Bigrams:** `bigram-candidates.md` (the top 80) and `bigram-candidates.csv` (all 611). It is
+    `web/scripts/phrase-candidates.mjs`'s process unchanged: the search index's prose and
+    tokenizer, 3 uses across 2 documents, G² ≥ 10.83, and existing labels excluded.
+    - **Why it was re-run** (Andy, 2026-10-29): the list in `docs/phrase-candidates.md` came
+      from `production-26` on 2026-09-14, over 53 documents, before many presentations had text.
+      That script reads `web/.env`, which is `production-26`, so it was not re-run itself.
+    - **What changed:** 72 of the top 80 are the same, and the total grew from 493 to 611, mostly
+      further down. New in the top 80: *user experience*, *information environments*, *business
+      goals*, *key concepts*, *multi device*, *purpose driven*. *domain modeling* is gone, now
+      that Domain Modeling is a label.
+  - **Single words:** `word-candidates.md` (the top 120) and `word-candidates.csv` (all 182). It
+    uses the bigram list's prose, tokenizer, floors (3 uses, 2 documents) and label exclusion.
+    The score differs, because G² needs two words. A word scores by how many documents it is one of the top 25 TF-IDF
+    keywords of, which is the search index's own measure, and it must reach 2. It is noisy, as
+    the bigram list is: *tags*, *llm*, *classification* and *authoring* sit beside *andy* and
+    *hands*. Singulars and plurals stay separate, because the shared tokenizer doesn't stem.
+  - **The taxonomy:** `topic-taxonomy.csv`, from `topic-taxonomy.mjs`. It has 59 concepts in
+    tree order (4 at level 1, 11 at level 2, 44 at level 3), each with its direct hand-tag count,
+    its count including narrower concepts, its v0 count, its definition and its scope note.
+    12 concepts below the top level have no direct hand tag.
+- [ ] **Andy sorts the lists in Miro, then edits the lab's Topic scheme in place.**
+  - **Topic references are strong.** The lab's hand tags still point at today's concepts, so the
+    Studio won't delete a concept that a document still references. The tag backup from
+    2026-10-26 holds the hand tags if they need clearing first, and M3.0 already records the
+    Hand tags column, so clearing them changes no report.
+- [ ] **Retag round 1, then M3.1.**
+  1. Re-fetch the corpus.
+  2. Re-score the changed and new concepts, about one query each.
+  3. Write tag set v1.
+  4. Generate M3.1 from the marked `m3.0.md`.
+
+  Only pages with a new list are flagged; see M3.n evaluation reports.
 
 ### 3. Taxonomy revision 2: examples
 
@@ -557,8 +623,15 @@ touches `production-26` or the site's pages.
 
 - **File and order.** One file per run, `m3.n.md`, readable in Obsidian. Resources are grouped by
   category (Article, Case Study, Note, Presentation) and sorted alphabetically within each group.
-- **One section per resource,** with a **CHANGED** flag when any column differs from the previous
-  run. On a re-run, only flagged resources need evaluating.
+- **One section per resource,** with a **NEW** flag when the newest column offers a list Andy has
+  not seen for that resource (Andy, 2026-10-29).
+  - **"New" ignores order.** v1's three cards are compared as a set with every earlier column's
+    set on that page. If they match any of them, the page is not flagged, because Andy has
+    already judged that list.
+  - **Only flagged pages are re-evaluated,** and only against the Best already chosen: is the new
+    list better? An unflagged page keeps its mark as it is.
+  - **This replaces the earlier CHANGED flag,** which flagged any difference from the previous
+    run. That would have sent Andy back to lists he had already judged in another column.
 - **The table.**
   - **Columns:** `Embeddings | Embeddings, same rules | Hand tags | Taxonomy v0 | v1 | …`.
   - **The two embeddings columns** are the baseline: no taxonomy at all.
@@ -578,6 +651,13 @@ touches `production-26` or the site's pages.
     best version, then a **Notes** row.
   - **Unchanged columns:** a column identical to the previous version reads "no change".
 - **Carry-forward.** Every run carries the earlier columns forward, with their Best marks and notes.
+  - **The earlier columns are read from the marked report, not recomputed.** Revision 1 changes
+    the lab's Topic scheme, and possibly its hand tags, so recomputing the Hand tags or v0 column
+    against the lab would rewrite what Andy judged. M3.1 is `m3.0.md` as marked, plus the v1
+    column.
+  - **Cards are matched by title**, which is unique across the 73 pages (verified 2026-10-29).
+    Obsidian pads the tables when it saves them; a test parse of the marked `m3.0.md` read every
+    mark.
 - **Comparisons that skip a run** go below the table, and only for truly interesting cases.
 - **The generator** (`m3-report.mjs`, built 2026-10-28):
   - **It never overwrites a report**, since a report holds Andy's marks. `--overwrite` is only for

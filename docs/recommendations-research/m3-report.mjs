@@ -151,7 +151,7 @@ out.push(
   `**The taxonomy columns** all run the site's ranker under one fixed crossing rule: at least ${TAXONOMY_CROSS.crossMinCount} shared tags, a shared ratio of at least ${TAXONOMY_CROSS.crossMinShared}, at most ${TAXONOMY_CROSS.crossMax} cross card. They differ only in their tags.`,
   '',
 )
-if (n === 0) out.push('M3.0 is the first run, so no page is flagged **CHANGED**.', '')
+if (n === 0) out.push('M3.0 is the first run, so no page is flagged **NEW**.', '')
 
 out.push(
   '| Column | What it is | Pages with a cross card | "Recent" fallbacks | Mean agreement with the column to its left |',
