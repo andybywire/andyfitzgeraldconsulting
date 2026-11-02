@@ -17,3 +17,5 @@ allowBuilds:
   # web/scripts/validate-html.mjs runs the jar with that `java` and never calls the
   # package's own `check()`, which would trigger the same download at run time.
   vnu-jar: false
+minimumReleaseAgeExclude:
+  - sanity-plugin-taxonomy-manager@6.2.0
