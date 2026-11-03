@@ -22,8 +22,16 @@
 // the corpus; the generator checks that before it starts.
 //
 // A page is flagged NEW, in its heading, when the vn cards, in any order, match none of the lists
-// already shown for it (Andy, 2026-10-29). Only those need judging, against the Best already
-// marked. When vn repeats an earlier list, its header names the column or columns it repeats.
+// already shown for it (Andy, 2026-10-29). Only those need judging, against the latest pick. When
+// vn repeats an earlier list, its header names the column or columns it repeats.
+//
+// ── ONE BEST ROW PER ROUND ───────────────────────────────────────────────────────────────────
+//
+// Each round keeps its own Best row, so the report records how every earlier round was judged
+// (Andy, 2026-11-03). M3.n has rows `v0 Best` to `vn Best`. The carried rows show their picks
+// grayed, as ☑️, and the `vn Best` row is left empty for Andy's ✅. M3.0's single "Best" row is
+// read as `v0 Best`. "The latest pick" is the newest carried row with a mark: a page Andy left
+// unmarked in a round falls back to the round before.
 //
 // ── WHAT THE REPORT SAYS ─────────────────────────────────────────────────────────────────────
 //
@@ -139,11 +147,11 @@ if (n > 0) {
   previous = {...parsed, byId: new Map(parsed.pages.map((p) => [p.id, p]))}
 }
 
-/** Each column's list for one page: ids, whether it was the "Recent" fallback, and its marks. */
+/** Each column's list for one page: ids, whether it was the "Recent" fallback, and its note. */
 function columnsFor(page) {
   const computed = pools.map((pool) => {
     const r = taxonomyColumn(page, pool, categories)
-    return {ids: r.items.map((i) => i._id), recent: r.isFallback, best: false, note: ''}
+    return {ids: r.items.map((i) => i._id), recent: r.isFallback, note: ''}
   })
   if (previous) {
     const carried = previous.byId.get(page._id).columns.map((c) => ({
@@ -153,22 +161,36 @@ function columnsFor(page) {
         return id
       }),
       recent: c.recent,
-      best: c.best,
       note: c.note,
     }))
     return [...carried, ...computed]
   }
   const basePage = base.pages.find((p) => p._id === page._id)
   return [
-    {ids: unrestricted(basePage, typeOf).map((r) => r.id), recent: false, best: false, note: ''},
-    {
-      ids: sameRules(basePage, typeOf, CROSS).map((r) => r.id),
-      recent: false,
-      best: false,
-      note: '',
-    },
+    {ids: unrestricted(basePage, typeOf).map((r) => r.id), recent: false, note: ''},
+    {ids: sameRules(basePage, typeOf, CROSS).map((r) => r.id), recent: false, note: ''},
     ...computed,
   ]
+}
+
+/**
+ * One page's Best rows: every row carried from the previous report, widened by an unmarked cell
+ * for the new column, then an empty row for this round.
+ */
+function bestsFor(page) {
+  const carried = previous
+    ? previous.byId.get(page._id).bests.map((b) => ({
+        version: b.version ?? 0,
+        marked: [...b.marked, false],
+      }))
+    : []
+  return [...carried, {version: n, marked: COLUMNS.map(() => false)}]
+}
+
+/** The newest carried Best row with a mark, as the round and the column it picked; or null. */
+function latestPick(bests) {
+  const row = bests.slice(0, -1).findLast((b) => b.marked.some(Boolean))
+  return row ? {version: row.version, at: row.marked.indexOf(true)} : null
 }
 
 const agree = (a, b) => a.filter((id) => b.includes(id)).length
@@ -184,17 +206,18 @@ const repeats = (cols) =>
     .map((c) => c.name)
 
 /**
- * On a NEW page, the newest list set against the one marked Best: the cards it adds, drops and
- * keeps, so a page can be judged on the swap rather than read whole (Andy, 2026-11-03).
+ * On a NEW page, the newest list set against the latest pick: the cards it adds, drops and keeps,
+ * so a page can be judged on the swap rather than read whole (Andy, 2026-11-03).
  *
  * It is a quote, not a bullet, so m3-parse.mjs never takes it for a tag line: the next report
- * computes its own against whatever Best is then. Titles are in italics because many hold commas
- * and colons, and a title's own asterisk ("Sanity Everything*[NYC]") is escaped so it can't end
- * the italics early.
+ * computes its own against whatever the latest pick is then. Titles are in italics because many
+ * hold commas and colons, and a title's own asterisk ("Sanity Everything*[NYC]") is escaped so it
+ * can't end the italics early.
  */
-function againstBest(page, cols) {
-  const at = cols.slice(0, -1).findIndex((c) => c.best)
-  if (at === -1) return null
+function againstBest(page, cols, bests) {
+  const pick = latestPick(bests)
+  if (!pick) return null
+  const at = pick.at
   const [best, newest] = [cols[at].ids, cols.at(-1).ids]
   const name = (id) => {
     const other = categoryForType(typeOf(id)) !== categoryForType(page._type)
@@ -215,7 +238,7 @@ function againstBest(page, cols) {
       newest.filter((id) => best.includes(id)),
     ),
   ].filter(Boolean)
-  return `> **${COLUMNS.at(-1).name} against Best** (${COLUMNS[at].name}): ${parts.join('; ')}.`
+  return `> **${COLUMNS.at(-1).name} against v${pick.version} Best** (${COLUMNS[at].name}): ${parts.join('; ')}.`
 }
 
 const GROUPS = [
@@ -227,6 +250,7 @@ const GROUPS = [
 const byTitle = (a, b) => titleOf(a).localeCompare(titleOf(b), 'en', {sensitivity: 'base'})
 const pages = GROUPS.flatMap(([type]) => corpus.pool.filter((d) => d._type === type).sort(byTitle))
 const results = new Map(pages.map((p) => [p._id, columnsFor(p)]))
+const bestRows = new Map(pages.map((p) => [p._id, bestsFor(p)]))
 const flagged = n > 0 ? pages.filter((p) => repeats(results.get(p._id)).length === 0) : []
 const isNew = new Set(flagged.map((p) => p._id))
 
@@ -242,7 +266,7 @@ out.push(
   '',
 )
 out.push(
-  `**How to judge.** In each page's **Best** row, paste ✅ under the column whose list you think is best, and add anything worth keeping in **Notes**. ⇄ marks a card from the other category. "(agree n/3)" counts the cards a column shares with the one to its left. "recent" means the ranker found nothing related and showed the newest documents instead.`,
+  `**How to judge.** Each page has one Best row per round. In its **v${n} Best** row, paste ✅ under the column whose list you think is best now, and add anything worth keeping in **Notes**.${n > 0 ? " The rows above it keep the earlier rounds' picks, grayed to ☑️." : ''} ⇄ marks a card from the other category. "(agree n/3)" counts the cards a column shares with the one to its left. "recent" means the ranker found nothing related and showed the newest documents instead.`,
   '',
 )
 out.push(
@@ -255,12 +279,13 @@ if (n === 0) {
   const newest = COLUMNS.at(-1).name
   const onBest = pages.filter((p) => {
     const cols = results.get(p._id)
-    return cols.slice(0, -1).some((c) => c.best && setKey(c.ids) === setKey(cols.at(-1).ids))
+    const pick = latestPick(bestRows.get(p._id))
+    return pick && setKey(cols[pick.at].ids) === setKey(cols.at(-1).ids)
   }).length
   out.push(
-    `**NEW** in a page's heading means its ${newest} list, in any order, matches none of the lists already shown for it. That is **${flagged.length} of ${pages.length} pages**, and only they need judging, against the Best already marked. On the other ${pages.length - flagged.length}, ${newest} repeats a list you have judged, and its header names which: on ${onBest} of them, the one you marked Best.`,
+    `**NEW** in a page's heading means its ${newest} list, in any order, matches none of the lists already shown for it. That is **${flagged.length} of ${pages.length} pages**, and only they need judging, against your latest pick. On the other ${pages.length - flagged.length}, ${newest} repeats a list you have judged, and its header names which: on ${onBest} of them, the one you last picked.`,
     '',
-    `**Best was the best of the lists shown, not of every possible list,** so a NEW page asks whether ${newest}'s list beats it. Each one has a line above its table setting ${newest} against the list marked Best: the cards it adds, drops and keeps.`,
+    `**Best was the best of the lists shown, not of every possible list,** so a NEW page asks whether ${newest}'s list beats it. Each one has a line above its table setting ${newest} against your latest pick: the cards it adds, drops and keeps.`,
     '',
   )
   for (const [type, heading] of GROUPS) {
@@ -270,21 +295,25 @@ if (n === 0) {
   out.push('')
 }
 
+/* One count column per earlier round's Best row: how many pages that round picked each column. */
+const rounds = Array.from({length: n}, (_, v) => v)
 out.push(
-  '| Column | What it is | Pages with a cross card | "Recent" fallbacks | Mean agreement with the column to its left | Marked Best |',
+  `| Column | What it is | Pages with a cross card | "Recent" fallbacks | Mean agreement with the column to its left |${rounds.map((v) => ` v${v} Best |`).join('')}`,
 )
-out.push('|---|---|---|---|---|---|')
+out.push(`|---|---|---|---|---|${rounds.map(() => '---|').join('')}`)
 COLUMNS.forEach((col, i) => {
   const lists = pages.map((p) => results.get(p._id)[i])
   const crossing = pages.filter((p, k) => crosses(p, lists[k].ids)).length
   const recent = lists.filter((l) => l.recent).length
-  const marked = lists.filter((l) => l.best).length
+  const picked = rounds.map(
+    (v) => pages.filter((p) => bestRows.get(p._id).find((b) => b.version === v)?.marked[i]).length,
+  )
   const mean =
     i === 0
       ? '—'
       : `${(pages.reduce((s, p) => s + agree(results.get(p._id)[i].ids, results.get(p._id)[i - 1].ids), 0) / pages.length).toFixed(2)} of 3`
   out.push(
-    `| ${col.name} | ${col.what} | ${crossing} of ${pages.length} | ${recent} | ${mean} | ${marked} |`,
+    `| ${col.name} | ${col.what} | ${crossing} of ${pages.length} | ${recent} | ${mean} |${picked.map((k) => ` ${k} |`).join('')}`,
   )
 })
 out.push('')
@@ -307,6 +336,7 @@ for (const [type, heading, singular] of GROUPS) {
   out.push(`## ${heading} (${group.length})`, '')
   for (const page of group) {
     const cols = results.get(page._id)
+    const bests = bestRows.get(page._id)
     const flag = isNew.has(page._id) ? ' — NEW' : ''
     out.push(`### ${titleOf(page)}${flag}`, `<!-- id: ${page._id} -->`, '')
     out.push(`*${singular}${page.genre ? ` · ${page.genre}` : ''}*`, '')
@@ -317,7 +347,7 @@ for (const [type, heading, singular] of GROUPS) {
       tagSets.forEach((t) => out.push(tagLine(t, page)))
     }
     out.push('')
-    const swap = flag ? againstBest(page, cols) : null
+    const swap = flag ? againstBest(page, cols, bests) : null
     if (swap) out.push(swap, '')
 
     const unchanged = cols.map(
@@ -341,7 +371,10 @@ for (const [type, heading, singular] of GROUPS) {
       })
       out.push(`| ${row + 1} | ${cells.join(' | ')} |`)
     }
-    out.push(`| **Best** | ${cols.map((c) => (c.best ? '✅' : '')).join(' | ')} |`)
+    for (const b of bests) {
+      const mark = b.version < n ? '☑️' : '✅'
+      out.push(`| **v${b.version} Best** | ${b.marked.map((m) => (m ? mark : '')).join(' | ')} |`)
+    }
     out.push(`| **Notes** | ${cols.map((c) => cell(c.note)).join(' | ')} |`)
     out.push('')
   }

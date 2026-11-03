@@ -672,9 +672,11 @@ touches `production-26` or the site's pages.
   - **Best is the best of the lists shown, not of every possible list** (Andy, 2026-11-03). So a
     high NEW count is not a bad sign in itself: each flagged page is a chance for the new version
     to beat what was there.
-  - **Each flagged page sets the new list against Best,** in a quoted line above its table: the
-    cards it adds, drops and keeps (Andy, 2026-11-03). In M3.1, v1 adds 1 card on 8 pages, 2 on 37
-    and all 3 on 22; on one page it returns a single card Best already had.
+  - **Each flagged page sets the new list against the latest pick,** in a quoted line above its
+    table: the cards it adds, drops and keeps (Andy, 2026-11-03). In M3.1, v1 adds 1 card on 8
+    pages, 2 on 37 and all 3 on 22; on one page it returns a single card the pick already had.
+    The latest pick is the newest earlier Best row with a mark, so a page left unmarked in one
+    round is compared with the round before.
   - **This replaces the earlier CHANGED flag,** which flagged any difference from the previous
     run. That would have sent Andy back to lists he had already judged in another column.
 - **The table.**
@@ -692,8 +694,11 @@ touches `production-26` or the site's pages.
       vocabulary adds.
     - Both are computed once and cached, since the experiment changes no content text.
   - **Header cells:** each gives that column's agreement with the column before it, as `(agree n/3)`.
-  - **Rows:** three for the cards, then a **Best** row left blank, where Andy pastes ✅ under the
-    best version, then a **Notes** row.
+  - **Rows:** three for the cards, then **one Best row per round,** then a **Notes** row (Andy,
+    2026-11-03). M3.n has `v0 Best` to `vn Best`. The earlier rows are carried forward with their
+    picks grayed to ☑️, so the report keeps a record of every round's judgment, and the `vn Best`
+    row is left empty for Andy's ✅. M3.0's single **Best** row counts as `v0 Best`. The summary
+    table counts each earlier round's picks per column.
   - **Unchanged columns:** a column identical to the previous version reads "no change".
 - **Carry-forward.** Every run carries the earlier columns forward, with their Best marks and notes.
   - **The earlier columns are read from the marked report, not recomputed.** Revision 1 changes
