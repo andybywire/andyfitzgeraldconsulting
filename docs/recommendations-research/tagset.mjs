@@ -9,11 +9,16 @@
 // Round 0's matrix is the score spike. It ran the round-0 query for every concept (prefLabel,
 // definition and scopeNote) against every document, which is exactly what a round-0 retag
 // would run, so it is reused rather than re-queried. The newest spike is read unless one is named.
+// A later round re-runs score-spike.mjs against the revised scheme, so its matrix is a spike file
+// too: v1's is spike-recommendations-lab-20261103T011931Z.json, every concept re-scored, since
+// revision 1 rewrote nearly every definition.
 import {mkdirSync, readFileSync, readdirSync, writeFileSync} from 'node:fs'
 import {ROUND_0, tagCorpus} from './tagger.mjs'
 
-/* One configuration per version. Later rounds add theirs here as they are decided. */
-const CONFIGS = {v0: ROUND_0}
+/* One configuration per version. Later rounds add theirs here as they are decided. v1 holds round
+   0's configuration on purpose, so a change between v0 and v1 comes from the vocabulary, not from
+   the tagger. The floor still fits: v1's lowest raw score is 4.99 against v0's 4.98. */
+const CONFIGS = {v0: ROUND_0, v1: ROUND_0}
 
 const version = process.argv[2]
 const config = CONFIGS[version]
@@ -45,7 +50,7 @@ const out = {
   dataset: matrix.dataset,
   matrix: file.pathname.split('/').slice(-2).join('/'),
   config,
-  authorTags: 'none: round 0 retags from scratch',
+  authorTags: 'none: every round retags from scratch (plan.md → Open questions)',
   documents: matrix.docs.map((d) => ({
     _id: d._id,
     _type: d._type,
@@ -132,7 +137,7 @@ const hand = new Map()
 for (const d of matrix.docs) for (const c of d.tags) hand.set(c, (hand.get(c) ?? 0) + 1)
 const auto = new Map()
 for (const t of tags) auto.set(t.concept, (auto.get(t.concept) ?? 0) + 1)
-console.log('\nMost-used concepts (v0 / by hand):')
+console.log(`\nMost-used concepts (${version} / by hand):`)
 for (const [c, n] of [...auto].sort((a, b) => b[1] - a[1]).slice(0, 10)) {
   console.log(`  ${String(n).padStart(3)} / ${String(hand.get(c) ?? 0).padEnd(3)} ${label.get(c)}`)
 }
@@ -142,5 +147,5 @@ const handTags = matrix.docs.flatMap((d) => d.tags.map((c) => `${d._id}|${c}`))
 const v0Pairs = new Set(docs.flatMap((d) => d.tags.map((t) => `${d._id}|${t.concept}`)))
 const kept = handTags.filter((p) => v0Pairs.has(p)).length
 console.log(
-  `\nHand tags reproduced: ${kept} of ${handTags.length}. v0 tags that are hand tags: ${kept} of ${tags.length}.`,
+  `\nHand tags reproduced: ${kept} of ${handTags.length}. ${version} tags that are hand tags: ${kept} of ${tags.length}.`,
 )

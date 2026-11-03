@@ -31,31 +31,41 @@ export const loadTagSet = (version) =>
  */
 export function topicShaper(topicScheme) {
   const parentOf = new Map(topicScheme.concepts.map((c) => [c._id, c.parents?.[0] ?? null]))
-  return (id) => {
+  const shape = (id) => {
     const parent = parentOf.get(id) ?? null
     return {_id: id, parent, parentIsTop: !parentOf.get(parent)}
   }
+  /** Whether the scheme holds this concept below its top level, which is all a tag set can hold. */
+  shape.has = (id) => parentOf.has(id)
+  return shape
 }
 
 /**
  * Throws unless rebuilding every document's hand tags gives back exactly what the query projected.
  * Only the three fields the ranker reads are compared: fetch-corpus.mjs adds a `prefLabel` for its
- * reports.
+ * reports. Returns how many hand tags it skipped.
+ *
+ * Hand tags on concepts that have left the scheme, or that are now top concepts, are skipped.
+ * Their parents can't be rebuilt from the scheme's narrower concepts, and they don't need to be:
+ * the tagger scores only those, so no tag set can hold one. Revision 1 left 36 such hand tags: 32
+ * on concepts outside the scheme, among them AI Integration's 12 and Content Analysis's 5, and 4
+ * on Project Management, which became a top concept. They still point at their concepts, which
+ * the lab keeps.
  */
 export function checkShape(pool, shape) {
+  const inScheme = (ts) => (ts ?? []).filter(Boolean).filter((t) => shape.has(t._id))
   const key = (ts) =>
-    JSON.stringify(
-      (ts ?? [])
-        .filter(Boolean)
-        .map(({_id, parent, parentIsTop}) => [_id, parent, parentIsTop])
-        .sort(),
-    )
+    JSON.stringify(ts.map(({_id, parent, parentIsTop}) => [_id, parent, parentIsTop]).sort())
   const misshapen = pool.filter(
-    (d) => key(d.topics) !== key((d.topics ?? []).filter(Boolean).map((t) => shape(t._id))),
+    (d) => key(inScheme(d.topics)) !== key(inScheme(d.topics).map((t) => shape(t._id))),
   )
   if (misshapen.length) {
     throw new Error(`rebuilt topics differ from the query's on ${misshapen.map((d) => d.slug)}`)
   }
+  return pool.reduce(
+    (n, d) => n + (d.topics ?? []).filter(Boolean).length - inScheme(d.topics).length,
+    0,
+  )
 }
 
 /** The pool with every document's topics replaced by a tag set's. Throws if the set misses one. */

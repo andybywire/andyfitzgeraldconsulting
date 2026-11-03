@@ -1,6 +1,6 @@
 # Recommendations research: plan
 
-*Living document. Started 2026-10-21; this version 2026-10-28. Branch: `recommendations-research`.*
+*Living document. Started 2026-10-21; this version 2026-11-03. Branch: `recommendations-research`.*
 
 ## What this is
 
@@ -26,7 +26,8 @@ Manager starter prompt come at the end.
 | `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags, and its runner, which writes one simulated tag set (spends none, writes no dataset) |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under `TAXONOMY_CROSS` (spends none) |
-| `m3-report.mjs`, `m3.0.md` | The M3.n report generator, and its first report, which Andy marks up (spends none, never overwrites a report) |
+| `m3-report.mjs`, `m3.0.md`, `m3.1.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
+| `m3-parse.mjs` | Reads a marked M3.n report back into columns, cards, Best marks and notes, for the carry-forward and, later, the extract script |
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
 
@@ -50,6 +51,21 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-02.** **Revision 1's scheme is in, and its definitions follow genus–differentia** (Andy).
+  - **The scheme** keeps its title "Topic" and its id, `skosConceptScheme87f8b2e73674`, so the
+    scripts needed no change. It has 6 top concepts (Engineering Practice, Design Practice,
+    Design Approach, Project Management, Engineering Tool, Outcome) and 66 concepts below them.
+    The "Topic v0" copy Andy made first is deleted; it referenced the same concept documents, so it
+    never held the old hierarchy anyway. `topic-taxonomy.csv` and the tag sets hold that.
+  - **Every definition is written as genus–differentia:** "X is a [parent] practice, method or
+    outcome that …", naming the parent rather than restating its definition, and without filler or
+    other concepts' names. Andy asked for it across the scheme, so that tagging isn't skewed by
+    the definitions' differing shapes. Claude drafted, Andy revised and published.
+  - **The tagger and the ranker read only a concept's first parent** (`broader[0]`), and round 1
+    keeps that rule by default. Andy has not ruled on it. Two concepts have two parents:
+    Prototyping, whose parents are both top concepts, so the rule changes nothing, and Structural
+    Analysis, whose second parent, Evaluation, is invisible to both.
 
 - **2026-10-29.** **M3.0 is marked, and revision 1 is planned** (Andy).
   - **The marks:** one ✅ on each of the 73 pages. The best list came from an embeddings column on
@@ -459,18 +475,41 @@ phase 6, and phase 6 waits for Andy's go-ahead.
     tree order (4 at level 1, 11 at level 2, 44 at level 3), each with its direct hand-tag count,
     its count including narrower concepts, its v0 count, its definition and its scope note.
     12 concepts below the top level have no direct hand tag.
-- [ ] **Andy sorts the lists in Miro, then edits the lab's Topic scheme in place.**
+- [x] **Andy sorts the lists in Miro, then edits the lab's Topic scheme in place** (2026-11-02).
+  See Decisions. 26 concepts are new, and 13 left the scheme. Their hand tags stay where they
+  were: 32 point at concepts outside the scheme, and 4 at Project Management, now a top concept.
   - **Topic references are strong.** The lab's hand tags still point at today's concepts, so the
     Studio won't delete a concept that a document still references. The tag backup from
     2026-10-26 holds the hand tags if they need clearing first, and M3.0 already records the
     Hand tags column, so clearing them changes no report.
-- [ ] **Retag round 1, then M3.1.**
-  1. Re-fetch the corpus.
-  2. Re-score the changed and new concepts, about one query each.
-  3. Write tag set v1.
-  4. Generate M3.1 from the marked `m3.0.md`.
+- [x] **Retag round 1, then M3.1** (2026-11-03).
+  1. **Corpus re-fetched:** the same 73 documents as v0.
+  2. **Every concept re-scored,** 66 queries, since nearly every definition changed:
+     `scores/spike-recommendations-lab-20261103T011931Z.json`. The concepts' own embeddings were
+     checked first: on five rewritten concepts, each matched its new text better than its old.
+     The floor still fits (lowest raw score 4.99, against v0's 4.98), and self-matches rose by a
+     median of only 0.11, so round 0's configuration is kept unchanged.
+  3. **Tag set v1:** 217 tags, 7 documents on the minimum (v0 had 4), 44 of 66 concepts used.
+  4. **M3.1:** `m3.1.md`, with M3.0's columns and marks carried forward. **68 of 73 pages are
+     flagged NEW.** The flags were checked against a direct comparison of card sets, and the
+     carried embeddings columns against a fresh computation: both agree on all 73 pages. v1 is
+     one card away from an earlier list on 32 of the 68.
 
-  Only pages with a new list are flagged; see M3.n evaluation reports.
+  **What v1 shows, before Andy's marks.** These are proxies; the marks decide.
+  - **Against the lists marked Best,** on the 61 pages where v0 wasn't marked Best: v1 shares 0.79
+    cards of 3 and v0 0.87. v1 is closer on 10 pages, further on 17, level on 34. On the 12 pages
+    where v0 was marked Best, v1 keeps 1.08 of its cards.
+  - **v1 agrees with v0 on 1.21 cards of 3,** and crosses on 15 pages, as v0 did.
+
+  **Inputs found for revision 2:**
+  - **The Navigation Design overlap is gone, and the same drop now comes from Search and Site Map.**
+    Information Architecture was the best match on *What Is Information Architecture?* (0.815)
+    and *When Do You Need an Information Architect?* (0.686), and a hand tag on both, yet it was
+    dropped for Search (0.581) and Site Map (0.472). Both definitions open "… is an information
+    architecture practice / model", so they score high wherever IA does. That is the cost of
+    naming the genus in a child's definition, under "more specific wins".
+  - **Hubs:** Sanity lands on 19 documents (4 by hand), Search on 10 (0 by hand), Structured
+    Content on 24 (19 by hand).
 
 ### 3. Taxonomy revision 2: examples
 
@@ -630,6 +669,12 @@ touches `production-26` or the site's pages.
     already judged that list.
   - **Only flagged pages are re-evaluated,** and only against the Best already chosen: is the new
     list better? An unflagged page keeps its mark as it is.
+  - **Best is the best of the lists shown, not of every possible list** (Andy, 2026-11-03). So a
+    high NEW count is not a bad sign in itself: each flagged page is a chance for the new version
+    to beat what was there.
+  - **Each flagged page sets the new list against Best,** in a quoted line above its table: the
+    cards it adds, drops and keeps (Andy, 2026-11-03). In M3.1, v1 adds 1 card on 8 pages, 2 on 37
+    and all 3 on 22; on one page it returns a single card Best already had.
   - **This replaces the earlier CHANGED flag,** which flagged any difference from the previous
     run. That would have sent Andy back to lists he had already judged in another column.
 - **The table.**
@@ -662,8 +707,14 @@ touches `production-26` or the site's pages.
 - **The generator** (`m3-report.mjs`, built 2026-10-28):
   - **It never overwrites a report**, since a report holds Andy's marks. `--overwrite` is only for
     one he hasn't touched.
-  - **Carry-forward is not built yet.** It needs a parser for the previous report, as the extract
-    script does, so both come with M3.1. Until then the generator refuses any n above 0.
+  - **Carry-forward is built** (2026-11-03). `m3-parse.mjs` reads the previous report back, and
+    the generator copies its columns, Best marks, notes and tag lines, then computes only the
+    newest column. It checks the previous report's column names and page ids before copying.
+  - **NEW sits in the heading,** as "— NEW", so the outline and search find it, and the summary
+    lists the flagged pages by category. A page that isn't new names the column its newest list
+    repeats, in that column's header ("same as Embeddings"). The summary table gains a Marked
+    Best count per column.
+  - **The extract script is not built yet.** It will use `m3-parse.mjs`.
   - **Each page's id sits in an HTML comment under its heading,** hidden in Obsidian, so the
     parser can find a page whatever its title.
   - **"No change" applies within the taxonomy versions** (v0 against the hand tags, v1 against
