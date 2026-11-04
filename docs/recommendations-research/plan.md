@@ -52,6 +52,12 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 
 Newest first.
 
+- **2026-11-03.** **M3.1 is marked** (Andy). Every page has one v1 pick. v1's list was the best
+  on 36 of the 68 NEW pages, and on 2 more where it repeated an earlier list. The taxonomy columns
+  now hold 51 of the 73 picks, against 25 in M3.0. See Phase 2 → M3.1 marked.
+  - **Best rows are kept per round** from M3.1 on: `v0 Best`, `v1 Best` and on, with earlier
+    picks grayed to ☑️. See M3.n evaluation reports.
+
 - **2026-11-02.** **Revision 1's scheme is in, and its definitions follow genus–differentia** (Andy).
   - **The scheme** keeps its title "Topic" and its id, `skosConceptScheme87f8b2e73674`, so the
     scripts needed no change. It has 6 top concepts (Engineering Practice, Design Practice,
@@ -510,6 +516,43 @@ phase 6, and phase 6 waits for Andy's go-ahead.
     naming the genus in a child's definition, under "more specific wins".
   - **Hubs:** Sanity lands on 19 documents (4 by hand), Search on 10 (0 by hand), Structured
     Content on 24 (19 by hand).
+
+- [x] **M3.1 marked** (Andy, 2026-11-03). One v1 pick on every page, notes on five.
+
+  | Best list from | v0 Best (M3.0) | v1 Best (M3.1) |
+  |---|---|---|
+  | Embeddings | 24 | 10 |
+  | Embeddings, same rules | 24 | 12 |
+  | Hand tags | 13 | 8 |
+  | Taxonomy v0 | 12 | 5 |
+  | v1 | — | 38 |
+  | **Embeddings / taxonomy** | **48 / 25** | **22 / 51** |
+
+  - **v1 won 36 of the 68 NEW pages,** and 2 of the 5 repeats, where its list was already shown.
+    It beat the earlier pick from every column: Embeddings on 13 of 24, Embeddings, same rules on
+    12 of 24, Taxonomy v0 on 8 of 12, Hand tags on 5 of 13. The hand tags held up best.
+  - **By type,** embeddings / taxonomy picks went from 22 / 7 to 10 / 19 on presentations, 16 / 15
+    to 7 / 24 on articles and 5 / 1 to 1 / 5 on notes. Case studies stayed with embeddings, 5 / 2
+    to 4 / 3, and v1 won only 2 of the 7.
+  - **How much v1 changed barely mattered.** It won 5 of 8 NEW pages where it swapped one card of
+    the v0 pick, 20 of 37 where it swapped two, and 10 of 22 where it swapped all three.
+  - **Several picks were close.** Four of the five notes say so.
+  - **Two pages moved between lists already shown,** both toward v0's list: *Designing and
+    Implementing Semantic Data Layers*, and *Design for Difference*, where v1 repeats v0. Seeing
+    more options can change how a list reads, which is worth remembering when rounds are compared.
+
+  **Inputs for revision 2, from the marks.** Win rates on NEW pages, by a tag v1 gave the page:
+  - **Taxonomy: 2 of 11,** the weakest. The concept has no narrower concepts, so taxonomy design,
+    tooling, governance and auto-categorization all look alike to the ranker. 7 of the 9 NEW
+    pages with "taxonomy" in the title went to another column.
+  - **Search 3 of 10, Site Map 1 of 5:** the two concepts round 1 flagged for dropping IA.
+  - **Sanity 9 of 18.** Andy's note on *Taxonomy Boot Camp 2024 Themes & Takeaways*: "I'm not sure
+    why articles like this are being tagged with 'Sanity' — that may need to go in a different
+    vocabulary." A tool is what a piece used, not what it is about, so a shared tool tag ties
+    unrelated pieces together. A separate facet for the Engineering Tool branch, which the ranker
+    could weight or ignore, is a content-model question and Andy's to decide.
+  - **Strongest:** Content Modeling 11 of 15, Structured Content 14 of 23, and Information
+    Architecture 5 of 8 where v1 kept it.
 
 ### 3. Taxonomy revision 2: examples
 
