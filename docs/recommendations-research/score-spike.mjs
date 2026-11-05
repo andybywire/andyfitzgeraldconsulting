@@ -1,11 +1,14 @@
 // The score spike: how Sanity's semantic scores behave, before any tagging threshold is set.
 //
-//   node docs/recommendations-research/score-spike.mjs            # the lab
+//   node docs/recommendations-research/score-spike.mjs                    # the lab
+//   node docs/recommendations-research/score-spike.mjs --recipe example   # see THE QUERY TEXT
 //   DATASET=production-26 node docs/recommendations-research/score-spike.mjs
 //
-// One query per Topic concept (55 today, so about 55 semantic-search queries against the quota).
+// One query per Topic concept (66 today, so 66 semantic-search queries against the quota).
 // Each query scores every publishable document AND the concept's own skosConcept document.
-// Writes the raw matrix to scores/spike-<dataset>-<UTC stamp>.json and nothing else.
+// Writes the raw matrix to scores/spike-<dataset>-<UTC stamp>.json, or
+// scores/spike-<dataset>-<recipe>-<UTC stamp>.json for a recipe other than `definition`, and
+// nothing else.
 // spike-report.mjs does the analysis from that file, so the analysis can be rerun for free.
 // Reads only, from a public dataset, so no token is needed.
 //
@@ -21,11 +24,29 @@
 //
 // ── THE QUERY TEXT ───────────────────────────────────────────────────────────────────────────
 //
-// prefLabel, definition and scopeNote, joined by blank lines. That is plan.md's spec for round 0.
-// Examples are left out until revision 2, and so are altLabels, whose role in the query is a
-// separate question. The text sent for each concept is saved in the matrix, so a later run with
-// a different recipe can be compared against exactly this one.
+// A recipe names the fields joined, by blank lines, into each concept's query:
+//
+//   definition   prefLabel, definition, scopeNote: rounds 0 and 1, and the default
+//   example      prefLabel, example
+//   combined     prefLabel, definition, scopeNote, example
+//
+// Revision 2 added an archetypal `example` to every concept (Andy, 2026-11-05), and asked whether
+// it should lead the query, join it, or run as a second query beside the definition, combined by
+// mean or max (tagger.mjs → combine). Each recipe runs on its own and writes its own matrix, so
+// those can be built and compared from the same files. altLabels stay out of every recipe: their
+// role in the query is a separate question. The text sent for each concept is saved in the
+// matrix, so a later run can be compared against exactly this one.
 import {mkdirSync, writeFileSync} from 'node:fs'
+
+const RECIPES = {
+  definition: ['prefLabel', 'definition', 'scopeNote'],
+  example: ['prefLabel', 'example'],
+  combined: ['prefLabel', 'definition', 'scopeNote', 'example'],
+}
+const at = process.argv.indexOf('--recipe')
+const RECIPE = at === -1 ? 'definition' : process.argv[at + 1]
+const FIELDS = RECIPES[RECIPE]
+if (!FIELDS) throw new Error(`Unknown recipe "${RECIPE}". Known: ${Object.keys(RECIPES)}`)
 
 const DATASET = process.env.DATASET ?? 'recommendations-lab'
 const TYPES = ['article', 'caseStudy', 'note', 'presentation']
@@ -42,8 +63,18 @@ const groq = async (query, params = {}) => {
 }
 
 const scheme = await groq(`*[_type == "skosConceptScheme" && title == "Topic"][0]{
-  "concepts": concepts[]->{_id, prefLabel, definition, scopeNote, "parent": broader[0]._ref}
+  "concepts": concepts[]->{_id, prefLabel, definition, scopeNote, example, "parent": broader[0]._ref}
 }`)
+/* A recipe that reads a field every concept doesn't fill would score some concepts on less text
+   than others, so it refuses. */
+const unfilled = scheme.concepts.filter((c) =>
+  FIELDS.some((f) => f !== 'scopeNote' && !c[f]?.trim()),
+)
+if (unfilled.length) {
+  throw new Error(
+    `Recipe "${RECIPE}" needs ${FIELDS}; missing on ${unfilled.map((c) => c.prefLabel)}`,
+  )
+}
 const docs = await groq(
   `*[_type in $types && defined(slug.current) && defined(pubDate)] | order(_type asc, slug.current asc) {
     _id, _type, "slug": slug.current, title, "genre": genre->prefLabel, "tags": coalesce(topic[]._ref, [])
@@ -52,7 +83,7 @@ const docs = await groq(
 )
 
 const text = (c) =>
-  [c.prefLabel, c.definition, c.scopeNote]
+  FIELDS.map((f) => c[f])
     .filter((s) => typeof s === 'string' && s.trim())
     .join('\n\n')
 
@@ -79,7 +110,9 @@ for (const [i, c] of scheme.concepts.entries()) {
 
 const takenAt = new Date().toISOString()
 const stamp = takenAt.replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')
-const file = new URL(`./scores/spike-${DATASET}-${stamp}.json`, import.meta.url)
+/* The default recipe keeps the old name, so tagset.mjs's "newest spike" still finds rounds 0–1. */
+const name = RECIPE === 'definition' ? DATASET : `${DATASET}-${RECIPE}`
+const file = new URL(`./scores/spike-${name}-${stamp}.json`, import.meta.url)
 mkdirSync(new URL('./scores/', import.meta.url), {recursive: true})
 writeFileSync(
   file,
@@ -87,7 +120,8 @@ writeFileSync(
     {
       dataset: DATASET,
       takenAt,
-      queryFields: ['prefLabel', 'definition', 'scopeNote'],
+      recipe: RECIPE,
+      queryFields: FIELDS,
       docs,
       concepts,
     },

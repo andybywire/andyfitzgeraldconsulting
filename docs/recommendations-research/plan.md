@@ -1,6 +1,6 @@
 # Recommendations research: plan
 
-*Living document. Started 2026-10-21; this version 2026-11-03. Branch: `recommendations-research`.*
+*Living document. Started 2026-10-21; this version 2026-11-05. Branch: `recommendations-research`.*
 
 ## What this is
 
@@ -19,14 +19,14 @@ Manager starter prompt come at the end.
 | `lab-api.mjs` | The authenticated client the writing scripts share: token from `sanity exec`, and writes to `production-26` refused |
 | `tags-backup.mjs`, `tags-restore.mjs` | Snapshot every document's tag fields, and put them back exactly. Restore is a dry run unless given `--write` |
 | `backups/` | Committed tag snapshots: the revert points |
-| `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept (spends quota), and its analysis (spends none) |
+| `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept, for one query recipe: `definition`, `example` or `combined` (spends quota), and its analysis (spends none) |
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
 | `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none) |
-| `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags, and its runner, which writes one simulated tag set (spends none, writes no dataset) |
+| `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags (one query per concept, or two combined by mean or max), and its runner, which writes one simulated tag set per version, including the v2 candidates (spends none, writes no dataset) |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under `TAXONOMY_CROSS` (spends none) |
-| `m3-report.mjs`, `m3.0.md`, `m3.1.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
+| `m3-report.mjs`, `m3.0.md`, `m3.1.md`, `m3.2.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
 | `m3-parse.mjs` | Reads a marked M3.n report back into columns, cards, Best marks and notes, for the carry-forward and, later, the extract script |
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
@@ -51,6 +51,14 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-05.** **Revision 2 adds an example to every concept, and v2 is scored on one query
+  that contains it** (Andy). Of three candidates, one combined query, and two queries combined by
+  mean or by max, he chose the combined query: it fixes Sanity's over-application while keeping
+  v1's tag volume. See Phase 3.
+  - **2026-11-04: no per-concept rules in the tagger** (Andy). A gate or a flag set for some
+    concepts would be a metadata application profile hidden in code. Anything the tagger does
+    applies to every concept alike, and what varies by concept lives in the vocabulary.
 
 - **2026-11-03.** **M3.1 is marked** (Andy). Every page has one v1 pick. v1's list was the best
   on 36 of the 68 NEW pages, and on 2 more where it repeated an earlier list. The taxonomy columns
@@ -556,17 +564,64 @@ phase 6, and phase 6 waits for Andy's go-ahead.
 
 ### 3. Taxonomy revision 2: examples
 
-- [ ] Add text examples to `skos:example`, at the embeddings' chunk size. **Measured 2026-10-27:
-      about 5,000 characters a chunk** (from `_embeddings` positions on the longest article). Note
-      that a *query* is read only to about 2,500 characters, so an example's length has to work
-      for both ends.
-- [ ] **Decide the source.** The plan is excerpts from the best-matching resources. Two risks:
-  - **unevenness:** concepts with examples are favored over concepts without
-  - **circularity:** a resource matches its own excerpt almost perfectly, which guarantees it the
-    tag
+**Before the examples: three concept edits and what they showed** (2026-11-04).
 
-  Generated examples avoid both. Decide before this phase starts.
-- [ ] Retag round 2, then **M3.2**
+- **Taxonomy got three children, Development, Governance and Implementation, and lost them again**
+  (Andy). A dry run of the tagger showed all three landing on the same 9 to 11 documents: a
+  document's three scores sat only about 0.05 apart, and a sharper rewrite didn't separate them.
+  Andy folded them back into Taxonomy, with a scope note naming all three, rather than add
+  workaround logic to the tagger. The concepts stay in the lab outside the scheme.
+- **Sanity and Search were narrowed, and wording alone couldn't make them strict.** A definition
+  dense with Sanity's own vocabulary still matched pieces that never mention it: Sanity went from
+  19 documents to 15, 6 of them never naming it. The ranking was right; the bar was too low for
+  a corpus where nearly everything is about content systems. **You can't define your way out of
+  semantic similarity.**
+- **A mention gate on named concepts was proposed and declined** (Andy): a list of gated concepts
+  in the tagger is a metadata application profile hidden in code. Counting the vocabulary's own
+  labels in a document (lib/keywords.ts → findTerms) is kept as a possible later path, as a
+  uniform boost rather than a gate. Full-text TF-IDF is not: it surfaces what is unusual about a
+  document, not what it is about, so "sanity" isn't among the top 25 terms of a piece that names
+  it 44 times.
+
+- [x] **Examples on every concept** (Andy reviewed and published, 2026-11-05). Claude drafted
+  them as archetypes: about 400 characters of practitioner prose built from the definition's own
+  terms, set in scenarios outside Andy's pieces so no piece matches its own sentences. None
+  shares a run of six words with the corpus. Andy chose the short form after a test: long
+  examples (about 1,200 characters) separated hand-tagged pieces worse than short ones.
+  - **The two risks the plan named are both handled.** Circularity, a piece matching its own
+    excerpt and so earning the tag, by writing archetypes rather than excerpts. Unevenness, a
+    concept favored for having an example, by giving every concept one before scoring.
+  - **The measured limits still apply** (2026-10-27): a document is embedded in chunks of about
+    5,000 characters, and a query is read only to about 2,500, so an example has to stay well
+    under that. They run 334 to 479.
+- [x] **The query recipe, decided by building three candidates** (2026-11-05). `score-spike.mjs`
+  now takes `--recipe definition | example | combined`, and `tagger.mjs` can combine two anchored
+  queries by mean or max (Andy's idea), one rule for every concept. Rounds 0 and 1 re-tag
+  identically.
+  - **Example queries score on a looser scale.** A short passage matches its concept's own
+    document less closely than a definition does (median self-match 9.15 against 9.61), so the
+    same 0.45 bar lets 31.9% of pairs through, against 13.6% for the definition and 14.0% for the
+    combined query. That inflates any candidate that takes the example on its own.
+
+  | | v1 | v2-combined | v2-mean | v2-max |
+  |---|---|---|---|---|
+  | Tags | 217 | 224 | 253 | 325 |
+  | Share that are hand tags | 33% | 32% | 29% | 22% |
+  | Sanity: documents (never naming it) | 19 (9) | 9 (1) | 8 (0) | 7 (0) |
+  | Search: documents | 10 | 5 | 3 | 6 |
+  | Cards shared with Andy's M3.1 pick, on the 35 pages v1 didn't win | 0.80 | 0.89 | 0.97 | 0.89 |
+
+  - **v2 is v2-combined** (Andy): one query per concept, with the example inside it. It keeps v1's
+    tag volume and hand-tag share and fixes Sanity. v2-mean came closer to the M3.1 picks but
+    added 17% more tags, partly from the looser scale. Recalibrating the bands per recipe would
+    remove that, and was held back so that M3.2 changes one thing.
+  - **What changed from v1:** 31 of 73 documents keep their tags. Machine Readability went from 5
+    documents to 10, User Interface Design 6 to 9, CMS 3 to 6; Sanity 19 to 9, Search 10 to 5,
+    Content Modeling 16 to 13.
+- [x] **Retag round 2, then M3.2** (2026-11-05). `tagsets/v2.json`, and `m3.2.md` with M3.1's
+  columns, picks and notes carried forward. **65 of 73 pages are NEW.** Each page now keeps a
+  Best row per round.
+- [ ] **Andy marks M3.2.**
 
 ### 4. Taxonomy revision 3: related terms
 

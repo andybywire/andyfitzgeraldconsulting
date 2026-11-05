@@ -121,24 +121,55 @@ export function tagDocument(candidates, authorTags, broaderOf, config) {
 }
 
 /**
+ * How two or more anchored scores for one concept and one document become one (revision 2, Andy,
+ * 2026-11-05). Each comes from its own query, anchored to that query's own self-match, which is
+ * what puts them on one scale: raw `_score`s from different queries can't be compared.
+ *
+ *   mean  a piece has to match every query reasonably well, which leans toward precision
+ *   max   a piece has to match any one of them, which leans toward recall, and adds up the
+ *         false matches of every query
+ *
+ * One rule for every concept, set in the configuration, never chosen per concept: picking the
+ * better query concept by concept would be a metadata application profile hidden in this code.
+ */
+export const COMBINE = Object.freeze({
+  mean: (xs) => xs.reduce((a, b) => a + b, 0) / xs.length,
+  max: (xs) => Math.max(...xs),
+})
+
+/**
  * Tag every document in a score matrix (score-spike.mjs's format).
  *
- * @param {{docs: {_id: string}[], concepts: {_id: string, parent: string | null, self: number,
- *   scores: Record<string, number>}[]}} matrix
- * @param {typeof ROUND_0} config
+ * A concept carries either one query's `self` and `scores`, or, for a combined run, `queries`:
+ * one `{self, scores}` per query, combined by `config.combine`. tagset.mjs builds the second shape
+ * from two matrices.
+ *
+ * @param {{docs: {_id: string}[], concepts: {_id: string, parent: string | null, self?: number,
+ *   scores?: Record<string, number>, queries?: {self: number, scores: Record<string, number>}[]
+ * }[]}} matrix
+ * @param {typeof ROUND_0 & {combine?: keyof typeof COMBINE}} config
  * @param {Map<string, string[]>} [authorTags]  by document id; none in round 0
  * @returns {Map<string, ReturnType<typeof tagDocument>>} by document id
  */
 export function tagCorpus(matrix, config, authorTags = new Map()) {
   const broaderOf = new Map(matrix.concepts.map((c) => [c._id, c.parent]))
+  const combine = config.combine ? COMBINE[config.combine] : null
+  if (config.combine && !combine) throw new Error(`[tagger] unknown combine "${config.combine}"`)
   return new Map(
     matrix.docs.map((d) => {
       const candidates = matrix.concepts.map((c) => {
-        const raw = c.scores[d._id]
-        if (typeof raw !== 'number') {
-          throw new Error(`[tagger] the matrix has no score for ${d._id} against ${c._id}`)
+        const queries = c.queries ?? [{self: c.self, scores: c.scores}]
+        if (queries.length > 1 && !combine) {
+          throw new Error(`[tagger] ${c._id} has ${queries.length} queries and no config.combine`)
         }
-        return {concept: c._id, score: anchored(raw, c.self, config.floor)}
+        const scores = queries.map((q) => {
+          const raw = q.scores[d._id]
+          if (typeof raw !== 'number') {
+            throw new Error(`[tagger] the matrix has no score for ${d._id} against ${c._id}`)
+          }
+          return anchored(raw, q.self, config.floor)
+        })
+        return {concept: c._id, score: queries.length > 1 ? combine(scores) : scores[0]}
       })
       return [d._id, tagDocument(candidates, authorTags.get(d._id) ?? [], broaderOf, config)]
     }),

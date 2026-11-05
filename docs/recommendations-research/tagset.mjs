@@ -12,35 +12,105 @@
 // A later round re-runs score-spike.mjs against the revised scheme, so its matrix is a spike file
 // too: v1's is spike-recommendations-lab-20261103T011931Z.json, every concept re-scored, since
 // revision 1 rewrote nearly every definition.
+//
+// Revision 2 runs three candidates from the same scores (Andy, 2026-11-05), all with round 0's
+// bands, and only one goes into M3.2:
+//
+//   node docs/recommendations-research/tagset.mjs v2-combined   # one query: definition + example
+//   node docs/recommendations-research/tagset.mjs v2-mean       # two queries, mean of anchored
+//   node docs/recommendations-research/tagset.mjs v2-max        # two queries, max of anchored
+//
+// The two-query versions read a `definition` matrix and an `example` matrix and give each concept
+// both (tagger.mjs → tagCorpus, `queries`). Matrices named on the command line are taken in the
+// version's recipe order; otherwise the newest matrix of each recipe is read.
 import {mkdirSync, readFileSync, readdirSync, writeFileSync} from 'node:fs'
 import {ROUND_0, tagCorpus} from './tagger.mjs'
 
-/* One configuration per version. Later rounds add theirs here as they are decided. v1 holds round
-   0's configuration on purpose, so a change between v0 and v1 comes from the vocabulary, not from
-   the tagger. The floor still fits: v1's lowest raw score is 4.99 against v0's 4.98. */
-const CONFIGS = {v0: ROUND_0, v1: ROUND_0}
+/* One configuration per version, with the query recipe(s) its matrix comes from. Later rounds add
+   theirs here as they are decided. v1 holds round 0's configuration on purpose, so a change
+   between v0 and v1 comes from the vocabulary, not from the tagger. The floor still fits: v1's
+   lowest raw score is 4.99 against v0's 4.98. The v2 candidates keep the bands too, so they
+   differ from each other only in how the example enters the score.
+
+   v2 is v2-combined (Andy, 2026-11-05): one query per concept with the example inside it. It
+   kept v1's tag volume and hand-tag share while fixing Sanity's over-application. v2-mean came
+   closer to Andy's M3.1 picks, but added 17% more tags, partly because example queries score on
+   a looser scale (plan.md → Phase 3). The candidates stay here as the record of the choice. */
+const VERSIONS = {
+  v0: {config: ROUND_0, recipes: ['definition']},
+  v1: {config: ROUND_0, recipes: ['definition']},
+  v2: {config: ROUND_0, recipes: ['combined']},
+  'v2-combined': {config: ROUND_0, recipes: ['combined']},
+  'v2-mean': {config: {...ROUND_0, combine: 'mean'}, recipes: ['definition', 'example']},
+  'v2-max': {config: {...ROUND_0, combine: 'max'}, recipes: ['definition', 'example']},
+}
 
 const version = process.argv[2]
-const config = CONFIGS[version]
+const {config, recipes} = VERSIONS[version] ?? {}
 if (!config) {
-  console.error(`Usage: tagset.mjs <version> [matrix]. Known versions: ${Object.keys(CONFIGS)}`)
+  console.error(`Usage: tagset.mjs <version> [matrix …]. Known versions: ${Object.keys(VERSIONS)}`)
   process.exit(1)
 }
 
+/* A matrix's recipe is in the file; rounds 0 and 1 predate the field and are `definition`. */
 const dir = new URL('./scores/', import.meta.url)
-const named = process.argv[3]
-const file = named
-  ? new URL(named, `file://${process.cwd()}/`)
-  : new URL(
-      readdirSync(dir)
+const named = process.argv.slice(3)
+const files = named.length
+  ? named.map((n) => new URL(n, `file://${process.cwd()}/`))
+  : recipes.map((recipe) => {
+      const newest = readdirSync(dir)
         .filter((n) => n.startsWith('spike-'))
         .sort()
-        .at(-1),
-      dir,
+        .reverse()
+        .find((n) => (JSON.parse(readFileSync(new URL(n, dir))).recipe ?? 'definition') === recipe)
+      if (!newest) throw new Error(`No ${recipe} matrix in scores/`)
+      return new URL(newest, dir)
+    })
+if (files.length !== recipes.length) {
+  throw new Error(`${version} reads ${recipes.length} matrices (${recipes}); given ${files.length}`)
+}
+const matrices = files.map((f) => JSON.parse(readFileSync(f)))
+matrices.forEach((m, i) => {
+  if ((m.recipe ?? 'definition') !== recipes[i]) {
+    throw new Error(
+      `${files[i].pathname} is a ${m.recipe ?? 'definition'} matrix, not ${recipes[i]}`,
     )
-const matrix = JSON.parse(readFileSync(file))
+  }
+})
+
+/* One matrix as it is, or several merged: every concept carries one {self, scores} per query.
+   They must score the same documents and the same concepts, or the combination is meaningless. */
+const key = (xs) =>
+  xs
+    .map((x) => x._id)
+    .sort()
+    .join()
+for (const m of matrices.slice(1)) {
+  if (key(m.docs) !== key(matrices[0].docs) || key(m.concepts) !== key(matrices[0].concepts)) {
+    throw new Error('The matrices score different documents or concepts')
+  }
+}
+const matrix =
+  matrices.length === 1
+    ? matrices[0]
+    : {
+        ...matrices[0],
+        concepts: matrices[0].concepts.map((c) => ({
+          _id: c._id,
+          prefLabel: c.prefLabel,
+          parent: c.parent,
+          queries: matrices.map((m) => {
+            const q = m.concepts.find((x) => x._id === c._id)
+            return {recipe: m.recipe, self: q.self, scores: q.scores}
+          }),
+        })),
+      }
 const label = new Map(matrix.concepts.map((c) => [c._id, c.prefLabel]))
-const raw = (doc, concept) => matrix.concepts.find((c) => c._id === concept).scores[doc]
+/* The raw score behind a tag, or one per query for a combined run. */
+const raw = (doc, concept) => {
+  const c = matrix.concepts.find((x) => x._id === concept)
+  return c.queries ? c.queries.map((q) => q.scores[doc]) : c.scores[doc]
+}
 
 const tagged = tagCorpus(matrix, config)
 
@@ -48,7 +118,7 @@ const out = {
   version,
   createdAt: new Date().toISOString(),
   dataset: matrix.dataset,
-  matrix: file.pathname.split('/').slice(-2).join('/'),
+  matrix: files.map((f) => f.pathname.split('/').slice(-2).join('/')).join(' + '),
   config,
   authorTags: 'none: every round retags from scratch (plan.md → Open questions)',
   documents: matrix.docs.map((d) => ({
