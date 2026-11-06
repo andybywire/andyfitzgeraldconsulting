@@ -52,6 +52,10 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 
 Newest first.
 
+- **2026-11-05.** **M3.2 is marked** (Andy). v2's list was the best on 40 of the 65 NEW pages and
+  on 3 of the repeats, 43 in all. The taxonomy columns now hold 62 of the 73 picks, against 51
+  in M3.1 and 25 in M3.0. See Phase 3 → M3.2 marked.
+
 - **2026-11-05.** **Revision 2 adds an example to every concept, and v2 is scored on one query
   that contains it** (Andy). Of three candidates, one combined query, and two queries combined by
   mean or by max, he chose the combined query: it fixes Sanity's over-application while keeping
@@ -621,7 +625,54 @@ phase 6, and phase 6 waits for Andy's go-ahead.
 - [x] **Retag round 2, then M3.2** (2026-11-05). `tagsets/v2.json`, and `m3.2.md` with M3.1's
   columns, picks and notes carried forward. **65 of 73 pages are NEW.** Each page now keeps a
   Best row per round.
-- [ ] **Andy marks M3.2.**
+- [x] **M3.2 marked** (Andy, 2026-11-05). One v2 pick on every page, new notes on twelve.
+
+  | Best list from | v0 Best (M3.0) | v1 Best (M3.1) | v2 Best (M3.2) |
+  |---|---|---|---|
+  | Embeddings | 24 | 10 | 5 |
+  | Embeddings, same rules | 24 | 12 | 6 |
+  | Hand tags | 13 | 8 | 5 |
+  | Taxonomy v0 | 12 | 5 | 4 |
+  | v1 | — | 38 | 10 |
+  | v2 | — | — | 43 |
+  | **Embeddings / taxonomy** | **48 / 25** | **22 / 51** | **11 / 62** |
+
+  - **v2 won 40 of the 65 NEW pages (62%),** against v1's 36 of 68 (53%), and 3 of the 8 repeats.
+    It beat v1's own list on 27 of the 38 pages v1 had won, Embeddings, same rules on 7 of 12,
+    Embeddings on 5 of 10, Hand tags on 3 of 8 and Taxonomy v0 on 1 of 5. Only one page moved
+    between lists already shown, against two in M3.1.
+  - **By type,** embeddings / taxonomy picks went from 7 / 24 to 1 / 30 on articles, 4 / 3 to
+    1 / 6 on case studies, 1 / 5 to 1 / 5 on notes and 10 / 19 to 8 / 21 on presentations.
+    Case studies, which stayed with embeddings in M3.1, have flipped. Presentations remain the
+    type embeddings serve best.
+  - **The concepts M3.1 flagged recovered.** Win rates on NEW pages, by a tag v2 gave the page:
+    Taxonomy 5 of 10 (M3.1: 2 of 11), Search 4 of 5 (3 of 10), Site Maps 5 of 7 (1 of 5),
+    Sanity 4 of 9 (9 of 18). Content Discovery won 4 of 4, Structured Content 17 of 24.
+  - **How much v2 changed barely mattered again:** it won 12 of 19 NEW pages where it swapped one
+    card of the v1 pick, 22 of 34 with two, 6 of 12 with all three. Pages whose own tags changed
+    from v1 went to v2 more often (29 of 43) than pages whose tags held (11 of 22).
+
+  **Inputs for the next revision, from the marks and notes:**
+  - **Presentation transcripts are not embedded,** by design: the projection in how.md covers a
+    presentation's title, description, body text and highlights, because long transcripts
+    "dominate the embedding, and Sanity drops everything past 10 chunks". Andy's note on *Language
+    Arts for the Lizard Brain*, about 20,500 characters, mostly transcript: "These should be:
+    they're rich content." Changing the projection changes every column, the embeddings baseline
+    included, so it is an experiment of its own, not part of a vocabulary round.
+  - **Pieces on cognition, language and meaning have no concept of their own.** *A Cognitive
+    Sciences Reading List for Designers*, *Language Arts for the Lizard Brain*, *Language + Meaning
+    + User Experience Architecture*, *Proust and the Squid* and *Information Design* are tagged
+    with interface, interaction and design-principles concepts, the nearest practices. That is a
+    vocabulary gap, and Andy's to judge.
+  - **Sibling methods pull each other in.** *How to Choose Topics for Card Sorting* got Tree
+    Testing, which it never mentions (Andy's note); their examples are close neighbors.
+  - **Sanity misfires once,** on *Four Web Writing Style Guides from which to Borrow*, which never
+    names it (Andy's note). v1 had nine such.
+  - **Thin pieces get thin tags:** *Improv Consulting* (451 characters of text), *Information
+    Design* (about 1,000) and *Proust and the Squid* (about 1,500).
+  - **The crossing rule has a cost.** On *Taxonomy Management and use in Sanity Studio*, Andy notes
+    that "the more relaxed category crossover rules really do match better content".
+    `TAXONOMY_CROSS` stays fixed through the revisions; promotion is where to revisit it.
 
 ### 4. Taxonomy revision 3: related terms
 
