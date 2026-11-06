@@ -118,20 +118,26 @@ const titleOf = (d) => d.title.trim()
 const idOfTitle = new Map(corpus.pool.map((d) => [titleOf(d), d._id]))
 if (idOfTitle.size !== corpus.pool.length) throw new Error('two pages share a title')
 
-/* Each version's crossing rule, as its tag set records it; one with none uses TAXONOMY_CROSS.
-   From v3 the taxonomy columns cross under TAXONOMY_CROSS_RELAXED (baseline-columns.mjs), so a
-   column is ranked, and described, under its own version's rule. The hand tags keep the original. */
-const ruleOf = (v) => loadTagSet(`v${v}`).crossRule ?? TAXONOMY_CROSS
+/* Each version's ranking rule, as its tag set records it: the crossing rule (TAXONOMY_CROSS when
+   it records none; TAXONOMY_CROSS_RELAXED from v3) and, from v4, a tie-break (related.ts → TIES).
+   A column is ranked, and described, under its own version's rule. The hand tags keep the
+   original crossing rule and the date tie-break. */
+const ruleOf = (v) => {
+  const set = loadTagSet(`v${v}`)
+  return {...(set.crossRule ?? TAXONOMY_CROSS), ...(set.tieBreak && {tieBreak: set.tieBreak})}
+}
 const rules = Array.from({length: n + 1}, (_, v) => ruleOf(v))
 const ruleText = (r) =>
   `at least ${r.crossMinCount} shared tags, a shared ratio of at least ${r.crossMinShared}, at most ${r.crossMax} cross card`
+const isOriginal = (r) =>
+  ['crossMinShared', 'crossMinCount', 'crossMax'].every((k) => r[k] === TAXONOMY_CROSS[k])
+const TIE_TEXT = {'genre-strength': 'ties broken by genre, then tag strength'}
 const versionColumn = (v) => ({
   name: v === 0 ? 'Taxonomy v0' : `v${v}`,
   what:
     `The ranker on tag set v${v}` +
-    (rules[v] === TAXONOMY_CROSS || JSON.stringify(rules[v]) === JSON.stringify(TAXONOMY_CROSS)
-      ? ''
-      : `, under the relaxed crossing rule`),
+    (isOriginal(rules[v]) ? '' : `, under the relaxed crossing rule`) +
+    (rules[v].tieBreak ? `, ${TIE_TEXT[rules[v].tieBreak]}` : ''),
   taxonomy: true,
   version: true,
 })
@@ -289,14 +295,17 @@ out.push(
   `**How to judge.** Each page has one Best row per round. In its **v${n} Best** row, paste ✅ under the column whose list you think is best now, and add anything worth keeping in **Notes**.${n > 0 ? " The rows above it keep the earlier rounds' picks, grayed to ☑️." : ''} ⇄ marks a card from the other category. "(agree n/3)" counts the cards a column shares with the one to its left. "recent" means the ranker found nothing related and showed the newest documents instead.`,
   '',
 )
-const isOriginal = (r) => JSON.stringify(r) === JSON.stringify(TAXONOMY_CROSS)
 const underOriginal = rules.flatMap((r, v) => (isOriginal(r) ? [COLUMNS[3 + v].name] : []))
 const underRelaxed = rules.flatMap((r, v) => (isOriginal(r) ? [] : [COLUMNS[3 + v].name]))
-const verb = (names) => (names.length === 1 ? 'crosses' : 'cross')
+const withTieBreak = rules.flatMap((r, v) => (r.tieBreak ? [COLUMNS[3 + v].name] : []))
+const verb = (names, one, many) => (names.length === 1 ? one : many)
 out.push(
-  underRelaxed.length === 0
+  (underRelaxed.length === 0
     ? `**The taxonomy columns** all run the site's ranker under one fixed crossing rule: ${ruleText(TAXONOMY_CROSS)}. They differ only in their tags.`
-    : `**The taxonomy columns** all run the site's ranker. Hand tags and ${underOriginal.join(', ')} cross under the original rule: ${ruleText(TAXONOMY_CROSS)}. ${underRelaxed.join(', ')} ${verb(underRelaxed)} under the relaxed rule: ${ruleText(rules.find((r) => !isOriginal(r)))}. A version that changes the rule keeps the tags of the one before it, so each column still changes one thing.`,
+    : `**The taxonomy columns** all run the site's ranker. Hand tags and ${underOriginal.join(', ')} cross under the original rule: ${ruleText(TAXONOMY_CROSS)}. ${underRelaxed.join(', ')} ${verb(underRelaxed, 'crosses', 'cross')} under the relaxed rule: ${ruleText(rules.find((r) => !isOriginal(r)))}. A version that changes the rule keeps the tags of the one before it, so each column still changes one thing.`) +
+    (withTieBreak.length
+      ? ` Where candidates tie, every column shows the newest first, except ${withTieBreak.join(', ')}, which ${verb(withTieBreak, 'puts', 'put')} the page's own genre first, then the pieces sharing its concepts most strongly, and ${verb(withTieBreak, 'uses', 'use')} the date only after that.`
+      : ''),
   '',
 )
 if (n === 0) {

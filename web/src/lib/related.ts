@@ -53,6 +53,9 @@ export type RelatedTopic = {
   _id: string | null
   parent?: string | null
   parentIsTop?: boolean | null
+  /** How strongly the document matches this tag, on the tagger's anchored scale: its
+      `topicScores` entry. Only read when a rule breaks ties by tag strength. */
+  score?: number | null
 }
 
 /** The shape the ranker needs. Card fields ride along untouched. */
@@ -143,8 +146,20 @@ export function genresForBranch(
   return ids
 }
 
-/** The three ratios rank; `sharedCount` is the raw number behind `shared`, for the crossing rule. */
-type Scored<T> = {item: T; shared: number; nearer: number; sibling: number; sharedCount: number}
+/**
+ * The three ratios rank; `sharedCount` is the raw number behind `shared`, for the crossing rule.
+ * `sameGenre` and `strength` break ties when a rule asks (see TIES, above rankAcross), and are
+ * 0 otherwise, which leaves the pool's newest-first order to decide.
+ */
+type Scored<T> = {
+  item: T
+  shared: number
+  nearer: number
+  sibling: number
+  sharedCount: number
+  sameGenre: number
+  strength: number
+}
 
 /**
  * Counts the three kinds of overlap between two topic sets.
@@ -161,6 +176,9 @@ function compare(mine: RelatedTopic[], theirs: RelatedTopic[]) {
   let shared = 0
   let nearer = 0
   let sibling = 0
+  /* For each shared concept, the weaker of the two documents' scores on it: how strongly BOTH
+     are about what they share. Untagged scores count nothing. */
+  let strength = 0
 
   for (const a of mine) {
     for (const b of theirs) {
@@ -168,6 +186,9 @@ function compare(mine: RelatedTopic[], theirs: RelatedTopic[]) {
 
       if (a._id === b._id) {
         shared++
+        if (typeof a.score === 'number' && typeof b.score === 'number') {
+          strength += Math.min(a.score, b.score)
+        }
         continue
       }
 
@@ -191,26 +212,46 @@ function compare(mine: RelatedTopic[], theirs: RelatedTopic[]) {
     nearer: nearer / union,
     sibling: sibling / union,
     sharedCount: shared,
+    strength,
   }
 }
 
-/** Shared before nearer before sibling: the lexicographic order the header explains. */
+/** Shared before nearer before sibling: the lexicographic order the header explains. Then,
+    only under a tie-breaking rule, same genre before strength; otherwise those are 0. */
 const byTiers = (a: Scored<unknown>, b: Scored<unknown>) =>
-  b.shared - a.shared || b.nearer - a.nearer || b.sibling - a.sibling
+  b.shared - a.shared ||
+  b.nearer - a.nearer ||
+  b.sibling - a.sibling ||
+  b.sameGenre - a.sameGenre ||
+  b.strength - a.strength
 
 /**
  * Score every candidate against `mine`, keep those that relate on any tier, best first.
- * The sort is stable, so candidates that tie keep the pool's newest-first order.
+ * The sort is stable, so candidates that tie keep the pool's newest-first order. Given `tie`,
+ * candidates of the page's own genre, then those sharing concepts more strongly, come first
+ * among those that tie on every tier.
  */
-function scoreCandidates<T extends RelatedCandidate>(mine: RelatedTopic[], candidates: T[]) {
+function scoreCandidates<T extends RelatedCandidate>(
+  mine: RelatedTopic[],
+  candidates: T[],
+  tie: {genreId: string | null} | null = null,
+) {
   const scored: Scored<T>[] = []
   for (const candidate of candidates) {
     const theirs = (candidate.topics ?? []).filter(Boolean) as RelatedTopic[]
     if (!mine.length || !theirs.length) continue
 
-    const {shared, nearer, sibling, sharedCount} = compare(mine, theirs)
+    const {shared, nearer, sibling, sharedCount, strength} = compare(mine, theirs)
     if (shared || nearer || sibling) {
-      scored.push({item: candidate, shared, nearer, sibling, sharedCount})
+      scored.push({
+        item: candidate,
+        shared,
+        nearer,
+        sibling,
+        sharedCount,
+        sameGenre: tie && tie.genreId && candidate.genreId === tie.genreId ? 1 : 0,
+        strength: tie ? strength : 0,
+      })
     }
   }
   return scored.sort(byTiers)
@@ -344,6 +385,28 @@ export type CrossRule = {crossMinShared: number; crossMinCount: number; crossMax
  */
 export const CROSS_RULE: CrossRule = {crossMinShared: 0.5, crossMinCount: 2, crossMax: 1}
 
+/*
+ * ── TIES: GENRE, THEN TAG STRENGTH, BEFORE DATE (research, 2026-11-06) ───────
+ *
+ * Candidates that tie on every tier keep the pool's order, which is newest first. Andy's
+ * objection: recency is arbitrary as an ordering, and it shuts out older pieces that are just
+ * as relevant. On the research's v3 tags it decides a lot: reversing the date order changes 24
+ * of 73 lists.
+ *
+ * `tieBreak: 'genre-strength'` puts two things ahead of the date:
+ *   - SAME GENRE: a case study before a talk on a case study's page. In M3.3 Andy kept the
+ *     case-study neighbors whenever a cross card displaced one.
+ *   - TAG STRENGTH: for each shared concept, the weaker of the two documents' scores on it,
+ *     summed. Two pieces strongly about what they share outrank two that brush it. It reads
+ *     only the scores of each document's own tags, which promotion stores as `topicScores`
+ *     anyway, so it adds no queries and no new data.
+ * The date still decides what neither separates, and orders the fallback within a genre.
+ *
+ * Measured against Andy's M3.3 picks, it moved 3 lists closer to them and none further. That
+ * is a proxy; M3.4 is the test. Absent, the default, ranking is exactly as before.
+ */
+export type RankRule = CrossRule & {tieBreak?: 'genre-strength'}
+
 export type RankedAcross<T> = RankedRelated<T> & {
   /** How many of `items` came from the other category. 0 on a fallback. */
   crossed: number
@@ -351,12 +414,18 @@ export type RankedAcross<T> = RankedRelated<T> & {
 
 /** Rank a pool against one document: its own category first, the other on a strong match. */
 export function rankAcross<T extends RelatedCandidate>(
-  current: {_id: string; type: string; topics?: (RelatedTopic | null)[] | null},
+  current: {
+    _id: string
+    type: string
+    genreId?: string | null
+    topics?: (RelatedTopic | null)[] | null
+  },
   pool: T[],
   genres: Record<Category, Set<string>>,
-  rule: CrossRule,
+  rule: RankRule,
   limit = 3,
 ): RankedAcross<T> {
+  const tie = rule.tieBreak === 'genre-strength' ? {genreId: current.genreId ?? null} : null
   const mine = ((current.topics ?? []).filter(Boolean) as RelatedTopic[]).filter((t) => t._id)
   const home = categoryForType(current.type)
   const other: Category = home === 'insights' ? 'presentations' : 'insights'
@@ -366,9 +435,9 @@ export function rankAcross<T extends RelatedCandidate>(
     pool.filter((c) => c._id !== current._id && c.genreId && genres[category].has(c.genreId))
   const homeCandidates = inCategory(home)
 
-  const list = scoreCandidates(mine, homeCandidates).slice(0, limit)
+  const list = scoreCandidates(mine, homeCandidates, tie).slice(0, limit)
   /* At least one shared tag whatever the rule says: nearer and sibling never cross. */
-  const strong = scoreCandidates(mine, inCategory(other)).filter(
+  const strong = scoreCandidates(mine, inCategory(other), tie).filter(
     (s) => s.sharedCount >= Math.max(1, rule.crossMinCount) && s.shared >= rule.crossMinShared,
   )
 
@@ -390,6 +459,12 @@ export function rankAcross<T extends RelatedCandidate>(
 
   if (list.length) return {items: list.map((s) => s.item), isFallback: false, crossed}
 
-  /* Nothing related in either category: the same date fallback as before, home only. */
-  return {items: homeCandidates.slice(0, limit), isFallback: true, crossed: 0}
+  /* Nothing related in either category: the newest from home, and under a tie-breaking rule the
+     page's own genre first. Stable, so the date still orders each genre. */
+  const fallback = tie
+    ? [...homeCandidates].sort(
+        (a, b) => Number(b.genreId === tie.genreId) - Number(a.genreId === tie.genreId),
+      )
+    : homeCandidates
+  return {items: fallback.slice(0, limit), isFallback: true, crossed: 0}
 }

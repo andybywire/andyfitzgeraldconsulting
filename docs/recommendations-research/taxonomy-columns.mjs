@@ -68,18 +68,30 @@ export function checkShape(pool, shape) {
   )
 }
 
-/** The pool with every document's topics replaced by a tag set's. Throws if the set misses one. */
+/**
+ * The pool with every document's topics replaced by a tag set's. Throws if the set misses one.
+ * Each topic carries its tag's score too, the `topicScores` the site would store, which the
+ * ranker reads only under a tie-breaking rule (related.ts → TIES).
+ */
 export function withTagSet(pool, tagSet, shape) {
-  const tagsFor = new Map(tagSet.documents.map((d) => [d._id, d.tags.map((t) => t.concept)]))
+  const tagsFor = new Map(tagSet.documents.map((d) => [d._id, d.tags]))
   const missing = pool.filter((d) => !tagsFor.has(d._id))
   if (missing.length) {
     throw new Error(`tag set ${tagSet.version} has no entry for ${missing.map((d) => d.slug)}`)
   }
-  return pool.map((d) => ({...d, topics: tagsFor.get(d._id).map(shape)}))
+  return pool.map((d) => ({
+    ...d,
+    topics: tagsFor.get(d._id).map((t) => ({...shape(t.concept), score: t.score})),
+  }))
 }
 
 /** One page's taxonomy column: rankAcross over a pool, under TAXONOMY_CROSS unless told otherwise. */
 export function taxonomyColumn(page, pool, categories, rule = TAXONOMY_CROSS) {
   const self = pool.find((d) => d._id === page._id)
-  return rankAcross({_id: page._id, type: page._type, topics: self.topics}, pool, categories, rule)
+  return rankAcross(
+    {_id: page._id, type: page._type, genreId: self.genreId, topics: self.topics},
+    pool,
+    categories,
+    rule,
+  )
 }

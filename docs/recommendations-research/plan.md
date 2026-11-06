@@ -26,7 +26,7 @@ Manager starter prompt come at the end.
 | `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags (one query per concept, or two combined by mean or max), and its runner, which writes one simulated tag set per version, including the v2 candidates (spends none, writes no dataset) |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under a crossing rule, `TAXONOMY_CROSS` unless a version records its own (spends none) |
-| `m3-report.mjs`, `m3.0.md` to `m3.3.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
+| `m3-report.mjs`, `m3.0.md` to `m3.4.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
 | `m3-parse.mjs` | Reads a marked M3.n report back into columns, cards, Best marks and notes, for the carry-forward and, later, the extract script |
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
@@ -51,6 +51,11 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-06.** **Ties are broken by genre, then tag strength, before the date, as v4; related
+  links follow as v5, in the tier role** (Andy). An embeddings tie-break was ruled out on cost.
+  A weighted related match was built, simulated and taken back out: it credits every piece on
+  the other side of a link. See Phase 3c and Phase 4.
 
 - **2026-11-05.** **M3.3 is marked, and the relaxed crossing rule holds** (Andy). v3 was the pick
   on 15 of the 23 lists it changed, 9 of 11 of them presentations. Taxonomy columns now hold 63
@@ -725,11 +730,70 @@ variable is added, to get the best lists in place first.
     v1 7, Taxonomy v0 4, Hand tags 5, Embeddings, same rules 5, Embeddings 5. Taxonomy 63,
     embeddings 10, against 62 and 11 after M3.2.
 
+### 3c. Ties broken by genre and tag strength, not date (v4)
+
+Andy, 2026-11-06: recency is an arbitrary ordering, and it shuts out older pieces that are as
+relevant. Reversing the date order changes 24 of 73 lists on v3's tags, so it decides a lot.
+
+- [x] **What else could break ties, without embeddings.** Per-page semantic scores were ruled out
+  (Andy): bringing an embeddings query into the site's ranking is a new cost. Tested in a scratch
+  copy of the ranker, proven identical to the real one, against v3. In the table, *closer /
+  further / level* counts changed lists on the pages where Andy's latest pick is another column,
+  and *shared* is the mean number of cards a list shares with his pick on the 30 such pages (v3:
+  1.17). The picks are a proxy; M3.4 is the test.
+
+  | Tie-break | Lists changed | Closer / further / level | Shared |
+  |---|---|---|---|
+  | Tag strength on shared concepts | 14 | 2 / 0 / 1 | 1.23 |
+  | Concept-profile similarity (all 66 scores) | 16 | 2 / 0 / 3 | 1.23 |
+  | Same genre first | 8 | 1 / 0 / 1 | 1.20 |
+  | **Same genre, then tag strength** | **19** | **3 / 0 / 2** | **1.27** |
+  | Same genre, then concept profile | 19 | 3 / 0 / 3 | 1.27 |
+
+  None moved a list away from a pick. Genre-then-strength ties the best and reads only each
+  document's own tag scores, which promotion stores as `topicScores` anyway; the profile version
+  would need all 66 scores per document stored.
+- [x] **v4 is v3 with that tie-break** (Andy chose it alone, over adding related links in the same
+  round). `rankAcross` takes `tieBreak: 'genre-strength'`, off by default; a topic may carry its
+  `score` and the page its `genreId`. The date still decides what neither separates, and the
+  no-match fallback now puts the page's own genre first. Recomputed with the changed ranker, the
+  v2 and v3 columns are unchanged on all 73 pages, and v4 equals the scratch result.
+- [x] **M3.4** (2026-11-06): `m3.4.md`, M3.3 carried forward with the v4 column. **16 of 73 pages
+  are NEW.**
+- [ ] **Andy marks M3.4.**
+
 ### 4. Taxonomy revision 3: related terms
 
-- [ ] Add `skos:related` links. None of the 73 concepts uses it today. The process is to be decided;
-      it may also need a ranking tier.
-- [ ] Retag round 3 as **v4**, under the relaxed crossing rule, then **M3.4**
+- [ ] Add `skos:related` links. None of the 73 concepts uses it today.
+- [ ] Retag round 3 as **v5**, under the relaxed crossing rule and v4's tie-break, then **M3.5**
+
+**Explored before v4** (2026-11-06), recorded because most of it did not work:
+
+- **The goal** (Andy): explicit non-hierarchical connections that surface meaningful but otherwise
+  unrealized connections between resources. A working test for a link: would someone reading a
+  piece tagged only A want one tagged only B? Pieces about both already carry both tags.
+- **Standard practice:** `skos:related` is symmetric, not transitive, and SKOS forbids it along a
+  hierarchy path. The thesaurus standards (ISO 25964, Z39.19) ask that every associative link be
+  justified, and name over-linking as the failure. Siblings may be linked where meanings overlap.
+- **Siblings depend on the ranker:** siblings under a mid-level parent already count, as the
+  sibling tier; siblings directly under a TOP concept count for nothing, by design. A link between
+  those is not redundant.
+- **What the picks showed:** of 55 cards in Andy's picks missing from v3's lists, 29 already share
+  a tag with the page and 19 are reachable only through a pair the hierarchy doesn't connect. Of
+  51 cards he passed over, 32 beat his picks on a higher shared ratio and 13 won a date tie.
+- **A weighted partial match** (a related pair as part of a shared tag) was built into the ranker
+  and simulated, then taken out again. With 12 links mined from the picks, weight 0.5 changed 11
+  lists and moved them 2 closer, 2 further: a link credits every piece on the other side, not the
+  card that was wanted. Weighting rare shared concepts more heavily has no signal either: the
+  cards he passed over and the ones he wanted share equally common concepts.
+- **Related in other roles,** on 24 links drawn from the concepts' meaning (`practice → outcome`,
+  `tool → practice`, `method → practice`, and across branches): as a tier after shared tags or as a
+  "nearer" match, about neutral (shared 1.20); weight 0.5 worse (1.13); a tier on top of v4's
+  tie-break, the best measured (5 / 1 / 4, shared 1.30), at 28 NEW pages. So round 3 builds the
+  tier role, on v4's tie-break.
+- **Expect more after Andy's hierarchy work:** the missing concepts for cognition, embodiment and
+  natural language, and the Card Sorting / Tree Testing overlap, both produce mis-tags, and a link
+  spreads whatever the tags say.
 
 ### 5. Manual audit
 
@@ -738,7 +802,8 @@ variable is added, to get the best lists in place first.
       Its shape is decided; who writes the schema edit is Andy's call.
 - [ ] Andy reviews the tags in the lab Studio for ones the tagger missed. Those become author
       tags, which are never bumped.
-- [ ] **M3.5**, from the tags in the dataset (renumbered: M3.3 went to the crossing rule)
+- [ ] **M3.6**, from the tags in the dataset (renumbered: M3.3 went to the crossing rule and M3.4
+      to the tie-break)
 
 ### 6. Promotion
 

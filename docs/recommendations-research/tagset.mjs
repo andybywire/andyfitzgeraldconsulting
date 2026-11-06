@@ -41,7 +41,12 @@ import {ROUND_0, tagCorpus} from './tagger.mjs'
    v3 is v2's tags under a relaxed crossing rule (Andy, 2026-11-05). Its tags must be v2's, so it
    pins v2's matrix rather than reading the newest one, and it records `crossRule`, which
    m3-report.mjs ranks its column under (baseline-columns.mjs → TAXONOMY_CROSS_RELAXED). A
-   version without one is ranked under TAXONOMY_CROSS. */
+   version without one is ranked under TAXONOMY_CROSS.
+
+   v4 is v3 again, with ties broken by same genre, then tag strength, before the date (Andy,
+   2026-11-06; related.ts → TIES). Same tags, same crossing rule, so the tie-break is the one
+   thing that changes. It records `tieBreak` for m3-report.mjs to rank under. */
+const V2_MATRIX = 'spike-recommendations-lab-combined-20261105T191152Z.json'
 const VERSIONS = {
   v0: {config: ROUND_0, recipes: ['definition']},
   v1: {config: ROUND_0, recipes: ['definition']},
@@ -49,8 +54,15 @@ const VERSIONS = {
   v3: {
     config: ROUND_0,
     recipes: ['combined'],
-    matrices: ['spike-recommendations-lab-combined-20261105T191152Z.json'],
+    matrices: [V2_MATRIX],
     crossRule: TAXONOMY_CROSS_RELAXED,
+  },
+  v4: {
+    config: ROUND_0,
+    recipes: ['combined'],
+    matrices: [V2_MATRIX],
+    crossRule: TAXONOMY_CROSS_RELAXED,
+    tieBreak: 'genre-strength',
   },
   'v2-combined': {config: ROUND_0, recipes: ['combined']},
   'v2-mean': {config: {...ROUND_0, combine: 'mean'}, recipes: ['definition', 'example']},
@@ -58,7 +70,7 @@ const VERSIONS = {
 }
 
 const version = process.argv[2]
-const {config, recipes, matrices: pinned, crossRule} = VERSIONS[version] ?? {}
+const {config, recipes, matrices: pinned, crossRule, tieBreak} = VERSIONS[version] ?? {}
 if (!config) {
   console.error(`Usage: tagset.mjs <version> [matrix …]. Known versions: ${Object.keys(VERSIONS)}`)
   process.exit(1)
@@ -137,6 +149,7 @@ const out = {
   matrix: files.map((f) => f.pathname.split('/').slice(-2).join('/')).join(' + '),
   config,
   ...(crossRule && {crossRule}),
+  ...(tieBreak && {tieBreak}),
   authorTags: 'none: every round retags from scratch (plan.md → Open questions)',
   documents: matrix.docs.map((d) => ({
     _id: d._id,
