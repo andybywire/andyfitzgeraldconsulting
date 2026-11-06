@@ -51,9 +51,17 @@ full-text TF-IDF, two-query mean and max, weighting rare concepts, and a weighte
 
 **Next, in order:**
 
-1. **Andy's hierarchy work:** concepts for cognition, embodiment and natural language; the Card
-   Sorting / Tree Testing overlap; any remaining single-tag or misfiring cases. Then a retag
-   round, re-scoring only the changed and new concepts.
+1. **Andy's hierarchy work:** concepts for cognition, embodiment and natural language, and any
+   remaining single-tag or misfiring cases. Then a retag round, re-scoring only the changed and
+   new concepts.
+   - **Tree Testing now has two parents, User Research first, then Evaluation** (Andy,
+     2026-11-06; its definition and example were right as they were). Re-tagged from v4's matrix
+     with only that change, it is neutral: no document's tags change, and one list loses a card
+     that reached it as a sibling under Evaluation. The co-tag on *How to Choose Topics for Card
+     Sorting* comes from the scores, not the hierarchy: the two concepts' texts match the same
+     piece, and the tagger only excludes a concept beside its own parent. Left for the manual
+     audit. **The first parent is the one the tagger and ranker see**, so User Research first
+     makes Tree Testing a research method to them, a sibling of Card Sorting.
 2. **Related terms as v5, in the tier role** (Phase 4): Andy writes links in the lab under the
    draft guidelines; the tier is built into `rankAcross` behind an option, as the tie-break was;
    then M3.5.
