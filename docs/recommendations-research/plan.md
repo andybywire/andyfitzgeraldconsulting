@@ -43,7 +43,20 @@ version beat the earlier pick on the pages where it showed something new:
 | M3.2 | v2: an example on every concept, in one combined query | 62 / 11 | 40 of 65 (62%) |
 | M3.3 | v3: the relaxed crossing rule | 63 / 10 | 15 of 23 (65%) |
 | M3.4 | v4: ties by genre, then tag strength, not date | 63 / 10 | 10 of 16 (62%) |
-| M3.5 | v5: the Human Factors hierarchy, with Cognition's example rewritten once | not yet marked | 9 pages NEW |
+| M3.5 | v5: the Human Factors hierarchy, with Cognition's example rewritten once | 64 / 9 | 5 of 9 (56%) |
+
+**Measured the stricter way** (2026-11-06, from M3.5's marks): how often a column shows the list
+Andy picked, in any order. Unlike the picks above, this credits only the configuration that would
+ship, so it is the headline to lead with.
+
+| Column | Shows the pick | Cards shared with the pick (mean, of 3) |
+|---|---|---|
+| Embeddings, unrestricted | 6 of 73 | 1.11 |
+| Hand tags | 5 | 0.84 |
+| v2 | 26 | 1.97 |
+| v3 | 32 | 2.10 |
+| v4 | 37 | 2.19 |
+| **v5** | **40** | **2.25** |
 
 **Settled:** the vocabulary (Phases 2 and 3), the combined query recipe, the relaxed crossing rule
 and the genre-then-strength tie-break. **Explored and set aside**, each recorded where it happened:
@@ -52,7 +65,12 @@ full-text TF-IDF, two-query mean and max, weighting rare concepts, and a weighte
 
 **Next, in order:**
 
-1. **Andy marks M3.5:** the 9 NEW pages of the hierarchy round (Phase 3d).
+1. **Choose what comes next: the manual audit (Phase 5) or related terms (v6).** Claude
+   recommends the audit first, from M3.5's marks. None of v5's losses is a gap a related link
+   fixes: they come from thin text and the cap on tags per document, and the audit has a work
+   list for exactly those (Phase 3d → M3.5 marked). Measuring it also answers what a person's
+   review adds on top of the tagger. If the audit goes first, it takes M3.6 and related terms
+   M3.7.
 2. **Related terms as v6, in the tier role** (Phase 4): Andy writes links in the lab under the
    draft guidelines; the tier is built into `rankAcross` behind an option, as the tie-break was;
    then M3.6.
@@ -62,18 +80,21 @@ full-text TF-IDF, two-query mean and max, weighting rare concepts, and a weighte
    explicit go-ahead. Promotion now carries the tie-break and `topicScores` as well as the
    stashed page wiring; `CROSS_RULE` already holds the relaxed values.
 5. **Still owed:** `how.md` and `value-add.md` stop at the tagger and have not caught up with
-   revisions 1–3, the crossing rule, the tie-break or the hierarchy round; the extract script
-   for trend charts is not built; and the open questions below are still open.
+   revisions 1–3, the crossing rule, the tie-break or the hierarchy round, and `value-add.md`'s
+   "Where embeddings win" now has thin content to add; the extract script for trend charts is
+   not built; and the open questions below are still open.
 
 **Raised for Andy in a review of the remaining steps (2026-11-06), none decided yet:**
 
-- **Whether to run v6 at all.** Its simulated gain was small (5 closer, 1 further, 28 NEW).
+- **Whether to run v6 at all.** Its simulated gain was small (5 closer, 1 further, 28 NEW), and
+  M3.5's losses are not the kind it would fix (see Next, item 1).
 - **A blind spot-check before any headline number.** About 20 pages, the final taxonomy list
   against unrestricted embeddings, unlabeled and in random order. One judge built the vocabulary
   and judged labeled columns, and the vocabulary was tuned on the pages it is judged on.
 - **The headline metric.** "63 of 73" counts every taxonomy column, including ones that won't
   ship. The honest one is the shipped configuration against the pick, page by page, regressions
-  included; the extract script should compute it.
+  included. It was computed once, for M3.5, by a scratch script (the table above); the extract
+  script should compute it every round.
 - **Promotion gaps Phase 6 doesn't cover yet:**
   - **The URL contract (Andy's):** facet slugs are `slugify(prefLabel)`, so a renamed or removed
     concept leaves old `?topic=` links on a silently unfiltered index (`nginx/redirects.conf`).
@@ -107,6 +128,13 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-06.** **M3.5 is marked** (Andy). v5 was the pick on 5 of the 9 NEW pages: all 4
+  articles and the one case study, and none of the 4 thin pieces, two notes and two talks, where
+  his notes ask for hand tags. Latest picks: taxonomy 64, embeddings 9. Measured as the shipped
+  configuration against the pick, v5 shows it on 40 of 73 pages, against unrestricted
+  embeddings' 6. What comes next, the audit or related terms, is not decided. See Phase 3d →
+  M3.5 marked.
 
 - **2026-11-06.** **The hierarchy round is v5, and Cognition's example was rewritten once
   before M3.5** (Andy). Human Factors joins as a seventh top concept, holding Cognition and
@@ -911,7 +939,63 @@ a Claude draft that Andy reviewed and published.
 - [x] **M3.5** (2026-11-06): `m3.5.md`, M3.4 carried forward with the v5 column. 11 lists differ
   from v4's, and **9 of 73 pages are NEW**. The carried columns, Best marks and notes match
   M3.4 on all 73 pages, and the v5 column matches the ranker on all 73.
-- [ ] **M3.5 marked** (Andy)
+- [x] **M3.5 marked** (Andy, 2026-11-06), the 9 NEW pages only. **v5 was the pick on 5 of 9**:
+  all four articles (*A Cognitive Sciences Reading List for Designers*, *AI Supported
+  Auto-Categorization*, *Language + Meaning + User Experience Architecture* and *Structured
+  Content Design Workflow 2022*) and the one case study, *Shoreline Community College*, which
+  moves from Embeddings. It lost all four thin pieces: the notes *Proust and the Squid* and *Why
+  Shortcuts Aren't the Road*, and the talks *Language Arts for the Lizard Brain* and *Improv
+  Consulting*.
+  - **Andy's notes:** on three of the four losses, that hand tags would help this thin content.
+    On *Lizard Brain*, the withdrawn transcript note stays withdrawn, with "Could also benefit
+    from hand tagging" added.
+  - **The latest pick on each page:** v5 5, v4 10, v3 9, v2 26, v1 5, Taxonomy v0 4, Hand tags
+    5, Embeddings, same rules 5, Embeddings 4. Taxonomy 64, embeddings 9.
+
+  **What the marks show.** From a scratch analysis of the marked report, with nothing
+  re-queried:
+
+  - **The shipped configuration shows the pick on 40 of 73 pages,** and the share has risen
+    every round (Where things stand). By type, v5 shows it on 19 of 31 articles, 4 of 7 case
+    studies, 2 of 6 notes and 15 of 29 presentations. Of the other 33 pages, 8 hold an
+    embeddings list and 25 an earlier taxonomy list or the hand tags, and 15 of those 25 share 2
+    of 3 cards with v5.
+  - **What embeddings still win is thin content.** 8 of their 9 remaining picks are on pages
+    with 1,449 embedded characters or fewer: over 1,500 characters, embeddings win 1 page of 41;
+    at or under, 8 of 32. Seven of the nine are talks, whose embedded text is a description and
+    highlights; *Lizard Brain*'s 19,410-character transcript is seen by neither method. And 4 of
+    the 6 pages on a minimum tag are embeddings picks.
+    - **The mechanism:** embeddings degrade gracefully, because a short description still ranks
+      every piece. The tagger needs enough text to clear a bar, and below it a page gets one weak
+      minimum tag that its whole list hangs on. So the taxonomy needs a person exactly where the
+      text is thinnest, which is what Andy's notes say.
+  - **On the thin pages v5 lost, its cards were right but too few.** *Proust* and *Lizard
+    Brain* each got one card, the Reading List, and Andy's pick includes it both times, along
+    with *Language + Meaning* and *The Trouble with Systems*.
+    - ***Language + Meaning* is the missing link.** It scores 0.481 for Cognition and lost its
+      third band-1 slot to User Experience Design at 0.486, within noise; band 2 wants 0.54. The
+      cap on tags per document is a precision choice, and here it costs recall.
+    - **A short list wins only against a wrong one.** The Reading List's two cards beat a full
+      list of general IA pieces; one right card lost to three.
+    - **Two remedies, with different owners:** an author tag at the audit, or embeddings
+      filling empty slots ("Combinations worth testing" in value-add.md), which carries the
+      per-page query cost that ruled out the embeddings tie-break.
+  - **A tag's quality reaches every page that can reach it.** Proust's old minimum tag,
+    Discovery, had put it on *Shoreline Community College*'s list; with it gone, Shoreline moved
+    from embeddings to v5, the case study type embeddings held longest. The same stray tag had
+    paired Proust with *Why Shortcuts Aren't the Road*, another thin note, and Andy kept that
+    list. Weak tags on thin pieces connect partly by luck.
+  - **Where a concept sits changes tagging, not only ranking.** Moving Mental Models out from
+    under User Research let User Research onto *Structured Content Design Workflow 2022*, since
+    the specificity rule had kept the parent off. All three NEW pages that Mental Models' move
+    touched went to v5. For value-add.md's governance claim: in this pipeline a structural edit
+    re-tags as well as re-ranks.
+  - **The one long piece embeddings still win:** *Delivering Information Architecture*, with
+    six specific tags. It lost Information Architecture (0.633, a hand tag) to Site Maps under
+    "more specific wins", v0's IA problem surviving on one page.
+  - **A work list for the audit (Phase 5):** the six pages on a minimum tag, the thin talks,
+    Cognition on *Language + Meaning*, and Information Architecture on *Delivering Information
+    Architecture*.
 
 ### 4. Taxonomy revision 3: related terms
 
