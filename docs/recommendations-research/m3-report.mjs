@@ -57,10 +57,17 @@ import {
 
 const n = Number(process.argv[2])
 if (!Number.isInteger(n) || n < 0) {
-  console.error('Usage: m3-report.mjs <n> [--overwrite]')
+  console.error('Usage: m3-report.mjs <n> [--overwrite] [--out <file>]')
   process.exit(1)
 }
-const target = new URL(`./m3.${n}.md`, import.meta.url)
+/* --out writes elsewhere, for checking that a code change reproduces an existing report. Such a
+   check must never regenerate the report in place: once marked, it would lose Andy's marks, and
+   on 2026-11-05 a check that did exactly that had to be restored from git. */
+const outAt = process.argv.indexOf('--out')
+const target =
+  outAt === -1
+    ? new URL(`./m3.${n}.md`, import.meta.url)
+    : new URL(process.argv[outAt + 1], `file://${process.cwd()}/`)
 if (existsSync(target) && !process.argv.includes('--overwrite')) {
   console.error(`${target.pathname} exists and may hold Andy's marks. --overwrite replaces it.`)
   process.exit(1)
@@ -111,9 +118,20 @@ const titleOf = (d) => d.title.trim()
 const idOfTitle = new Map(corpus.pool.map((d) => [titleOf(d), d._id]))
 if (idOfTitle.size !== corpus.pool.length) throw new Error('two pages share a title')
 
+/* Each version's crossing rule, as its tag set records it; one with none uses TAXONOMY_CROSS.
+   From v3 the taxonomy columns cross under TAXONOMY_CROSS_RELAXED (baseline-columns.mjs), so a
+   column is ranked, and described, under its own version's rule. The hand tags keep the original. */
+const ruleOf = (v) => loadTagSet(`v${v}`).crossRule ?? TAXONOMY_CROSS
+const rules = Array.from({length: n + 1}, (_, v) => ruleOf(v))
+const ruleText = (r) =>
+  `at least ${r.crossMinCount} shared tags, a shared ratio of at least ${r.crossMinShared}, at most ${r.crossMax} cross card`
 const versionColumn = (v) => ({
   name: v === 0 ? 'Taxonomy v0' : `v${v}`,
-  what: `The ranker on tag set v${v}`,
+  what:
+    `The ranker on tag set v${v}` +
+    (rules[v] === TAXONOMY_CROSS || JSON.stringify(rules[v]) === JSON.stringify(TAXONOMY_CROSS)
+      ? ''
+      : `, under the relaxed crossing rule`),
   taxonomy: true,
   version: true,
 })
@@ -149,8 +167,10 @@ if (n > 0) {
 
 /** Each column's list for one page: ids, whether it was the "Recent" fallback, and its note. */
 function columnsFor(page) {
-  const computed = pools.map((pool) => {
-    const r = taxonomyColumn(page, pool, categories)
+  /* M3.0 computes Hand tags and v0, both under TAXONOMY_CROSS; later reports compute only vn. */
+  const computedRules = n === 0 ? [TAXONOMY_CROSS, rules[0]] : [rules[n]]
+  const computed = pools.map((pool, i) => {
+    const r = taxonomyColumn(page, pool, categories, computedRules[i])
     return {ids: r.items.map((i) => i._id), recent: r.isFallback, note: ''}
   })
   if (previous) {
@@ -269,8 +289,14 @@ out.push(
   `**How to judge.** Each page has one Best row per round. In its **v${n} Best** row, paste ✅ under the column whose list you think is best now, and add anything worth keeping in **Notes**.${n > 0 ? " The rows above it keep the earlier rounds' picks, grayed to ☑️." : ''} ⇄ marks a card from the other category. "(agree n/3)" counts the cards a column shares with the one to its left. "recent" means the ranker found nothing related and showed the newest documents instead.`,
   '',
 )
+const isOriginal = (r) => JSON.stringify(r) === JSON.stringify(TAXONOMY_CROSS)
+const underOriginal = rules.flatMap((r, v) => (isOriginal(r) ? [COLUMNS[3 + v].name] : []))
+const underRelaxed = rules.flatMap((r, v) => (isOriginal(r) ? [] : [COLUMNS[3 + v].name]))
+const verb = (names) => (names.length === 1 ? 'crosses' : 'cross')
 out.push(
-  `**The taxonomy columns** all run the site's ranker under one fixed crossing rule: at least ${TAXONOMY_CROSS.crossMinCount} shared tags, a shared ratio of at least ${TAXONOMY_CROSS.crossMinShared}, at most ${TAXONOMY_CROSS.crossMax} cross card. They differ only in their tags.`,
+  underRelaxed.length === 0
+    ? `**The taxonomy columns** all run the site's ranker under one fixed crossing rule: ${ruleText(TAXONOMY_CROSS)}. They differ only in their tags.`
+    : `**The taxonomy columns** all run the site's ranker. Hand tags and ${underOriginal.join(', ')} cross under the original rule: ${ruleText(TAXONOMY_CROSS)}. ${underRelaxed.join(', ')} ${verb(underRelaxed)} under the relaxed rule: ${ruleText(rules.find((r) => !isOriginal(r)))}. A version that changes the rule keeps the tags of the one before it, so each column still changes one thing.`,
   '',
 )
 if (n === 0) {

@@ -24,6 +24,7 @@
 // both (tagger.mjs → tagCorpus, `queries`). Matrices named on the command line are taken in the
 // version's recipe order; otherwise the newest matrix of each recipe is read.
 import {mkdirSync, readFileSync, readdirSync, writeFileSync} from 'node:fs'
+import {TAXONOMY_CROSS_RELAXED} from './baseline-columns.mjs'
 import {ROUND_0, tagCorpus} from './tagger.mjs'
 
 /* One configuration per version, with the query recipe(s) its matrix comes from. Later rounds add
@@ -35,18 +36,29 @@ import {ROUND_0, tagCorpus} from './tagger.mjs'
    v2 is v2-combined (Andy, 2026-11-05): one query per concept with the example inside it. It
    kept v1's tag volume and hand-tag share while fixing Sanity's over-application. v2-mean came
    closer to Andy's M3.1 picks, but added 17% more tags, partly because example queries score on
-   a looser scale (plan.md → Phase 3). The candidates stay here as the record of the choice. */
+   a looser scale (plan.md → Phase 3). The candidates stay here as the record of the choice.
+
+   v3 is v2's tags under a relaxed crossing rule (Andy, 2026-11-05). Its tags must be v2's, so it
+   pins v2's matrix rather than reading the newest one, and it records `crossRule`, which
+   m3-report.mjs ranks its column under (baseline-columns.mjs → TAXONOMY_CROSS_RELAXED). A
+   version without one is ranked under TAXONOMY_CROSS. */
 const VERSIONS = {
   v0: {config: ROUND_0, recipes: ['definition']},
   v1: {config: ROUND_0, recipes: ['definition']},
   v2: {config: ROUND_0, recipes: ['combined']},
+  v3: {
+    config: ROUND_0,
+    recipes: ['combined'],
+    matrices: ['spike-recommendations-lab-combined-20261105T191152Z.json'],
+    crossRule: TAXONOMY_CROSS_RELAXED,
+  },
   'v2-combined': {config: ROUND_0, recipes: ['combined']},
   'v2-mean': {config: {...ROUND_0, combine: 'mean'}, recipes: ['definition', 'example']},
   'v2-max': {config: {...ROUND_0, combine: 'max'}, recipes: ['definition', 'example']},
 }
 
 const version = process.argv[2]
-const {config, recipes} = VERSIONS[version] ?? {}
+const {config, recipes, matrices: pinned, crossRule} = VERSIONS[version] ?? {}
 if (!config) {
   console.error(`Usage: tagset.mjs <version> [matrix …]. Known versions: ${Object.keys(VERSIONS)}`)
   process.exit(1)
@@ -57,15 +69,19 @@ const dir = new URL('./scores/', import.meta.url)
 const named = process.argv.slice(3)
 const files = named.length
   ? named.map((n) => new URL(n, `file://${process.cwd()}/`))
-  : recipes.map((recipe) => {
-      const newest = readdirSync(dir)
-        .filter((n) => n.startsWith('spike-'))
-        .sort()
-        .reverse()
-        .find((n) => (JSON.parse(readFileSync(new URL(n, dir))).recipe ?? 'definition') === recipe)
-      if (!newest) throw new Error(`No ${recipe} matrix in scores/`)
-      return new URL(newest, dir)
-    })
+  : pinned
+    ? pinned.map((n) => new URL(n, dir))
+    : recipes.map((recipe) => {
+        const newest = readdirSync(dir)
+          .filter((n) => n.startsWith('spike-'))
+          .sort()
+          .reverse()
+          .find(
+            (n) => (JSON.parse(readFileSync(new URL(n, dir))).recipe ?? 'definition') === recipe,
+          )
+        if (!newest) throw new Error(`No ${recipe} matrix in scores/`)
+        return new URL(newest, dir)
+      })
 if (files.length !== recipes.length) {
   throw new Error(`${version} reads ${recipes.length} matrices (${recipes}); given ${files.length}`)
 }
@@ -120,6 +136,7 @@ const out = {
   dataset: matrix.dataset,
   matrix: files.map((f) => f.pathname.split('/').slice(-2).join('/')).join(' + '),
   config,
+  ...(crossRule && {crossRule}),
   authorTags: 'none: every round retags from scratch (plan.md → Open questions)',
   documents: matrix.docs.map((d) => ({
     _id: d._id,

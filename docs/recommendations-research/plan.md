@@ -25,8 +25,8 @@ Manager starter prompt come at the end.
 | `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none) |
 | `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags (one query per concept, or two combined by mean or max), and its runner, which writes one simulated tag set per version, including the v2 candidates (spends none, writes no dataset) |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
-| `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under `TAXONOMY_CROSS` (spends none) |
-| `m3-report.mjs`, `m3.0.md`, `m3.1.md`, `m3.2.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
+| `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under a crossing rule, `TAXONOMY_CROSS` unless a version records its own (spends none) |
+| `m3-report.mjs`, `m3.0.md` to `m3.3.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
 | `m3-parse.mjs` | Reads a marked M3.n report back into columns, cards, Best marks and notes, for the carry-forward and, later, the extract script |
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
@@ -51,6 +51,15 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-05.** **M3.3 is marked, and the relaxed crossing rule holds** (Andy). v3 was the pick
+  on 15 of the 23 lists it changed, 9 of 11 of them presentations. Taxonomy columns now hold 63
+  of the 73 latest picks. See Phase 3b.
+
+- **2026-11-05.** **The taxonomy crossing rule is relaxed from v3, before related terms are
+  added** (Andy): at least 2 shared tags, making up at least half of the pair's tags, and at
+  most 1 cross card. v3 is v2's tags under it, judged in M3.3; the related-terms round becomes
+  v4. The old rule stays behind the v0 to v2 columns. See Phase 3b.
 
 - **2026-11-05.** **M3.2 is marked** (Andy). v2's list was the best on 40 of the 65 NEW pages and
   on 3 of the repeats, 43 in all. The taxonomy columns now hold 62 of the 73 picks, against 51
@@ -671,14 +680,56 @@ phase 6, and phase 6 waits for Andy's go-ahead.
   - **Thin pieces get thin tags:** *Improv Consulting* (451 characters of text), *Information
     Design* (about 1,000) and *Proust and the Squid* (about 1,500).
   - **The crossing rule has a cost.** On *Taxonomy Management and use in Sanity Studio*, Andy notes
-    that "the more relaxed category crossover rules really do match better content".
-    `TAXONOMY_CROSS` stays fixed through the revisions; promotion is where to revisit it.
+    that "the more relaxed category crossover rules really do match better content". That
+    became the next step: see 3b.
+
+### 3b. The crossing rule relaxed (v3)
+
+Andy, 2026-11-05: v2 was the most successful round, so the crossing rule moves before another
+variable is added, to get the best lists in place first.
+
+- [x] **Why it moved.** By v2, 45 of 73 documents carry exactly three tags, so `TAXONOMY_CROSS`'s
+  3 shared tags had come to mean IDENTICAL tag sets, and only 14 pages crossed. On v2's tags, 2
+  shared tags at a ratio of 0.50 crosses on 34 pages (embeddings, same rules: 19; unrestricted
+  embeddings: 53). The ratio has a cliff just above it: 2 of 3 tags shared is exactly 0.50, and
+  at 0.60 crossings fall to 9.
+- [x] **The rule:** `TAXONOMY_CROSS_RELAXED = {crossMinShared: 0.5, crossMinCount: 2, crossMax: 1}`
+  in `baseline-columns.mjs`, beside `TAXONOMY_CROSS`, which stays the rule behind the Hand tags,
+  v0, v1 and v2 columns. It equals `CROSS_RULE`'s provisional values in `lib/related.ts`.
+- [x] **v3 is v2's tags under it.** `tagset.mjs`'s v3 pins v2's matrix and records the rule as
+  `crossRule`; `m3-report.mjs` ranks each version's column under its own rule. So v3 changes one
+  thing, and the related-terms round becomes v4.
+- [x] **Against the M3.2 marks, before Andy judges v3:** 24 of 73 lists change. 16 are on pages
+  where v2 was the pick, so they can only read as "different". On the 8 others, 3 move closer to
+  the pick, 1 further, 4 stay level, and *Orchestrating the Mundane: Deskilling Language Models*
+  now produces exactly the list Andy picked. Most new cross cards pair an article with a talk on
+  the same subject, such as *Designing with Code* and *Content First Prototyping*.
+- [x] **M3.3** (2026-11-05): `m3.3.md`, with M3.2's columns, picks and notes carried and the v3
+  column added. **23 of 73 pages are NEW**; the 24th changed list repeats the one Andy picked.
+- [x] **M3.3 marked** (Andy, 2026-11-05). He marked the 23 NEW pages only; an unflagged page keeps
+  its v2 pick, which is the rule. **v3 was the pick on 15 of the 23.**
+  - **Where v2 had been the pick,** v3 won 11 of 16. **Where another column had,** it won 4 of 7:
+    three from v1, one from Embeddings, same rules.
+  - **The cross card is what won it.** 21 of the 23 new lists add a card from the other
+    category, and v3 won 13 of those. Most winners pair a talk with an article on the same
+    subject, such as *Designing with Code* and *Content First Prototyping*.
+  - **By type,** v3 won 9 of 11 presentations, 6 of 9 articles, 0 of 2 case studies and 0 of 1
+    note. Presentations were the type embeddings served best, because the old rule rarely let a
+    talk reach an article. On both case studies the new cross card displaced a sibling case
+    study, and Andy kept v2: a hint, on two pages, that case studies relate best to each other.
+  - **Andy's notes:** on *Ranked Lists of Related Content in Sanity Studio*, v3 is "*closer* to
+    what was effective about the unrestricted embeddings match"; on *Taxonomy Management and use
+    in Sanity Studio*, "better than other taxonomy versions ... but still not as good as
+    unrestricted embeddings". Both kept their embeddings picks.
+  - **The latest pick on each page**, v3's row where marked and v2's otherwise: v3 15, v2 32,
+    v1 7, Taxonomy v0 4, Hand tags 5, Embeddings, same rules 5, Embeddings 5. Taxonomy 63,
+    embeddings 10, against 62 and 11 after M3.2.
 
 ### 4. Taxonomy revision 3: related terms
 
 - [ ] Add `skos:related` links. None of the 73 concepts uses it today. The process is to be decided;
       it may also need a ranking tier.
-- [ ] Retag round 3, then **M3.3**
+- [ ] Retag round 3 as **v4**, under the relaxed crossing rule, then **M3.4**
 
 ### 5. Manual audit
 
@@ -687,7 +738,7 @@ phase 6, and phase 6 waits for Andy's go-ahead.
       Its shape is decided; who writes the schema edit is Andy's call.
 - [ ] Andy reviews the tags in the lab Studio for ones the tagger missed. Those become author
       tags, which are never bumped.
-- [ ] **M3.4**, from the tags in the dataset
+- [ ] **M3.5**, from the tags in the dataset (renumbered: M3.3 went to the crossing rule)
 
 ### 6. Promotion
 
@@ -702,8 +753,9 @@ touches `production-26` or the site's pages.
 - [ ] **Cross-category ranking: the wiring.** The insight and presentation pages move to
       `rankAcross`. `RelatedBand.astro` gets the new labels and links each card to its own
       collection. The old branch rule and the `parent` projection are then removed.
-      - **`CROSS_RULE` takes the research's final rule,** `TAXONOMY_CROSS` from
-        `baseline-columns.mjs`, and its comment is rewritten to match.
+      - **`CROSS_RULE` takes the research's final rule,** from `baseline-columns.mjs`, and its
+        comment is rewritten to match. Since v3 that is `TAXONOMY_CROSS_RELAXED`, which already
+        equals `CROSS_RULE`'s values, so only the comment would change.
       - **It is already written:** `git stash list` shows it as "recommendations-research:
         cross-category wiring of pages and RelatedBand, for promotion (2026-10-28)". It changes
         four files: `RelatedBand.astro`, both `[slug].astro` pages, and a comment in
@@ -735,9 +787,9 @@ touches `production-26` or the site's pages.
   - at most `crossMax` cross cards are shown
 
   All of these are adjustable.
-  - **The research uses `TAXONOMY_CROSS`** in `baseline-columns.mjs`: `crossMinShared` 0.40,
-    `crossMinCount` 3, `crossMax` 1. It was calibrated on tag set v0 and is held fixed through
-    revisions 1–3 (Andy, 2026-10-28).
+  - **The research used `TAXONOMY_CROSS`** in `baseline-columns.mjs` through v2: `crossMinShared`
+    0.40, `crossMinCount` 3, `crossMax` 1, calibrated on tag set v0 (Andy, 2026-10-28). **From v3
+    it uses `TAXONOMY_CROSS_RELAXED`:** 0.50, 2, 1 (Andy, 2026-11-05; Phase 3b).
   - **The pages will read `CROSS_RULE`** in `lib/related.ts`. It keeps its provisional values
     (0.5, 2, 1, from 2026-10-27) until promotion, and its comment there is out of date until
     then too.
@@ -861,6 +913,10 @@ touches `production-26` or the site's pages.
 - **The generator** (`m3-report.mjs`, built 2026-10-28):
   - **It never overwrites a report**, since a report holds Andy's marks. `--overwrite` is only for
     one he hasn't touched.
+  - **`--out <file>` writes elsewhere,** for checking that a code change reproduces an existing
+    report. Added 2026-11-05, after such a check regenerated the marked `m3.2.md` in place and it
+    had to be restored from git. A regenerated report differs from the committed one only in its
+    "Generated" date, which is UTC.
   - **Carry-forward is built** (2026-11-03). `m3-parse.mjs` reads the previous report back, and
     the generator copies its columns, Best marks, notes and tag lines, then computes only the
     newest column. It checks the previous report's column names and page ids before copying.

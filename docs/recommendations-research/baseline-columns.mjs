@@ -60,10 +60,28 @@ export const CROSS = {crossMin: 0.7, crossMax: 1}
  * nothing on v0 between 0.01 and 0.40; 0.40 guards against heavily tagged documents sharing 3 of
  * 9 tags.
  *
- * HELD FIXED across revisions 1–3, so each M3.n column measures the vocabulary, not a moved bar.
- * CROSS_RULE in related.ts keeps its provisional values until promotion (plan.md → phase 6).
+ * It was held fixed through revisions 1 and 2, so each M3.n column measured the vocabulary, not a
+ * moved bar, and it remains the rule behind the Taxonomy v0, v1 and v2 columns. From v3 on, the
+ * taxonomy columns use TAXONOMY_CROSS_RELAXED below.
  */
 export const TAXONOMY_CROSS = {crossMinShared: 0.4, crossMinCount: 3, crossMax: 1}
+
+/**
+ * The relaxed crossing rule, for v3 and on (Andy, 2026-11-05): at least 2 shared tags, making up
+ * at least half of all the tags between the two documents.
+ *
+ * Why it moved: by v2, 45 of 73 documents carry exactly three tags, so 3 shared tags had come to
+ * mean IDENTICAL tag sets, and only 14 pages crossed. Andy's M3.2 note on *Taxonomy Management
+ * and use in Sanity Studio* asked for the looser crossover. On v2's tags this rule crosses on 34
+ * pages (embeddings, same rules: 19; unrestricted embeddings: 53). The ratio has a cliff just
+ * above it: 2 of 3 tags shared is exactly 0.50, and at 0.60 crossings fall to 9.
+ *
+ * It is the same as CROSS_RULE's provisional values in related.ts, so if it holds through the
+ * evaluations, promotion needs no change there. Moving it before revision 3 (related terms) is
+ * deliberate: Andy wanted the best lists in place before adding another variable, and v3, which
+ * changes only this rule, is judged on its own.
+ */
+export const TAXONOMY_CROSS_RELAXED = {crossMinShared: 0.5, crossMinCount: 2, crossMax: 1}
 
 export const category = (type) => (type === 'presentation' ? 'presentations' : 'insights')
 
