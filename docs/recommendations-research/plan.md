@@ -1,6 +1,6 @@
 # Recommendations research: plan
 
-*Living document. Started 2026-10-21; this version 2026-11-05. Branch: `recommendations-research`.*
+*Living document. Started 2026-10-21; this version 2026-11-06. Branch: `recommendations-research`.*
 
 ## What this is
 
@@ -31,6 +31,41 @@ Manager starter prompt come at the end.
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
 
+## Where things stand (2026-11-06): start here in a new session
+
+**The trajectory.** The taxonomy columns' share of Andy's latest picks, and how often each new
+version beat the earlier pick on the pages where it showed something new:
+
+| Report | Changed | Taxonomy / embeddings picks | New version won |
+|---|---|---|---|
+| M3.0 | baseline | 25 / 48 | — |
+| M3.1 | v1: revision 1, genus–differentia definitions | 51 / 22 | 36 of 68 (53%) |
+| M3.2 | v2: an example on every concept, in one combined query | 62 / 11 | 40 of 65 (62%) |
+| M3.3 | v3: the relaxed crossing rule | 63 / 10 | 15 of 23 (65%) |
+| M3.4 | v4: ties by genre, then tag strength, not date | 63 / 10 | 10 of 16 (62%) |
+
+**Settled:** the vocabulary (Phases 2 and 3), the combined query recipe, the relaxed crossing rule
+and the genre-then-strength tie-break. **Explored and set aside**, each recorded where it happened:
+an embeddings tie-break (cost), a mention gate on named concepts (a hidden application profile),
+full-text TF-IDF, two-query mean and max, weighting rare concepts, and a weighted related match.
+
+**Next, in order:**
+
+1. **Andy's hierarchy work:** concepts for cognition, embodiment and natural language; the Card
+   Sorting / Tree Testing overlap; any remaining single-tag or misfiring cases. Then a retag
+   round, re-scoring only the changed and new concepts.
+2. **Related terms as v5, in the tier role** (Phase 4): Andy writes links in the lab under the
+   draft guidelines; the tier is built into `rankAcross` behind an option, as the tie-break was;
+   then M3.5.
+3. **The same-work duplicate:** an article and the talk it became both appearing in one list.
+   Outside the taxonomy: a content-model relation and a ranker rule. Andy's call.
+4. **Phase 5, the manual audit,** then **Phase 6, promotion**, which needs Andy's explicit
+   go-ahead. Promotion now carries the tie-break and `topicScores` as well as the stashed page
+   wiring; `CROSS_RULE` already holds the relaxed values.
+5. **Still owed:** `how.md` and `value-add.md` stop at the tagger and have not caught up with
+   revisions 1–3, the crossing rule or the tie-break; the extract script for trend charts is not
+   built; and the open questions below are still open.
+
 ## Ground rules
 
 Andy, 2026-10-28. These hold until he lifts them, and they outrank anything later in this file.
@@ -51,6 +86,10 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-06.** **M3.4 is marked** (Andy). v4 was the pick on 10 of the 16 lists it changed,
+  including all 6 where v3 had been the pick. Andy's next step is the hierarchy work; related
+  terms follow as v5. See "Where things stand".
 
 - **2026-11-06.** **Ties are broken by genre, then tag strength, before the date, as v4; related
   links follow as v5, in the tier role** (Andy). An embeddings tie-break was ruled out on cost.
@@ -760,7 +799,19 @@ relevant. Reversing the date order changes 24 of 73 lists on v3's tags, so it de
   v2 and v3 columns are unchanged on all 73 pages, and v4 equals the scratch result.
 - [x] **M3.4** (2026-11-06): `m3.4.md`, M3.3 carried forward with the v4 column. **16 of 73 pages
   are NEW.**
-- [ ] **Andy marks M3.4.**
+- [x] **M3.4 marked** (Andy, 2026-11-06), the 16 NEW pages only. **v4 was the pick on 10 of 16**:
+  all 6 where v3 had been the pick, 4 of 6 where v2 had been, none of the 4 held by v0, v1, the
+  hand tags or Embeddings. Articles 4 of 7, presentations 6 of 9.
+  - **The margins are small.** Two of the four notes say "better ... but just barely".
+  - **A duplicate the taxonomy can't see** (Andy's note on *Boutique Knowledge Graphs: Building
+    Smart Content At Any Scale*): *Conversations with Robots*, the article, and *Conversations
+    With Robots*, the talk, both appear in one list: the same work in two formats. "Likely an
+    issue outside of the taxonomy": a relation between an article and the talk it became, which is
+    a content-model question, with a ranker rule to show only one of them.
+  - **The transcript note is withdrawn** (on *Language Arts for the Lizard Brain*): that mismatch
+    comes from the missing cognitive-science concepts, which Andy is adding.
+  - **The latest pick on each page after M3.4:** v4 10, v3 9, v2 28, v1 7, Taxonomy v0 4, Hand
+    tags 5, Embeddings, same rules 5, Embeddings 5. Taxonomy 63, embeddings 10, as after M3.3.
 
 ### 4. Taxonomy revision 3: related terms
 
