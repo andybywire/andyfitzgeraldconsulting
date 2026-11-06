@@ -19,14 +19,14 @@ Manager starter prompt come at the end.
 | `lab-api.mjs` | The authenticated client the writing scripts share: token from `sanity exec`, and writes to `production-26` refused |
 | `tags-backup.mjs`, `tags-restore.mjs` | Snapshot every document's tag fields, and put them back exactly. Restore is a dry run unless given `--write` |
 | `backups/` | Committed tag snapshots: the revert points |
-| `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept, for one query recipe: `definition`, `example` or `combined` (spends quota), and its analysis (spends none) |
+| `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept, for one query recipe: `definition`, `example` or `combined` (spends quota; with `--base`, only on new or changed concepts), and its analysis (spends none) |
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
 | `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none) |
 | `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags (one query per concept, or two combined by mean or max), and its runner, which writes one simulated tag set per version, including the v2 candidates (spends none, writes no dataset) |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under a crossing rule, `TAXONOMY_CROSS` unless a version records its own (spends none) |
-| `m3-report.mjs`, `m3.0.md` to `m3.4.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
+| `m3-report.mjs`, `m3.0.md` to `m3.5.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
 | `m3-parse.mjs` | Reads a marked M3.n report back into columns, cards, Best marks and notes, for the carry-forward and, later, the extract script |
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
@@ -43,6 +43,7 @@ version beat the earlier pick on the pages where it showed something new:
 | M3.2 | v2: an example on every concept, in one combined query | 62 / 11 | 40 of 65 (62%) |
 | M3.3 | v3: the relaxed crossing rule | 63 / 10 | 15 of 23 (65%) |
 | M3.4 | v4: ties by genre, then tag strength, not date | 63 / 10 | 10 of 16 (62%) |
+| M3.5 | v5: the Human Factors hierarchy, with Cognition's example rewritten once | not yet marked | 9 pages NEW |
 
 **Settled:** the vocabulary (Phases 2 and 3), the combined query recipe, the relaxed crossing rule
 and the genre-then-strength tie-break. **Explored and set aside**, each recorded where it happened:
@@ -51,28 +52,40 @@ full-text TF-IDF, two-query mean and max, weighting rare concepts, and a weighte
 
 **Next, in order:**
 
-1. **Andy's hierarchy work:** concepts for cognition, embodiment and natural language, and any
-   remaining single-tag or misfiring cases. Then a retag round, re-scoring only the changed and
-   new concepts.
-   - **Tree Testing now has two parents, User Research first, then Evaluation** (Andy,
-     2026-11-06; its definition and example were right as they were). Re-tagged from v4's matrix
-     with only that change, it is neutral: no document's tags change, and one list loses a card
-     that reached it as a sibling under Evaluation. The co-tag on *How to Choose Topics for Card
-     Sorting* comes from the scores, not the hierarchy: the two concepts' texts match the same
-     piece, and the tagger only excludes a concept beside its own parent. Left for the manual
-     audit. **The first parent is the one the tagger and ranker see**, so User Research first
-     makes Tree Testing a research method to them, a sibling of Card Sorting.
-2. **Related terms as v5, in the tier role** (Phase 4): Andy writes links in the lab under the
+1. **Andy marks M3.5:** the 9 NEW pages of the hierarchy round (Phase 3d).
+2. **Related terms as v6, in the tier role** (Phase 4): Andy writes links in the lab under the
    draft guidelines; the tier is built into `rankAcross` behind an option, as the tie-break was;
-   then M3.5.
+   then M3.6.
 3. **The same-work duplicate:** an article and the talk it became both appearing in one list.
    Outside the taxonomy: a content-model relation and a ranker rule. Andy's call.
-4. **Phase 5, the manual audit,** then **Phase 6, promotion**, which needs Andy's explicit
-   go-ahead. Promotion now carries the tie-break and `topicScores` as well as the stashed page
-   wiring; `CROSS_RULE` already holds the relaxed values.
+4. **Phase 5, the manual audit** (M3.7), then **Phase 6, promotion**, which needs Andy's
+   explicit go-ahead. Promotion now carries the tie-break and `topicScores` as well as the
+   stashed page wiring; `CROSS_RULE` already holds the relaxed values.
 5. **Still owed:** `how.md` and `value-add.md` stop at the tagger and have not caught up with
-   revisions 1–3, the crossing rule or the tie-break; the extract script for trend charts is not
-   built; and the open questions below are still open.
+   revisions 1–3, the crossing rule, the tie-break or the hierarchy round; the extract script
+   for trend charts is not built; and the open questions below are still open.
+
+**Raised for Andy in a review of the remaining steps (2026-11-06), none decided yet:**
+
+- **Whether to run v6 at all.** Its simulated gain was small (5 closer, 1 further, 28 NEW).
+- **A blind spot-check before any headline number.** About 20 pages, the final taxonomy list
+  against unrestricted embeddings, unlabeled and in random order. One judge built the vocabulary
+  and judged labeled columns, and the vocabulary was tuned on the pages it is judged on.
+- **The headline metric.** "63 of 73" counts every taxonomy column, including ones that won't
+  ship. The honest one is the shipped configuration against the pick, page by page, regressions
+  included; the extract script should compute it.
+- **Promotion gaps Phase 6 doesn't cover yet:**
+  - **The URL contract (Andy's):** facet slugs are `slugify(prefLabel)`, so a renamed or removed
+    concept leaves old `?topic=` links on a silently unfiltered index (`nginx/redirects.conf`).
+    It needs a label diff against `production-26`.
+  - **Search moves too:** `bodyTerms` matches body text against the Topic labels.
+  - **Tags at risk:** author tags added at the audit live in the lab, and retagging
+    `production-26` from scratch would drop them; pieces published live since 10-22 carry hand
+    tags that need a rule.
+  - **How new pieces get tagged after promotion.** The tagger is run by hand, and tagging one
+    document costs a query per concept today.
+- **The write-up's shape and audience:** a "why" and a "how", or one piece; taxonomists or Sanity
+  developers.
 
 ## Ground rules
 
@@ -94,6 +107,18 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-06.** **The hierarchy round is v5, and Cognition's example was rewritten once
+  before M3.5** (Andy). Human Factors joins as a seventh top concept, holding Cognition and
+  Decision Making, which are new, and Mental Models, moved from User Research. The first build
+  tagged the Cognitive Sciences Reading List correctly and left its list on Recent, because no
+  other piece shared its new tags; Andy chose a revised example over judging that build. See
+  Phase 3d.
+  - **Re-scoring is incremental now** (`score-spike.mjs --base`): only concepts whose query text
+    changed are queried, with a control, so a round's noise stays out of concepts nobody touched.
+  - **Every version pins its score matrix** in `tagset.mjs`. v2 read "the newest combined
+    matrix", which v5's would have become; all eight earlier tag sets were re-run from their
+    pins and came back identical.
 
 - **2026-11-06.** **M3.4 is marked** (Andy). v4 was the pick on 10 of the 16 lists it changed,
   including all 6 where v3 had been the pick. Andy's next step is the hierarchy work; related
@@ -821,10 +846,78 @@ relevant. Reversing the date order changes 24 of 73 lists on v3's tags, so it de
   - **The latest pick on each page after M3.4:** v4 10, v3 9, v2 28, v1 7, Taxonomy v0 4, Hand
     tags 5, Embeddings, same rules 5, Embeddings 5. Taxonomy 63, embeddings 10, as after M3.3.
 
+### 3d. The hierarchy round: Human Factors (v5)
+
+Andy, 2026-11-06. M3.2's notes found that the pieces on cognition, language and meaning had no
+concept of their own and were tagged with the nearest interface and design concepts. He added
+**Human Factors** as a seventh top concept, holding **Cognition** and **Decision Making**, both
+new, and **Mental Models**, moved from User Research with a new definition. The example on each is
+a Claude draft that Andy reviewed and published.
+
+- [x] **Tree Testing's second parent came and went.** Earlier the same day Andy gave it User
+  Research first, then Evaluation. Re-tagged from v4's matrix with only that change, it was
+  neutral: no tag changed, and one list (*WHO Knowledge Action Portal*) lost a card that reached
+  it as a sibling under Evaluation. **The first parent is the one the tagger and ranker see.** By
+  the time of the retag its only parent was Evaluation again, as in v4, so v5 carries no Tree
+  Testing change. The co-tag on *How to Choose Topics for Card Sorting* comes from the scores, not
+  the hierarchy, and is left for the manual audit.
+- [x] **Examples for the three,** under revision 2's rules: about 400 characters, archetypes set
+  outside Andy's pieces, no run of six words shared with the corpus (the longest was 4).
+  - **Mental Models' pull toward the modeling pieces comes from the label and the corpus, not the
+    wording.** The label and example alone, without the definition, still ranked *Content Modeling
+    in the Age of Flying Cars* and *Domain Modeling for Structured Content* first. v4 had already
+    put Mental Models on three such pieces. You can't define your way out of semantic similarity,
+    again.
+- [x] **Re-scored incrementally** (`score-spike.mjs --base`): Mental Models, Cognition and
+  Decision Making, 3 queries, with every other concept's scores reused from v2's matrix. The
+  control, Content Discovery queried again, was a median 0.0038 from its stored scores, which is
+  the measured noise. Each re-scored concept's self-match landed in v2's range (median 9.74), which
+  shows its document had been embedded with its published example.
+- [x] **The first build, kept as `v5-first`: the right tags and a worse list.** 3 documents'
+  tags changed. Cognition and Decision Making landed only on *A Cognitive Sciences Reading List
+  for Designers* (0.60 and 0.54), so it shared no tag with anything in its category, and its list
+  fell back to Recent. The pieces that should have shared Cognition sat at the bar, within noise:
+  *Language Arts for the Lizard Brain* 0.446, *Language + Meaning + User Experience Architecture*
+  0.449, and *Proust and the Squid* 0.362 against Discovery's 0.363 for its minimum tag.
+  - **A concept on one piece gives the ranker nothing,** and it can displace the shared tags that
+    were doing the work. A finding for the write-up.
+- [x] **Cognition's example rewritten once** (Andy chose it over judging the first build). The
+  first was set in procedures and safety; the corpus meets cognition through reading and
+  language, so the second is set there, with fast, automatic reading set against slow reasoning.
+  It is tuning toward the pieces the concept should catch, accepted because it corrected a
+  mismatch in the draft rather than chasing the bar, and capped at one attempt.
+  - **Predicted before it was published,** from one probe query and an in-memory simulation
+    over v5-first's matrix. The real build matched the simulation's tags and lists card for card.
+- [x] **v5** (`tagsets/v5.json`, Cognition re-scored once more from v5-first's matrix): 5
+  documents' tags differ from v4.
+
+  | Concept | Documents in v5 |
+  |---|---|
+  | Cognition | the Reading List 0.63, *Lizard Brain* 0.48, *Proust* 0.42 (its minimum) |
+  | Decision Making | the Reading List 0.54 |
+  | Mental Models | *Language + Meaning* 0.58, *Domain Modeling for Structured Content* 0.54, *Domain Modeling for Digital Information Designers* 0.50 |
+
+  - **Mental Models lost two pieces:** *How to Choose Topics for Card Sorting*, to
+    Discoverability by 0.003, and *Structured Content Design Workflow 2022*'s sixth slot, to User
+    Research. In v4, Mental Models was User Research's child, and the specificity rule kept a
+    parent off any document carrying its child; moving it freed User Research to compete.
+  - ***Design for the Human Scale* stays just under:** Cognition 0.424, against Human Centered
+    Design's 0.435 for its minimum tag.
+  - **The cognition pieces now find each other.** The Reading List's list is *Lizard Brain* ⇄
+    and *Proust*, and each of those shows the Reading List: short lists, but on topic.
+  - **Human Factors is flat,** its children directly under a top concept, where siblings count for
+    nothing. So a Cognition piece and a Decision Making piece connect only through a shared tag
+    or a related link (Phase 4).
+- [x] **M3.5** (2026-11-06): `m3.5.md`, M3.4 carried forward with the v5 column. 11 lists differ
+  from v4's, and **9 of 73 pages are NEW**. The carried columns, Best marks and notes match
+  M3.4 on all 73 pages, and the v5 column matches the ranker on all 73.
+- [ ] **M3.5 marked** (Andy)
+
 ### 4. Taxonomy revision 3: related terms
 
 - [ ] Add `skos:related` links. None of the 73 concepts uses it today.
-- [ ] Retag round 3 as **v5**, under the relaxed crossing rule and v4's tie-break, then **M3.5**
+- [ ] Retag round 3 as **v6**, under the relaxed crossing rule and v4's tie-break, then **M3.6**
+      (renumbered 2026-11-06: the hierarchy round took v5)
 
 **Explored before v4** (2026-11-06), recorded because most of it did not work:
 
@@ -861,8 +954,8 @@ relevant. Reversing the date order changes 24 of 73 lists on v3's tags, so it de
       Its shape is decided; who writes the schema edit is Andy's call.
 - [ ] Andy reviews the tags in the lab Studio for ones the tagger missed. Those become author
       tags, which are never bumped.
-- [ ] **M3.6**, from the tags in the dataset (renumbered: M3.3 went to the crossing rule and M3.4
-      to the tie-break)
+- [ ] **M3.7**, from the tags in the dataset (renumbered: M3.3 went to the crossing rule, M3.4
+      to the tie-break and M3.5 to the hierarchy round)
 
 ### 6. Promotion
 
@@ -935,7 +1028,7 @@ touches `production-26` or the site's pages.
 
 - **Scope.** The Topic scheme only, in the `topic` field of the four types. Genre is not touched.
   Top concepts are never candidates.
-- **Score.** One query per concept, about 55 a round:
+- **Score.** One query per concept, 68 today, or only the new and changed ones (see Incremental):
   - **query:** the concept's `prefLabel`, `definition` and `scopeNote`, with examples added from r2
   - **result:** every document is scored against it
   - **normalization:** the anchored scale, `(score − 4.9) / (self − 4.9)`, where `self` is the
@@ -977,6 +1070,8 @@ touches `production-26` or the site's pages.
     children of one broader concept give way to the broader concept.
 - **Incremental.** When a concept is added or changed, only that concept is re-queried, and the
   bump rule is applied per document.
+  - **Re-querying only what changed is built** (`score-spike.mjs --base`, 2026-11-06), with a
+    control query that checks the reused scores still hold. The bump rule is not built.
 - **Output: a tag-set file per version,** `tagsets/<version>.json`, holding each document's tags
   with their scores. The ranker and M3.n read it in memory. Rounds 0–3 never write to the dataset.
 - **Write, at phase 5 and promotion only.** Through `lab-api.mjs` under

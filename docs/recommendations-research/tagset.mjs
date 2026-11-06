@@ -45,12 +45,45 @@ import {ROUND_0, tagCorpus} from './tagger.mjs'
 
    v4 is v3 again, with ties broken by same genre, then tag strength, before the date (Andy,
    2026-11-06; related.ts → TIES). Same tags, same crossing rule, so the tie-break is the one
-   thing that changes. It records `tieBreak` for m3-report.mjs to rank under. */
+   thing that changes. It records `tieBreak` for m3-report.mjs to rank under.
+
+   v5 is Andy's hierarchy round (2026-11-06): a Human Factors top concept holding Cognition and
+   Decision Making, which are new, and Mental Models, moved from User Research with a new
+   definition and example. Tree Testing's second parent came and went the same day, so its first
+   parent is Evaluation, as in v4. Its matrix is v2's with those three re-scored and nothing else
+   (score-spike.mjs → INCREMENTAL), under v4's crossing rule and tie-break, so the vocabulary is
+   the one thing that changes.
+
+   v5 took two builds. The first, kept as v5-first, put Cognition and Decision Making on the
+   Cognitive Sciences Reading List and nowhere else, so the Reading List shared no tag with
+   anything in its category and fell back to Recent; the other cognition pieces sat at the band's
+   edge (Lizard Brain 0.446). Cognition's example had been set in procedures and safety, and the
+   corpus meets cognition through reading and language, so it was rewritten once there (Andy,
+   2026-11-06) and Cognition alone re-scored from v5-first's matrix. v5 is that second build.
+
+   EVERY VERSION PINS ITS MATRIX, to the file its committed tag set records. v2 used to read "the
+   newest combined matrix", so v5's matrix would have silently become v2's on the next run, and v1
+   already read round 2's definition re-run rather than its own. The newest-matrix lookup below
+   remains for a version not yet decided. */
 const V2_MATRIX = 'spike-recommendations-lab-combined-20261105T191152Z.json'
+const V5_FIRST_MATRIX = 'spike-recommendations-lab-combined-20261106T191338Z.json'
+const V5_MATRIX = 'spike-recommendations-lab-combined-20261106T192359Z.json'
+const V2_TWO_QUERY = [
+  'spike-recommendations-lab-20261105T191123Z.json',
+  'spike-recommendations-lab-example-20261105T191137Z.json',
+]
 const VERSIONS = {
-  v0: {config: ROUND_0, recipes: ['definition']},
-  v1: {config: ROUND_0, recipes: ['definition']},
-  v2: {config: ROUND_0, recipes: ['combined']},
+  v0: {
+    config: ROUND_0,
+    recipes: ['definition'],
+    matrices: ['spike-recommendations-lab-20261026T235419Z.json'],
+  },
+  v1: {
+    config: ROUND_0,
+    recipes: ['definition'],
+    matrices: ['spike-recommendations-lab-20261103T011931Z.json'],
+  },
+  v2: {config: ROUND_0, recipes: ['combined'], matrices: [V2_MATRIX]},
   v3: {
     config: ROUND_0,
     recipes: ['combined'],
@@ -64,9 +97,31 @@ const VERSIONS = {
     crossRule: TAXONOMY_CROSS_RELAXED,
     tieBreak: 'genre-strength',
   },
-  'v2-combined': {config: ROUND_0, recipes: ['combined']},
-  'v2-mean': {config: {...ROUND_0, combine: 'mean'}, recipes: ['definition', 'example']},
-  'v2-max': {config: {...ROUND_0, combine: 'max'}, recipes: ['definition', 'example']},
+  v5: {
+    config: ROUND_0,
+    recipes: ['combined'],
+    matrices: [V5_MATRIX],
+    crossRule: TAXONOMY_CROSS_RELAXED,
+    tieBreak: 'genre-strength',
+  },
+  'v5-first': {
+    config: ROUND_0,
+    recipes: ['combined'],
+    matrices: [V5_FIRST_MATRIX],
+    crossRule: TAXONOMY_CROSS_RELAXED,
+    tieBreak: 'genre-strength',
+  },
+  'v2-combined': {config: ROUND_0, recipes: ['combined'], matrices: [V2_MATRIX]},
+  'v2-mean': {
+    config: {...ROUND_0, combine: 'mean'},
+    recipes: ['definition', 'example'],
+    matrices: V2_TWO_QUERY,
+  },
+  'v2-max': {
+    config: {...ROUND_0, combine: 'max'},
+    recipes: ['definition', 'example'],
+    matrices: V2_TWO_QUERY,
+  },
 }
 
 const version = process.argv[2]
