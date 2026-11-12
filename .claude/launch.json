@@ -19,6 +19,12 @@
       "port": 3030
     },
     {
+      "name": "studio-lab",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "studio", "dev:lab"],
+      "port": 3031
+    },
+    {
       "name": "web-ssr",
       "runtimeExecutable": "env",
       "runtimeArgs": [

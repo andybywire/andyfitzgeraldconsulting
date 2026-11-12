@@ -9,12 +9,15 @@ import {BODY_STYLES, TRANSCRIPT_STYLES, MARKS} from '../portableText'
 import {defineType, defineField} from 'sanity'
 import {uniqueBandTypes} from '../validation'
 import {slugField} from '../slug'
+import {topicScoresField, topicScoresFieldset} from '../objects/topicScore'
+import {TopicsInput} from '../../tagger/TopicsInput'
 
 export default defineType({
   name: 'presentation',
   type: 'document',
   icon: PiMicrophone,
   title: 'Presentations',
+  fieldsets: [topicScoresFieldset],
   fields: [
     defineField({
       name: 'title',
@@ -51,8 +54,9 @@ export default defineType({
           },
         },
       ],
-      components: {field: ArrayHierarchyInput},
+      components: {field: ArrayHierarchyInput, input: TopicsInput},
     }),
+    topicScoresField(),
     defineField({
       title: 'Poster',
       name: 'poster',

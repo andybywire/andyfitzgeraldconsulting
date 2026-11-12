@@ -15,6 +15,21 @@
 export declare const internalGroqTypeReferenceTo: unique symbol
 
 // Source: schema.json
+export type SkosConceptReference = {
+  _ref: string
+  _type: 'reference'
+  _weak?: boolean
+  [internalGroqTypeReferenceTo]?: 'skosConcept'
+}
+
+export type TopicScore = {
+  _type: 'topicScore'
+  concept?: SkosConceptReference
+  score?: number
+  scoredAt?: string
+  excluded?: boolean
+}
+
 export type BandGetInTouch = {
   _type: 'bandGetInTouch'
   message?: Array<{
@@ -377,13 +392,6 @@ export type Page = {
   >
 }
 
-export type SkosConceptReference = {
-  _ref: string
-  _type: 'reference'
-  _weak?: boolean
-  [internalGroqTypeReferenceTo]?: 'skosConcept'
-}
-
 export type SanityFileAssetReference = {
   _ref: string
   _type: 'reference'
@@ -412,6 +420,11 @@ export type Presentation = {
     {
       _key: string
     } & SkosConceptReference
+  >
+  topicScores?: Array<
+    {
+      _key: string
+    } & TopicScore
   >
   poster?: {
     asset?: SanityImageAssetReference
@@ -570,6 +583,11 @@ export type CaseStudy = {
     {
       _key: string
     } & SkosConceptReference
+  >
+  topicScores?: Array<
+    {
+      _key: string
+    } & TopicScore
   >
   client?: ClientReference
   shortDescription?: string
@@ -808,6 +826,11 @@ export type Article = {
       _key: string
     } & SkosConceptReference
   >
+  topicScores?: Array<
+    {
+      _key: string
+    } & TopicScore
+  >
   genre?: SkosConceptReference
   shortDescription?: string
   description?: string
@@ -881,6 +904,11 @@ export type Note = {
     {
       _key: string
     } & SkosConceptReference
+  >
+  topicScores?: Array<
+    {
+      _key: string
+    } & TopicScore
   >
   bodyText?: Array<
     | {
@@ -1142,6 +1170,8 @@ export type Geopoint = {
 }
 
 export type AllSanitySchemaTypes =
+  | SkosConceptReference
+  | TopicScore
   | BandGetInTouch
   | ClientReference
   | BandWorkWithMe
@@ -1156,7 +1186,6 @@ export type AllSanitySchemaTypes =
   | Singleton
   | Slug
   | Page
-  | SkosConceptReference
   | SanityFileAssetReference
   | EventReference
   | Presentation

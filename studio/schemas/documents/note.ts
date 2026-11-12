@@ -8,12 +8,15 @@ import {defineType, defineField} from 'sanity'
 import {uniqueBandTypes} from '../validation'
 import {BODY_STYLES, MARKS} from '../portableText'
 import {slugField} from '../slug'
+import {topicScoresField, topicScoresFieldset} from '../objects/topicScore'
+import {TopicsInput} from '../../tagger/TopicsInput'
 
 export default defineType({
   name: 'note',
   type: 'document',
   icon: GrNote,
   title: 'Notes',
+  fieldsets: [topicScoresFieldset],
   fields: [
     defineField({
       name: 'title',
@@ -61,8 +64,9 @@ export default defineType({
           },
         },
       ],
-      components: {field: ArrayHierarchyInput},
+      components: {field: ArrayHierarchyInput, input: TopicsInput},
     }),
+    topicScoresField(),
     defineField({
       title: 'Body',
       name: 'bodyText',

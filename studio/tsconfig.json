@@ -15,7 +15,12 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "incremental": true
+    "incremental": true,
+    // studio/tagger/ imports its own files with a `.ts` extension, because plain Node runs them
+    // too, under type stripping, and resolves no extensionless path: the recommendations
+    // research imports the tagger, and its checks run outside the Studio. web/ allows the same
+    // through Astro's strict config, for web/src/lib/related.ts.
+    "allowImportingTsExtensions": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules", "dist"]

@@ -9,6 +9,7 @@ import {schemaTypes} from './schemas'
 import {codeInput} from '@sanity/code-input'
 import {RiSettings4Line} from 'react-icons/ri'
 import {StudioIcon} from './icon'
+import {SuggestTopicsAction, TAGGED_TYPES} from './tagger/SuggestTopicsAction'
 
 /**
  * Types the generated list must not show. Three are placed by hand further down — Settings as a
@@ -171,6 +172,12 @@ export default defineConfig({
     comments: {
       enabled: false,
     },
+    /* "Suggest topics" (studio/tagger/), in the LAB ONLY until promotion: nothing in the
+       recommendations research touches production-26 until Andy says so (docs/
+       recommendations-research/plan.md → Ground rules). Promotion removes `isLab` here, once
+       production's Topic concepts carry the definitions and examples the tagger needs. */
+    actions: (prev, {schemaType}) =>
+      isLab && TAGGED_TYPES.includes(schemaType) ? [...prev, SuggestTopicsAction] : prev,
   },
   tasks: {enabled: false},
   releases: {enabled: false},

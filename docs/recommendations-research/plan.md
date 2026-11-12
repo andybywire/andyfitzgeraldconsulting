@@ -23,7 +23,7 @@ Manager starter prompt come at the end.
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
 | `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none) |
-| `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags (one query per concept, or two combined by mean or max), and its runner, which writes one simulated tag set per version, including the v2 candidates (spends none, writes no dataset) |
+| `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags (one query per concept, or two combined by mean or max), and its runner, which writes one simulated tag set per version, including the v2 candidates (spends none, writes no dataset). Since 2026-11-06 `tagger.mjs` re-exports `studio/tagger/tagger.ts`, the tagger the Studio runs |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under a crossing rule, `TAXONOMY_CROSS` unless a version records its own (spends none) |
 | `m3-report.mjs`, `m3.0.md` to `m3.5.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
@@ -31,7 +31,7 @@ Manager starter prompt come at the end.
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
 
-## Where things stand (2026-11-06): start here in a new session
+## Where things stand (2026-11-12): start here in a new session
 
 **The trajectory.** The taxonomy columns' share of Andy's latest picks, and how often each new
 version beat the earlier pick on the pages where it showed something new:
@@ -63,31 +63,38 @@ and the genre-then-strength tie-break. **Explored and set aside**, each recorded
 an embeddings tie-break (cost), a mention gate on named concepts (a hidden application profile),
 full-text TF-IDF, two-query mean and max, weighting rare concepts, and a weighted related match.
 
+**The experiment is closed** (Andy, 2026-11-06). It answered its question: how similarity
+routed through a taxonomy's tags differs from an embeddings index's, and where each is strong.
+The next gains are in the vocabulary itself, its terms, definitions and relationships, iterated
+until ideas are clearly articulated and separated. Related terms wait until that core taxonomy is
+solid and vetted in use. So there is no v6 and no further M3 round planned. The work moves to
+production.
+
 **Next, in order:**
 
-1. **Choose what comes next: the manual audit (Phase 5) or related terms (v6).** Claude
-   recommends the audit first, from M3.5's marks. None of v5's losses is a gap a related link
-   fixes: they come from thin text and the cap on tags per document, and the audit has a work
-   list for exactly those (Phase 3d → M3.5 marked). Measuring it also answers what a person's
-   review adds on top of the tagger. If the audit goes first, it takes M3.6 and related terms
-   M3.7.
-2. **Related terms as v6, in the tier role** (Phase 4): Andy writes links in the lab under the
-   draft guidelines; the tier is built into `rankAcross` behind an option, as the tie-break was;
-   then M3.6.
-3. **The same-work duplicate:** an article and the talk it became both appearing in one list.
+1. **The production tagger** is built as a stopgap and runs in the lab only (Phase 6 → The
+   tagger). Two decisions are still Andy's:
+   - **Production's hand tags at promotion:** retagged from scratch, as decided on 10-22, or
+     kept as author tags. Kept, they would ship lists that don't match v5.
+   - **Removing one of your own tags:** as built, it records nothing, so the tagger may propose
+     that concept later. Recording it would mean an `excluded` entry with no score.
+2. **Phase 6, promotion,** which needs Andy's explicit go-ahead.
+3. **The article's framing and takeaways** (Andy, 2026-11-06: after the tagger).
+4. **The same-work duplicate:** an article and the talk it became both appearing in one list.
    Outside the taxonomy: a content-model relation and a ranker rule. Andy's call.
-4. **Phase 5, the manual audit** (M3.7), then **Phase 6, promotion**, which needs Andy's
-   explicit go-ahead. Promotion now carries the tie-break and `topicScores` as well as the
-   stashed page wiring; `CROSS_RULE` already holds the relaxed values.
 5. **Still owed:** `how.md` and `value-add.md` stop at the tagger and have not caught up with
    revisions 1–3, the crossing rule, the tie-break or the hierarchy round, and `value-add.md`'s
    "Where embeddings win" now has thin content to add; the extract script for trend charts is
    not built; and the open questions below are still open.
 
-**Raised for Andy in a review of the remaining steps (2026-11-06), none decided yet:**
+**Raised for Andy in a review of the remaining steps (2026-11-06).** Answered since:
 
-- **Whether to run v6 at all.** Its simulated gain was small (5 closer, 1 further, 28 NEW), and
-  M3.5's losses are not the kind it would fix (see Next, item 1).
+- *Whether to run v6 at all:* not now. See "The experiment is closed" above.
+- *How new pieces get tagged after promotion:* "Suggest topics", by hand, one document at a time
+  (Phase 6 → The tagger).
+
+Still open:
+
 - **A blind spot-check before any headline number.** About 20 pages, the final taxonomy list
   against unrestricted embeddings, unlabeled and in random order. One judge built the vocabulary
   and judged labeled columns, and the vocabulary was tuned on the pages it is judged on.
@@ -100,11 +107,10 @@ full-text TF-IDF, two-query mean and max, weighting rare concepts, and a weighte
     concept leaves old `?topic=` links on a silently unfiltered index (`nginx/redirects.conf`).
     It needs a label diff against `production-26`.
   - **Search moves too:** `bodyTerms` matches body text against the Topic labels.
-  - **Tags at risk:** author tags added at the audit live in the lab, and retagging
-    `production-26` from scratch would drop them; pieces published live since 10-22 carry hand
-    tags that need a rule.
-  - **How new pieces get tagged after promotion.** The tagger is run by hand, and tagging one
-    document costs a query per concept today.
+  - **Tags at risk:** author tags added at an audit in the lab would be dropped by retagging
+    `production-26` from scratch; pieces published live since 10-22 carry hand tags that need a
+    rule. Doing the audit in production after promotion, with "Suggest topics", removes the first
+    half (Claude's suggestion, not decided).
 - **The write-up's shape and audience:** a "why" and a "how", or one piece; taxonomists or Sanity
   developers.
 
@@ -128,6 +134,43 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-12.** **A removed tag is recorded as excluded when it is removed, not at the next
+  run** (Andy). The first build inferred an exclusion at the next run and wrote it only when that
+  run was applied, so between the two the draft and the run's review disagreed: the entry said
+  "not excluded" while the review said "excluded" (Andy's test). Now the Topics field's input
+  writes the mark as the change lands. It watches the value of Topics, because no callback sees
+  every edit, and writes only into a draft, and never on a change to the scores alone. See
+  Phase 6 → The tagger.
+
+- **2026-11-12.** **`topicScores` takes the shape Claude drafted** (Andy): `{concept, score,
+  scoredAt, excluded}`, in a collapsed, read-only "Tagger" fieldset after Topics on the four
+  tagged types. This revises the 10-22 shape: `round` is dropped as research-only, the concept
+  reference is weak, and `excluded` is new. A topic with no entry is still an author tag. The
+  rule's one cost, accepted: an author tag carries no score, so it adds nothing to the tie-break's
+  tag strength. `studio/schemas/objects/topicScore.ts` holds the reasoning.
+
+- **2026-11-06.** **The stopgap tagger is a Studio document action, "Suggest topics", not a
+  Sanity Function** (Andy). A Function runs on a document event, on a schedule, or when another
+  Function calls it; the Studio can't call one. And its natural job, tagging on publish, would
+  write after the publish, which means a second deploy and no review. The action writes to the
+  draft, for review and one publish. It runs in the lab Studio only until promotion. A Function
+  stays the likely way to automate a corpus retag later, and the Taxonomy Manager the long-term
+  home.
+
+- **2026-11-06.** **The ranker stays TypeScript; a SPARQL version is deferred** (Andy chose the
+  tagger first). Measured on v5's tags: `rankAcross` takes 0.064 ms a page at 73 documents, 2.9
+  ms at 7,300, about 21 s for every page there. A page relates on some tier to half the corpus
+  and shares a tag with a quarter, so a triple store's indexes would prune by a constant factor
+  only. SPARQL's case is expressiveness and portability, not speed. Two findings worth keeping
+  for the article: the first-parent rule is an artifact of Sanity's ordered arrays, since
+  `skos:broader` is unordered, and the research needed the ranker pure to simulate tag sets.
+
+- **2026-11-06.** **The experiment closes without v6** (Andy). It has taught what it set out
+  to. The next step is iterating the vocabulary until ideas are clearly articulated and
+  separated, and related terms follow once that taxonomy is solid and vetted in use. The order
+  from here: the production tagger, then promotion, then the article's framing. See "Where
+  things stand".
 
 - **2026-11-06.** **M3.5 is marked** (Andy). v5 was the pick on 5 of the 9 NEW pages: all 4
   articles and the one case study, and none of the 4 thin pieces, two notes and two talks, where
@@ -999,6 +1042,9 @@ a Claude draft that Andy reviewed and published.
 
 ### 4. Taxonomy revision 3: related terms
 
+**Deferred** (Andy, 2026-11-06) until the core taxonomy is solid and vetted in use; see "The
+experiment is closed". What was explored stays below for when it is picked up.
+
 - [ ] Add `skos:related` links. None of the 73 concepts uses it today.
 - [ ] Retag round 3 as **v6**, under the relaxed crossing rule and v4's tie-break, then **M3.6**
       (renumbered 2026-11-06: the hierarchy round took v5)
@@ -1033,9 +1079,14 @@ a Claude draft that Andy reviewed and published.
 
 ### 5. Manual audit
 
+With the experiment closed, the audit is better done in production after promotion, as ordinary
+tagging with "Suggest topics": author tags are then written where they live, and nothing has to
+be carried across datasets. Claude's suggestion (2026-11-06), not yet decided; the list below is
+the lab plan it would replace. The **`topicScores` field** this phase waited on is built (Phase 6
+→ The tagger), and M3.5's marks left a work list (Phase 3d → M3.5 marked).
+
 - [ ] **Write the chosen tag set into the lab,** with a backup first and a dry run first. This is
-      where the tags first reach the dataset, and where the **`topicScores` schema field** lands.
-      Its shape is decided; who writes the schema edit is Andy's call.
+      where the tags first reach the dataset.
 - [ ] Andy reviews the tags in the lab Studio for ones the tagger missed. Those become author
       tags, which are never bumped.
 - [ ] **M3.7**, from the tags in the dataset (renumbered: M3.3 went to the crossing rule, M3.4
@@ -1051,6 +1102,14 @@ touches `production-26` or the site's pages.
 - [ ] **Move the concept and scheme documents into `production-26`,** then re-run the tagger there
       and write the tags and `topicScores` through `lab-api.mjs --allow-production`, with a backup
       first. See "Where the experiments run" → Cost.
+      - **The write step isn't built yet:** the research pipeline scores and tags the corpus but
+        writes nothing. It needs a backup, a dry run that shows each document's change, and one
+        transaction, which the deploy workflow collapses into a single build.
+      - **Check the floor once,** against production's own scores, before the first write. 4.9
+        was frozen from the lab's spike, and production has its own embeddings index.
+- [ ] **Turn the tagger on in production:** remove `isLab` from the action's registration in
+      `studio/sanity.config.ts`, then deploy the Studio, which deploys the `topicScores` field
+      too. Its concepts must carry definitions and examples by then, or it refuses to run.
 - [ ] **Cross-category ranking: the wiring.** The insight and presentation pages move to
       `rankAcross`. `RelatedBand.astro` gets the new labels and links each card to its own
       collection. The old branch rule and the `parent` projection are then removed.
@@ -1070,6 +1129,44 @@ touches `production-26` or the site's pages.
         and crossing off, so the copy reuses the real scorer and the reports stay reproducible.
         Andy's call.
 - [ ] **Merge to `main`**, which deploys. Andy's call, as always.
+
+### The tagger: built 2026-11-12, lab only
+
+The stopgap Andy asked for on 2026-11-06, until tagging moves into the Taxonomy Manager. Each
+file's header holds its reasoning.
+
+| File | What it is |
+|---|---|
+| `studio/tagger/tagger.ts` | The tagger, moved from this folder. All ten research tag sets re-ran through it identically |
+| `studio/tagger/score.ts` | The Topic concepts, each concept's query text, and one document scored against every concept |
+| `studio/tagger/propose.ts` | Pure: the result merged into `topic` and `topicScores`, and `exclusionPatches` |
+| `studio/tagger/SuggestTopicsAction.tsx` | The "Suggest topics" action: confirm, score, review, apply to the draft |
+| `studio/tagger/TopicsInput.tsx` | Topics' input: records a removal or an add-back in `topicScores` as it lands |
+| `studio/schemas/objects/topicScore.ts` | The `topicScores` entry, the collapsed "Tagger" fieldset, and the field |
+
+**Measured and proven:**
+
+- **Query text** built by `score.ts` matches the text v5's matrix saved, on all 68 concepts, as
+  does every concept's first parent.
+- **Narrowing a query changes no score.** The Studio scores one document and the concept's own
+  document; the research scored the whole corpus. For the Reading List against Cognition, the
+  raw scores were identical in both queries and in v5's matrix: 7.885244, and 9.654434 for the
+  concept's own document.
+- **End to end,** on the Reading List in the lab: 68 queries in 3.0 s. Scores were within 0.002
+  of v5's matrix, which is run-to-run noise, with the same tags in the same slots.
+- **Drafts are embedded in their own right,** so a piece can be tagged before its first publish
+  and published once.
+- **The merge and exclusion rules** pass 14 checks on made-up documents: every row of
+  `propose.ts`'s table, keys kept, pruning, the minimum tag, and the next run reading a recorded
+  mark. Andy tested the action and the exclusion in the lab Studio.
+
+**What a run costs:** one semantic search per Topic concept, 68 today, against the
+organization's monthly quota. The Free plan allows no overage.
+
+**Not built, on purpose:** a corpus retag in the Studio, which stays a script (see the checklist
+above), and automation by a Sanity Function. `@sanity/ui` is not added either: adding it
+re-resolved other packages in the shared lockfile when tried on 2026-10-22, so the dialogs use
+the Studio's own.
 
 ## Specs
 
@@ -1161,6 +1258,9 @@ touches `production-26` or the site's pages.
 - **Write, at phase 5 and promotion only.** Through `lab-api.mjs` under
   `sanity exec --with-user-token`, so no token is handled. A backup comes first and a dry run
   before any write.
+- **In the Studio** (2026-11-12): "Suggest topics" tags one document and writes its draft, for
+  review and one publish. It reads author tags and exclusions by the rules in
+  `studio/schemas/objects/topicScore.ts`. See Phase 6 → The tagger.
 
 ### M3.n evaluation reports
 

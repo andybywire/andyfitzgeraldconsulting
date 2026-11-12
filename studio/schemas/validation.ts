@@ -64,3 +64,13 @@ export const uniqueDocumentTypes = uniqueBy<ObjectItem & {documentType?: string}
   (item) => item.documentType,
   'Each document type may only be overridden once. Combine the bands into one entry.',
 )
+
+/**
+ * For `topicScores`. The tagger scores each concept once per document, so two entries for one
+ * concept means a write went wrong, and which score the ranker read would depend on array order.
+ * The field is read-only, so this guards the tagger rather than an editor.
+ */
+export const uniqueConcepts = uniqueBy<ObjectItem & {concept?: {_ref?: string}}>(
+  (item) => item.concept?._ref,
+  'Each concept may only be scored once. The tagger wrote a duplicate.',
+)
