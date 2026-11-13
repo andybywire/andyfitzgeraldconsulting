@@ -18,4 +18,4 @@ allowBuilds:
   # package's own `check()`, which would trigger the same download at run time.
   vnu-jar: false
 minimumReleaseAgeExclude:
-  - sanity-plugin-taxonomy-manager@6.2.0
+  - sanity-plugin-taxonomy-manager@6.2.0 || 6.3.0

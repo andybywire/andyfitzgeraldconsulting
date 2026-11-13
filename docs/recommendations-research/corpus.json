@@ -1,0 +1,2745 @@
+{
+  "genres": {
+    "concepts": [
+      {
+        "_id": "ccff5c8a95719d76384336cb986e5bb9",
+        "broader": [
+          "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38"
+        ],
+        "parent": "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38",
+        "prefLabel": "Interview"
+      },
+      {
+        "_id": "ca9a7385da21985670aeb8261ebff30e",
+        "broader": [
+          "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c"
+        ],
+        "parent": "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c",
+        "prefLabel": "Method"
+      },
+      {
+        "_id": "300c8d03-a879-4bbe-af1b-3f794a142559",
+        "broader": [
+          "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38"
+        ],
+        "parent": "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38",
+        "prefLabel": "Keynote"
+      },
+      {
+        "_id": "f709b616-91d9-4de8-861d-9051023eed73",
+        "broader": [
+          "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38"
+        ],
+        "parent": "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38",
+        "prefLabel": "Talk"
+      },
+      {
+        "_id": "5c95ea53-2c13-43ed-973a-54d1eaaf1e70",
+        "broader": [
+          "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38"
+        ],
+        "parent": "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38",
+        "prefLabel": "Workshop"
+      },
+      {
+        "_id": "37391cfd-54ff-4c48-b507-728dcdb18807",
+        "broader": [
+          "6b925f38-273c-40c3-929a-a4c153e9be3b"
+        ],
+        "parent": "6b925f38-273c-40c3-929a-a4c153e9be3b",
+        "prefLabel": "Web Clipping"
+      },
+      {
+        "_id": "6b925f38-273c-40c3-929a-a4c153e9be3b",
+        "broader": [
+          "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c"
+        ],
+        "parent": "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c",
+        "prefLabel": "Note"
+      },
+      {
+        "_id": "00290a16-7bbf-48f2-bc0d-76f868b128fe",
+        "broader": [
+          "6b925f38-273c-40c3-929a-a4c153e9be3b"
+        ],
+        "parent": "6b925f38-273c-40c3-929a-a4c153e9be3b",
+        "prefLabel": "Book Note"
+      },
+      {
+        "_id": "89d6c3022255ade8c6f5867ca3b2354a",
+        "broader": [
+          "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c"
+        ],
+        "parent": "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c",
+        "prefLabel": "Case Study"
+      },
+      {
+        "_id": "e7925917-9a45-45ea-a33a-18c495e0e5b4",
+        "broader": [
+          "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c"
+        ],
+        "parent": "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c",
+        "prefLabel": "Conference Themes"
+      },
+      {
+        "_id": "1236c9e2-d4ce-4325-8d17-b84eaacbc50a",
+        "broader": [
+          "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38"
+        ],
+        "parent": "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38",
+        "prefLabel": "Panel"
+      },
+      {
+        "_id": "8a9adace664eaebadd1f051e41fc6ffa",
+        "broader": [
+          "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c"
+        ],
+        "parent": "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c",
+        "prefLabel": "Perspective"
+      }
+    ],
+    "tops": [
+      {
+        "_id": "99b8ff1a-a9ce-493a-b78b-0a61e4f4af4c",
+        "prefLabel": "Document"
+      },
+      {
+        "_id": "b33b2dd9-3bc5-486f-8b81-3e3cb178bf38",
+        "prefLabel": "Presentation"
+      }
+    ]
+  },
+  "pool": [
+    {
+      "_id": "c5822e56-5ceb-4d8b-9907-78b231a9b3d0",
+      "_type": "note",
+      "genre": "Book Note",
+      "genreId": "00290a16-7bbf-48f2-bc0d-76f868b128fe",
+      "pubDate": "2026-10-19",
+      "shortDescription": "A practical, actionable, architectural approach to making meaning explicit, consistent and durable.",
+      "slug": "designing-and-implementing-semantic-data-layers",
+      "title": "Designing and Implementing Semantic Data Layers",
+      "topics": [
+        {
+          "_id": "skosConcept103b850abb89",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Semantic Web"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        },
+        {
+          "_id": "skosConcept568483e9bd85",
+          "parent": "skosConceptcd47dd017453",
+          "parentIsTop": false,
+          "prefLabel": "Data Management"
+        }
+      ]
+    },
+    {
+      "_id": "dcc69d65-439f-46c8-a823-47c95340c15c",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2026-10-08",
+      "shortDescription": "Four lessons learned from redeveloping my consulting website with LLM code collaboration.",
+      "slug": "site-updates-structure-semantics-standards",
+      "title": "Site Updates: Structure, Semantics & Standards",
+      "topics": [
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "b490234ff630e4b7ed8c2af6a19e37c5",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Accessibility Evaluation"
+        },
+        {
+          "_id": "skosConceptd845b87f1fe8",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Performance Evaluation"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        }
+      ]
+    },
+    {
+      "_id": "4ad3c7bd-dc55-4163-a636-2f2b276bc419",
+      "_type": "note",
+      "genre": "Web Clipping",
+      "genreId": "37391cfd-54ff-4c48-b507-728dcdb18807",
+      "pubDate": "2026-09-19",
+      "shortDescription": "Geoff Teehan on the particular moment we’re in with AI assisted software creation: developer scarcity is fading, but we still don't understand what abundance looks like. ",
+      "slug": "the-calm-before-the-storm",
+      "title": "The Calm Before the Storm",
+      "topics": [
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        },
+        {
+          "_id": "skosConcept9c1330f0dda3",
+          "parent": null,
+          "parentIsTop": true,
+          "prefLabel": "Project Management"
+        }
+      ]
+    },
+    {
+      "_id": "6aa06467-cbba-49ff-b843-c1ceac45dca4",
+      "_type": "note",
+      "genre": "Web Clipping",
+      "genreId": "37391cfd-54ff-4c48-b507-728dcdb18807",
+      "pubDate": "2026-09-04",
+      "shortDescription": "As with most shortcuts, there’s a reason that the road isn’t laid down that way.",
+      "slug": "why-shortcuts-arent-the-road",
+      "title": "Why Shortcuts Aren't the Road",
+      "topics": [
+        {
+          "_id": "skosConceptac4ece69b7b7",
+          "parent": "4ce68dd7-b2f2-47ef-9eba-a5da950244a1",
+          "parentIsTop": false,
+          "prefLabel": "User Research"
+        },
+        {
+          "_id": "skosConcept9c1330f0dda3",
+          "parent": null,
+          "parentIsTop": true,
+          "prefLabel": "Project Management"
+        }
+      ]
+    },
+    {
+      "_id": "9da8b536-23eb-4844-9fd7-6572acf4cad2",
+      "_type": "article",
+      "genre": "Conference Themes",
+      "genreId": "e7925917-9a45-45ea-a33a-18c495e0e5b4",
+      "pubDate": "2026-08-05",
+      "shortDescription": "Summary of the top themes and insights from the 2026 GraphCon conference in Seattle.",
+      "slug": "graphcon-2026-themes-takeaways",
+      "title": "GraphCon 2026 Themes & Takeaways",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        }
+      ]
+    },
+    {
+      "_id": "4541d046-5a81-4c77-844d-5c308e25145e",
+      "_type": "presentation",
+      "genre": "Workshop",
+      "genreId": "5c95ea53-2c13-43ed-973a-54d1eaaf1e70",
+      "pubDate": "2026-04-09",
+      "shortDescription": null,
+      "slug": "structured-content-in-product-design",
+      "title": "Structured Content in Product Design",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        },
+        {
+          "_id": "skosConceptdf13da8210f3",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Content Reuse"
+        },
+        {
+          "_id": "skosConcept5a935787d6f0",
+          "parent": "9bd13e07-4e81-4116-af65-1e66f19c6f0a",
+          "parentIsTop": false,
+          "prefLabel": "Governance"
+        }
+      ]
+    },
+    {
+      "_id": "3c619185-987f-4c0d-82f8-04dd7d5ae77d",
+      "_type": "presentation",
+      "genre": "Panel",
+      "genreId": "1236c9e2-d4ce-4325-8d17-b84eaacbc50a",
+      "pubDate": "2026-03-19",
+      "shortDescription": null,
+      "slug": "ai-assisted-content-operations-in-practice",
+      "title": "AI Assisted Content Operations in Practice",
+      "topics": [
+        {
+          "_id": "9869288d-fc68-4dc5-be03-58dec37f5dd2",
+          "parent": "fd10110f-2c13-493d-b474-e89d5c34cf92",
+          "parentIsTop": false,
+          "prefLabel": "Sanity"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        }
+      ]
+    },
+    {
+      "_id": "9704b5b1-0dd2-47fa-8740-a560a063c333",
+      "_type": "note",
+      "genre": "Book Note",
+      "genreId": "00290a16-7bbf-48f2-bc0d-76f868b128fe",
+      "pubDate": "2025-11-15",
+      "shortDescription": "A non-academic introduction to SHACL with rich examples and real-world real world case studies. ",
+      "slug": "shacl-for-the-practitioner",
+      "title": "SHACL for the Practitioner",
+      "topics": [
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        }
+      ]
+    },
+    {
+      "_id": "511fba96-1a7d-4fd8-949f-44f263a2620c",
+      "_type": "caseStudy",
+      "genre": "Case Study",
+      "genreId": "89d6c3022255ade8c6f5867ca3b2354a",
+      "pubDate": "2025-11-01",
+      "shortDescription": "A cross-platform workflow integration that streamlined content review processes and improved transparency for healthcare point-of-care resources.",
+      "slug": "content-review-approval-workflow-integration",
+      "title": "Content Review & Approval Workflow Integration",
+      "topics": [
+        {
+          "_id": "skosConcept846777440278",
+          "parent": "skosConcepta78cd7e0feb2",
+          "parentIsTop": false,
+          "prefLabel": "Process Mapping"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        },
+        {
+          "_id": "skosConcept990e9ab91af5",
+          "parent": "skosConcept9e2a99441475",
+          "parentIsTop": false,
+          "prefLabel": "User Flows"
+        },
+        {
+          "_id": "skosConceptcaea8340e2d1",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Automation"
+        },
+        {
+          "_id": "skosConcept60493dda870a",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Usability Testing"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "skosConcept418495454409",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Systems Thinking"
+        },
+        {
+          "_id": "a307e19e-276e-48f0-aa1f-9db6a11216b4",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Development"
+        },
+        {
+          "_id": "skosConceptb4099ea36d61",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "Information Architecture"
+        }
+      ]
+    },
+    {
+      "_id": "bb59c854-f527-4f6d-84f7-49cb27921048",
+      "_type": "article",
+      "genre": "Conference Themes",
+      "genreId": "e7925917-9a45-45ea-a33a-18c495e0e5b4",
+      "pubDate": "2025-09-30",
+      "shortDescription": "Conference and courtyard themes from Sanity’s first “Everything*[NYC]” developer conference.",
+      "slug": "sanity-everything-nyc-conference-themes-takeaways",
+      "title": "Sanity Everything*[NYC] Conference Themes & Takeaways",
+      "topics": [
+        {
+          "_id": "9869288d-fc68-4dc5-be03-58dec37f5dd2",
+          "parent": "fd10110f-2c13-493d-b474-e89d5c34cf92",
+          "parentIsTop": false,
+          "prefLabel": "Sanity"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        }
+      ]
+    },
+    {
+      "_id": "2682dad1-a2ec-4587-a0ac-c2b245203047",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2025-09-15",
+      "shortDescription": null,
+      "slug": "ranked-lists-of-related-content-in-sanity-studio",
+      "title": "Ranked Lists of Related Content in Sanity Studio",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConceptb0ab1a4c00ba",
+          "parent": "4ce68dd7-b2f2-47ef-9eba-a5da950244a1",
+          "parentIsTop": false,
+          "prefLabel": "Content Discovery"
+        },
+        {
+          "_id": "9869288d-fc68-4dc5-be03-58dec37f5dd2",
+          "parent": "fd10110f-2c13-493d-b474-e89d5c34cf92",
+          "parentIsTop": false,
+          "prefLabel": "Sanity"
+        }
+      ]
+    },
+    {
+      "_id": "f7a71104-99a6-47f0-81c6-7cea01be4e1f",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2025-08-26",
+      "shortDescription": "Structuring and connecting content for the next generation of AI-integrated CMS.",
+      "slug": "content-modeling-in-the-age-of-flying-cars",
+      "title": "Content Modeling in the Age of Flying Cars",
+      "topics": [
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        }
+      ]
+    },
+    {
+      "_id": "62102ecf-5f3b-45b3-946f-7775f1889da5",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2025-05-02",
+      "shortDescription": null,
+      "slug": "orchestrating-the-mundane-deskilling-language-models",
+      "title": "Orchestrating the Mundane: Deskilling Language Models ",
+      "topics": [
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        },
+        {
+          "_id": "skosConceptcaea8340e2d1",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Automation"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        }
+      ]
+    },
+    {
+      "_id": "9d152ebf-a81b-4d43-a22c-e706c982903a",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2025-04-04",
+      "shortDescription": null,
+      "slug": "taxonomy-management-and-use-in-sanity-studio",
+      "title": "Taxonomy Management and use in Sanity Studio",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        }
+      ]
+    },
+    {
+      "_id": "3ae51a50-c4c4-4c7b-9978-c64e83b75620",
+      "_type": "note",
+      "genre": "Book Note",
+      "genreId": "00290a16-7bbf-48f2-bc0d-76f868b128fe",
+      "pubDate": "2025-03-15",
+      "shortDescription": "Well designed authoring experiences make doing the right things easy and doing the wrong things hard.",
+      "slug": "designing-content-authoring-experiences",
+      "title": "Designing Content Authoring Experiences",
+      "topics": [
+        {
+          "_id": "skosConcept5a935787d6f0",
+          "parent": "9bd13e07-4e81-4116-af65-1e66f19c6f0a",
+          "parentIsTop": false,
+          "prefLabel": "Governance"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        }
+      ]
+    },
+    {
+      "_id": "64213d45-8be1-47cc-80a4-630b1de47785",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2025-03-03",
+      "shortDescription": "A comparison of manual, NLP, and LLM-based tagging methods and key takeaways for effective tagging approaches.",
+      "slug": "ai-supported-auto-categorization",
+      "title": "AI Supported Auto-Categorization",
+      "topics": [
+        {
+          "_id": "a307e19e-276e-48f0-aa1f-9db6a11216b4",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Development"
+        },
+        {
+          "_id": "skosConceptcaea8340e2d1",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Automation"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        }
+      ]
+    },
+    {
+      "_id": "f68ed174-bc4b-45b1-afc7-3a8cfbf6b059",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2025-02-11",
+      "shortDescription": "Instructions, templates, and scripts for migrating a taxonomy from a spreadsheet into the Taxonomy Manager tool on Sanity CMS.",
+      "slug": "sanity-studio-taxonomy-migration",
+      "title": "Sanity Studio Taxonomy Migration",
+      "topics": [
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        }
+      ]
+    },
+    {
+      "_id": "8cd3522e-6b34-4800-84ac-118b9427dd4a",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2025-01-30",
+      "shortDescription": "A purpose-driven process for selecting terms, creating structure, and vetting design approaches on small and large scale taxonomy projects.",
+      "slug": "purpose-driven-taxonomy-design",
+      "title": "Purpose-Driven Taxonomy Design",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcept60493dda870a",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Usability Testing"
+        }
+      ]
+    },
+    {
+      "_id": "82b76788-f6f1-484e-aedd-4bf189704d24",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2025-01-15",
+      "shortDescription": "An example workflow for coordinating LLMs and text analytics to generate topic tags for an article collection.",
+      "slug": "ai-taxonomy-term-generation",
+      "title": "AI Supported Taxonomy Term Generation",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        },
+        {
+          "_id": "skosConcepta7f5f35426b9",
+          "parent": "aa3b1982-e014-4d65-9c77-d0613ec85d53",
+          "parentIsTop": false,
+          "prefLabel": "Python"
+        }
+      ]
+    },
+    {
+      "_id": "fea85e03-4ea2-46d1-ab8c-597b2636fd7c",
+      "_type": "article",
+      "genre": "Conference Themes",
+      "genreId": "e7925917-9a45-45ea-a33a-18c495e0e5b4",
+      "pubDate": "2024-12-04",
+      "shortDescription": "Summary of the top themes and insights from the 2024 Taxonomy Boot Camp conference in Washington DC.",
+      "slug": "taxonomy-boot-camp-2024-themes-takeaways",
+      "title": "Taxonomy Boot Camp 2024 Themes & Takeaways",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcept418495454409",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Systems Thinking"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        }
+      ]
+    },
+    {
+      "_id": "5f070014-bd99-402d-b240-8c380da903e4",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2024-10-27",
+      "shortDescription": "“Deskilling” is a method for framing language models in predictable structures in order to achieve consistent outcomes for well-defined tasks. ",
+      "slug": "deskilling-large-language-models",
+      "title": "Deskilling Large Language Models",
+      "topics": [
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        },
+        {
+          "_id": "skosConcepta7f5f35426b9",
+          "parent": "aa3b1982-e014-4d65-9c77-d0613ec85d53",
+          "parentIsTop": false,
+          "prefLabel": "Python"
+        }
+      ]
+    },
+    {
+      "_id": "f0eff07f-7a9b-43ea-a9a7-c9c6f90a0f67",
+      "_type": "presentation",
+      "genre": "Keynote",
+      "genreId": "300c8d03-a879-4bbe-af1b-3f794a142559",
+      "pubDate": "2024-04-13",
+      "shortDescription": null,
+      "slug": "yes-and-information-architecture-in-the-age-of-artificial-intelligence",
+      "title": "Yes, And: Information Architecture in the Age of Artificial Intelligence",
+      "topics": [
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        },
+        {
+          "_id": "skosConcept34fdd78a186c",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "Digital Communication"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        }
+      ]
+    },
+    {
+      "_id": "e35b6652-5207-4bcb-aaef-2e452b5e59a8",
+      "_type": "caseStudy",
+      "genre": "Case Study",
+      "genreId": "89d6c3022255ade8c6f5867ca3b2354a",
+      "pubDate": "2023-06-05",
+      "shortDescription": "I helped Elemeno Health design, develop, and release a structured content authoring solution that helps their content work harder and last longer.",
+      "slug": "elemeno-health-structured-content",
+      "title": "Elemeno Health Structured Content Design & Development",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "d5292e50-2f54-4d31-b164-403a7a937f7b",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Content Analysis"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcept98491a29e88a",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Structural Analysis"
+        }
+      ]
+    },
+    {
+      "_id": "4fe208e5-681a-4cc8-8750-c596fff05948",
+      "_type": "presentation",
+      "genre": "Interview",
+      "genreId": "ccff5c8a95719d76384336cb986e5bb9",
+      "pubDate": "2023-04-09",
+      "shortDescription": null,
+      "slug": "beyond-the-page-with-structured-content",
+      "title": "Beyond the Page with Structured Content",
+      "topics": [
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        }
+      ]
+    },
+    {
+      "_id": "5923ac1e-b0a7-4b9a-9cd2-6b88d3747603",
+      "_type": "presentation",
+      "genre": "Workshop",
+      "genreId": "5c95ea53-2c13-43ed-973a-54d1eaaf1e70",
+      "pubDate": "2023-03-28",
+      "shortDescription": null,
+      "slug": "domain-modeling-for-digital-information-designers",
+      "title": "Domain Modeling for Digital Information Designers",
+      "topics": [
+        {
+          "_id": "83295bd4-9958-4263-80a4-c797e08dcf6d",
+          "parent": "skosConcepta78cd7e0feb2",
+          "parentIsTop": false,
+          "prefLabel": "Domain Modeling"
+        },
+        {
+          "_id": "skosConcept98491a29e88a",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Structural Analysis"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        }
+      ]
+    },
+    {
+      "_id": "40809e80-7276-41ef-9aa8-c794401236b2",
+      "_type": "presentation",
+      "genre": "Interview",
+      "genreId": "ccff5c8a95719d76384336cb986e5bb9",
+      "pubDate": "2022-12-15",
+      "shortDescription": null,
+      "slug": "knowledge-graphs-and-ia",
+      "title": "Knowledge Graphs and IA",
+      "topics": null
+    },
+    {
+      "_id": "26d21d24-cce4-4953-94b9-a32cfc43b227",
+      "_type": "article",
+      "genre": "Conference Themes",
+      "genreId": "e7925917-9a45-45ea-a33a-18c495e0e5b4",
+      "pubDate": "2022-11-17",
+      "shortDescription": "Summary of the top themes and insights from the 2022 Taxonomy Boot Camp conference in Washington DC",
+      "slug": "taxonomy-boot-camp-2022-themes-takeaways",
+      "title": "Taxonomy Boot Camp 2022 Themes & Takeaways",
+      "topics": [
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        },
+        {
+          "_id": "skosConcept3f483f8930ed",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Collaborative Design"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        }
+      ]
+    },
+    {
+      "_id": "4b461d31-125c-4735-b9b8-80c22f9c2501",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2022-07-19",
+      "shortDescription": "Structured content treats information as a set of ideas, concepts, and facts to communicate. ",
+      "slug": "structured-content-headless-cms",
+      "title": "Structured Content and the Headless CMS",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        }
+      ]
+    },
+    {
+      "_id": "ef267031-6966-4eaa-9520-3fa45c1312d7",
+      "_type": "presentation",
+      "genre": "Interview",
+      "genreId": "ccff5c8a95719d76384336cb986e5bb9",
+      "pubDate": "2022-06-21",
+      "shortDescription": null,
+      "slug": "how-to-get-started-with-knowledge-graphs",
+      "title": "How to Get Started with Knowledge Graphs",
+      "topics": [
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        }
+      ]
+    },
+    {
+      "_id": "1b4b2e3c-03b8-4ede-91b2-834d14eca543",
+      "_type": "presentation",
+      "genre": "Panel",
+      "genreId": "1236c9e2-d4ce-4325-8d17-b84eaacbc50a",
+      "pubDate": "2022-05-26",
+      "shortDescription": null,
+      "slug": "improv-consulting-yes-and-experts-improvise-solutions-to-real-problems",
+      "title": " Improv Consulting: Yes, And ... Experts Improvise Solutions to Real Problems",
+      "topics": [
+        {
+          "_id": "9869288d-fc68-4dc5-be03-58dec37f5dd2",
+          "parent": "fd10110f-2c13-493d-b474-e89d5c34cf92",
+          "parentIsTop": false,
+          "prefLabel": "Sanity"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        }
+      ]
+    },
+    {
+      "_id": "31ca73d8-b780-48c8-a703-39b739edf834",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2022-05-05",
+      "shortDescription": null,
+      "slug": "boutique-knowledge-graphs-building-smart-content-at-any-scale",
+      "title": "Boutique Knowledge Graphs: Building Smart Content At Any Scale",
+      "topics": [
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        }
+      ]
+    },
+    {
+      "_id": "5efd0d18-6f7e-4a89-8236-688c2092496b",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2022-01-27",
+      "shortDescription": "Learn to define the information structures and meaning that help structured content reach further and last longer.",
+      "slug": "domain-modeling",
+      "title": "Domain Modeling for Structured Content",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        },
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        }
+      ]
+    },
+    {
+      "_id": "247ff45e-41ce-4001-9a33-7cffafa20efa",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2022-01-20",
+      "shortDescription": "An approachable, scalable technique for solving well-defined communication and discovery problems.",
+      "slug": "boutique-knowledge-graphs",
+      "title": "Boutique Knowledge Graphs: Creating Smart Content at Any Scale",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "skosConceptcaea8340e2d1",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Automation"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        },
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        }
+      ]
+    },
+    {
+      "_id": "ba7353cd-c250-4eea-a2cc-ec350453303a",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2022-01-12",
+      "shortDescription": "Focus on communicating effectively to users, however they choose to access content.",
+      "slug": "structured-content-design-22",
+      "title": "Structured Content Design Workflow 2022",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "skosConcept5ff5e1375b86",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Knowledge Graphs"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        }
+      ]
+    },
+    {
+      "_id": "9d24f3a3-f7e6-4cb3-8a53-bac144173dcb",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2022-01-05",
+      "shortDescription": "A comprehensive guide to self-hosting Sanity Studio on DreamHost with GitHub Actions for continuous integration.",
+      "slug": "self-hosting-sanity-studio",
+      "title": "Self-Hosting Sanity Studio with GitHub Actions",
+      "topics": [
+        {
+          "_id": "skosConceptcaea8340e2d1",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Automation"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        }
+      ]
+    },
+    {
+      "_id": "131a8c56-1748-4e40-aedf-8cf8abb39bd7",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2021-11-07",
+      "shortDescription": null,
+      "slug": "taxonomy-and-the-headless-cms",
+      "title": "Taxonomy and the Headless CMS",
+      "topics": [
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        }
+      ]
+    },
+    {
+      "_id": "fae0850d-e970-4bd5-84f3-0ef8727a04a7",
+      "_type": "presentation",
+      "genre": "Interview",
+      "genreId": "ccff5c8a95719d76384336cb986e5bb9",
+      "pubDate": "2021-09-24",
+      "shortDescription": null,
+      "slug": "browsability-with-dan-brown",
+      "title": "Browsability with Dan Brown",
+      "topics": [
+        {
+          "_id": "skosConceptada46566c164",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Discoverability"
+        },
+        {
+          "_id": "skosConcept782f8bd5e6cb",
+          "parent": "skosConcept9e2a99441475",
+          "parentIsTop": false,
+          "prefLabel": "Navigation Design"
+        }
+      ]
+    },
+    {
+      "_id": "3b596131-81dd-4ed5-98ee-a84d5b7b80b5",
+      "_type": "caseStudy",
+      "genre": "Case Study",
+      "genreId": "89d6c3022255ade8c6f5867ca3b2354a",
+      "pubDate": "2021-08-09",
+      "shortDescription": "I helped the World Health Organization Department of Control of Neglected Tropical Diseases assess and revise their sub-site information architecture. ",
+      "slug": "who-ntd",
+      "title": "WHO Department of Neglected Tropical Diseases",
+      "topics": [
+        {
+          "_id": "skosConcept782f8bd5e6cb",
+          "parent": "skosConcept9e2a99441475",
+          "parentIsTop": false,
+          "prefLabel": "Navigation Design"
+        },
+        {
+          "_id": "skosConcept630472d20d3c",
+          "parent": "skosConcept9e2a99441475",
+          "parentIsTop": false,
+          "prefLabel": "Interaction Design"
+        },
+        {
+          "_id": "skosConcept867e5c27fed3",
+          "parent": "skosConcept9c1330f0dda3",
+          "parentIsTop": true,
+          "prefLabel": "Stakeholder Engagement"
+        }
+      ]
+    },
+    {
+      "_id": "10bf9f82-0a0d-439d-bab7-f4a6d6a17122",
+      "_type": "presentation",
+      "genre": "Panel",
+      "genreId": "1236c9e2-d4ce-4325-8d17-b84eaacbc50a",
+      "pubDate": "2021-02-07",
+      "shortDescription": null,
+      "slug": "ia-the-current-and-the-future",
+      "title": "IA, the Current and the Future",
+      "topics": [
+        {
+          "_id": "skosConceptb4099ea36d61",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "Information Architecture"
+        }
+      ]
+    },
+    {
+      "_id": "6d0ba798-f8fd-4f18-a9e4-69c7feac73b7",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2020-09-17",
+      "shortDescription": "Improve the quality of your card sorting results with client collaboration.",
+      "slug": "choosing-card-sorting-topics",
+      "title": "How to Choose Topics for Card Sorting",
+      "topics": [
+        {
+          "_id": "d5292e50-2f54-4d31-b164-403a7a937f7b",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Content Analysis"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        }
+      ]
+    },
+    {
+      "_id": "dcc02d5e-d74e-4196-b219-6321fc02b2b7",
+      "_type": "caseStudy",
+      "genre": "Case Study",
+      "genreId": "89d6c3022255ade8c6f5867ca3b2354a",
+      "pubDate": "2020-07-09",
+      "shortDescription": "A content strategy and information architecture approach for integrating health and wellness content.",
+      "slug": "uw-medicine",
+      "title": "UW Medicine",
+      "topics": [
+        {
+          "_id": "d5292e50-2f54-4d31-b164-403a7a937f7b",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Content Analysis"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        }
+      ]
+    },
+    {
+      "_id": "a9664990-656e-46bf-b8d3-0eb85dafb560",
+      "_type": "caseStudy",
+      "genre": "Case Study",
+      "genreId": "89d6c3022255ade8c6f5867ca3b2354a",
+      "pubDate": "2020-06-29",
+      "shortDescription": "A comprehensive research-backed approach to usability, accessibility, and performance improvement.",
+      "slug": "who-kap",
+      "title": "WHO Knowledge Action Portal",
+      "topics": [
+        {
+          "_id": "b490234ff630e4b7ed8c2af6a19e37c5",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Accessibility Evaluation"
+        },
+        {
+          "_id": "skosConceptd845b87f1fe8",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Performance Evaluation"
+        }
+      ]
+    },
+    {
+      "_id": "50c51119-5405-4828-8bde-6fe3605aa1b0",
+      "_type": "presentation",
+      "genre": "Interview",
+      "genreId": "ccff5c8a95719d76384336cb986e5bb9",
+      "pubDate": "2020-05-04",
+      "shortDescription": null,
+      "slug": "information-architecture-for-digital-content",
+      "title": "Information Architecture for Digital Content",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        }
+      ]
+    },
+    {
+      "_id": "0c6323e6-09c5-4b40-9ea5-a41a2ddbbb29",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2020-04-29",
+      "shortDescription": "A deep dive into delivering effective IA and staying focused on the right problems.",
+      "slug": "delivering-ia",
+      "title": "Delivering Information Architecture",
+      "topics": [
+        {
+          "_id": "skosConceptb4099ea36d61",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "Information Architecture"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "skosConcept418495454409",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Systems Thinking"
+        }
+      ]
+    },
+    {
+      "_id": "9eb6fd3e-fe27-43a4-b5fd-e6691376ac05",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2020-04-20",
+      "shortDescription": "Get started with web writing with this intro, template, and set of examples.",
+      "slug": "web-writing",
+      "title": "Four Web Writing Style Guides from which to Borrow",
+      "topics": [
+        {
+          "_id": "skosConcept5a935787d6f0",
+          "parent": "9bd13e07-4e81-4116-af65-1e66f19c6f0a",
+          "parentIsTop": false,
+          "prefLabel": "Governance"
+        },
+        {
+          "_id": "skosConceptcd47dd017453",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Best Practices"
+        },
+        {
+          "_id": "skosConcept34fdd78a186c",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "Digital Communication"
+        }
+      ]
+    },
+    {
+      "_id": "8f5604c0-febb-4792-8edd-362b11e9eda7",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2020-04-13",
+      "shortDescription": "Learn how to extract keywords from unstructured user feedback with Natural Language Processing (NLP).",
+      "slug": "keyword-extraction-nlp",
+      "title": "Keyword Extraction with NLP: A Beginner's Guide",
+      "topics": [
+        {
+          "_id": "d5292e50-2f54-4d31-b164-403a7a937f7b",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Content Analysis"
+        },
+        {
+          "_id": "skosConcepta7f5f35426b9",
+          "parent": "aa3b1982-e014-4d65-9c77-d0613ec85d53",
+          "parentIsTop": false,
+          "prefLabel": "Python"
+        }
+      ]
+    },
+    {
+      "_id": "1fe66c29-5121-4f6d-98bb-d3dccfec773a",
+      "_type": "presentation",
+      "genre": "Panel",
+      "genreId": "1236c9e2-d4ce-4325-8d17-b84eaacbc50a",
+      "pubDate": "2020-03-03",
+      "shortDescription": null,
+      "slug": "unexpected-path-different-backgrounds-to-ux",
+      "title": "Unexpected Paths: How Different Backgrounds Led Us to UX",
+      "topics": [
+        {
+          "_id": "skosConcept9e2a99441475",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "User Experience Design"
+        }
+      ]
+    },
+    {
+      "_id": "0808cd9e-a5c0-4901-b823-9ce3d80edd7f",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2020-01-29",
+      "shortDescription": "Find the right IA for your role with this quick roundup of the different ways IAs staff projects.",
+      "slug": "how-to-hire-an-ia",
+      "title": "How to Hire an Information Architect",
+      "topics": [
+        {
+          "_id": "skosConceptb4099ea36d61",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "Information Architecture"
+        },
+        {
+          "_id": "skosConcept9c1330f0dda3",
+          "parent": null,
+          "parentIsTop": true,
+          "prefLabel": "Project Management"
+        }
+      ]
+    },
+    {
+      "_id": "fb52551b-106a-42c6-8208-c930ffb36ea2",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2020-01-22",
+      "shortDescription": "Information architects work collaboratively to build information environments that support defined user and business goals.",
+      "slug": "working-with-an-ia",
+      "title": "What's It Like to Work with an Information Architect?",
+      "topics": [
+        {
+          "_id": "skosConcept3f483f8930ed",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Collaborative Design"
+        },
+        {
+          "_id": "skosConcept34fdd78a186c",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "Digital Communication"
+        },
+        {
+          "_id": "skosConcept867e5c27fed3",
+          "parent": "skosConcept9c1330f0dda3",
+          "parentIsTop": true,
+          "prefLabel": "Stakeholder Engagement"
+        }
+      ]
+    },
+    {
+      "_id": "38b51499-0d57-4669-adf6-0f6bede45330",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2020-01-15",
+      "shortDescription": "Not sure your project needs an IA? Here are some leading indicators for when you should include an IA on your design team.",
+      "slug": "when-to-use-an-ia",
+      "title": "When Do You Need an Information Architect?",
+      "topics": [
+        {
+          "_id": "skosConceptb4099ea36d61",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "Information Architecture"
+        },
+        {
+          "_id": "skosConcept9c1330f0dda3",
+          "parent": null,
+          "parentIsTop": true,
+          "prefLabel": "Project Management"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        }
+      ]
+    },
+    {
+      "_id": "8142383a-b6e9-42df-a188-fecda37b4377",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2020-01-08",
+      "shortDescription": "Information Architecture is the process and the product of designing shared information environments to achieve specific goals.",
+      "slug": "what-is-information-architecture",
+      "title": "What Is Information Architecture?",
+      "topics": [
+        {
+          "_id": "skosConceptb4099ea36d61",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "Information Architecture"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        },
+        {
+          "_id": "skosConcept3f483f8930ed",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Collaborative Design"
+        }
+      ]
+    },
+    {
+      "_id": "de569eb0-7fd5-4a33-a937-2718be3c3a1f",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2019-06-10",
+      "shortDescription": "Learn how to keep your content whole across contexts with linked data.",
+      "slug": "conversations-with-robots",
+      "title": "Conversations with Robots: Voice, Smart Agents & the Case for Structured Content",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "skosConcept60493dda870a",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Usability Testing"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        }
+      ]
+    },
+    {
+      "_id": "4f3cf2bd-b43d-4d58-881c-aa9ff39550f2",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2019-03-16",
+      "shortDescription": null,
+      "slug": "conversations-with-robots-voice-ai-structured-content",
+      "title": "Conversations With Robots: Voice, AI & Structured Content",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "skosConcepte598aed1c962",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "AI Integration"
+        },
+        {
+          "_id": "skosConceptcce86c220fbc",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Linked Data"
+        }
+      ]
+    },
+    {
+      "_id": "bc2cb749-d9d4-490e-bc95-060d4047ed83",
+      "_type": "presentation",
+      "genre": "Workshop",
+      "genreId": "5c95ea53-2c13-43ed-973a-54d1eaaf1e70",
+      "pubDate": "2019-03-14",
+      "shortDescription": null,
+      "slug": "practical-large-scale-content-analysis",
+      "title": "Practical Large Scale Content Analysis",
+      "topics": [
+        {
+          "_id": "d5292e50-2f54-4d31-b164-403a7a937f7b",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Content Analysis"
+        },
+        {
+          "_id": "skosConcept8bf8ee7f13af",
+          "parent": "4ce68dd7-b2f2-47ef-9eba-a5da950244a1",
+          "parentIsTop": false,
+          "prefLabel": "Content Auditing"
+        },
+        {
+          "_id": "skosConcept98491a29e88a",
+          "parent": "skosConceptb0ab1a4c00ba",
+          "parentIsTop": false,
+          "prefLabel": "Structural Analysis"
+        },
+        {
+          "_id": "skosConcept568483e9bd85",
+          "parent": "skosConceptcd47dd017453",
+          "parentIsTop": false,
+          "prefLabel": "Data Management"
+        }
+      ]
+    },
+    {
+      "_id": "576fca2b-1ecd-418f-86e7-b1dc91c281b8",
+      "_type": "presentation",
+      "genre": "Panel",
+      "genreId": "1236c9e2-d4ce-4325-8d17-b84eaacbc50a",
+      "pubDate": "2019-02-23",
+      "shortDescription": null,
+      "slug": "design-for-difference",
+      "title": "Design for Difference",
+      "topics": [
+        {
+          "_id": "skosConceptac4ece69b7b7",
+          "parent": "4ce68dd7-b2f2-47ef-9eba-a5da950244a1",
+          "parentIsTop": false,
+          "prefLabel": "User Research"
+        },
+        {
+          "_id": "b490234ff630e4b7ed8c2af6a19e37c5",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Accessibility Evaluation"
+        }
+      ]
+    },
+    {
+      "_id": "1fe73d0a-2cc5-4cce-9ebd-9d6432a70035",
+      "_type": "article",
+      "genre": "Method",
+      "genreId": "ca9a7385da21985670aeb8261ebff30e",
+      "pubDate": "2019-02-18",
+      "shortDescription": "Learn to ensure the integrity of content across channels with structured content and linked data.",
+      "slug": "structured-content-design",
+      "title": "Structured Content Design Workflow",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        }
+      ]
+    },
+    {
+      "_id": "9c881418-5b5f-4ab9-b7d6-efb53f27cb05",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2018-05-18",
+      "shortDescription": "Learn about the complimentary roles site maps and content models play in Content Strategy and IA projects.",
+      "slug": "site-maps-connected-content",
+      "title": "Site Maps & Connected Content",
+      "topics": [
+        {
+          "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Structured Content"
+        },
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        }
+      ]
+    },
+    {
+      "_id": "cba6cb1c-e06e-49b8-896e-315ea3a6fdf8",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2018-03-23",
+      "shortDescription": null,
+      "slug": "prototyping-information-architecture",
+      "title": "Prototyping Information Architecture",
+      "topics": [
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "skosConceptca50ca2bc0a5",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Technology Integration"
+        },
+        {
+          "_id": "skosConceptcaea8340e2d1",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Automation"
+        }
+      ]
+    },
+    {
+      "_id": "787a3f7c-00ea-43e2-9f41-341c75cc6a34",
+      "_type": "caseStudy",
+      "genre": "Case Study",
+      "genreId": "89d6c3022255ade8c6f5867ca3b2354a",
+      "pubDate": "2017-06-01",
+      "shortDescription": "Global navigation and home page redesign for a pediatric research hospital. ",
+      "slug": "seattle-childrens",
+      "title": "Seattle Children's Hospital",
+      "topics": [
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "skosConcept9e2a99441475",
+          "parent": "f4b97464-2131-422c-9c24-b4cf121c6360",
+          "parentIsTop": true,
+          "prefLabel": "User Experience Design"
+        },
+        {
+          "_id": "skosConcept60493dda870a",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Usability Testing"
+        }
+      ]
+    },
+    {
+      "_id": "9be237f7-22de-41be-bbe2-501037fc95fb",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2017-04-05",
+      "shortDescription": null,
+      "slug": "language-arts-for-the-lizard-brain",
+      "title": "Language Arts for the Lizard Brain",
+      "topics": [
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        }
+      ]
+    },
+    {
+      "_id": "dd1db5ec-024a-4c2e-9d68-5ec21e0ac289",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2017-03-01",
+      "shortDescription": null,
+      "slug": "content-first-prototyping",
+      "title": "Content First Prototyping",
+      "topics": [
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "skosConceptcaea8340e2d1",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Automation"
+        }
+      ]
+    },
+    {
+      "_id": "a2b88ad2-b112-4547-ab88-9539ebf1f4c5",
+      "_type": "presentation",
+      "genre": "Keynote",
+      "genreId": "300c8d03-a879-4bbe-af1b-3f794a142559",
+      "pubDate": "2017-02-18",
+      "shortDescription": null,
+      "slug": "design-for-the-human-scale",
+      "title": "Design for the Human Scale ",
+      "topics": [
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        },
+        {
+          "_id": "skosConceptf7102e5be5c9",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Design Principles"
+        }
+      ]
+    },
+    {
+      "_id": "777aa5cf-260f-44e3-8afc-233d38794aed",
+      "_type": "presentation",
+      "genre": "Workshop",
+      "genreId": "5c95ea53-2c13-43ed-973a-54d1eaaf1e70",
+      "pubDate": "2017-02-17",
+      "shortDescription": null,
+      "slug": "taxonomy-for-experience-designers",
+      "title": "Taxonomy for Experience Designers",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcept3f483f8930ed",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Collaborative Design"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        }
+      ]
+    },
+    {
+      "_id": "1e6c36fb-44a8-400e-a014-5eca8af938f4",
+      "_type": "caseStudy",
+      "genre": "Case Study",
+      "genreId": "89d6c3022255ade8c6f5867ca3b2354a",
+      "pubDate": "2017-02-06",
+      "shortDescription": "A taxonomy and navigation redesign that helped Shoreline realign their Program pages with site user expectations.",
+      "slug": "shoreline",
+      "title": "Shoreline Community College",
+      "topics": [
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "skosConcept3f483f8930ed",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Collaborative Design"
+        },
+        {
+          "_id": "skosConcept60493dda870a",
+          "parent": "skosConceptb74a43dbb362",
+          "parentIsTop": false,
+          "prefLabel": "Usability Testing"
+        }
+      ]
+    },
+    {
+      "_id": "08d1758b-d5c0-4541-a257-c596804ea448",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2016-07-28",
+      "shortDescription": "Gain a better understanding of why users behave the (sometimes bizarre) ways they do with these foundational cognitive science texts.",
+      "slug": "cognitive-science-for-designers",
+      "title": "A Cognitive Sciences Reading List for Designers",
+      "topics": [
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        },
+        {
+          "_id": "skosConceptf7c414ce9a1c",
+          "parent": "skosConceptac4ece69b7b7",
+          "parentIsTop": false,
+          "prefLabel": "Contextual Inquiry"
+        }
+      ]
+    },
+    {
+      "_id": "ef27057a-6e6f-4b01-ad2f-5606d5810a95",
+      "_type": "note",
+      "genre": "Book Note",
+      "genreId": "00290a16-7bbf-48f2-bc0d-76f868b128fe",
+      "pubDate": "2016-07-28",
+      "shortDescription": "Learning to read creates physical changes in the brain that directly affect  how we think.",
+      "slug": "proust-and-the-squid",
+      "title": "Proust and the Squid",
+      "topics": [
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        }
+      ]
+    },
+    {
+      "_id": "6edc1863-8261-4672-bbf5-f9b96f7785c4",
+      "_type": "presentation",
+      "genre": "Keynote",
+      "genreId": "300c8d03-a879-4bbe-af1b-3f794a142559",
+      "pubDate": "2014-11-07",
+      "shortDescription": null,
+      "slug": "desiring-ecologies",
+      "title": "Desiring Ecologies",
+      "topics": [
+        {
+          "_id": "skosConceptada46566c164",
+          "parent": "1579c078-1248-467a-844f-5f5cf20cf603",
+          "parentIsTop": false,
+          "prefLabel": "Discoverability"
+        },
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcepte623e7fb15aa",
+          "parent": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+          "parentIsTop": true,
+          "prefLabel": "Mental Models"
+        },
+        {
+          "_id": "skosConceptf7102e5be5c9",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Design Principles"
+        }
+      ]
+    },
+    {
+      "_id": "47c1f050-5ee3-41f0-a22a-244a837a7872",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2014-10-21",
+      "shortDescription": null,
+      "slug": "information-design",
+      "title": "Information Design",
+      "topics": null
+    },
+    {
+      "_id": "f5876a14-a8d3-47e6-aba9-8dd65ef11046",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2014-02-28",
+      "shortDescription": null,
+      "slug": "responsive-information-architectures",
+      "title": "Responsive Information Architectures",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcepta7d41d83ba9a",
+          "parent": "skosConcept9e2a99441475",
+          "parentIsTop": false,
+          "prefLabel": "Responsive Design"
+        },
+        {
+          "_id": "skosConcept782f8bd5e6cb",
+          "parent": "skosConcept9e2a99441475",
+          "parentIsTop": false,
+          "prefLabel": "Navigation Design"
+        }
+      ]
+    },
+    {
+      "_id": "9106bf66-d338-49fe-b0fb-05faed7c0463",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2013-08-19",
+      "shortDescription": "To communicate effectively across digital contexts, we need to understand the way we make meaning as thinking animals.",
+      "slug": "language-meaning-user-experience-architecture",
+      "title": "Language + Meaning + User Experience Architecture",
+      "topics": [
+        {
+          "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Content Modeling"
+        },
+        {
+          "_id": "skosConcept34fdd78a186c",
+          "parent": "skosConcept418495454409",
+          "parentIsTop": false,
+          "prefLabel": "Digital Communication"
+        }
+      ]
+    },
+    {
+      "_id": "8aec2572-76bf-4288-a172-271b8eb04825",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2013-08-15",
+      "shortDescription": "The rise of adaptive, flexible content means designers now have more reasons than ever to better understand code.",
+      "slug": "designing-with-code",
+      "title": "Designing with Code",
+      "topics": [
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        },
+        {
+          "_id": "a307e19e-276e-48f0-aa1f-9db6a11216b4",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Development"
+        }
+      ]
+    },
+    {
+      "_id": "be93e14c-6312-4f8c-9c36-e10de4dfdb31",
+      "_type": "article",
+      "genre": "Perspective",
+      "genreId": "8a9adace664eaebadd1f051e41fc6ffa",
+      "pubDate": "2013-07-01",
+      "shortDescription": "Designing systems is hard, but information architecture gives us the tools to do so consistently and predictably. ",
+      "slug": "the-trouble-with-systems",
+      "title": "The Trouble with Systems",
+      "topics": [
+        {
+          "_id": "skosConcept418495454409",
+          "parent": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+          "parentIsTop": true,
+          "prefLabel": "Systems Thinking"
+        },
+        {
+          "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+          "parent": "skosConceptab0268fb8036",
+          "parentIsTop": true,
+          "prefLabel": "Prototyping"
+        }
+      ]
+    },
+    {
+      "_id": "24be866e-9083-49af-b5f7-54af8b834fbd",
+      "_type": "presentation",
+      "genre": "Talk",
+      "genreId": "f709b616-91d9-4de8-861d-9051023eed73",
+      "pubDate": "2013-04-05",
+      "shortDescription": null,
+      "slug": "taxonomy-for-app-makers",
+      "title": "Taxonomy for App Makers",
+      "topics": [
+        {
+          "_id": "skosConcept30d10883c017",
+          "parent": "skosConceptb4099ea36d61",
+          "parentIsTop": false,
+          "prefLabel": "Taxonomy"
+        },
+        {
+          "_id": "skosConcept67a915151759",
+          "parent": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+          "parentIsTop": false,
+          "prefLabel": "Interoperability"
+        }
+      ]
+    }
+  ],
+  "topicScheme": {
+    "concepts": [
+      {
+        "_id": "skosConceptb0ab1a4c00ba",
+        "parents": [
+          "4ce68dd7-b2f2-47ef-9eba-a5da950244a1"
+        ],
+        "prefLabel": "Content Discovery"
+      },
+      {
+        "_id": "skosConcepta78cd7e0feb2",
+        "parents": [
+          "4ce68dd7-b2f2-47ef-9eba-a5da950244a1"
+        ],
+        "prefLabel": "Contextual Research"
+      },
+      {
+        "_id": "skosConcept30d5fec29869",
+        "parents": [
+          "skosConcepta78cd7e0feb2"
+        ],
+        "prefLabel": "Competitive Review"
+      },
+      {
+        "_id": "skosConceptdcf179f57a77",
+        "parents": [
+          "4ce68dd7-b2f2-47ef-9eba-a5da950244a1"
+        ],
+        "prefLabel": "Heuristic Analysis"
+      },
+      {
+        "_id": "skosConcept846777440278",
+        "parents": [
+          "skosConcepta78cd7e0feb2"
+        ],
+        "prefLabel": "Process Mapping"
+      },
+      {
+        "_id": "skosConcept867e5c27fed3",
+        "parents": [
+          "skosConcept9c1330f0dda3"
+        ],
+        "prefLabel": "Stakeholder Engagement"
+      },
+      {
+        "_id": "skosConceptac4ece69b7b7",
+        "parents": [
+          "4ce68dd7-b2f2-47ef-9eba-a5da950244a1"
+        ],
+        "prefLabel": "User Research"
+      },
+      {
+        "_id": "skosConceptf7c414ce9a1c",
+        "parents": [
+          "skosConceptac4ece69b7b7"
+        ],
+        "prefLabel": "Contextual Inquiry"
+      },
+      {
+        "_id": "skosConcepte623e7fb15aa",
+        "parents": [
+          "b16391cf-590e-4714-8ab2-b7750dcf291f"
+        ],
+        "prefLabel": "Mental Models"
+      },
+      {
+        "_id": "skosConcept6e6870311a88",
+        "parents": [
+          "skosConceptac4ece69b7b7"
+        ],
+        "prefLabel": "User Interviews"
+      },
+      {
+        "_id": "skosConceptcd47dd017453",
+        "parents": [
+          "7329d9d5-45c9-4bed-b56d-91fd499c9cef"
+        ],
+        "prefLabel": "Best Practices"
+      },
+      {
+        "_id": "skosConcept3f483f8930ed",
+        "parents": [
+          "7329d9d5-45c9-4bed-b56d-91fd499c9cef"
+        ],
+        "prefLabel": "Collaborative Design"
+      },
+      {
+        "_id": "skosConceptf7102e5be5c9",
+        "parents": [
+          "7329d9d5-45c9-4bed-b56d-91fd499c9cef"
+        ],
+        "prefLabel": "Design Principles"
+      },
+      {
+        "_id": "skosConcept418495454409",
+        "parents": [
+          "7329d9d5-45c9-4bed-b56d-91fd499c9cef"
+        ],
+        "prefLabel": "Systems Thinking"
+      },
+      {
+        "_id": "skosConcept103b850abb89",
+        "parents": [
+          "skosConceptab0268fb8036"
+        ],
+        "prefLabel": "Semantic Web"
+      },
+      {
+        "_id": "skosConcept5ff5e1375b86",
+        "parents": [
+          "1fc550e5-aa7e-470e-9e8b-b782cb20a358"
+        ],
+        "prefLabel": "Knowledge Graphs"
+      },
+      {
+        "_id": "skosConceptcce86c220fbc",
+        "parents": [
+          "1fc550e5-aa7e-470e-9e8b-b782cb20a358"
+        ],
+        "prefLabel": "Linked Data"
+      },
+      {
+        "_id": "skosConceptb4099ea36d61",
+        "parents": [
+          "f4b97464-2131-422c-9c24-b4cf121c6360"
+        ],
+        "prefLabel": "Information Architecture"
+      },
+      {
+        "_id": "skosConcept782f8bd5e6cb",
+        "parents": [
+          "skosConcept9e2a99441475"
+        ],
+        "prefLabel": "Navigation Design"
+      },
+      {
+        "_id": "skosConcept13348442cc6a",
+        "parents": [
+          "skosConceptb4099ea36d61"
+        ],
+        "prefLabel": "Search"
+      },
+      {
+        "_id": "skosConcept30d10883c017",
+        "parents": [
+          "skosConceptb4099ea36d61"
+        ],
+        "prefLabel": "Taxonomy"
+      },
+      {
+        "_id": "skosConcept9e2a99441475",
+        "parents": [
+          "f4b97464-2131-422c-9c24-b4cf121c6360"
+        ],
+        "prefLabel": "User Experience Design"
+      },
+      {
+        "_id": "skosConcept630472d20d3c",
+        "parents": [
+          "skosConcept9e2a99441475"
+        ],
+        "prefLabel": "Interaction Design"
+      },
+      {
+        "_id": "skosConceptcaea8340e2d1",
+        "parents": [
+          "skosConceptab0268fb8036"
+        ],
+        "prefLabel": "Automation"
+      },
+      {
+        "_id": "skosConcepta7f5f35426b9",
+        "parents": [
+          "aa3b1982-e014-4d65-9c77-d0613ec85d53"
+        ],
+        "prefLabel": "Python"
+      },
+      {
+        "_id": "skosConcept9e13b69d1d2d",
+        "parents": [
+          "aa3b1982-e014-4d65-9c77-d0613ec85d53"
+        ],
+        "prefLabel": "Javascript"
+      },
+      {
+        "_id": "skosConceptca50ca2bc0a5",
+        "parents": [
+          "skosConceptab0268fb8036"
+        ],
+        "prefLabel": "Technology Integration"
+      },
+      {
+        "_id": "skosConceptb74a43dbb362",
+        "parents": [
+          "f4b97464-2131-422c-9c24-b4cf121c6360"
+        ],
+        "prefLabel": "Evaluation"
+      },
+      {
+        "_id": "skosConceptd845b87f1fe8",
+        "parents": [
+          "skosConceptb74a43dbb362"
+        ],
+        "prefLabel": "Performance Evaluation"
+      },
+      {
+        "_id": "skosConcept60493dda870a",
+        "parents": [
+          "skosConceptb74a43dbb362"
+        ],
+        "prefLabel": "Usability Testing"
+      },
+      {
+        "_id": "b490234ff630e4b7ed8c2af6a19e37c5",
+        "parents": [
+          "skosConceptb74a43dbb362"
+        ],
+        "prefLabel": "Accessibility Evaluation"
+      },
+      {
+        "_id": "4eb7c42e-1c45-4332-b767-dd8877457b93",
+        "parents": [
+          "skosConceptb4099ea36d61"
+        ],
+        "prefLabel": "Content Modeling"
+      },
+      {
+        "_id": "9bd13e07-4e81-4116-af65-1e66f19c6f0a",
+        "parents": [
+          "f4b97464-2131-422c-9c24-b4cf121c6360"
+        ],
+        "prefLabel": "Content Strategy"
+      },
+      {
+        "_id": "495ed524-22ad-4c0d-a45a-d1d95500c494",
+        "parents": [
+          "skosConceptab0268fb8036",
+          "7329d9d5-45c9-4bed-b56d-91fd499c9cef"
+        ],
+        "prefLabel": "Prototyping"
+      },
+      {
+        "_id": "9869288d-fc68-4dc5-be03-58dec37f5dd2",
+        "parents": [
+          "fd10110f-2c13-493d-b474-e89d5c34cf92"
+        ],
+        "prefLabel": "Sanity"
+      },
+      {
+        "_id": "535c9c5d-f0e5-4d3a-b0a3-c41bbe557485",
+        "parents": [
+          "skosConceptac4ece69b7b7"
+        ],
+        "prefLabel": "Card Sorting"
+      },
+      {
+        "_id": "6055ca4e-70fc-4b85-89a4-a63dac9556b1",
+        "parents": [
+          "skosConceptb74a43dbb362"
+        ],
+        "prefLabel": "Tree Testing"
+      },
+      {
+        "_id": "83295bd4-9958-4263-80a4-c797e08dcf6d",
+        "parents": [
+          "skosConcepta78cd7e0feb2"
+        ],
+        "prefLabel": "Domain Modeling"
+      },
+      {
+        "_id": "5ce459fa-f57b-4960-b845-70ac206e81da",
+        "parents": [
+          "f4b97464-2131-422c-9c24-b4cf121c6360"
+        ],
+        "prefLabel": "User Interface Design"
+      },
+      {
+        "_id": "5589ed0d-26ab-446a-b5e4-8cf6ebdb6272",
+        "parents": [
+          "skosConceptb4099ea36d61"
+        ],
+        "prefLabel": "Site Maps"
+      },
+      {
+        "_id": "6e570b93-0a61-4d2f-97dd-c11ed8f41d4c",
+        "parents": [
+          "9bd13e07-4e81-4116-af65-1e66f19c6f0a"
+        ],
+        "prefLabel": "Content Operations"
+      },
+      {
+        "_id": "338b5df5-da25-43f7-851b-f4ece0d85219",
+        "parents": [
+          "9bd13e07-4e81-4116-af65-1e66f19c6f0a"
+        ],
+        "prefLabel": "Web Writing"
+      },
+      {
+        "_id": "4ce68dd7-b2f2-47ef-9eba-a5da950244a1",
+        "parents": [
+          "f4b97464-2131-422c-9c24-b4cf121c6360"
+        ],
+        "prefLabel": "Discovery"
+      },
+      {
+        "_id": "skosConcept98491a29e88a",
+        "parents": [
+          "skosConceptb0ab1a4c00ba",
+          "skosConceptb74a43dbb362"
+        ],
+        "prefLabel": "Structural Analysis"
+      },
+      {
+        "_id": "0cea1942-4bd0-4f1a-9da0-20581a3b28cd",
+        "parents": [
+          "7329d9d5-45c9-4bed-b56d-91fd499c9cef"
+        ],
+        "prefLabel": "Human Centered Design"
+      },
+      {
+        "_id": "f3d8e1e4-1366-47f3-844e-24f9370db723",
+        "parents": [
+          "skosConcept9c1330f0dda3"
+        ],
+        "prefLabel": "Goals"
+      },
+      {
+        "_id": "66a3dd73-1f4a-45e1-a084-a9bd6d91e8b2",
+        "parents": [
+          "skosConcept9c1330f0dda3"
+        ],
+        "prefLabel": "Use Cases"
+      },
+      {
+        "_id": "5cb6a0d5-dde7-46b6-adbc-bc3e0abcad6c",
+        "parents": [
+          "skosConceptab0268fb8036"
+        ],
+        "prefLabel": "Natural Language Processing"
+      },
+      {
+        "_id": "dc849871-1501-43c0-a339-9e4e6fab7f15",
+        "parents": [
+          "skosConceptab0268fb8036"
+        ],
+        "prefLabel": "Standards Compliance"
+      },
+      {
+        "_id": "aa3b1982-e014-4d65-9c77-d0613ec85d53",
+        "parents": [
+          "9cfa26a0-a2d0-4013-8a7e-3ae46e4d7860"
+        ],
+        "prefLabel": "Programming Languages"
+      },
+      {
+        "_id": "3196622b-09d9-4dd8-9e4b-a661684c5ac5",
+        "parents": [
+          "aa3b1982-e014-4d65-9c77-d0613ec85d53"
+        ],
+        "prefLabel": "SPARQL"
+      },
+      {
+        "_id": "2c47bde2-1faa-48c2-9504-77eac0f6fc04",
+        "parents": [
+          "9cfa26a0-a2d0-4013-8a7e-3ae46e4d7860"
+        ],
+        "prefLabel": "Engineering Products"
+      },
+      {
+        "_id": "fd10110f-2c13-493d-b474-e89d5c34cf92",
+        "parents": [
+          "2c47bde2-1faa-48c2-9504-77eac0f6fc04"
+        ],
+        "prefLabel": "CMS"
+      },
+      {
+        "_id": "f0c6d461-4a5d-4c21-ab15-ad621f6bd182",
+        "parents": [
+          "skosConceptab0268fb8036"
+        ],
+        "prefLabel": "Continuous Integration"
+      },
+      {
+        "_id": "6cef888f-2393-4112-9ed7-8f9964a8c29c",
+        "parents": [
+          "2c47bde2-1faa-48c2-9504-77eac0f6fc04"
+        ],
+        "prefLabel": "AI"
+      },
+      {
+        "_id": "f852abd2-3bb7-4ce9-82d2-c0e6b118ba80",
+        "parents": [
+          "2c47bde2-1faa-48c2-9504-77eac0f6fc04"
+        ],
+        "prefLabel": "Graph Databases"
+      },
+      {
+        "_id": "9d7bd414-996a-4c06-a1da-56cbdf90857d",
+        "parents": [
+          "9cfa26a0-a2d0-4013-8a7e-3ae46e4d7860"
+        ],
+        "prefLabel": "Frameworks"
+      },
+      {
+        "_id": "3a7c017c-bcac-41d1-990e-2e6690dc37dd",
+        "parents": [
+          "9d7bd414-996a-4c06-a1da-56cbdf90857d"
+        ],
+        "prefLabel": "RDF"
+      },
+      {
+        "_id": "50464f85-fb77-4439-9436-323407c88d66",
+        "parents": [
+          "9d7bd414-996a-4c06-a1da-56cbdf90857d"
+        ],
+        "prefLabel": "Astro"
+      },
+      {
+        "_id": "1579c078-1248-467a-844f-5f5cf20cf603",
+        "parents": [
+          "f19139a1-f5f1-4852-81d4-239f0533002c"
+        ],
+        "prefLabel": "Design Outcomes"
+      },
+      {
+        "_id": "skosConcept67a915151759",
+        "parents": [
+          "1fc550e5-aa7e-470e-9e8b-b782cb20a358"
+        ],
+        "prefLabel": "Interoperability"
+      },
+      {
+        "_id": "skosConceptdf13da8210f3",
+        "parents": [
+          "1579c078-1248-467a-844f-5f5cf20cf603"
+        ],
+        "prefLabel": "Content Reuse"
+      },
+      {
+        "_id": "skosConceptada46566c164",
+        "parents": [
+          "1579c078-1248-467a-844f-5f5cf20cf603"
+        ],
+        "prefLabel": "Discoverability"
+      },
+      {
+        "_id": "1fc550e5-aa7e-470e-9e8b-b782cb20a358",
+        "parents": [
+          "f19139a1-f5f1-4852-81d4-239f0533002c"
+        ],
+        "prefLabel": "Engineering Outcomes"
+      },
+      {
+        "_id": "355181f4-2bd3-4ba1-b9a5-c2556b0e2048",
+        "parents": [
+          "1fc550e5-aa7e-470e-9e8b-b782cb20a358"
+        ],
+        "prefLabel": "Machine Readability"
+      },
+      {
+        "_id": "c30443b4-2c6b-4dde-8be2-12de89fc771a",
+        "parents": [
+          "1579c078-1248-467a-844f-5f5cf20cf603"
+        ],
+        "prefLabel": "Structured Content"
+      },
+      {
+        "_id": "9da1dce4-9927-419b-aade-94dfd6217dff",
+        "parents": [
+          "b16391cf-590e-4714-8ab2-b7750dcf291f"
+        ],
+        "prefLabel": "Cognition"
+      },
+      {
+        "_id": "da6c82ab-4243-4d22-aac4-ba4751f392d7",
+        "parents": [
+          "b16391cf-590e-4714-8ab2-b7750dcf291f"
+        ],
+        "prefLabel": "Decision Making"
+      }
+    ],
+    "title": "Topic",
+    "tops": [
+      {
+        "_id": "skosConceptab0268fb8036",
+        "prefLabel": "Engineering Practices"
+      },
+      {
+        "_id": "f4b97464-2131-422c-9c24-b4cf121c6360",
+        "prefLabel": "Design Practices"
+      },
+      {
+        "_id": "7329d9d5-45c9-4bed-b56d-91fd499c9cef",
+        "prefLabel": "Design Approaches"
+      },
+      {
+        "_id": "skosConcept9c1330f0dda3",
+        "prefLabel": "Project Management"
+      },
+      {
+        "_id": "9cfa26a0-a2d0-4013-8a7e-3ae46e4d7860",
+        "prefLabel": "Engineering Tools"
+      },
+      {
+        "_id": "f19139a1-f5f1-4852-81d4-239f0533002c",
+        "prefLabel": "Outcomes"
+      },
+      {
+        "_id": "b16391cf-590e-4714-8ab2-b7750dcf291f",
+        "prefLabel": "Human Factors"
+      }
+    ]
+  },
+  "dataset": "recommendations-lab",
+  "fetchedAt": "2026-11-06T19:12:12.189Z"
+}
