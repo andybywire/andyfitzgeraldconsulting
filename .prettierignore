@@ -8,6 +8,7 @@ web/dist/
 web/.astro/
 studio/dist/
 studio/schema.json
+studio/recommendations-research/corpus.json
 
 # Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
 # .gitignore, never a nested one — so a local `prettier --check .` failed on it while CI, which
