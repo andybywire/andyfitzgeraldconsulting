@@ -131,6 +131,19 @@ const CONFIGS = [
 const LOAD_TIMEOUT_MS = 15_000
 const SETTLE_CAP_MS = 2_000
 
+/**
+ * How long Chrome may take to start. This was 10s until 2026-11-13, when a branch run on a
+ * freshly updated runner image (ubuntu26/20261111.196, Chrome 156 → 157) gave up waiting: Chrome
+ * printed nothing for about 6s and was still starting at 10. A re-run on the same image passed,
+ * so Chrome 157 works there; most likely it was slow, though one pass cannot rule out a hang that
+ * happens only sometimes. The wait ends the moment Chrome answers, so a longer one costs a
+ * normal run nothing; it only sets how long a broken start takes to say so.
+ *
+ * If this fires again, the failure message says whether Chrome was still running (slow, or
+ * hung) or had exited — the distinction the 10s message could not make.
+ */
+const START_TIMEOUT_MS = 30_000
+
 /* ── Teardown, which every exit goes through ─────────────────────────────── */
 
 let chrome, server, profile
@@ -146,6 +159,9 @@ const cleanup = () => {
 
 const fail = (message) => {
   console.error(message)
+  // Said in the output as well as under EXIT CODES above, because a CI log shows only pnpm's
+  // "Exit status 2", and that reads as a verdict on the site when it is the opposite.
+  console.error('\nExit 2: the accessibility check could not run.')
   cleanup()
   process.exit(2)
 }
@@ -188,23 +204,31 @@ const ORIGIN = `http://127.0.0.1:${server.address().port}`
 
 /* ── Chrome ───────────────────────────────────────────────────────────────── */
 
-const CHROME = [
-  process.env.CHROME_PATH,
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  'google-chrome',
-  'google-chrome-stable',
-  'chromium',
-  'chromium-browser',
-]
-  .filter(Boolean)
-  .find((candidate) => spawnSync(candidate, ['--version']).status === 0)
-
-if (!CHROME) fail('No Chrome found. Install Google Chrome, or set CHROME_PATH.')
+/**
+ * The first Chrome that answers `--version`, and what it answered. The version goes into the
+ * report, because it is the first thing to compare when a run that passed starts failing: the
+ * runner image can change Chrome between two runs of the same commit, as on 2026-11-13.
+ */
+const findChrome = () => {
+  const candidates = [
+    process.env.CHROME_PATH,
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    'google-chrome',
+    'google-chrome-stable',
+    'chromium',
+    'chromium-browser',
+  ]
+  for (const path of candidates.filter(Boolean)) {
+    const probe = spawnSync(path, ['--version'], {encoding: 'utf8'})
+    if (probe.status === 0) return {path, version: probe.stdout.trim()}
+  }
+  fail('No Chrome found. Install Google Chrome, or set CHROME_PATH.')
+}
+const {path: CHROME, version: CHROME_VERSION} = findChrome()
 
 // A throwaway profile, never anyone's real one. Port 0 lets Chrome pick a free debugging port
 // and write it to DevToolsActivePort in the profile, so two runs never collide.
 profile = mkdtempSync(join(tmpdir(), 'afc-a11y-'))
-let chromeLog = ''
 chrome = spawn(
   CHROME,
   [
@@ -218,10 +242,34 @@ chrome = spawn(
   ],
   {stdio: ['ignore', 'ignore', 'pipe']},
 )
-chrome.stderr.on('data', (chunk) => (chromeLog = (chromeLog + chunk).slice(-2000)))
 
+// Chrome's stderr, kept for the failure message: its last 20 lines, minus D-Bus errors, which
+// are counted instead. Chrome logs those when it finds no desktop session bus, as on a CI
+// runner, and starts anyway. On 2026-11-13 they were the whole log, and they buried the one
+// useful fact, which was that nothing else had been said. Filtering line by line, as they
+// arrive, means they can never push a real error out of the tail.
+const DBUS = /:ERROR:dbus\//
+const chromeLines = []
+let chromePartial = ''
+let dbusLines = 0
+chrome.stderr.setEncoding('utf8').on('data', (chunk) => {
+  const lines = (chromePartial + chunk).split('\n')
+  chromePartial = lines.pop()
+  for (const line of lines) {
+    if (DBUS.test(line)) dbusLines++
+    else if (line.trim()) chromeLines.push(line)
+  }
+  chromeLines.splice(0, chromeLines.length - 20)
+})
+
+// How Chrome ended, if it ends before answering. 'close' rather than 'exit', because 'close'
+// waits for stderr to drain, so the log is complete by the time the message is built.
+let chromeEnded
+chrome.on('close', (code, signal) => (chromeEnded = {code, signal}))
+
+const startedAt = Date.now()
 let socket
-for (let waited = 0; waited < 10_000 && !socket; waited += 100) {
+while (!socket && !chromeEnded && Date.now() - startedAt < START_TIMEOUT_MS) {
   await new Promise((r) => setTimeout(r, 100))
   const portFile = join(profile, 'DevToolsActivePort')
   if (!existsSync(portFile)) continue
@@ -233,7 +281,29 @@ for (let waited = 0; waited < 10_000 && !socket; waited += 100) {
   const page = targets.find((target) => target.type === 'page')
   if (page) socket = new WebSocket(page.webSocketDebuggerUrl)
 }
-if (!socket) fail(`Chrome did not start (${CHROME}).\n${chromeLog}`)
+if (!socket) {
+  const seconds = ((Date.now() - startedAt) / 1000).toFixed(1)
+  const how = !chromeEnded
+    ? `it was still running after ${seconds}s, so it is slow to start or hung`
+    : chromeEnded.signal
+      ? `it was killed by ${chromeEnded.signal} after ${seconds}s`
+      : `it exited with code ${chromeEnded.code} after ${seconds}s`
+  const output = [...chromeLines, chromePartial].filter((line) => line.trim() && !DBUS.test(line))
+  fail(
+    [
+      `Chrome did not start: ${CHROME_VERSION}, at ${CHROME}.`,
+      `It never answered on its debugging port; ${how}.`,
+      ...(output.length
+        ? ['Its last output:', ...output.map((line) => `  ${line}`)]
+        : [`It printed nothing${dbusLines ? ' but D-Bus errors' : ''}.`]),
+      ...(dbusLines
+        ? [
+            `(${dbusLines} D-Bus ${dbusLines === 1 ? 'error' : 'errors'} left out: Chrome starts without a session bus.)`,
+          ]
+        : []),
+    ].join('\n'),
+  )
+}
 await new Promise((open) => socket.addEventListener('open', open))
 
 /* ── The protocol, as much of it as this needs ───────────────────────────── */
@@ -379,6 +449,7 @@ const SHOWN = 8
 
 const lines = [
   `Accessibility: ${pages.length} pages × ${CONFIGS.length} configurations, ${seconds}s, in ${DIST}`,
+  `With ${CHROME_VERSION}.`,
   '',
 ]
 let elements = 0
