@@ -23,6 +23,13 @@
 //
 // After a write it re-reads every document it touched and exits non-zero if any still differs.
 // A restore that only claims to have worked is the failure this guards against.
+//
+// ── DRAFTS ARE RESTORED LIKE ANY OTHER ENTRY ─────────────────────────────────────────────────
+//
+// Backups hold drafts since 2026-11-20 (tags-backup.mjs says why), under their `drafts.` ids. So
+// every read here uses the `raw` perspective: under `published`, a draft id matches nothing, and
+// the draft would be reported missing and skipped. A draft the backup does NOT hold, such as one
+// from an older backup, is still named in a warning, since it keeps its own tags.
 import {readFileSync, readdirSync} from 'node:fs'
 import {LAB, arg, mutate, query} from './lab-api.mjs'
 
@@ -48,7 +55,10 @@ if (only !== undefined && !wanted.length) throw new Error(`${only} is not in ${f
 
 const ids = wanted.map((d) => d._id)
 const current = new Map(
-  (await query(dataset, `*[_id in $ids]{_id, ${fields.join(', ')}}`, {ids})).map((d) => [d._id, d]),
+  (await query(dataset, `*[_id in $ids]{_id, ${fields.join(', ')}}`, {ids}, 'raw')).map((d) => [
+    d._id,
+    d,
+  ]),
 )
 const labels = new Map(
   (await query(dataset, `*[_type == "skosConcept"]{_id, prefLabel}`)).map((c) => [
@@ -95,16 +105,23 @@ console.log(`  ${changes.length} document(s) differ from the backup.`)
 
 if (!changes.length) process.exit(0)
 
-const drafts = await query(
-  dataset,
-  `*[_id in $ids]._id`,
-  {
-    ids: changes.map((c) => `drafts.${c.doc._id}`),
-  },
-  'raw',
-)
+const inBackup = new Set(backup.documents.map((d) => d._id))
+const drafts = (
+  await query(
+    dataset,
+    `*[_id in $ids]._id`,
+    {
+      ids: changes
+        .filter((c) => !c.doc._id.startsWith('drafts.'))
+        .map((c) => `drafts.${c.doc._id}`),
+    },
+    'raw',
+  )
+).filter((id) => !inBackup.has(id))
 if (drafts.length) {
-  console.log(`  WARNING: these have drafts, which keep their own tags: ${drafts.join(', ')}`)
+  console.log(
+    `  WARNING: these have drafts the backup doesn't hold, which keep their own tags: ${drafts.join(', ')}`,
+  )
 }
 
 if (!write) {
@@ -123,9 +140,12 @@ await mutate(
   })),
 )
 
-const after = await query(dataset, `*[_id in $ids]{_id, ${fields.join(', ')}}`, {
-  ids: changes.map((c) => c.doc._id),
-})
+const after = await query(
+  dataset,
+  `*[_id in $ids]{_id, ${fields.join(', ')}}`,
+  {ids: changes.map((c) => c.doc._id)},
+  'raw',
+)
 const stillDiffer = changes.filter((c) => {
   const now = after.find((d) => d._id === c.doc._id)
   return fields.some((f) => !same(now?.[f], c.doc[f]))

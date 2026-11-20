@@ -20,13 +20,20 @@
 // A null label means a reference whose concept no longer exists. It is kept, not filtered,
 // because a dangling tag is exactly what a quick check should catch.
 //
-// ── PUBLISHED ONLY, AND DRAFTS ARE NAMED RATHER THAN IGNORED ─────────────────────────────────
+// ── DRAFTS ARE BACKED UP TOO, SINCE STREAM 1 ─────────────────────────────────────────────────
 //
-// The tagger writes published documents, so those are what a restore must put back. A draft of
-// the same document would keep its own tags and show them in the Studio instead, so a backup
-// that silently skipped drafts would look complete and not be. The `raw` perspective sees both;
-// any draft found is listed in the file and on screen. The lab was imported with --no-drafts, so
-// a draft there means someone has been editing in the lab Studio.
+// This saved published documents only, and listed drafts without saving them: the tagger wrote
+// published documents, so those were what a restore had to put back. Two things changed on
+// 2026-11-20 (stream-1-data.md, A5 and A6). The lab now holds production's drafts on purpose,
+// Andy's working notes, carried over at A5. And tags-write.mjs sets `topic` on a judged
+// document's draft as well as its published copy, so a later publish can't put old tags back over
+// new ones. A restore must therefore be able to put drafts back too, and a backup that skipped
+// them would look complete and not be.
+//
+// So every draft of a tagged type is saved beside the published documents, under its own
+// `drafts.` id, and `drafts` lists which entries are drafts. The `raw` perspective sees both.
+// Release versions (`versions.`) are still left out: releases are off in this Studio, and none
+// exist.
 import {mkdirSync, writeFileSync} from 'node:fs'
 import {LAB, TAGGED_TYPES, arg, query} from './lab-api.mjs'
 
@@ -45,8 +52,10 @@ const rows = await query(
   'raw',
 )
 
-const published = rows.filter((d) => !d._id.startsWith('drafts.') && !d._id.startsWith('versions.'))
-const drafts = rows.filter((d) => !published.includes(d)).map((d) => d._id)
+const versions = rows.filter((d) => d._id.startsWith('versions.'))
+const saved = rows.filter((d) => !versions.includes(d))
+const published = saved.filter((d) => !d._id.startsWith('drafts.'))
+const drafts = saved.filter((d) => d._id.startsWith('drafts.')).map((d) => d._id)
 
 const takenAt = new Date().toISOString()
 const stamp = takenAt.replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')
@@ -62,7 +71,7 @@ writeFileSync(
       fields: FIELDS,
       count: published.length,
       drafts,
-      documents: published.map((d) => ({
+      documents: saved.map((d) => ({
         _id: d._id,
         _type: d._type,
         slug: d.slug,
@@ -78,7 +87,11 @@ writeFileSync(
 )
 
 const tagged = published.filter((d) => d.topic?.length).length
-console.log(`Backed up ${published.length} documents from ${dataset} (${tagged} with tags).`)
+console.log(
+  `Backed up ${published.length} documents and ${drafts.length} drafts from ${dataset} (${tagged} published with tags).`,
+)
 console.log(`  ${file.pathname}`)
-if (drafts.length)
-  console.log(`  WARNING: ${drafts.length} draft(s) not backed up: ${drafts.join(', ')}`)
+if (versions.length)
+  console.log(
+    `  WARNING: ${versions.length} release version(s) not backed up: ${versions.map((d) => d._id).join(', ')}`,
+  )
