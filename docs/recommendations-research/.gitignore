@@ -1,3 +1,7 @@
 # Written by fetch-corpus.mjs on every run. A snapshot of whichever dataset was fetched last,
 # regenerated rather than kept; see the header of fetch-corpus.mjs.
 corpus.json
+
+# Written by reverse-shortlist.mjs: the documents' text, chunked for the reverse queries.
+# Regenerated rather than kept, like corpus.json.
+reverse-blocks.json

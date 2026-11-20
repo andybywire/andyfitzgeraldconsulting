@@ -17,8 +17,10 @@ docs/recommendations-research/backups/
 docs/recommendations-research/scores/
 docs/recommendations-research/tagsets/
 # Gitignored by that folder's own .gitignore, which Prettier never reads (see studio/.sanity/
-# below): a fetch-corpus.mjs snapshot that a local check would otherwise flag.
+# below): a fetch-corpus.mjs snapshot that a local check would otherwise flag, and the text
+# reverse-shortlist.mjs fetches to chunk.
 docs/recommendations-research/corpus.json
+docs/recommendations-research/reverse-blocks.json
 
 # Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
 # .gitignore, never a nested one — so a local `prettier --check .` failed on it while CI, which

@@ -27,11 +27,13 @@ Manager starter prompt come at the end.
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under a crossing rule, `TAXONOMY_CROSS` unless a version records its own (spends none) |
 | `m3-report.mjs`, `m3.0.md` to `m3.5.md` | The M3.n report generator, and its reports, which Andy marks up. From M3.1 it carries the previous report's columns and marks forward and computes only the newest column (spends none, never overwrites a report) |
+| `reverse-shortlist.mjs`, `reverse-report.mjs` | The reverse direction: each document's sections querying the concepts (spends one search per chunk), and its analysis against v5 (spends none) |
+| `related-algorithm.md`, `what-goes-where.md` | Where the related-resources algorithm landed, as a diagram, and every part sorted between the plugin, a companion, the article and this site |
 | `m3-parse.mjs` | Reads a marked M3.n report back into columns, cards, Best marks and notes, for the carry-forward and, later, the extract script |
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
 
-## Where things stand (2026-11-12): start here in a new session
+## Where things stand (2026-11-19): start here in a new session
 
 **The trajectory.** The taxonomy columns' share of Andy's latest picks, and how often each new
 version beat the earlier pick on the pages where it showed something new:
@@ -70,28 +72,45 @@ until ideas are clearly articulated and separated. Related terms wait until that
 solid and vetted in use. So there is no v6 and no further M3 round planned. The work moves to
 production.
 
-**Next, in order:**
+**Next: three work streams, in order** (Andy, 2026-11-19). Each gets its own plan, and the
+third its own kickoff in the plugin's repository. Decided, so no stream reworks another's:
 
-1. **The production tagger** is built as a stopgap and runs in the lab only (Phase 6 → The
-   tagger). Two decisions are still Andy's:
-   - **Production's hand tags at promotion:** retagged from scratch, as decided on 10-22, or
-     kept as author tags. Kept, they would ship lists that don't match v5.
-   - **Removing one of your own tags:** as built, it records nothing, so the tagger may propose
-     that concept later. Recording it would mean an `excluded` entry with no score.
-2. **Phase 6, promotion,** which needs Andy's explicit go-ahead.
-3. **The article's framing and takeaways** (Andy, 2026-11-06: after the tagger).
-4. **The same-work duplicate:** an article and the talk it became both appearing in one list.
-   Outside the taxonomy: a content-model relation and a ranker rule. Andy's call.
-5. **Still owed:** `how.md` and `value-add.md` stop at the tagger and have not caught up with
-   revisions 1–3, the crossing rule, the tie-break or the hierarchy round, and `value-add.md`'s
-   "Where embeddings win" now has thin content to add; the extract script for trend charts is
-   not built; and the open questions below are still open.
+1. **The data: `recommendations-lab` becomes production.** Production's changes since 10-22
+   (new, edited and deleted documents, drafts included) come into the lab, under a content
+   freeze. v5's tags are written for the 73 judged documents, and Andy tags the few new ones by
+   hand. Then the current `production-26` is exported, with drafts and assets, and deleted, and
+   the lab is copied into a fresh `production-26`. The name stays, so the site's environment,
+   the webhook and the Studio need no new dataset name. On the Free plan, "copy" means an export
+   and import, and the copy needs embeddings re-enabled with the projection.
+2. **The ranker: a shared, pure TypeScript module,** used by the site's build and, later, by a
+   Studio tool that counts how often each piece appears in other pieces' lists. A test runner
+   arrives with it, as the first shared code to need one. Built on a branch, and merged after
+   the dataset swap: until then the live site runs the old branch rule over the new tags.
+3. **The tagger: the Taxonomy Manager plugin,** at the concept, scheme and resource levels, with
+   its scores in records the plugin ships, so users' document types need no extra field. Kicked
+   off in the plugin's repository, with a pointer here. Until it lands, production uses the
+   plugin as it is today, with no assisted tagging. Then a full tagging pass, after a backup,
+   reviewed through a Sanity Release.
+
+**Tag scores ship with stream 3, not before** (Andy). Streams 1 and 2 write and read no scores:
+ties break by genre, then date, without tag strength, a small variation Andy accepts. So
+`topicScores`, "Suggest topics" and `TopicsInput` stay on this branch as prototypes, and the
+branch never merges whole: the research docs merge alone (`docs/**` deploys nothing), the ranker
+carries into stream 2, and the tagger is stream 3's reference.
+
+**The ground rules still hold** through streams 1 and 2: every step that touches `production-26`
+waits for Andy's go-ahead.
+
+**Still owed, outside the streams:** the article's framing and takeaways; the same-work duplicate
+(a content-model relation and a ranker rule, Andy's call); `how.md` and `value-add.md`, which
+stop at the tagger; and the extract script for trend charts.
 
 **Raised for Andy in a review of the remaining steps (2026-11-06).** Answered since:
 
 - *Whether to run v6 at all:* not now. See "The experiment is closed" above.
-- *How new pieces get tagged after promotion:* "Suggest topics", by hand, one document at a time
-  (Phase 6 → The tagger).
+- *How new pieces get tagged after promotion:* by hand until the plugin lands (stream 3).
+- *Production's hand tags at promotion:* the lab's tags go across, v5's for the judged documents
+  and Andy's for the new ones (2026-11-19).
 
 Still open:
 
@@ -107,10 +126,6 @@ Still open:
     concept leaves old `?topic=` links on a silently unfiltered index (`nginx/redirects.conf`).
     It needs a label diff against `production-26`.
   - **Search moves too:** `bodyTerms` matches body text against the Topic labels.
-  - **Tags at risk:** author tags added at an audit in the lab would be dropped by retagging
-    `production-26` from scratch; pieces published live since 10-22 carry hand tags that need a
-    rule. Doing the audit in production after promotion, with "Suggest topics", removes the first
-    half (Claude's suggestion, not decided).
 - **The write-up's shape and audience:** a "why" and a "how", or one piece; taxonomists or Sanity
   developers.
 
@@ -134,6 +149,18 @@ Andy, 2026-10-28. These hold until he lifts them, and they outrank anything late
 ## Decisions
 
 Newest first.
+
+- **2026-11-19.** **The follow-on work is three streams, in order: the data, the ranker, the
+  plugin** (Andy). The lab becomes production by being copied into a fresh `production-26`; the
+  ranker becomes a shared TypeScript module, with a test runner; the tagger moves into the
+  Taxonomy Manager, kicked off in its own repository. No tag scores until the plugin. See
+  "Where things stand".
+
+- **2026-11-17.** **Tagging a new document: a reverse shortlist, then forward scores** (the
+  experiment; adopting it is stream 3's call). The document's sections query the concepts for a
+  shortlist, and only the shortlisted concepts score it forward, on the calibrated scale. A
+  shortlist of 15 reproduces v5's tags exactly on 68 of 73 documents; reverse scores alone, on
+  9 of 37. See "The reverse direction" under Phases.
 
 - **2026-11-12.** **A removed tag is recorded as excluded when it is removed, not at the next
   run** (Andy). The first build inferred an exclusion at the next run and wrote it only when that
@@ -1167,6 +1194,54 @@ organization's monthly quota. The Free plan allows no overage.
 above), and automation by a Sanity Function. `@sanity/ui` is not added either: adding it
 re-resolved other packages in the shared lockfile when tried on 2026-10-22, so the dialogs use
 the Studio's own.
+
+### The reverse direction: querying from the document (2026-11-14 to 11-19)
+
+**Why.** Tagging one document costs one semantic search per concept, 68, and the organization's
+quota is 1,000 a month: November reached 867 by the 12th, 340 of them five test runs of "Suggest
+topics". One search per concept scores EVERY document at once, so a whole corpus costs the same
+68 as a single piece; the expense is tagging one document at a time. Andy's proposal: when the
+document is what changed, let it be the query.
+
+**One search is one read.** The organization's `embeddings-reads` metric counts one per semantic
+search (November 6 showed 20, matching that day's queries exactly). It counted past 1,000 on
+2026-11-17 and refused nothing, so the quota is not enforced in real time on this plan.
+
+**The chunking** is Andy's design: sections at headings, split at paragraph breaks, short
+neighbors packed together, 2,000 characters a query (`reverse-shortlist.mjs` says why). The
+corpus needs 302 queries in all: a median of 1 per document, at most 20, never above 68. A
+single query reading only a document's opening would miss 71% of the corpus text; the forward
+direction misses none, because a document is embedded in chunks.
+
+**What it found** (`reverse-report.mjs` over `scores/reverse-recommendations-lab-20261120T003633Z.json`,
+a re-run that reproduced the first run's figures within one document):
+
+| Combining a document's chunks | Deepest v5 tag: median / 90th pct / worst | v5 exactly at K = 10 | K = 15 | K = 20 |
+|---|---|---|---|---|
+| Best chunk | 5 / 13 / 27 | 59 of 73 | 68 | 69 |
+| **Mean of the best two** | 5 / 14 / 21 | 61 | 68 | **72** |
+| Mean of all chunks | 5 / 14 / 42 | 60 | 66 | 69 |
+| First chunk only | 5 / 21 / 63 | 57 | 63 | 64 |
+
+- **The reverse direction is good for recall, not for scores.** On the 37 single-chunk
+  documents, forward and reverse scores correlate at a median of 0.93, but the offset between
+  them runs from −0.38 to +0.26, and reverse scores alone give v5's exact tags on only 9. A first
+  test on three documents had looked better, at 2 of 3, and was luck.
+- **The offset follows the document's own self-match** (correlation 0.77), which every reverse
+  query returns for free. A possible correction, not built.
+- **So: shortlist, then score forward.** The sections pick about 15 concepts, and those score
+  the document forward, narrowed to it, which gives exactly the full query's scores (checked
+  2026-11-12). About 16 searches for a typical piece, at most about 40, against 68.
+- **Reading only the opening is the weakest row.** Evidence for chunking over a synthetic
+  summary, worth keeping for the article.
+- **The misses are mostly weak tags:** a fifth or sixth tag in the second band. One, Sanity on
+  *Four Web Writing Style Guides*, is a tag Andy called a misfire in M3.2.
+- **Shared forward checks make batches cheap,** since one concept query scores every document in
+  the batch; once a batch's shortlists cover most of the 68 concepts, the full pass is cheaper.
+
+**The first run's raw results were lost** with the scratchpad on 2026-11-19, before they were
+saved: the risk had been named two turns earlier and not acted on. The scripts were rebuilt here
+and re-run, which also proved them.
 
 ## Specs
 
