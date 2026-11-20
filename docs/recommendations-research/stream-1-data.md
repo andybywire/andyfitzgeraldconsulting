@@ -184,7 +184,17 @@ environment, the deployed Studio and the webhook's dataset scope all keep workin
    built: a script that sets each of the 73 documents' `topic` from `tagsets/v5.json`, with a dry
    run that lists every change, then one transaction. `topic` only, no `topicScores`.
 
-   **Built and dry-run 2026-11-20; not yet written.**
+   **Written 2026-11-20, 17:05 UTC: 77 documents in one transaction**, after the three commits
+   that hold the scripts and the backup (Andy: commit first).
+   - **Proved three ways.** The script re-read and confirmed its own write. A second dry run finds
+     79 already matching (73 published and 6 drafts) and nothing to change. And the only lab
+     documents written since are the 77: 71 published and 6 drafts.
+   - **The way back is intact.** A restore dry run against the backup sees exactly those 77, every
+     one on `topic` alone, so no `topicScores` was touched and nothing is missing:
+     `tags-restore.mjs --file backups/tags-recommendations-lab-20261120T165610Z.json --write`
+     would undo it.
+
+   How it was built:
    - **Drafts too** (Andy): a judged document's draft gets the same `topic`, so publishing it
      later can't put old tags back. So `tags-backup.mjs` now saves drafts, and
      `tags-restore.mjs` reads `raw`, so it finds them. Proved by a restore dry run straight after
@@ -205,6 +215,42 @@ environment, the deployed Studio and the webhook's dataset scope all keep workin
    - concepts outside the Topic scheme, once no document references them. Delete or keep: Andy's
      call.
    - any `topicScores` data written while testing the stopgap tagger
+
+   **Step 7 checked, and step 8 inventoried 2026-11-20 (reads only).**
+   - **Step 7:** all three new notes are tagged inside the Topic scheme, none at a top concept.
+   - **Andy published 10 drafts in the lab during step 7:** every carried draft that had a
+     published copy (Settings and the Genre scheme aside), and the *Cognitive Sciences* test
+     draft. The 12 never-published working notes stay drafts. Compared against the archive, nine
+     of them held no edits of their own: each published copy differs from production's in v5's
+     `topic` or not at all. *Taxonomy Manager Tree View Improvements* carried one real edit, its
+     `shortDescription`, which goes live at the switch. All 73 judged documents still match v5.
+   - **The research drafts:** the test draft is gone with the rest. The three Taxonomy children
+     remain, as concept drafts holding the 11-04 genus–differentia definitions, never published.
+     Those concepts left the scheme when Andy subsumed them back into Taxonomy.
+   - **`topicScores`: none anywhere in the lab.** Nothing to clean.
+   - **16 published concepts sit outside every scheme.** 15 have no references at all: AI
+     Integration, Content Analysis, Content Auditing, Data Management, Development, Digital
+     Communication, Digital Presence, GitHub Actions, Personas, Responsive Design, Strategy, User
+     Flows, and the three Taxonomy children. **Governance** has one, from the never-published
+     working note *Content Operations Strategy and Design*.
+   - **Four of them exist nowhere but the lab:** GitHub Actions and the three Taxonomy children
+     were created there, so the A3 archive can't restore them. An export of the lab before any
+     delete is what makes the cleanup reversible.
+
+   **Cleaned 2026-11-20 (Andy: export, then delete; Governance too, once he retagged the working
+   note that used it).**
+   - **The restore point:**
+     `~/Archives/afc/recommendations-lab-2026-11-20/recommendations-lab.tar.gz`, with 293
+     documents and 1,036 assets, 1.05 GB, exported in 1m 16s. It holds every deleted document,
+     the Taxonomy children's drafted definitions in full.
+   - **19 documents deleted in one transaction:** the 16 off-scheme concepts and the three
+     Taxonomy children's drafts. Every guard was rerun on the live lab right before the delete:
+     each concept still outside every scheme, referenced by nothing (drafts included), and present
+     in the export. The lab went from 1,341 documents to 1,322.
+   - **Afterwards:** the 14 drafts left are all production's, and no concept sits outside a
+     scheme. Topic (75 members) and Genre (15) are unchanged, and no `topicScores` exist. All 73
+     judged documents still match v5. All 504 concept references (`topic`, `genre`, `broader`,
+     `related` and the schemes' own) resolve.
 9. **Validate against the lab**, before anything in production changes:
    - **Build the site against the lab:** `PUBLIC_SANITY_DATASET=recommendations-lab`. Then
      `pnpm parity`, `pnpm links`, `pnpm validate`, `pnpm a11y` and `pnpm budgets`.
@@ -219,6 +265,60 @@ environment, the deployed Studio and the webhook's dataset scope all keep workin
      Recent where it didn't before.
    - **Media Library references:** imported images carry a weak `media` reference beside the
      asset. Check that they survive an import.
+
+   **Run 2026-11-20.** "Before" is the live site, read with public GETs; production is frozen, so
+   it matches the A3 archive. "After" is the lab build.
+   - **The override reaches everything.** The dataset is read in three places: Vite's `loadEnv`
+     (the `sanity()` integration), Node's `loadEnvFile` (parity) and `astro:env` (image URLs). The
+     command line beat `.env` in the first two. The build's 11,426 Sanity image URLs all name
+     `recommendations-lab`, `production-26` appears nowhere in `dist/`, and *Ontology Pipeline*
+     shows the lab's tags. Parity read 258 documents, which is the lab's published count.
+   - **All five gates are green.** The build took 51s. Parity: 0 fails (1 warning, the known
+     unattached event). Links: 89 pages, 3,059 links. Validate: every page valid. Accessibility:
+     89 pages in 5 configurations, no violations. Budgets: all within, the search index at 20.6
+     of 25 KB.
+   - **Media Library:** all 1,036 lab assets carry exactly production's `media` reference. The one
+     production asset missing is A5's orphan image.
+   - **Search:** the headline multiword terms match exactly as many documents as before: tree
+     testing 7, card sorting 5, information architecture 24, structured content 19, content
+     modeling 3, knowledge graphs 11. Body terms go from 71 to 109. The ten dropped are mostly old
+     top-concept labels: design (51 documents), development (26), strategy (15), engineering (7).
+     Then content management (8, but "content management system" arrives with 6), personas,
+     user flows, data management, content analysis and digital communication. Some new terms are
+     generic words: goals (25), outcomes (15), semantic (19), graph (15).
+     - **These counts are of body TEXT, not tags.** `bodyTerms` takes every label in the Genre
+       and Topic schemes, walked from the scheme so top concepts are included, and matches them
+       against each document's prose. Goals and Outcomes tag nothing. "goals (25)" means 25
+       documents use the word. So a label chosen to organize the hierarchy becomes a search term
+       too, as the old top concept Design did (51 documents).
+   - **Facets: chips vanish, and none of them is a rename.** Insights goes from 36 topic chips to
+     51, Presentations from 30 to 33, and genre is unchanged. All six named `/insights/tag/`
+     targets in `nginx/redirects.conf` survive.
+     - **On Insights, 12 chips go:** nine retired concepts deleted at A8 (AI Integration, Content
+       Analysis, Development, Digital Communication, Governance, Data Management, User Flows), four
+       that tag nothing now (Interoperability, Stakeholder Engagement, Contextual Inquiry, Process
+       Mapping), and Project Management, now a top concept.
+     - **All 12 were 11ty tag pages.** The 2022 dataset has exactly 70 concepts, the ~70 tag pages
+       urls-and-filtering.md lists. So `/insights/tag/<slug>/` for each of them works today
+       through the catch-all and **lands on an unfiltered index after the switch.** **No
+       redirects (Andy, 2026-11-20):** all twelve default to the Insights index through the
+       existing catch-all, so `nginx/redirects.conf` doesn't change.
+     - **On Presentations, 15 go:** seven of them still tag insights but no presentation now, such
+       as Navigation Design and Linked Data. A `?topic=` link only reaches them on Presentations,
+       and those URLs only date from 09-28.
+   - **Related: six pages fall back to "Recent"** (two gain "Related"): *Cognitive Science for
+     Designers*, *Ontology Pipeline*, *Proust and the Squid*, *The Calm Before the Storm*, *Why
+     Shortcuts Aren't the Road* and *Language Arts for the Lizard Brain*. The cause is the old
+     branch rule meeting the new vocabulary.
+     - **The old rule matches only within a page's own genre branch,** and ignores siblings under
+       a top concept.
+     - **Cognition sits directly under Human Factors, a top concept.** Its three documents are an
+       article, a talk and a note, so no two of them share a branch.
+     - **The clippings each carry one tag that no other note shares.**
+     - **Stream 2's cross-category ranker** is what reaches these pages. **Falling back to Recent
+       is fine for the interval** (Andy, 2026-11-20).
+
+   **Phase A is complete.**
 
 ## Phase B: the switch (production is replaced)
 
@@ -241,8 +341,13 @@ site. The site gates run beside the deploy and never hold it.
    references resolving, embeddings status `ready`, and the Studio opening on the new dataset.
 8. **Re-enable both deploys, deploy, and check the live site:**
    - run `deploy-astro.yml` by hand
-   - deploy the prepared redirects with `nginx/deploy.sh`
+   - no redirects to deploy: A9's twelve retired tag URLs keep the catch-all (Andy)
    - check facets, the related bands, search and a sample of pages
+   - **check Presentation end to end in the deployed Studio** (Andy's eyeball step). It was
+     never removed from production: the lab switch drops it only under `dev:lab`. It needs no
+     change at the switch, because the name stays `production-26`. But the dataset under it is
+     new, so check that the preview loads, overlays appear, and a click reaches the right
+     document
    - **diff the five feeds against `~/Archives/afc/production-26-2026-11-20/feeds/`**: every
      entry's `<id>`, `<published>` and `<updated>` should be unchanged. The only differences
      allowed are content changes (new topic labels in `<category>`)
@@ -270,6 +375,6 @@ site. The site gates run beside the deploy and never hold it.
 | A delta document fails to import on a dead reference | Step A4 strips references to removed concepts first |
 | Figures and alt text lost in an import | Assets included in every export and import |
 | Content published during the switch is lost | The freeze, and a second backup at B2 |
-| Old facet and tag URLs land on an unfiltered index | The label diff and prepared redirects (A9), deployed at B8 |
+| Old facet and tag URLs land on an unfiltered index | Measured at A9: twelve retired tag URLs do, and Andy accepted it; no redirects |
 | The webhook stops dispatching | Proved by a publish at B9 |
 | The delete can't be undone | Two verified backups, and the lab itself, until B7 passes |
