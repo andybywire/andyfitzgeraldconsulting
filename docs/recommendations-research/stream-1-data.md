@@ -328,17 +328,103 @@ site. The site gates run beside the deploy and never hold it.
 
 1. **Disable both deploys:** `gh workflow disable deploy-astro.yml` and `deploy-preview.yml`.
    This also mutes the webhook's `repository_dispatch`, and nothing merges to `main` meanwhile.
+
+   **Done 2026-11-20, 21:50 UTC.** Both read `disabled_manually`. No run was in progress, and
+   none had run since the 11-18 note publish, which is consistent with the freeze.
+   `checks.yml` stays active: a branch push still builds against `production-26`, so it goes red
+   while the dataset is missing, but it deploys nothing. Re-enable with `gh workflow enable` at
+   B8.
+
+   **The mute was proved, not assumed** (Andy: test it). One `repository_dispatch` of type `note`,
+   exactly what a publish makes the webhook send, was accepted by GitHub at 21:53:01 UTC (HTTP
+   204). No workflow run started in the 90 seconds after, and `deploy-astro.yml`'s latest run is
+   still the 11-18 publish. It was tested before B4 on purpose: a failed mute then would only
+   have redeployed the frozen, intact dataset.
 2. **Back up production once more**, catching anything since step A3, and check the archive:
    document and asset counts, and every published `_id` present, as was done before the old
    `production` dataset was deleted on 2026-10-22.
+
+   **Done 2026-11-20, 22:21 UTC:**
+   `~/Archives/afc/production-26-2026-11-20/production-26-b2-before-delete.tar.gz`, with 272
+   documents and 1,037 assets, 1.05 GB, exported in 1m 18s. A3's archive sits beside it, untouched.
+   - **It is complete.** Production was re-read after the export. All 267 content documents are
+     in the archive at their live `_rev`, 23 drafts among them, with every published `_id`
+     present. All 1,037 assets have their file and their `assets.json` entry.
+   - **Nothing changed since A3.** No document was added, removed or revised, and no asset was
+     added or removed, so the freeze held. The lab already holds everything production has, and
+     no second delta is needed. **This is the archive B4's delete relies on.**
 3. **Export the lab**, drafts and assets included: the import source.
+
+   **Done 2026-11-21, 17:59 UTC:**
+   `~/Archives/afc/recommendations-lab-2026-11-21/recommendations-lab-b3-import-source.tar.gz`,
+   with 274 documents and 1,036 assets, 1.05 GB, exported in 1m 19s.
+   - **The lab hadn't moved overnight:** still 1,322 documents and 14 drafts, with nothing written
+     since A8's delete.
+   - **The archive is complete.** All 274 documents are there at their lab `_rev`, the 14 drafts
+     among them, with nothing missing or extra. All 1,036 assets have their file and their
+     `assets.json` entry; 699 carry their Media Library reference. It holds no system documents.
+     Its 90 concepts are exactly Topic's 75 and Genre's 15.
+   - **Read for B5 and B9:** `production-26` is `public`, as the Free plan requires. Both
+     datasets carry the identical embeddings projection, status `ready`. The project's one
+     webhook, "Publish Update", is scoped to `production-26` by name and posts to the repo's
+     dispatch URL.
 4. **Delete `production-26`** (Andy, in Manage or with the CLI: irreversible).
+
+   **The final freeze check passed on 2026-11-21, just before the delete.** Production's
+   metadata, compared with the B2 archive by `_id`, `_rev` and asset hash, shows no document
+   added, revised or removed, the five `system.release` documents included, and no asset added
+   or removed. The newest content write is still the 11-18 note publish. So the B2 archive is
+   production exactly as deleted.
+
+   **Deleted by Andy on 2026-11-21.** `datasets list` at 18:20:59 UTC showed only
+   `recommendations-lab`.
 5. **Create `production-26` again,** with the same visibility as before, and **enable embeddings
    with the lab's projection** (read it from the lab's embeddings settings). Embeddings are free
    to generate, and they'll be needed again by stream 3.
+
+   Prepared at B3. Both datasets carry this projection, so the command copies it exactly:
+
+   ```bash
+   pnpm --dir studio exec sanity datasets create production-26 --visibility public --embeddings --embeddings-projection '{_type == "article" => {title, shortDescription, bodyText}, _type == "note" => {title, shortDescription, bodyText}, _type == "caseStudy" => {title, shortDescription, atGlance, whatDid, projectGoal, projectApproach, projectOutcome}, _type == "presentation" => {title, description, bodyText, highlights}, _type == "skosConcept" => {prefLabel, definition, scopeNote, example}}'
+   ```
+
+   **Done 2026-11-21, 18:21:15 UTC**, 16 seconds after the delete was confirmed, on the first try:
+   the name was free at once. `embeddings status` reads enabled, with the projection above, status
+   `ready` (on an empty dataset).
 6. **Import the lab's export,** assets included.
+
+   **Done 2026-11-21, 18:21:24 to 18:25:44 UTC (4m 20s):** the B3 archive into the new
+   `production-26`, with no `--replace` since the dataset was empty. Documents took 2.4s and the
+   1,036 asset uploads 4m 7s, then asset references and strengthening took 8s. The deploys stayed
+   muted throughout, so whatever the webhook sent for imported documents started nothing.
+   - **It landed whole:** 1,322 documents, the lab's own count. That is 274 content documents (14
+     of them drafts), 1,036 assets, and the 12 system documents (11 `system.group`, 1
+     `system.retention`) Sanity creates in any dataset. None of the archive's 274 documents or
+     1,036 assets is missing.
 7. **Verify the copy against the lab:** document and asset counts, every `_id` present,
    references resolving, embeddings status `ready`, and the Studio opening on the new dataset.
+
+   **Run 2026-11-21, 18:27 to 18:31 UTC. The copy is exact.**
+   - **Field by field:** all 1,310 documents and assets (274 content, 14 of them drafts, and
+     1,036 assets) match the lab with the always-rewritten fields set aside. Of those, 1,278 are
+     identical and 32 differ only in the import dropping `_weak: false`. Nothing is missing or
+     extra. All 1,036 assets carry the lab's Media Library reference, 699 of them a non-empty one.
+   - **References:** all 1,591 resolve.
+   - **Settings:** `public`, created 18:21:08 UTC. The webhook still reads `production-26`. No
+     deployed schema (`_.schemas.default`), as expected: B8 deploys one.
+   - **Embeddings:** status `ready`, and the index answers. All 166 published documents score on
+     a probe, as in the lab, and the top results make sense. **But it is not the lab's index,
+     score for score.** On four probes, rank correlation with the lab was 0.95 to 0.97 and the
+     median score difference about 0.03, ten times the same-query noise measured in the research.
+     69 of 166 documents moved by more than 0.1 on some probe, 8 by more than 0.3, and the long
+     presentations moved most (up to 1.1). Perspective, untouched since 10-22, moved 0.38, so lab
+     edits leaving stale embeddings don't explain it. The likelier cause is that long documents
+     embed slightly differently when the index is built fresh.
+     - **The live site is unaffected:** its search and related lists use no embeddings.
+     - **Stream 3 should re-check the tagger's calibration against production's index before
+       relying on it.** That is the anchored 0–1 scale (floor 4.9, bands at 0.45 and 0.54),
+       measured on the lab.
+   - **The Studio opening on the new dataset** is Andy's eyeball step: `pnpm --filter studio dev`.
 8. **Re-enable both deploys, deploy, and check the live site:**
    - run `deploy-astro.yml` by hand
    - no redirects to deploy: A9's twelve retired tag URLs keep the catch-all (Andy)
@@ -354,10 +440,44 @@ site. The site gates run beside the deploy and never hold it.
    - **check the deployed schema exists** (`_.schemas.default`): it lives in the dataset, so the
      new `production-26` has none until the Studio or schema is deployed again
    - run the deploy's own smoke checks
+
+   **Done 2026-11-21 (Andy confirmed the Studio on the new dataset first).**
+   - **Deploys re-enabled** at 18:32:38 UTC. Nothing started on its own, so the dispatches the
+     import may have sent were dropped while the workflows were disabled, not queued.
+   - **The schema is deployed:** `sanity schema deploy --workspace default` wrote
+     `_.schemas.default` at 18:33:00.
+   - **`deploy-astro.yml` ran by hand from `main` (`822baf6`):** run 44936151199. It built by
+     18:34:51 and went live at 18:35:14. The site checks beside it (links, validate, a11y,
+     budgets) all passed against the new data.
+   - **The live site is the A9 lab build.** The lab hasn't changed since A9, so its build in
+     `web/dist` is the expected result. All 88 live pages return 200. Each is byte-identical to
+     the lab build once two things are swapped back: the dataset name in image URLs, and the
+     timestamps and long-form dates. `search.json` is identical apart from the date of 3 `page`
+     entries. Those are the `_updatedAt` values A3 predicted would move. So the facets (51
+     Insights chips), the related bands (6 on Recent) and search are live exactly as A9
+     measured them.
+   - **The feeds:** across all five, no entry `<id>` changed, and not one `<published>` or
+     `<updated>` moved from the A3 baseline. Only `<category>` changed, carrying the new tags.
+     All are served as `application/atom+xml`.
+   - **Images load from the new dataset:** 6 of 6 sampled `production-26` URLs return 200.
+   - **Hosts, checked from outside:** the apex returns 200, `www` 301s to it, and `preview.`
+     returns 200 with `noindex` in both header and meta. The preview, which reads per request and
+     wasn't redeployed, already shows the new tags.
+   - **Andy's to run:** Presentation end to end in the deployed Studio. Also
+     `AFC_SSH=do nginx/deploy.sh` for its smoke checks if wanted: the nginx config didn't change,
+     and droplet SSH is his.
 9. **Prove the webhook:** publish a small edit and watch a production deploy start. The webhook is
    scoped to the dataset by name, so it should survive the recreation, but "should" is not
    accepted here.
+
+   **Proved 2026-11-21.** Andy published an edit to a note, and the webhook's `repository_dispatch`
+   (type `note`) started run 44937412707 at 18:47:14 UTC. It built, deployed at 18:48:56, and
+   its site checks passed. The webhook survived the recreation, as its scope by name suggested.
 10. **End the freeze.**
+
+   **Ended 2026-11-21 with B9's publish.** Phase B is complete: `production-26` holds what the lab
+   held, and the live site, the preview, the Studio, the deployed schema and the webhook all work
+   against it.
 
 ## Phase C: afterwards
 

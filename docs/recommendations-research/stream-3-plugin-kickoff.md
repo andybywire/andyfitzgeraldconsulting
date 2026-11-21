@@ -40,6 +40,10 @@ What matters here:
 - **The anchored scale** makes scores comparable across concepts: (raw − floor) ÷ (self − floor).
   `self` is the concept's own document in the same query; the floor (4.9 here) was frozen from a
   full first pass. Sanity's raw `_score` can't be compared across queries.
+  **The floor and the bands were measured on the lab's embeddings index.** Production's, rebuilt
+  fresh at stream 1's switch on 2026-11-21, agrees closely but not exactly: rank correlation 0.95
+  to 0.97 on four probes, with long presentations moving most. Re-measure the floor and bands
+  against production before trusting them there (stream-1-data.md, B7).
 - **Selection:** up to 3 tags at ≥ 0.45, then 3 more at ≥ 0.54; never a concept beside its own
   parent, the more specific winning; at least one tag; author tags kept and never bumped; a tag
   the author removed is never proposed again. The values are this site's; the mechanism is
