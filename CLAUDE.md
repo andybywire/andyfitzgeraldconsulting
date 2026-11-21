@@ -367,6 +367,29 @@ and **declined**: Andy is publishing little or nothing before cutover, and hand-
 articles is cheaper than maintaining and debugging a migration suite. At cutover, `production-26`
 becomes the live dataset.
 
+**The old `production` dataset is GONE** (Andy deleted it on 2026-10-22 to free the Free plan's
+second slot). It was exported first to
+`~/Archives/afc/2022-production-dataset-2026-10-22/production.tar.gz`, with drafts and assets, and
+checked against the live dataset before the delete. **The second slot now holds
+`recommendations-lab`**, a copy of `production-26` for the recommendations research, where tags are
+rewritten and the taxonomy is restructured without touching the live site.
+`docs/recommendations-research/plan.md` is the record. Run its Studio with
+`pnpm --filter studio dev:lab` on :3031. The project's one webhook is scoped to `production-26`, so
+nothing written to the lab deploys anything.
+
+**Stream 1 made the lab production** (2026-11-21). The research's revised Topic scheme and its tags
+went live by recreating `production-26` from the lab: production was archived twice, to
+`~/Archives/afc/production-26-2026-11-20/`, deleted, and created again under the same name. So the
+site's environment, the preview, the deployed Studio and the webhook needed no change.
+**`docs/recommendations-research/stream-1-data.md` is the record**, step by step. The lab stays, as
+stream 3's test dataset, and starts that stream identical to production.
+
+Two things moved at the switch, both expected:
+- **Every document's `_updatedAt` now reads the import time.** The feeds date their entries by
+  `pubDate`, so no entry moved, but JSON-LD `dateModified`, the sitemap's `<lastmod>` and search's
+  date for a `page` all moved once.
+- **The fresh embeddings index agrees with the lab's closely but not exactly.**
+
 ### Phase sequence
 
 Each phase is a branch, merged back once verified — off `next` through the cutover, off `main` since
@@ -469,14 +492,22 @@ Each phase is a branch, merged back once verified — off `next` through the cut
      ├─ Case Study                 ├─ Workshop
      ├─ Conference Themes          ├─ Panel
      └─ Note                       └─ Interview
-          ├─ Clipping
-          └─ Book Note
+          ├─ Web Clipping
+          ├─ Book Note
+          └─ Project Note
    ```
 
-   Topic is a separate 3-level scheme under **Engineering / Design / Discovery / Strategy**, and
-   `docs/urls-and-filtering.md` filters on **direct tags only** — no ancestor roll-up. Content is
-   tagged at leaf and mid level and **never at a top concept**, verified, which is what keeps that
-   rule from producing a "Design" chip that competes with an "Information Architecture" one.
+   *Updated 2026-11-21, against the dataset.* The diagram showed "Clipping", which was already
+   labeled Web Clipping when the lab was copied on 10-22. Project Note joined on 11-02.
+
+   Topic is a separate scheme, **rebuilt in the recommendations research and live since stream 1**
+   (2026-11-21). It has 75 concepts under **seven top concepts**, up to four levels deep:
+   Engineering Practices, Design Practices, Design Approaches, Project Management, Engineering
+   Tools, Outcomes and Human Factors. It replaced a 3-level scheme under Engineering / Design /
+   Discovery / Strategy. `docs/urls-and-filtering.md` filters on **direct tags only** — no ancestor
+   roll-up. Content is tagged at leaf and mid level and **never at a top concept**, verified, and
+   verified again for stream 1's tags. That is what keeps that rule from producing a "Design" chip
+   that competes with an "Information Architecture" one.
 
    **A consistency invariant falls out of the Genre hierarchy, and it is worth a build-time check:**
    a document's genre should sit under the top concept matching its structural family — a document
@@ -536,8 +567,10 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    positions, methods and case studies per service. `page` buys room to work out the positioning
    first. The 4 orphan `service` documents (Structured Content Design, Information Architecture,
    Content Strategy, Knowledge Graph Engineering) were the obvious content for that. **Phase 7
-   deleted them from `production-26`; the old `production` dataset still holds all four**
-   (checked 2026-10-08), so that is where to read them when Consulting's positioning is worked out.
+   deleted them from `production-26`, and all four survive in the export of the old `production`
+   dataset** at `~/Archives/afc/2022-production-dataset-2026-10-22/production.tar.gz` (the dataset
+   itself was deleted 2026-10-22). Read them there when Consulting's positioning is worked out:
+   `data.ndjson` inside the tarball, `_type == "service"`.
 
    **`note` is ONE type, and the vocabulary decided that** — Note is a *branch* with Clipping and Book
    Note beneath it, so `genre` discriminates the three. Built 2026-08-26 with two optional objects
@@ -735,8 +768,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    - ~~**Retire the two deprecated schemes**~~ **DONE.** Only Genre (12 concepts) and Topic (55)
      remain, and no concept sits outside a scheme (verified 2026-10-08).
    - ~~**Resolve the orphan types**, `service` (4 documents) and `collection` (2)~~ **DONE: deleted,
-     not adopted** — though the old `production` dataset still has both; see Consulting under
-     phase 4. **A third orphan turned up while checking:** `media.tag`, one "banner" tag left by the
+     not adopted** — though the export of the old `production` dataset still has both; see
+     Consulting under phase 4. **A third orphan turned up while checking:** `media.tag`, one "banner" tag left by the
      old `sanity-plugin-media`, weakly referenced by 8 old 5088×800 banner assets that no document
      used. Tag and assets were deleted on 2026-10-08.
    - ~~**Shrink `hiddenDocTypes`**~~ **DONE** — down to `sanity.videoAsset`, a workaround for a
