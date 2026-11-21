@@ -33,7 +33,7 @@ Manager starter prompt come at the end.
 | `term-candidates.mjs`, `bigram-candidates.md`/`.csv`, `word-candidates.md`/`.csv` | Two-word and single-word term candidates for revision 1, from one fetch of the lab's documents (spends none) |
 | `topic-taxonomy.mjs`, `topic-taxonomy.csv` | The lab's Topic scheme in tree order, with each concept's level and how many resources are tagged with it, for revision 1 (spends none) |
 
-## Where things stand (2026-11-19): start here in a new session
+## Where things stand (2026-11-21): start here in a new session
 
 **The trajectory.** The taxonomy columns' share of Andy's latest picks, and how often each new
 version beat the earlier pick on the pages where it showed something new:
@@ -82,6 +82,18 @@ third its own kickoff in the plugin's repository. Decided, so no stream reworks 
    the lab is copied into a fresh `production-26`. The name stays, so the site's environment,
    the webhook and the Studio need no new dataset name. On the Free plan, "copy" means an export
    and import, and the copy needs embeddings re-enabled with the projection.
+
+   **DONE 2026-11-21. [stream-1-data.md](stream-1-data.md) is the record**, step by step, on
+   branch `lab-to-production`. What went live, and what it left:
+   - **The vocabulary and tags:** the revised Topic scheme (75 concepts, seven top concepts), v5's
+     tags on the 73 judged documents, Andy's on the three new notes, and production's changes
+     since 10-22, his working drafts included. **Genre came from production**, not the lab, since
+     production had added Project Note (Andy). The 16 concepts outside every scheme were deleted.
+   - **Accepted at A9 (Andy):** twelve old `/insights/tag/` URLs now land on the unfiltered index,
+     with no new redirects. Six related bands fall back to "Recent" until stream 2.
+   - **For stream 3:** production's fresh embeddings index agrees with the lab's at a rank
+     correlation of 0.95 to 0.97, not exactly. Re-measure the tagger's floor and bands there.
+   - **The lab stays,** identical to production at the switch, as stream 3's test dataset.
 2. **The ranker: a shared, pure TypeScript module,** used by the site's build and, later, by a
    Studio tool that counts how often each piece appears in other pieces' lists. A test runner
    arrives with it, as the first shared code to need one. Built on a branch, and merged after
@@ -98,8 +110,8 @@ ties break by genre, then date, without tag strength, a small variation Andy acc
 branch never merges whole: the research docs merge alone (`docs/**` deploys nothing), the ranker
 carries into stream 2, and the tagger is stream 3's reference.
 
-**The ground rules still hold** through streams 1 and 2: every step that touches `production-26`
-waits for Andy's go-ahead.
+**The ground rules still hold** through stream 2: every step that touches `production-26` waits
+for Andy's go-ahead. They held through stream 1, where every read and write of it had one.
 
 **Still owed, outside the streams:** the article's framing and takeaways; the same-work duplicate
 (a content-model relation and a ranker rule, Andy's call); `how.md` and `value-add.md`, which
@@ -121,11 +133,15 @@ Still open:
   ship. The honest one is the shipped configuration against the pick, page by page, regressions
   included. It was computed once, for M3.5, by a scratch script (the table above); the extract
   script should compute it every round.
-- **Promotion gaps Phase 6 doesn't cover yet:**
+- ~~**Promotion gaps Phase 6 doesn't cover yet:**~~ **Answered at stream 1's A9** (2026-11-20).
   - **The URL contract (Andy's):** facet slugs are `slugify(prefLabel)`, so a renamed or removed
     concept leaves old `?topic=` links on a silently unfiltered index (`nginx/redirects.conf`).
-    It needs a label diff against `production-26`.
-  - **Search moves too:** `bodyTerms` matches body text against the Topic labels.
+    *The label diff found no renames. Twelve old tag URLs turn unfiltered, and Andy accepted
+    that, with no new redirects.*
+  - **Search moves too:** `bodyTerms` matches body text against the Topic labels. *The headline
+    multiword terms match as many documents as before. The old top-concept labels (design 51,
+    development 26) left the body terms, and structural labels such as Goals and Outcomes joined
+    them.*
 - **The write-up's shape and audience:** a "why" and a "how", or one piece; taxonomists or Sanity
   developers.
 

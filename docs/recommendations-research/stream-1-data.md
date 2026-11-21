@@ -487,6 +487,13 @@ site. The site gates run beside the deploy and never hold it.
   which is still right; plan.md, CLAUDE.md and this file record what moved and when.
 - **Stream 2 starts,** building the ranker against the new production data.
 
+**Done 2026-11-21, apart from stream 2 itself.** The lab stays, unchanged since the switch.
+`lab-api.mjs` is unchanged too, since its refusal to write `production-26` without
+`--allow-production` is still right. CLAUDE.md was reconciled with the research branch and
+updated for stream 1 (`e6006ba`), and plan.md's "Where things stand" marks this stream done.
+Merging `lab-to-production` into `main` is Andy's call. It touches only `docs/`, `studio/`,
+`.prettierignore` and `CLAUDE.md`, so by the workflows' `paths:` lists it deploys nothing.
+
 ## What could go wrong, and the guard for each
 
 | Risk | Guard |
