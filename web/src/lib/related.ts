@@ -44,11 +44,18 @@
  */
 
 import {stegaClean} from '@sanity/client/stega'
+/* The `.ts` extension is deliberate, and the only one in src/. The recommendations research
+   (docs/recommendations-research/) runs this file under plain Node, whose type stripping
+   resolves no extensionless paths. Astro's tsconfig allows it (allowImportingTsExtensions). */
+import {subtree} from './genres.ts'
 
 export type RelatedTopic = {
   _id: string | null
   parent?: string | null
   parentIsTop?: boolean | null
+  /** How strongly the document matches this tag, on the tagger's anchored scale: its
+      `topicScores` entry. Only read when a rule breaks ties by tag strength. */
+  score?: number | null
 }
 
 /** The shape the ranker needs. Card fields ride along untouched. */
@@ -59,7 +66,12 @@ export type RelatedCandidate = {
   topics?: (RelatedTopic | null)[] | null
 }
 
-export type GenreConcept = {_id: string | null; prefLabel: string | null; parent?: string | null}
+export type GenreConcept = {
+  _id: string | null
+  prefLabel: string | null
+  parent?: string | null
+  broader?: (string | null)[] | null
+}
 export type GenreTops = {_id: string | null; prefLabel: string | null}
 
 /** Which branch of the Genre tree a page's related list may draw from. */
@@ -134,7 +146,20 @@ export function genresForBranch(
   return ids
 }
 
-type Scored<T> = {item: T; shared: number; nearer: number; sibling: number}
+/**
+ * The three ratios rank; `sharedCount` is the raw number behind `shared`, for the crossing rule.
+ * `sameGenre` and `strength` break ties when a rule asks (see TIES, above rankAcross), and are
+ * 0 otherwise, which leaves the pool's newest-first order to decide.
+ */
+type Scored<T> = {
+  item: T
+  shared: number
+  nearer: number
+  sibling: number
+  sharedCount: number
+  sameGenre: number
+  strength: number
+}
 
 /**
  * Counts the three kinds of overlap between two topic sets.
@@ -151,6 +176,9 @@ function compare(mine: RelatedTopic[], theirs: RelatedTopic[]) {
   let shared = 0
   let nearer = 0
   let sibling = 0
+  /* For each shared concept, the weaker of the two documents' scores on it: how strongly BOTH
+     are about what they share. Untagged scores count nothing. */
+  let strength = 0
 
   for (const a of mine) {
     for (const b of theirs) {
@@ -158,6 +186,9 @@ function compare(mine: RelatedTopic[], theirs: RelatedTopic[]) {
 
       if (a._id === b._id) {
         shared++
+        if (typeof a.score === 'number' && typeof b.score === 'number') {
+          strength += Math.min(a.score, b.score)
+        }
         continue
       }
 
@@ -176,7 +207,54 @@ function compare(mine: RelatedTopic[], theirs: RelatedTopic[]) {
     }
   }
 
-  return {shared: shared / union, nearer: nearer / union, sibling: sibling / union}
+  return {
+    shared: shared / union,
+    nearer: nearer / union,
+    sibling: sibling / union,
+    sharedCount: shared,
+    strength,
+  }
+}
+
+/** Shared before nearer before sibling: the lexicographic order the header explains. Then,
+    only under a tie-breaking rule, same genre before strength; otherwise those are 0. */
+const byTiers = (a: Scored<unknown>, b: Scored<unknown>) =>
+  b.shared - a.shared ||
+  b.nearer - a.nearer ||
+  b.sibling - a.sibling ||
+  b.sameGenre - a.sameGenre ||
+  b.strength - a.strength
+
+/**
+ * Score every candidate against `mine`, keep those that relate on any tier, best first.
+ * The sort is stable, so candidates that tie keep the pool's newest-first order. Given `tie`,
+ * candidates of the page's own genre, then those sharing concepts more strongly, come first
+ * among those that tie on every tier.
+ */
+function scoreCandidates<T extends RelatedCandidate>(
+  mine: RelatedTopic[],
+  candidates: T[],
+  tie: {genreId: string | null} | null = null,
+) {
+  const scored: Scored<T>[] = []
+  for (const candidate of candidates) {
+    const theirs = (candidate.topics ?? []).filter(Boolean) as RelatedTopic[]
+    if (!mine.length || !theirs.length) continue
+
+    const {shared, nearer, sibling, sharedCount, strength} = compare(mine, theirs)
+    if (shared || nearer || sibling) {
+      scored.push({
+        item: candidate,
+        shared,
+        nearer,
+        sibling,
+        sharedCount,
+        sameGenre: tie && tie.genreId && candidate.genreId === tie.genreId ? 1 : 0,
+        strength: tie ? strength : 0,
+      })
+    }
+  }
+  return scored.sort(byTiers)
 }
 
 export type RankedRelated<T> = {
@@ -206,16 +284,7 @@ export function rankRelated<T extends RelatedCandidate>(
     (c) => c._id !== current._id && c.genreId && eligibleGenres.has(c.genreId),
   )
 
-  const scored: Scored<T>[] = []
-  for (const candidate of candidates) {
-    const theirs = (candidate.topics ?? []).filter(Boolean) as RelatedTopic[]
-    if (!mine.length || !theirs.length) continue
-
-    const {shared, nearer, sibling} = compare(mine, theirs)
-    if (shared || nearer || sibling) scored.push({item: candidate, shared, nearer, sibling})
-  }
-
-  scored.sort((a, b) => b.shared - a.shared || b.nearer - a.nearer || b.sibling - a.sibling)
+  const scored = scoreCandidates(mine, candidates)
 
   if (scored.length) return {items: scored.slice(0, limit).map((s) => s.item), isFallback: false}
 
@@ -223,4 +292,179 @@ export function rankRelated<T extends RelatedCandidate>(
      thinnest document, `who-kap`, has no shared tags and five sibling matches — so this is
      a guard for a newly published document with an unusual tag rather than a live path. */
   return {items: candidates.slice(0, limit), isFallback: true}
+}
+
+/*
+ * ══ CROSS-CATEGORY RANKING (2026-10-27) ═════════════════════════════════════
+ *
+ * The replacement for the branch rule above, built beside it so the pages keep building
+ * until they move over. Specified in docs/recommendations-research/plan.md → Cross-category
+ * ranking; decided by Andy on 2026-10-22.
+ *
+ * ── TWO CATEGORIES, AND THEY ARE THE GENRE SCHEME'S TWO TOP CONCEPTS ─────────
+ *
+ * Insights is everything under Document, notes included, so a note and an article can now
+ * relate where the branch rule kept them apart. Presentations is everything under
+ * Presentation. Each is a whole subtree, walked by lib/genres.ts's `subtree` to any depth.
+ * The branch rule's two-level Note walk, and its third load-bearing label, are gone with it.
+ *
+ * ── HOME FIRST, AND CROSSING ONLY ON A STRONG MATCH ──────────────────────────
+ *
+ * A page ranks its own category exactly as before. A document from the other category may
+ * then take a card only if:
+ *   - it shares a tag. "Nearer" and "sibling" never cross: crossing is for documents about
+ *     the same thing, and a neighbouring topic is not that;
+ *   - its shared ratio reaches `crossMinShared`;
+ *   - it shares at least `crossMinCount` tags. The ratio alone let ONE shared tag between two
+ *     thinly tagged documents count as strong: on the hand tags, at a ratio of 0.5, requiring
+ *     two removed 6 of 32 crossings (Andy, 2026-10-27);
+ *   - it STRICTLY outranks the home card it would replace. A tie keeps the home card, which
+ *     is what "prefer the page's own category" means;
+ *   - fewer than `crossMax` cards have crossed already.
+ * If the home category fills fewer than `limit` cards, a strong cross match fills the gap
+ * without having to displace anything.
+ *
+ * The result says how many cards crossed, because the band's heading names the categories
+ * it shows: "Related Insights & Presentations" against "Related Insights".
+ */
+
+/** The two related-content categories. Each is a Genre top concept and everything below it. */
+export type Category = 'insights' | 'presentations'
+
+const TOP_FOR: Record<Category, string> = {insights: 'Document', presentations: 'Presentation'}
+
+/** Which category a page's own document belongs to, by its Sanity type. */
+export function categoryForType(type: string): Category {
+  return type === 'presentation' ? 'presentations' : 'insights'
+}
+
+/**
+ * The genre ids in each category.
+ *
+ * The two top concepts are found by `prefLabel`, for the reason `genresForBranch` gives: the
+ * rule is stated in terms of those named concepts. A rename would silently empty a category,
+ * so it THROWS instead.
+ */
+export function genresByCategory(
+  tops: (GenreTops | null)[] | null | undefined,
+  concepts: (GenreConcept | null)[] | null | undefined,
+): Record<Category, Set<string>> {
+  const allTops = (tops ?? []).filter(Boolean) as GenreTops[]
+  const all = (concepts ?? []).filter(Boolean) as GenreConcept[]
+
+  /* stegaClean: preview encodes this label — see STEGA AND LOGIC in sanity/load-query.ts. */
+  const topId = (label: string) => allTops.find((t) => stegaClean(t.prefLabel) === label)?._id
+
+  const result = {} as Record<Category, Set<string>>
+  for (const category of Object.keys(TOP_FOR) as Category[]) {
+    const id = topId(TOP_FOR[category])
+    if (!id) {
+      throw new Error(
+        `[related] the Genre scheme has no "${TOP_FOR[category]}" top concept. Related-content ` +
+          'categories are the subtrees of the two top concepts, found by prefLabel — see ' +
+          'genresByCategory.',
+      )
+    }
+    result[category] = subtree(all, id)
+  }
+  return result
+}
+
+/** How readily a page's list crosses into the other category. */
+export type CrossRule = {crossMinShared: number; crossMinCount: number; crossMax: number}
+
+/**
+ * The crossing rule both detail pages use. PROVISIONAL (Andy, 2026-10-27).
+ *
+ * The hand tags could not calibrate it: with 2–4 tags a document the ratio takes few values,
+ * and crossing fell from 32 pages to 2 between 0.50 and 0.67. It is set properly on the
+ * research's tag set v0, with up to six tags a document. The default is a value that crosses
+ * on about as many pages as the embeddings baseline does (19 of 73), so the comparison
+ * measures the vocabulary rather than how loose the bar is. See
+ * docs/recommendations-research/plan.md → Open questions.
+ */
+export const CROSS_RULE: CrossRule = {crossMinShared: 0.5, crossMinCount: 2, crossMax: 1}
+
+/*
+ * ── TIES: GENRE, THEN TAG STRENGTH, BEFORE DATE (research, 2026-11-06) ───────
+ *
+ * Candidates that tie on every tier keep the pool's order, which is newest first. Andy's
+ * objection: recency is arbitrary as an ordering, and it shuts out older pieces that are just
+ * as relevant. On the research's v3 tags it decides a lot: reversing the date order changes 24
+ * of 73 lists.
+ *
+ * `tieBreak: 'genre-strength'` puts two things ahead of the date:
+ *   - SAME GENRE: a case study before a talk on a case study's page. In M3.3 Andy kept the
+ *     case-study neighbors whenever a cross card displaced one.
+ *   - TAG STRENGTH: for each shared concept, the weaker of the two documents' scores on it,
+ *     summed. Two pieces strongly about what they share outrank two that brush it. It reads
+ *     only the scores of each document's own tags, which promotion stores as `topicScores`
+ *     anyway, so it adds no queries and no new data.
+ * The date still decides what neither separates, and orders the fallback within a genre.
+ *
+ * Measured against Andy's M3.3 picks, it moved 3 lists closer to them and none further. That
+ * is a proxy; M3.4 is the test. Absent, the default, ranking is exactly as before.
+ */
+export type RankRule = CrossRule & {tieBreak?: 'genre-strength'}
+
+export type RankedAcross<T> = RankedRelated<T> & {
+  /** How many of `items` came from the other category. 0 on a fallback. */
+  crossed: number
+}
+
+/** Rank a pool against one document: its own category first, the other on a strong match. */
+export function rankAcross<T extends RelatedCandidate>(
+  current: {
+    _id: string
+    type: string
+    genreId?: string | null
+    topics?: (RelatedTopic | null)[] | null
+  },
+  pool: T[],
+  genres: Record<Category, Set<string>>,
+  rule: RankRule,
+  limit = 3,
+): RankedAcross<T> {
+  const tie = rule.tieBreak === 'genre-strength' ? {genreId: current.genreId ?? null} : null
+  const mine = ((current.topics ?? []).filter(Boolean) as RelatedTopic[]).filter((t) => t._id)
+  const home = categoryForType(current.type)
+  const other: Category = home === 'insights' ? 'presentations' : 'insights'
+
+  /* Self is never its own related content, and a document with no genre is in no category. */
+  const inCategory = (category: Category) =>
+    pool.filter((c) => c._id !== current._id && c.genreId && genres[category].has(c.genreId))
+  const homeCandidates = inCategory(home)
+
+  const list = scoreCandidates(mine, homeCandidates, tie).slice(0, limit)
+  /* At least one shared tag whatever the rule says: nearer and sibling never cross. */
+  const strong = scoreCandidates(mine, inCategory(other), tie).filter(
+    (s) => s.sharedCount >= Math.max(1, rule.crossMinCount) && s.shared >= rule.crossMinShared,
+  )
+
+  let crossed = 0
+  for (const candidate of strong) {
+    if (crossed >= rule.crossMax) break
+    if (list.length < limit) {
+      list.push(candidate)
+    } else if (byTiers(candidate, list[list.length - 1]) < 0) {
+      list[list.length - 1] = candidate
+    } else {
+      /* `strong` is sorted best first, so if this one cannot displace, none after it can. */
+      break
+    }
+    crossed++
+    /* Stable, so a cross card that ties a home card on every tier sorts after it. */
+    list.sort(byTiers)
+  }
+
+  if (list.length) return {items: list.map((s) => s.item), isFallback: false, crossed}
+
+  /* Nothing related in either category: the newest from home, and under a tie-breaking rule the
+     page's own genre first. Stable, so the date still orders each genre. */
+  const fallback = tie
+    ? [...homeCandidates].sort(
+        (a, b) => Number(b.genreId === tie.genreId) - Number(a.genreId === tie.genreId),
+      )
+    : homeCandidates
+  return {items: fallback.slice(0, limit), isFallback: true, crossed: 0}
 }

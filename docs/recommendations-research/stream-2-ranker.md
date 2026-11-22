@@ -90,6 +90,11 @@ expect a conflict.
 1. **The test runner and its gate.** A root `pnpm test` that runs every package's tests, and a
    step in `checks.yml` beside the four code gates. Prove the gate the project's way: a run with
    one deliberate failure must turn red ("it is not known to work until it fails").
+
+   **DONE 2026-11-21** (`106ffe0`). Node's `node:test`, with two guards a test gate needs:
+   `web/scripts/require-tests.mjs` fails a run that ran no tests, and the step's
+   `timeout-minutes` stops a hang, which `--test-timeout` cannot. Proven red locally; green on
+   the runner, and not proven red there (Andy: skipped, on the strength of the local proof).
 2. **The module, ported, with unit tests.** Port `rankAcross` and its helpers from the research
    branch, with their comments. Test them on small, made-up taxonomies and pools, one rule per
    test:
@@ -102,6 +107,14 @@ expect a conflict.
    - **self-exclusion,** a document with no genre, and a concept with two parents, where only the
      first counts
    - **the tie-break,** with scores and without
+
+   **DONE 2026-11-21.** `related.ts` is the research branch's file unchanged, so
+   `git diff recommendations-research -- web/src/lib/related.ts` is empty; its stale comments
+   wait for piece 4. `related.test.ts` holds 33 tests, and each test that expects nothing to
+   cross re-runs with that rule loosened, to show the card crossing then. **The tests were
+   checked by breaking the module:** ten rules removed one at a time, each turning at least one
+   test red. The first pass caught two misses. One was a real gap, an assertion on ids alone,
+   which a fallback to the same card satisfies, now fixed. The other was a badly made break.
 3. **The golden test.** A committed fixture of the lab's 73 documents: ids, types, genres,
    pubDates and topic shapes, with no text. The test checks two sets of lists:
    - **with v5's scores,** every list must equal M3.5's v5 column, which proves the port is
