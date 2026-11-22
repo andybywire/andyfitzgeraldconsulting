@@ -98,6 +98,11 @@ third its own kickoff in the plugin's repository. Decided, so no stream reworks 
    Studio tool that counts how often each piece appears in other pieces' lists. A test runner
    arrives with it, as the first shared code to need one. Built on a branch, and merged after
    the dataset swap: until then the live site runs the old branch rule over the new tags.
+
+   **STARTED 2026-11-21, on branch `related-ranker`.** [stream-2-ranker.md](stream-2-ranker.md)
+   → Decided at the start records Andy's five answers. The one that changes this list: **the
+   Studio tool is a stream of its own**, after stream 2 merges, and is where the module becomes a
+   workspace package. The test runner is `node:test`.
 3. **The tagger: the Taxonomy Manager plugin,** at the concept, scheme and resource levels, with
    its scores in records the plugin ships, so users' document types need no extra field. Kicked
    off in the plugin's repository, with a pointer here. Until it lands, production uses the

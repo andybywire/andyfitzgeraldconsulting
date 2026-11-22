@@ -26,27 +26,49 @@ Studio governance tool. The research's code becomes something tested, robust and
   expected.
 - **Merged after stream 1.** Until then the live site keeps the old rule, over the new tags.
 
-## Decisions to make at the start
+## Decided at the start (Andy, 2026-11-21)
 
-1. **Where the module lives.** The project's rule is that a second consumer triggers promotion.
-   - **In `web/src/lib/related.ts`** while the site is its only consumer, then promoted to a
-     workspace package (`packages/related`, say) when the Studio tool arrives as the second.
-   - **As a package from the start,** if the Studio tool is certainly in this stream.
+Each was put to Andy with a recommendation, and he took all five. The branch is
+**`related-ranker`**.
 
-   Recommendation: start in `web/`, and promote in the piece that builds the Studio tool.
-   That's a component boundary, so it's Andy's call.
-2. **The test runner.** Recommendation: **Node's own `node:test`.** It needs no dependency, runs
-   the module's TypeScript directly under type stripping as the research already did, and fits
-   the project's hand-built, few-dependencies habit. Vitest is the usual alternative, with watch
-   mode and nicer output, at the cost of a dependency tree and a lockfile change.
-3. **The old rule's research scripts.** `measure.mjs`, `m3.mjs` and `cross-dryrun.mjs` import
-   `rankRelated`, `branchForType` and `genresForBranch`, which removing the old rule deletes.
-   Either keep a frozen copy in `docs/recommendations-research/` so the M1, M2 and first M3
-   reports stay reproducible, or accept that those closed-research scripts stop running. A
-   frozen copy is about 60 lines: the old rule is `rankAcross` with the eligible genres as the
-   home set and crossing off.
-4. **Whether the Studio tool is in this stream.** It is the second consumer, and the reason for
-   a shared module at all. It could also be a stream of its own.
+0. **The branch is cut from `lab-to-production`**, which had not merged into `main` when stream 2
+   started. Stream 1 was finished on it, and this file and plan.md, which stream 2 updates as it
+   goes, existed only there. If `lab-to-production` is squash-merged, `related-ranker` is rebased
+   onto `main` afterwards.
+1. **The module starts in `web/src/lib/related.ts`**, and moves to a workspace package when the
+   Studio tool arrives as its second consumer. Two things that move will touch:
+   - **The research scripts import it by a fixed path,** `../../web/src/lib/related.ts`. That
+     includes `taxonomy-columns.mjs` and `m3-report.mjs`, which use the NEW rule, so promotion
+     breaks them as well as the old rule's three.
+   - **`genresByCategory` imports `stegaClean`** from `@sanity/client` to match genre labels.
+     A package would want the site to clean the labels it passes in, so the package depends on
+     nothing.
+2. **The test runner is Node's own `node:test`.** Checked on Node 24.19 before deciding:
+   `node --test` runs `*.test.ts` directly under type stripping, its snapshots work unflagged, and
+   `--watch` exists, so Vitest's watch-mode advantage is smaller than it looked. Tests under
+   `web/src` are also type-checked by `astro check`, whose tsconfig includes everything, with
+   `@types/node` already a dependency. No dependency and no lockfile change.
+3. **The old rule's research scripts stop running,** and each one's header, and plan.md, records
+   the last commit at which they still run. That is how the 11ty build is kept, at `06cd8e5`.
+   `measure.mjs`, `m3.mjs` and `cross-dryrun.mjs` import `rankRelated`, `branchForType` and
+   `genresForBranch`, which removing the old rule deletes. A frozen copy of the old rule was the
+   alternative, and it would have bought less than it looked:
+   - **`corpus.json` is the lab's, fetched 2026-11-06,** while the M1/M2 report was made from
+     `production-26` on 2026-10-21. `measure.mjs` already cannot regenerate those numbers; run
+     today, it writes a `report-m1-m2.recommendations-lab.md` beside them.
+   - **`m3.mjs` queries the lab's embeddings live,** so it was never reproducible from the
+     repository alone.
+
+   A checkout of the recorded commit recovers everything still recoverable.
+4. **The Studio tool is a stream of its own,** after this one merges. The merge is what reaches
+   the six pages falling back to "Recent", and the tool should not hold it. The tool is a new
+   Studio surface with its own seams — what it counts, where it sits, a pane or a document view —
+   that want their own kickoff, and it is where the module is promoted. Until then the module
+   stays ready to share: pure functions, no Astro imports.
+5. **Development runs against the lab throughout,** not only "until stream 1's swap", which has
+   happened. The lab was identical to production at the switch, and the golden test's fixture
+   comes from it. **Andy's go-ahead is asked for at verification only:** the site build against
+   `production-26`, the first push (which runs `checks.yml`'s build), and the preview rehearsal.
 
 ## The sources
 
@@ -86,17 +108,20 @@ expect a conflict.
      faithful to what Andy judged
    - **without scores,** the lists that will ship. Snapshot them once, and have Andy look at the
      pages that differ from v5, the small variation he accepted.
-4. **The wiring.** Apply the stash onto a branch from `main`, resolve the conflict, and add
+4. **The wiring.** Apply the stash onto `related-ranker`, resolve the conflict, and add
    `genreId` and the tie-break. `RelatedBand` gets the new labels and links each card to its own
    collection. Rewrite `CROSS_RULE`'s comment, since its values (0.5, 2, 1) are already the
-   relaxed rule. Develop against the lab with `PUBLIC_SANITY_DATASET=recommendations-lab` until
-   stream 1's swap.
+   relaxed rule. Develop against the lab with `PUBLIC_SANITY_DATASET=recommendations-lab`
+   (decision 5). The stash is `stash@{0}` in the stack every checkout shares, so apply it by its
+   SHA, `7923b1c6`, and never pop it.
 5. **Remove the old rule:** `rankRelated`, `branchForType`, `genresForBranch` and the `parent`
    projection the branch rule used, with the scripts handled as decided above.
-6. **The Studio tool, if it's in this stream:** a pane listing every tagged piece, with how many
-   other pieces' lists it appears in, and which. It runs the shared module over one GROQ pool
-   query in the Studio. This is where the module moves to a package, as its second consumer.
-7. **Merge, after the swap.** Verify, then hand Andy the eyeball steps.
+6. ~~**The Studio tool, if it's in this stream**~~ **A stream of its own** (decision 4): a pane
+   listing every tagged piece, with how many other pieces' lists it appears in, and which. It
+   runs the shared module over one GROQ pool query in the Studio. This is where the module moves
+   to a package, as its second consumer.
+7. **Merge.** Stream 1's swap is done (2026-11-21), so nothing waits on it. Verify, then hand
+   Andy the eyeball steps.
 
 ## Verification
 

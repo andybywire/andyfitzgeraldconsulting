@@ -127,6 +127,7 @@ the old `web/`, and so were a January 2024 `production` dataset export and the o
 pnpm --filter web dev        # Astro dev server
 pnpm --filter studio dev     # Sanity Studio on the production-26 dataset, :3030
 pnpm typegen                 # regenerate web/sanity.types.ts — after any schema or query change
+pnpm test                    # unit tests, node:test, every package — no build or dataset needed
 pnpm parity                  # render-every-document check — after `pnpm --filter web build`
 pnpm links                   # link check over the build — after `pnpm --filter web build`
 pnpm validate                # HTML validation over the build — needs Java 11+ (Temurin 21 here)
@@ -138,8 +139,10 @@ pnpm format                  # Prettier, repo-wide — fixes what the Prettier c
 
 The code checks in `.github/workflows/checks.yml` run on every branch push, and each one runs
 locally as it does in CI: `pnpm typegen` then `git diff --exit-code web/sanity.types.ts`,
-`pnpm --filter web check`, `pnpm --filter studio typecheck`, `pnpm exec prettier --check .`.
-On a branch it also builds the site and runs `pnpm links`, `pnpm validate`, `pnpm budgets` and
+`pnpm --filter web check`, `pnpm --filter studio typecheck`, `pnpm test`,
+`pnpm exec prettier --check .`. **Tests are `*.test.ts` beside the module they test**, run by
+Node's own `node:test` with no dependency (2026-11-21, stream 2 of the recommendations work); a
+run that finds no test file fails rather than passing on nothing. On a branch it also builds the site and runs `pnpm links`, `pnpm validate`, `pnpm budgets` and
 `pnpm a11y`.
 
 **Java is a local dependency now**, for the HTML validator only: Temurin 21, installed with
