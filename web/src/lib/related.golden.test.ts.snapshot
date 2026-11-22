@@ -1,0 +1,578 @@
+exports[`without scores, every page’s list matches the reviewed snapshot 1`] = `
+{
+  "designing-and-implementing-semantic-data-layers": {
+    "items": [
+      "shacl-for-the-practitioner",
+      "conversations-with-robots"
+    ],
+    "isFallback": false
+  },
+  "site-updates-structure-semantics-standards": {
+    "items": [
+      "boutique-knowledge-graphs",
+      "structured-content-headless-cms",
+      "site-maps-connected-content"
+    ],
+    "isFallback": false
+  },
+  "the-calm-before-the-storm": {
+    "items": [
+      "why-shortcuts-arent-the-road",
+      "designing-and-implementing-semantic-data-layers",
+      "site-updates-structure-semantics-standards"
+    ],
+    "isFallback": true
+  },
+  "why-shortcuts-arent-the-road": {
+    "items": [
+      "keyword-extraction-nlp",
+      "structured-content-design-22",
+      "ai-supported-auto-categorization"
+    ],
+    "isFallback": false
+  },
+  "graphcon-2026-themes-takeaways": {
+    "items": [
+      "how-to-get-started-with-knowledge-graphs",
+      "conversations-with-robots",
+      "boutique-knowledge-graphs"
+    ],
+    "isFallback": false
+  },
+  "structured-content-in-product-design": {
+    "items": [
+      "structured-content-headless-cms",
+      "taxonomy-and-the-headless-cms",
+      "practical-large-scale-content-analysis"
+    ],
+    "isFallback": false
+  },
+  "ai-assisted-content-operations-in-practice": {
+    "items": [
+      "yes-and-information-architecture-in-the-age-of-artificial-intelligence",
+      "deskilling-large-language-models",
+      "knowledge-graphs-and-ia"
+    ],
+    "isFallback": false
+  },
+  "shacl-for-the-practitioner": {
+    "items": [
+      "designing-and-implementing-semantic-data-layers",
+      "sanity-studio-taxonomy-migration",
+      "site-updates-structure-semantics-standards"
+    ],
+    "isFallback": false
+  },
+  "content-review-approval-workflow-integration": {
+    "items": [
+      "sanity-everything-nyc-conference-themes-takeaways",
+      "content-modeling-in-the-age-of-flying-cars",
+      "elemeno-health-structured-content"
+    ],
+    "isFallback": false
+  },
+  "sanity-everything-nyc-conference-themes-takeaways": {
+    "items": [
+      "content-review-approval-workflow-integration",
+      "web-writing",
+      "site-updates-structure-semantics-standards"
+    ],
+    "isFallback": false
+  },
+  "ranked-lists-of-related-content-in-sanity-studio": {
+    "items": [
+      "taxonomy-management-and-use-in-sanity-studio",
+      "purpose-driven-taxonomy-design",
+      "taxonomy-for-app-makers"
+    ],
+    "isFallback": false
+  },
+  "content-modeling-in-the-age-of-flying-cars": {
+    "items": [
+      "elemeno-health-structured-content",
+      "content-review-approval-workflow-integration",
+      "structured-content-headless-cms"
+    ],
+    "isFallback": false
+  },
+  "orchestrating-the-mundane-deskilling-language-models": {
+    "items": [
+      "yes-and-information-architecture-in-the-age-of-artificial-intelligence",
+      "deskilling-large-language-models",
+      "ai-assisted-content-operations-in-practice"
+    ],
+    "isFallback": false
+  },
+  "taxonomy-management-and-use-in-sanity-studio": {
+    "items": [
+      "ranked-lists-of-related-content-in-sanity-studio",
+      "sanity-studio-taxonomy-migration",
+      "taxonomy-for-app-makers"
+    ],
+    "isFallback": false
+  },
+  "designing-content-authoring-experiences": {
+    "items": [
+      "taxonomy-and-the-headless-cms",
+      "structured-content-headless-cms",
+      "elemeno-health-structured-content"
+    ],
+    "isFallback": false
+  },
+  "ai-supported-auto-categorization": {
+    "items": [
+      "purpose-driven-taxonomy-design",
+      "keyword-extraction-nlp",
+      "sanity-studio-taxonomy-migration"
+    ],
+    "isFallback": false
+  },
+  "sanity-studio-taxonomy-migration": {
+    "items": [
+      "ranked-lists-of-related-content-in-sanity-studio",
+      "site-updates-structure-semantics-standards",
+      "self-hosting-sanity-studio"
+    ],
+    "isFallback": false
+  },
+  "purpose-driven-taxonomy-design": {
+    "items": [
+      "ranked-lists-of-related-content-in-sanity-studio",
+      "ai-supported-auto-categorization",
+      "what-is-information-architecture"
+    ],
+    "isFallback": false
+  },
+  "ai-taxonomy-term-generation": {
+    "items": [
+      "taxonomy-boot-camp-2024-themes-takeaways",
+      "purpose-driven-taxonomy-design",
+      "ai-supported-auto-categorization"
+    ],
+    "isFallback": false
+  },
+  "taxonomy-boot-camp-2024-themes-takeaways": {
+    "items": [
+      "ai-taxonomy-term-generation",
+      "taxonomy-boot-camp-2022-themes-takeaways",
+      "purpose-driven-taxonomy-design"
+    ],
+    "isFallback": false
+  },
+  "deskilling-large-language-models": {
+    "items": [
+      "yes-and-information-architecture-in-the-age-of-artificial-intelligence",
+      "ai-supported-auto-categorization",
+      "ai-taxonomy-term-generation"
+    ],
+    "isFallback": false
+  },
+  "yes-and-information-architecture-in-the-age-of-artificial-intelligence": {
+    "items": [
+      "deskilling-large-language-models",
+      "ai-assisted-content-operations-in-practice",
+      "orchestrating-the-mundane-deskilling-language-models"
+    ],
+    "isFallback": false
+  },
+  "elemeno-health-structured-content": {
+    "items": [
+      "structured-content-in-product-design",
+      "structured-content-headless-cms",
+      "content-modeling-in-the-age-of-flying-cars"
+    ],
+    "isFallback": false
+  },
+  "beyond-the-page-with-structured-content": {
+    "items": [
+      "conversations-with-robots-voice-ai-structured-content",
+      "site-maps-connected-content",
+      "browsability-with-dan-brown"
+    ],
+    "isFallback": false
+  },
+  "domain-modeling-for-digital-information-designers": {
+    "items": [
+      "domain-modeling",
+      "taxonomy-management-and-use-in-sanity-studio",
+      "information-architecture-for-digital-content"
+    ],
+    "isFallback": false
+  },
+  "knowledge-graphs-and-ia": {
+    "items": [
+      "browsability-with-dan-brown",
+      "how-to-get-started-with-knowledge-graphs",
+      "ai-assisted-content-operations-in-practice"
+    ],
+    "isFallback": false
+  },
+  "taxonomy-boot-camp-2022-themes-takeaways": {
+    "items": [
+      "uw-medicine",
+      "taxonomy-and-the-headless-cms",
+      "boutique-knowledge-graphs"
+    ],
+    "isFallback": false
+  },
+  "structured-content-headless-cms": {
+    "items": [
+      "structured-content-in-product-design",
+      "elemeno-health-structured-content",
+      "site-updates-structure-semantics-standards"
+    ],
+    "isFallback": false
+  },
+  "how-to-get-started-with-knowledge-graphs": {
+    "items": [
+      "graphcon-2026-themes-takeaways",
+      "knowledge-graphs-and-ia",
+      "boutique-knowledge-graphs-building-smart-content-at-any-scale"
+    ],
+    "isFallback": false
+  },
+  "improv-consulting-yes-and-experts-improvise-solutions-to-real-problems": {
+    "items": [
+      "how-to-get-started-with-knowledge-graphs",
+      "practical-large-scale-content-analysis"
+    ],
+    "isFallback": false
+  },
+  "boutique-knowledge-graphs-building-smart-content-at-any-scale": {
+    "items": [
+      "conversations-with-robots",
+      "conversations-with-robots-voice-ai-structured-content",
+      "beyond-the-page-with-structured-content"
+    ],
+    "isFallback": false
+  },
+  "domain-modeling": {
+    "items": [
+      "structured-content-design-22",
+      "domain-modeling-for-digital-information-designers",
+      "structured-content-headless-cms"
+    ],
+    "isFallback": false
+  },
+  "boutique-knowledge-graphs": {
+    "items": [
+      "site-updates-structure-semantics-standards",
+      "structured-content-headless-cms",
+      "conversations-with-robots"
+    ],
+    "isFallback": false
+  },
+  "structured-content-design-22": {
+    "items": [
+      "domain-modeling",
+      "structured-content-headless-cms",
+      "structured-content-design"
+    ],
+    "isFallback": false
+  },
+  "self-hosting-sanity-studio": {
+    "items": [
+      "sanity-studio-taxonomy-migration",
+      "web-writing",
+      "sanity-everything-nyc-conference-themes-takeaways"
+    ],
+    "isFallback": false
+  },
+  "taxonomy-and-the-headless-cms": {
+    "items": [
+      "designing-content-authoring-experiences",
+      "structured-content-in-product-design",
+      "taxonomy-for-app-makers"
+    ],
+    "isFallback": false
+  },
+  "browsability-with-dan-brown": {
+    "items": [
+      "knowledge-graphs-and-ia",
+      "conversations-with-robots-voice-ai-structured-content",
+      "beyond-the-page-with-structured-content"
+    ],
+    "isFallback": false
+  },
+  "who-ntd": {
+    "items": [
+      "structured-content-design",
+      "delivering-ia",
+      "when-to-use-an-ia"
+    ],
+    "isFallback": false
+  },
+  "ia-the-current-and-the-future": {
+    "items": [
+      "prototyping-information-architecture",
+      "desiring-ecologies",
+      "responsive-information-architectures"
+    ],
+    "isFallback": false
+  },
+  "choosing-card-sorting-topics": {
+    "items": [
+      "ai-supported-auto-categorization",
+      "purpose-driven-taxonomy-design",
+      "taxonomy-boot-camp-2024-themes-takeaways"
+    ],
+    "isFallback": false
+  },
+  "uw-medicine": {
+    "items": [
+      "taxonomy-boot-camp-2022-themes-takeaways",
+      "information-architecture-for-digital-content",
+      "boutique-knowledge-graphs"
+    ],
+    "isFallback": false
+  },
+  "who-kap": {
+    "items": [
+      "structured-content-design",
+      "choosing-card-sorting-topics"
+    ],
+    "isFallback": false
+  },
+  "information-architecture-for-digital-content": {
+    "items": [
+      "site-maps-connected-content",
+      "structured-content-in-product-design",
+      "beyond-the-page-with-structured-content"
+    ],
+    "isFallback": false
+  },
+  "delivering-ia": {
+    "items": [
+      "the-trouble-with-systems",
+      "who-ntd",
+      "seattle-childrens"
+    ],
+    "isFallback": false
+  },
+  "web-writing": {
+    "items": [
+      "sanity-everything-nyc-conference-themes-takeaways",
+      "site-updates-structure-semantics-standards",
+      "boutique-knowledge-graphs"
+    ],
+    "isFallback": false
+  },
+  "keyword-extraction-nlp": {
+    "items": [
+      "why-shortcuts-arent-the-road",
+      "ai-supported-auto-categorization",
+      "ai-taxonomy-term-generation"
+    ],
+    "isFallback": false
+  },
+  "unexpected-path-different-backgrounds-to-ux": {
+    "items": [
+      "taxonomy-for-experience-designers",
+      "design-for-difference",
+      "information-design"
+    ],
+    "isFallback": false
+  },
+  "how-to-hire-an-ia": {
+    "items": [
+      "working-with-an-ia",
+      "language-meaning-user-experience-architecture",
+      "the-trouble-with-systems"
+    ],
+    "isFallback": false
+  },
+  "working-with-an-ia": {
+    "items": [
+      "how-to-hire-an-ia",
+      "what-is-information-architecture",
+      "language-meaning-user-experience-architecture"
+    ],
+    "isFallback": false
+  },
+  "when-to-use-an-ia": {
+    "items": [
+      "site-maps-connected-content",
+      "what-is-information-architecture",
+      "who-ntd"
+    ],
+    "isFallback": false
+  },
+  "what-is-information-architecture": {
+    "items": [
+      "when-to-use-an-ia",
+      "working-with-an-ia",
+      "site-maps-connected-content"
+    ],
+    "isFallback": false
+  },
+  "conversations-with-robots": {
+    "items": [
+      "boutique-knowledge-graphs-building-smart-content-at-any-scale",
+      "boutique-knowledge-graphs",
+      "site-updates-structure-semantics-standards"
+    ],
+    "isFallback": false
+  },
+  "conversations-with-robots-voice-ai-structured-content": {
+    "items": [
+      "beyond-the-page-with-structured-content",
+      "browsability-with-dan-brown",
+      "boutique-knowledge-graphs-building-smart-content-at-any-scale"
+    ],
+    "isFallback": false
+  },
+  "practical-large-scale-content-analysis": {
+    "items": [
+      "structured-content-in-product-design",
+      "beyond-the-page-with-structured-content",
+      "conversations-with-robots-voice-ai-structured-content"
+    ],
+    "isFallback": false
+  },
+  "design-for-difference": {
+    "items": [
+      "information-design",
+      "design-for-the-human-scale",
+      "taxonomy-for-experience-designers"
+    ],
+    "isFallback": false
+  },
+  "structured-content-design": {
+    "items": [
+      "site-maps-connected-content",
+      "structured-content-headless-cms",
+      "domain-modeling"
+    ],
+    "isFallback": false
+  },
+  "site-maps-connected-content": {
+    "items": [
+      "beyond-the-page-with-structured-content",
+      "structured-content-design",
+      "site-updates-structure-semantics-standards"
+    ],
+    "isFallback": false
+  },
+  "prototyping-information-architecture": {
+    "items": [
+      "content-first-prototyping",
+      "ia-the-current-and-the-future",
+      "responsive-information-architectures"
+    ],
+    "isFallback": false
+  },
+  "seattle-childrens": {
+    "items": [
+      "responsive-information-architectures",
+      "delivering-ia",
+      "shoreline"
+    ],
+    "isFallback": false
+  },
+  "language-arts-for-the-lizard-brain": {
+    "items": [
+      "cognitive-science-for-designers"
+    ],
+    "isFallback": false
+  },
+  "content-first-prototyping": {
+    "items": [
+      "prototyping-information-architecture",
+      "designing-with-code",
+      "conversations-with-robots-voice-ai-structured-content"
+    ],
+    "isFallback": false
+  },
+  "design-for-the-human-scale": {
+    "items": [
+      "design-for-difference"
+    ],
+    "isFallback": false
+  },
+  "taxonomy-for-experience-designers": {
+    "items": [
+      "unexpected-path-different-backgrounds-to-ux",
+      "taxonomy-for-app-makers",
+      "design-for-difference"
+    ],
+    "isFallback": false
+  },
+  "shoreline": {
+    "items": [
+      "who-ntd",
+      "seattle-childrens",
+      "taxonomy-boot-camp-2024-themes-takeaways"
+    ],
+    "isFallback": false
+  },
+  "cognitive-science-for-designers": {
+    "items": [
+      "language-arts-for-the-lizard-brain",
+      "proust-and-the-squid"
+    ],
+    "isFallback": false
+  },
+  "proust-and-the-squid": {
+    "items": [
+      "cognitive-science-for-designers"
+    ],
+    "isFallback": false
+  },
+  "desiring-ecologies": {
+    "items": [
+      "the-trouble-with-systems",
+      "information-design",
+      "responsive-information-architectures"
+    ],
+    "isFallback": false
+  },
+  "information-design": {
+    "items": [
+      "design-for-difference",
+      "desiring-ecologies",
+      "the-trouble-with-systems"
+    ],
+    "isFallback": false
+  },
+  "responsive-information-architectures": {
+    "items": [
+      "desiring-ecologies",
+      "seattle-childrens",
+      "ia-the-current-and-the-future"
+    ],
+    "isFallback": false
+  },
+  "language-meaning-user-experience-architecture": {
+    "items": [
+      "how-to-hire-an-ia",
+      "domain-modeling",
+      "working-with-an-ia"
+    ],
+    "isFallback": false
+  },
+  "designing-with-code": {
+    "items": [
+      "content-first-prototyping",
+      "taxonomy-boot-camp-2022-themes-takeaways",
+      "uw-medicine"
+    ],
+    "isFallback": false
+  },
+  "the-trouble-with-systems": {
+    "items": [
+      "desiring-ecologies",
+      "how-to-hire-an-ia",
+      "delivering-ia"
+    ],
+    "isFallback": false
+  },
+  "taxonomy-for-app-makers": {
+    "items": [
+      "desiring-ecologies",
+      "ranked-lists-of-related-content-in-sanity-studio",
+      "taxonomy-management-and-use-in-sanity-studio"
+    ],
+    "isFallback": false
+  }
+}
+`;

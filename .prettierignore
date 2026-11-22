@@ -19,6 +19,10 @@ docs/recommendations-research/reverse-blocks.json
 docs/recommendations-research/backups/
 docs/recommendations-research/scores/
 docs/recommendations-research/tagsets/
+# The ranker's golden fixture, written by docs/recommendations-research/golden-fixture.mjs for
+# the same reason. It sits in web/ rather than docs/, so unlike the files above, a Prettier
+# failure in it would fail its own push.
+web/src/lib/related.golden.json
 
 # Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
 # .gitignore, never a nested one — so a local `prettier --check .` failed on it while CI, which

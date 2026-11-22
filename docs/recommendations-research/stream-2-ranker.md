@@ -121,6 +121,43 @@ expect a conflict.
      faithful to what Andy judged
    - **without scores,** the lists that will ship. Snapshot them once, and have Andy look at the
      pages that differ from v5, the small variation he accepted.
+
+   **DONE 2026-11-21. Andy reviewed the differences below and accepted the no-scores lists**,
+   all 12 swaps included, so the snapshot is the reviewed record of what stream 2 ships on the
+   judged corpus. Rewriting it is a new decision, to be made the same way.
+   `golden-fixture.mjs` writes `web/src/lib/related.golden.json` from `corpus.json`,
+   `tagsets/v5.json` and `m3.5.md`, reusing `topicShaper` and `withTagSet` so the pool is the one
+   M3.5 ranked. `related.golden.test.ts` holds the two checks, the second as a node:test snapshot
+   beside it. Slugs key the lists, so a failure reads.
+   - **The port is faithful:** the ported module reproduces M3.5's v5 column on all 73 pages.
+   - **The two halves guard different things,** shown by breaking the module: ignoring tag
+     strength fails only the v5 check, and ignoring genre fails both.
+   - **Without scores, 19 of 73 lists differ from v5.** 7 only reorder the same three cards
+     (`content-review-approval-workflow-integration`, `yes-and-…-artificial-intelligence`,
+     `taxonomy-boot-camp-2022-themes-takeaways`, `choosing-card-sorting-topics`, `delivering-ia`,
+     `desiring-ecologies`, `information-design`). 12 swap one card.
+   - **Measured against Andy's latest picks in M3.5, the cost is one page.** v5 shows the pick on
+     40 of 73, matching "Where things stand" in plan.md, and the no-scores lists on 39. Of the 12
+     swaps, 4 gain the pick, 5 lose it and 3 change neither:
+
+     | Page | Drops | Adds | Pick |
+     |---|---|---|---|
+     | `ai-taxonomy-term-generation` | `deskilling-large-language-models` | `ai-supported-auto-categorization` | gains |
+     | `deskilling-large-language-models` | `keyword-extraction-nlp` | `ai-supported-auto-categorization` | gains |
+     | `keyword-extraction-nlp` | `deskilling-large-language-models` | `ai-taxonomy-term-generation` | gains |
+     | `structured-content-design` | `structured-content-design-22` | `domain-modeling` | gains |
+     | `sanity-studio-taxonomy-migration` | `taxonomy-management-and-use-in-sanity-studio` | `ranked-lists-of-related-content-in-sanity-studio` | loses |
+     | `beyond-the-page-with-structured-content` | `information-architecture-for-digital-content` | `browsability-with-dan-brown` | loses |
+     | `taxonomy-and-the-headless-cms` | `taxonomy-boot-camp-2022-themes-takeaways` | `designing-content-authoring-experiences` | loses |
+     | `site-maps-connected-content` | `structured-content-headless-cms` | `site-updates-structure-semantics-standards` | loses |
+     | `responsive-information-architectures` | `the-trouble-with-systems` | `seattle-childrens` | loses |
+     | `knowledge-graphs-and-ia` | `boutique-knowledge-graphs-building-smart-content-at-any-scale` | `ai-assisted-content-operations-in-practice` | neither |
+     | `boutique-knowledge-graphs-building-smart-content-at-any-scale` | `knowledge-graphs-and-ia` | `beyond-the-page-with-structured-content` | neither |
+     | `conversations-with-robots` | `structured-content-headless-cms` | `site-updates-structure-semantics-standards` | neither |
+
+   - **Of the six pages on "Recent" since stream 1's A9,** five are in the fixture, and only *The
+     Calm Before the Storm* still falls back, as it does under v5. *Ontology Pipeline* is not
+     among the 73; the build in piece 4 shows its list.
 4. **The wiring.** Apply the stash onto `related-ranker`, resolve the conflict, and add
    `genreId` and the tie-break. `RelatedBand` gets the new labels and links each card to its own
    collection. Rewrite `CROSS_RULE`'s comment, since its values (0.5, 2, 1) are already the
