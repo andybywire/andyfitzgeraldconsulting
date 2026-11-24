@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel dev",
     "typegen": "pnpm --filter studio typegen",
+    "test": "pnpm -r --if-present test",
     "parity": "pnpm --filter web parity",
     "links": "pnpm --filter web links",
     "validate": "pnpm --filter web validate",

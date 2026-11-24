@@ -8,7 +8,11 @@ web/dist/
 web/.astro/
 studio/dist/
 studio/schema.json
-docs/recommendations-research/corpus.json
+
+# The ranker's golden fixture: JSON written by JSON.stringify in the recommendations research's
+# generator (in git history at ae73f98), and frozen since. Formatting it would only make its
+# provenance harder to check against the commit that wrote it.
+web/src/lib/related.golden.json
 
 # Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
 # .gitignore, never a nested one — so a local `prettier --check .` failed on it while CI, which

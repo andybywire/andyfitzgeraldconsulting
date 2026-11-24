@@ -1,15 +1,17 @@
 # The Astro migration
 
-The planning record of the rebuild in Astro, from phase 4 through phase 8 (2026-08-26 to
-2026-10-10). Moved here from `docs/` on 2026-10-10, once every phase was closed. CLAUDE.md's
-*Phase sequence* is the summary; these are the working documents behind it.
+The planning record of the rebuild in Astro, from phase 0 through phase 8 (2026-08-17 to
+2026-10-10). The kickoffs moved here from `docs/` on 2026-10-10, once every phase was closed.
+[phase-history.md](phase-history.md) is the phase sequence CLAUDE.md carried while the work ran,
+moved here verbatim on 2026-11-24; CLAUDE.md now keeps only what still governs, under *Where the
+rebuild left things*. The kickoffs are the working documents behind both.
 
 **Read them as records, not instructions.** Each kickoff was written as the prompt that started a
 session, so most are in the imperative: read this first, do not write code yet, decide that. They
 record what was planned, what was measured and what was found on the way. What is current is
 CLAUDE.md, DESIGN.md, and the code.
 
-Phases 0–3 and 7 had no kickoff documents. CLAUDE.md is their record.
+Phases 0–3 and 7 had no kickoff documents. [phase-history.md](phase-history.md) is their record.
 
 ## Phase 4 — page types
 
