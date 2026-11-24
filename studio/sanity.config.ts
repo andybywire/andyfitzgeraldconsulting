@@ -80,9 +80,13 @@ const previewUrlFor = (studioOrigin: string) =>
 /**
  * ── THE LAB DATASET: ONE ENV VAR, SET BY ONE SCRIPT ───────────────────────────────────────
  *
- * `recommendations-lab` is where the recommendations research retags content and restructures the
- * taxonomy without touching the live site (docs/recommendations-research/plan.md). Andy works in
- * it through `pnpm --filter studio dev:lab`, which sets SANITY_STUDIO_DATASET and nothing else does.
+ * `recommendations-lab` is where the recommendations research retagged content and restructured
+ * the taxonomy without touching the live site (docs/recommendations/). Andy works in it through
+ * `pnpm --filter studio dev:lab`, which sets SANITY_STUDIO_DATASET and nothing else does.
+ *
+ * It stays for now, but it is NOT where the Taxonomy Manager's assisted tagging gets tested
+ * (Andy, 2026-11-24): that happens in the plugin's own dev Studio, so the two projects stop
+ * depending on each other. When nothing here needs the lab, this switch and `dev:lab` can go.
  *
  * The comment above rejects an env var for the preview URL because one that leaked into
  * `sanity deploy` would ship a broken Studio. This one carries the same risk, and is accepted

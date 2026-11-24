@@ -177,9 +177,9 @@ sits *below* `card sorting` at 4. The distributions overlap completely.
 
 **So termhood is an editorial judgement here, not an inference.** Every term in
 `bodyTerms` is one somebody put in a concept scheme. Discovery still runs — as
-`web/scripts/phrase-candidates.mjs`, by hand, writing
-[phrase-candidates.md](phrase-candidates.md) — but it proposes to a person and never to
-the index.
+`web/scripts/phrase-candidates.mjs`, by hand, writing `phrase-candidates.md` beside this
+file — but it proposes to a person and never to the index. Its last batch was folded into the
+Topic scheme and the file removed on 2026-11-24.
 
 This is the SKOS parallel above running in the other direction. There, TF-IDF behaves
 *like* a vocabulary by accident. Here the vocabulary does a job the statistics measurably

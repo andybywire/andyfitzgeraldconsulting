@@ -188,7 +188,7 @@ jobs:
       # ── UNIT TESTS: node:test, EVERY PACKAGE THAT HAS A `test` SCRIPT ──────
       #
       # Added 2026-11-21 with the related-content ranker, the first shared code to
-      # need tests (docs/recommendations-research/stream-2-ranker.md). Node's own
+      # need tests (docs/recommendations/stream-2-ranker.md). Node's own
       # runner, so no dependency: it runs the TypeScript directly under type
       # stripping. The root script runs `test` in every package that defines one,
       # which today is web/ only.

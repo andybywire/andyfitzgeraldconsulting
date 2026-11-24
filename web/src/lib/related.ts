@@ -44,9 +44,9 @@
  */
 
 import {stegaClean} from '@sanity/client/stega'
-/* The `.ts` extension is deliberate, and the only one in src/ outside the tests. The tests and
-   the recommendations research (docs/recommendations-research/) run this file under plain
-   Node, whose type stripping resolves no extensionless paths. Astro's tsconfig allows it
+/* The `.ts` extension is deliberate, and the only one in src/ outside the tests. The tests run
+   this file under plain Node, as the recommendations research's scripts did, and Node's type
+   stripping resolves no extensionless paths. Astro's tsconfig allows it
    (allowImportingTsExtensions). */
 import {subtree} from './genres.ts'
 
@@ -188,8 +188,9 @@ function scoreCandidates<T extends RelatedCandidate>(
 /*
  * ══ CROSS-CATEGORY RANKING (2026-10-27) ═════════════════════════════════════
  *
- * Both detail pages' rule since 2026-11-23. Specified in docs/recommendations-research/plan.md
- * → Cross-category ranking; decided by Andy on 2026-10-22.
+ * Both detail pages' rule since 2026-11-23, explained in docs/related-content.md. Specified in the
+ * research's plan.md → Cross-category ranking (docs/recommendations/ says where it lives); decided
+ * by Andy on 2026-10-22.
  *
  * It replaced the BRANCH RULE, which kept an article's list to articles, a note's to notes and
  * a presentation's to presentations, by three genre branches resolved from three labels. The
@@ -336,7 +337,7 @@ export type RankRule = CrossRule & {tieBreak?: 'genre-strength'}
  * Until stream 3's scores, ties break by genre, then date. That is a variation on M3.5's v5,
  * which ranked with scores: 19 of 73 lists differ, 12 by one card, and against Andy's picks it
  * shows the chosen list on 39 pages where v5 showed it on 40. Andy reviewed the 12 and
- * accepted them (2026-11-21; docs/recommendations-research/stream-2-ranker.md → piece 3).
+ * accepted them (2026-11-21; docs/recommendations/stream-2-ranker.md → piece 3).
  */
 export const RANK_RULE: RankRule = {...CROSS_RULE, tieBreak: 'genre-strength'}
 

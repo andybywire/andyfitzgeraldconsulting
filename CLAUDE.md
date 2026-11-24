@@ -375,17 +375,27 @@ second slot). It was exported first to
 `~/Archives/afc/2022-production-dataset-2026-10-22/production.tar.gz`, with drafts and assets, and
 checked against the live dataset before the delete. **The second slot now holds
 `recommendations-lab`**, a copy of `production-26` for the recommendations research, where tags are
-rewritten and the taxonomy is restructured without touching the live site.
-`docs/recommendations-research/plan.md` is the record. Run its Studio with
-`pnpm --filter studio dev:lab` on :3031. The project's one webhook is scoped to `production-26`, so
-nothing written to the lab deploys anything.
+rewritten and the taxonomy is restructured without touching the live site. The research's record
+is [docs/recommendations/](docs/recommendations/README.md), which says where its full folder went.
+Run the lab's Studio with `pnpm --filter studio dev:lab` on :3031. The project's one webhook is
+scoped to `production-26`, so nothing written to the lab deploys anything.
+
+**`dev:lab` stays for now, but the lab is not stream 3's test bed** (Andy, 2026-11-24). The
+plugin's assisted tagging is experimented with and tested in the Taxonomy Manager's own dev Studio,
+with content created or copied there, so this site and the plugin stop depending on each other.
+Its starting document moved to that repository: `docs/development/embeddings-tagging/`.
 
 **Stream 1 made the lab production** (2026-11-21). The research's revised Topic scheme and its tags
 went live by recreating `production-26` from the lab: production was archived twice, to
 `~/Archives/afc/production-26-2026-11-20/`, deleted, and created again under the same name. So the
 site's environment, the preview, the deployed Studio and the webhook needed no change.
-**`docs/recommendations-research/stream-1-data.md` is the record**, step by step. The lab stays, as
-stream 3's test dataset, and starts that stream identical to production.
+**[docs/recommendations/stream-1-data.md](docs/recommendations/stream-1-data.md) is the record**,
+step by step. The lab was identical to production at the switch.
+
+**Stream 2 rebuilt the related-content ranker** (2026-11-23): cross-category ranking from Topic
+tags, a tested module, and the old branch rule removed.
+**[docs/related-content.md](docs/related-content.md) explains it**, and
+[docs/recommendations/stream-2-ranker.md](docs/recommendations/stream-2-ranker.md) is the record.
 
 Two things moved at the switch, both expected:
 - **Every document's `_updatedAt` now reads the import time.** The feeds date their entries by
@@ -477,7 +487,8 @@ Each phase is a branch, merged back once verified — off `next` through the cut
    **The consequence for you: adding a concept is now a search change.** A multiword term is
    invisible to search until it exists in a scheme — nothing is inferred. `web/scripts/
    phrase-candidates.mjs` is the hand-run generator that proposes candidates from the corpus into
-   [docs/phrase-candidates.md](docs/phrase-candidates.md); it never feeds the build. Note also that
+   `docs/phrase-candidates.md`; it never feeds the build. Its last batch was folded into the Topic
+   scheme and the file removed (2026-11-24), so it reappears only when the script is run again. Note also that
    `keywords.ts` now carries an `ALLOW` list so `ai`, `ia`, `ui` and `ux` survive the two-character
    floor — without it a "UX Research" concept could not be represented at all.
 

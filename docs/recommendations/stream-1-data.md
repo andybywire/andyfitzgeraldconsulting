@@ -1,6 +1,6 @@
 # Stream 1: the lab becomes production
 
-*Planned 2026-11-19, from the decisions in [plan.md](plan.md) → Where things stand. The first of
+*Planned 2026-11-19, from the decisions in the research's `plan.md` → Where things stand ([where it lives now](README.md#where-the-research-lives)). The first of
 three streams; the ranker (stream 2) merges after this one, and the plugin (stream 3) after that.
 Written to be picked up cold.*
 

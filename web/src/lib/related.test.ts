@@ -2,9 +2,10 @@
  * The cross-category ranker, `rankAcross`, and the two helpers that sort pages and genres
  * into its categories.
  *
- * Each test pins ONE rule from docs/recommendations-research/plan.md → Specs → Cross-category
- * ranking, or from the comments in related.ts, so a failure names the rule that broke. The
- * golden test (stream 2, piece 3) is the other half: it pins whole lists over the real corpus.
+ * Each test pins ONE rule from docs/related-content.md → The rules, or from the comments in
+ * related.ts, so a failure names the rule that broke. The rules were first specified in the
+ * research's plan.md → Specs → Cross-category ranking. The golden test is the other half: it pins
+ * whole lists over the real corpus.
  * These pin the mechanics on a taxonomy small enough to work out by hand.
  *
  * ── THE MADE-UP TOPIC TREE ───────────────────────────────────────────────────

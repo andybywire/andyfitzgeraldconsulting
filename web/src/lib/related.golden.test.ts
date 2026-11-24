@@ -2,8 +2,8 @@
  * The golden test: the ranker over the 73 documents Andy judged in the recommendations research.
  *
  * related.test.ts pins each rule on a made-up taxonomy. This pins whole lists on the real one,
- * from related.golden.json, which docs/recommendations-research/golden-fixture.mjs wrote from
- * the lab's corpus, the v5 tag set and the M3.5 report. It reads no dataset.
+ * from related.golden.json, which the research's golden-fixture.mjs wrote from the lab's corpus,
+ * the v5 tag set and the M3.5 report; all four are in git history at ae73f98. It reads no dataset.
  *
  * ── TWO SETS OF LISTS, TWO DIFFERENT GUARDS ─────────────────────────────────
  *

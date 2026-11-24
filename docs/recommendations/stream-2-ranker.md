@@ -1,6 +1,6 @@
 # Stream 2: the ranker goes to production
 
-*Planned 2026-11-19, from the decisions in [plan.md](plan.md) → Where things stand. The second of
+*Planned 2026-11-19, from the decisions in the research's `plan.md` → Where things stand ([where it lives now](README.md#where-the-research-lives)). The second of
 three streams. Built on a branch while stream 1 runs, and merged after stream 1's dataset swap.
 Written to be picked up cold.*
 
@@ -8,7 +8,7 @@ Written to be picked up cold.*
 
 Replace the live site's related-content rule, the old branch rule, with the one the research
 settled on: cross-category ranking from Topic tags, as drawn in
-[related-algorithm.md](related-algorithm.md). It ships as **a shared, pure TypeScript module with
+[related-content.md](../related-content.md). It ships as **a shared, pure TypeScript module with
 tests** (Andy, 2026-11-19), so the same code can rank for the site's build and, later, count for a
 Studio governance tool. The research's code becomes something tested, robust and iterable.
 
@@ -78,7 +78,7 @@ Each was put to Andy with a recommendation, and he took all five. The branch is
 | Genre subtrees | `web/src/lib/genres.ts` → `subtree` |
 | The pool query: each topic's first parent and `parentIsTop` | `web/src/sanity/queries/related.ts` |
 | The page wiring, labels, and cards linking to their own collection | `git stash list`: "cross-category wiring of pages and RelatedBand, for promotion (2026-10-28)" |
-| The rules and labels, specified | [plan.md](plan.md) → Specs → Cross-category ranking |
+| The rules and labels, specified | `plan.md` → Specs → Cross-category ranking ([where it lives now](README.md#where-the-research-lives)) |
 | What each rule is for, and what was tried | the comments in `related.ts`, and plan.md's Phases 1, 3b and 3c |
 
 The stash predates the tie-break (2026-11-06), so the wiring needs the page's `genreId` and the

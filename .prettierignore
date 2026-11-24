@@ -9,19 +9,9 @@ web/.astro/
 studio/dist/
 studio/schema.json
 
-# The recommendations research scripts' output: JSON written by JSON.stringify, so formatting it
-# here would only be undone by the next run. Whole folders rather than the files that fail today,
-# since a later run's file can fail where this one passed. Note that checks.yml skips a push that
-# touches only docs/, so a file here that breaks Prettier fails the NEXT push that touches code,
-# not its own. That is how reverse-blocks.json sat unnoticed on main (2026-11-19).
-docs/recommendations-research/corpus.json
-docs/recommendations-research/reverse-blocks.json
-docs/recommendations-research/backups/
-docs/recommendations-research/scores/
-docs/recommendations-research/tagsets/
-# The ranker's golden fixture, written by docs/recommendations-research/golden-fixture.mjs for
-# the same reason. It sits in web/ rather than docs/, so unlike the files above, a Prettier
-# failure in it would fail its own push.
+# The ranker's golden fixture: JSON written by JSON.stringify in the recommendations research's
+# generator (in git history at ae73f98), and frozen since. Formatting it would only make its
+# provenance harder to check against the commit that wrote it.
 web/src/lib/related.golden.json
 
 # Written by `sanity dev`. studio/.gitignore already ignores it, but Prettier reads only the ROOT
