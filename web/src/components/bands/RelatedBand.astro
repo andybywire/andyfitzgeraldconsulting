@@ -1,12 +1,19 @@
 ---
 /**
- * The "Related Insights" band — every detail page.
+ * The "Related" band — every insight and presentation detail page.
  *
- * Ranking happens in `lib/related.ts` and eligibility in the query; this component receives
- * an ordered list and renders it. It does own one piece of logic, the heading, because that
- * is presentation: the band says *Related* when the ranker found real matches and *Recent*
- * when it fell through to the date fallback, and putting that split in the page would make
- * every future consumer restate it.
+ * Ranking happens in `lib/related.ts`; this component receives an ordered list and renders
+ * it. It does own one piece of logic, the heading, because that is presentation: the band
+ * says *Related* when the ranker found real matches and *Recent* when it fell through to the
+ * date fallback, and putting that split in the page would make every consumer restate it.
+ *
+ * ── THE HEADING NAMES WHAT THE CARDS ARE, READ OFF THE CARDS ─────────────────
+ *
+ * Since lists cross (2026-10-28), the heading names the page's own category first and the
+ * other one too when a card came from it: "Related Insights & Presentations". That is read
+ * from the cards' own `_type`s rather than from the ranker's `crossed` count, so the heading
+ * cannot name a category no card on screen belongs to. The fallback is home-only, so it
+ * always reads "Recent Insights" or "Recent Presentations".
  *
  * ── THE SAME CARDS AS THE INDEX, AT h3 ───────────────────────────────────────
  *
@@ -14,6 +21,7 @@
  * titles sit at h3 — one level below the index, where they are h2 under the page h1.
  */
 import type {SanityImageSource} from '../../sanity/image'
+import {categoryForType, type Category} from '../../lib/related'
 import Band from '../Band.astro'
 import Grid from '../Grid.astro'
 import ArticleCard from '../cards/ArticleCard.astro'
@@ -47,27 +55,43 @@ export type RelatedItem = {
   recordingKinds?: (string | null)[] | null
 }
 
+/** Each category's name in the heading, and where its documents live (no trailing slash). */
+const COLLECTIONS: Record<Category, {noun: string; path: string}> = {
+  insights: {noun: 'Insights', path: '/insights'},
+  presentations: {noun: 'Presentations', path: '/presentations'},
+}
+
 interface Props {
-  /** Plural, as it appears in the heading — "Insights", "Notes", "Presentations". */
-  noun: string
   /**
-   * Where these items live, without a trailing slash — "/insights", "/presentations".
+   * The category of the page doing the linking, which the heading names first.
    *
-   * The path used to be hardcoded, which was correct while only the insight detail page
-   * rendered this band. The presentation page is the second consumer, and its items live
-   * somewhere else. Passed rather than derived from `_type`, matching the `basePath`
-   * chain <EntryHeader>, <TopicList> and <Eyebrow> already use: the collection a link
-   * belongs to is a fact about the PAGE doing the linking, not about the row.
+   * ── A CARD'S LINK IS A FACT ABOUT THE ROW NOW, NOT THE PAGE ─────────────────
+   *
+   * This prop was `basePath`, and its comment said the opposite: the collection a link
+   * belongs to is a fact about the PAGE, matching the chain <EntryHeader>, <TopicList> and
+   * <Eyebrow> use. That held while a list drew from one collection. Once lists cross
+   * (lib/related.ts → rankAcross), an insight page can show a presentation card, and no one
+   * path is right for every card — so each card links to the collection its own document
+   * lives in, from its `_type`, and the page says only which category is home.
+   *
+   * The chain is unaffected, and the difference is real rather than drift: a topic or genre
+   * link there filters the page's OWN index, so for it the collection really is the page's.
    */
-  basePath: string
-  /** The ranker found nothing, so these are simply the most recent eligible documents. */
+  category: Category
+  /** The ranker found nothing, so these are simply the most recent documents in `category`. */
   isFallback?: boolean
   items: RelatedItem[]
 }
 
-const {noun, basePath, isFallback = false, items}: Props = Astro.props
+const {category, isFallback = false, items}: Props = Astro.props
 
-const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
+/* `_type` is optional in the item's shape only. IDENTITY projects it on every pool row. */
+const categoryOf = (item: RelatedItem) => categoryForType(item._type ?? '')
+const href = (item: RelatedItem) => `${COLLECTIONS[categoryOf(item)].path}/${item.slug}/`
+
+const crossedFrom = items.map(categoryOf).find((c) => c !== category)
+const nouns = [category, crossedFrom].flatMap((c) => (c ? [COLLECTIONS[c].noun] : [])).join(' & ')
+const heading = `${isFallback ? 'Recent' : 'Related'} ${nouns}`
 ---
 
 {
@@ -94,7 +118,7 @@ const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
                  the same wherever it appears. */
               <PresentationCard
                 as="h3"
-                href={`${basePath}/${item.slug}/`}
+                href={href(item)}
                 title={item.title ?? 'Untitled'}
                 genre={item.genre}
                 date={item.pubDate}
@@ -105,7 +129,7 @@ const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
             ) : item._type === 'note' ? (
               <NoteCard
                 as="h3"
-                href={`${basePath}/${item.slug}/`}
+                href={href(item)}
                 title={item.title ?? 'Untitled'}
                 genre={item.genre}
                 date={item.pubDate}
@@ -115,7 +139,7 @@ const heading = `${isFallback ? 'Recent' : 'Related'} ${noun}`
             ) : (
               <ArticleCard
                 as="h3"
-                href={`${basePath}/${item.slug}/`}
+                href={href(item)}
                 title={item.title ?? 'Untitled'}
                 genre={item.genre}
                 date={item.pubDate}

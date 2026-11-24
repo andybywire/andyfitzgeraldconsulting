@@ -297,9 +297,10 @@ export function rankRelated<T extends RelatedCandidate>(
 /*
  * ══ CROSS-CATEGORY RANKING (2026-10-27) ═════════════════════════════════════
  *
- * The replacement for the branch rule above, built beside it so the pages keep building
- * until they move over. Specified in docs/recommendations-research/plan.md → Cross-category
- * ranking; decided by Andy on 2026-10-22.
+ * The replacement for the branch rule above. It was built beside that rule so the pages kept
+ * building while the research ran, and both detail pages have used it since 2026-11-23; the
+ * branch rule stays only until its removal. Specified in docs/recommendations-research/plan.md
+ * → Cross-category ranking; decided by Andy on 2026-10-22.
  *
  * ── TWO CATEGORIES, AND THEY ARE THE GENRE SCHEME'S TWO TOP CONCEPTS ─────────
  *
@@ -324,8 +325,9 @@ export function rankRelated<T extends RelatedCandidate>(
  * If the home category fills fewer than `limit` cards, a strong cross match fills the gap
  * without having to displace anything.
  *
- * The result says how many cards crossed, because the band's heading names the categories
- * it shows: "Related Insights & Presentations" against "Related Insights".
+ * The result says how many cards crossed, for the research's dry runs. The band does not
+ * read it: it names its heading from the cards' own types, so "Related Insights &
+ * Presentations" cannot appear over a list that holds no presentation.
  */
 
 /** The two related-content categories. Each is a Genre top concept and everything below it. */
@@ -374,14 +376,27 @@ export function genresByCategory(
 export type CrossRule = {crossMinShared: number; crossMinCount: number; crossMax: number}
 
 /**
- * The crossing rule both detail pages use. PROVISIONAL (Andy, 2026-10-27).
+ * The crossing rule both detail pages use: at least two shared tags, a shared ratio of at
+ * least 0.5, and at most one card from the other category. RANK_RULE, below, adds the
+ * tie-break, and is what the pages pass.
  *
- * The hand tags could not calibrate it: with 2–4 tags a document the ratio takes few values,
- * and crossing fell from 32 pages to 2 between 0.50 and 0.67. It is set properly on the
- * research's tag set v0, with up to six tags a document. The default is a value that crosses
- * on about as many pages as the embeddings baseline does (19 of 73), so the comparison
- * measures the vocabulary rather than how loose the bar is. See
- * docs/recommendations-research/plan.md → Open questions.
+ * ── SETTLED BY THE RESEARCH, WHICH ARRIVED AT THESE VALUES SEPARATELY ────────
+ *
+ * They were set here on 2026-10-27 as a provisional default, and this comment called them that
+ * until stream 2 wired the pages to them (2026-11-23). The research ranked under its own rule,
+ * held fixed so that a change between columns came from the tags:
+ *   - `TAXONOMY_CROSS` (0.40, 3, 1) through v2, calibrated on tag set v0 (Andy, 2026-10-28).
+ *     By v2, 45 of 73 documents carried exactly three tags, so three shared tags had come to
+ *     mean IDENTICAL tag sets, and only 14 pages crossed.
+ *   - `TAXONOMY_CROSS_RELAXED` (0.50, 2, 1) from v3 (Andy, 2026-11-05; plan.md → Phase 3b),
+ *     which crossed on 34 pages of v2's tags. Every list Andy judged from M3.3 on was ranked
+ *     under it, and it equals these values, so nothing here moved at promotion.
+ *
+ * The ratio has a cliff just above 0.5: two of three tags shared is exactly 0.50, and at 0.60
+ * crossings fell to 9. The hand tags, with two to four a document, could not calibrate it at all.
+ *
+ * Tuning a value here changes what the golden test's snapshot records
+ * (related.golden.test.ts), which is how the change gets reviewed, page by page.
  */
 export const CROSS_RULE: CrossRule = {crossMinShared: 0.5, crossMinCount: 2, crossMax: 1}
 
@@ -398,14 +413,31 @@ export const CROSS_RULE: CrossRule = {crossMinShared: 0.5, crossMinCount: 2, cro
  *     case-study neighbors whenever a cross card displaced one.
  *   - TAG STRENGTH: for each shared concept, the weaker of the two documents' scores on it,
  *     summed. Two pieces strongly about what they share outrank two that brush it. It reads
- *     only the scores of each document's own tags, which promotion stores as `topicScores`
- *     anyway, so it adds no queries and no new data.
+ *     only the scores of each document's own tags, as `topicScores`, so it adds no queries.
+ *     Those scores arrive with the tagger in stream 3. Until then no topic carries one, and
+ *     strength adds nothing: `compare` counts it only when both documents have a score.
  * The date still decides what neither separates, and orders the fallback within a genre.
  *
- * Measured against Andy's M3.3 picks, it moved 3 lists closer to them and none further. That
- * is a proxy; M3.4 is the test. Absent, the default, ranking is exactly as before.
+ * Measured against Andy's M3.3 picks, it moved 3 lists closer to them and none further. M3.4
+ * then judged it: v4, the first tag set ranked under it, won 10 of the 16 pages where it showed
+ * something new. Absent, the pool's newest-first order breaks every tie, as it always did.
  */
 export type RankRule = CrossRule & {tieBreak?: 'genre-strength'}
+
+/**
+ * The rule both detail pages rank under: CROSS_RULE, with ties broken by genre, then tag
+ * strength, before date.
+ *
+ * ONE value for both pages, rather than each spreading its own: they are its two consumers,
+ * and a second consumer is this project's trigger for a shared value. The golden test reads it
+ * too, so its snapshot is ranked under exactly what the pages run.
+ *
+ * Until stream 3's scores, ties break by genre, then date. That is a variation on M3.5's v5,
+ * which ranked with scores: 19 of 73 lists differ, 12 by one card, and against Andy's picks it
+ * shows the chosen list on 39 pages where v5 showed it on 40. Andy reviewed the 12 and
+ * accepted them (2026-11-21; docs/recommendations-research/stream-2-ranker.md → piece 3).
+ */
+export const RANK_RULE: RankRule = {...CROSS_RULE, tieBreak: 'genre-strength'}
 
 export type RankedAcross<T> = RankedRelated<T> & {
   /** How many of `items` came from the other category. 0 on a fallback. */

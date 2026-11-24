@@ -25,6 +25,13 @@ import {DATES, IDENTITY, IMAGE} from '../fragments'
  * leaves under Evaluation are. Rather than ship the top-concept list and compare against
  * it, each topic reports whether its own parent is a top — which is true exactly when the
  * parent has no parent of its own. Self-contained, and one less thing to keep in step.
+ *
+ * ── EACH GENRE CONCEPT CARRIES ALL ITS PARENTS (`broader`) AS WELL AS THE FIRST ──
+ *
+ * The cross-category ranker (2026-10-27) sorts genres into two categories by walking the
+ * whole Genre tree with lib/genres.ts's `subtree`, which reads every `broader` ref and has
+ * no depth limit. `parent` is the first ref only and serves the older branch rule, which
+ * walks two levels. It goes once the pages have moved to the new ranker.
  */
 export const RELATED_POOL_QUERY = defineQuery(`
 	{
@@ -33,7 +40,8 @@ export const RELATED_POOL_QUERY = defineQuery(`
 			"concepts": concepts[]->{
 				_id,
 				prefLabel,
-				"parent": broader[0]._ref
+				"parent": broader[0]._ref,
+				"broader": broader[]._ref
 			}
 		},
 

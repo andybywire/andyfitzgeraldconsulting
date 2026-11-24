@@ -164,6 +164,34 @@ expect a conflict.
    relaxed rule. Develop against the lab with `PUBLIC_SANITY_DATASET=recommendations-lab`
    (decision 5). The stash is `stash@{0}` in the stack every checkout shares, so apply it by its
    SHA, `7923b1c6`, and never pop it.
+
+   **BUILT 2026-11-23 against the lab, and eyeballed by Andy the same day:** the headings, the
+   cross cards linking into their own collection, and the fallback. The stash applied
+   with no conflict: the 3-way merge absorbed `main`'s later changes to the insight page. It is
+   still in the stash stack, since `apply` leaves it there. Beside it:
+   - **`RANK_RULE`** in `related.ts`, `CROSS_RULE` plus the genre tie-break, is what both pages
+     pass and what the golden test ranks under. One value for its two consumers, the project's
+     promotion rule. `CROSS_RULE` keeps its name, so the docs that cite it stay right.
+   - **The page's `genreId`**, from its own pool row, and the research's `broader` projection on
+     genre concepts, with TypeGen re-run. `parent` stays until piece 5.
+   - **Comments rewritten** where they were stale: `CROSS_RULE`'s "PROVISIONAL", the tie-break's
+     "M3.4 is the test", and both pages' 2026-10-28 counts.
+
+   **Verified against a production build of the lab** (76 documents, 2026-11-23):
+   - **The band check passes on all 76 pages:** every built band's heading and card links equal
+     `rankAcross` under `RANK_RULE` over the lab's pool, fetched with the site's own query.
+     Re-run expecting `CROSS_RULE` without the tie-break, it flags 9 pages, so it can fail. Its
+     first run reported 33 false mismatches, all from its own parser stopping at a card's
+     nested `<ul class="card-tags">`.
+   - **Headings:** 28 "Related Insights", 18 "Related Insights & Presentations", 12 "Related
+     Presentations", 17 "Related Presentations & Insights", 1 "Recent Insights".
+   - **Of the six pages on "Recent" since stream 1's A9, five now have a related list.** Only
+     *The Calm Before the Storm* falls back, as it does under v5.
+   - The tests, `astro check`, Prettier, and the site gates over that build: links, HTML
+     validation, budgets and accessibility.
+
+   Not yet checked against `production-26`, which may have moved since the switch: that build,
+   the first push and the preview rehearsal wait for Andy's go-ahead (decision 5).
 5. **Remove the old rule:** `rankRelated`, `branchForType`, `genresForBranch` and the `parent`
    projection the branch rule used, with the scripts handled as decided above.
 6. ~~**The Studio tool, if it's in this stream**~~ **A stream of its own** (decision 4): a pane

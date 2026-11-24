@@ -56,7 +56,8 @@ import {stegaClean} from '@sanity/client/stega'
  *
  * Related Presentations IS built, as of 2026-09-11, and needed no third branch in
  * lib/related.ts — that arm already existed. It took `presentation` in the pool query
- * and a `basePath` on <RelatedBand>. The RSS band above it is built.
+ * and a `basePath` on <RelatedBand>, which became `category` on 2026-10-28 when lists
+ * began to cross. The RSS band above it is built.
  */
 import {loadQuery} from '../../sanity/load-query'
 import {
@@ -86,7 +87,7 @@ import RelatedBand from '../../components/bands/RelatedBand.astro'
 import SlideDeck from '../../components/SlideDeck.astro'
 import Recording from '../../components/Recording.astro'
 import {RELATED_POOL_QUERY} from '../../sanity/queries/related'
-import {branchForType, genresForBranch, rankRelated} from '../../lib/related'
+import {RANK_RULE, categoryForType, genresByCategory, rankAcross} from '../../lib/related'
 import {deckSize, deckUrl} from '../../sanity/file'
 import {headingLinks, type HeadingLink} from '../../components/prose/headingId'
 import {formatLocation, isoCountry} from '../../lib/location'
@@ -147,38 +148,41 @@ const deck = delivery?.deck ?? null
 const transcript = transcriptDoc?.transcript ?? null
 
 /**
- * ── RELATED PRESENTATIONS ────────────────────────────────────────────────────
+ * ── RELATED PRESENTATIONS, AND AN INSIGHT ON A STRONG MATCH ──────────────────
  *
- * The same three calls the article page makes, against the same pool. Presentations
- * relating only to presentations needs no special case: `branchForType` maps this
- * `_type` to the Presentation branch and `genresForBranch` admits only genres whose
- * parent is that top concept, so Talk, Keynote, Interview, Workshop and Panel are in and
- * every Document-branch genre is out.
+ * The same calls the insight page makes, against the same pool. A presentation ranks the
+ * Presentations category first — the whole Presentation subtree of the Genre scheme, so
+ * Talk, Keynote, Interview, Workshop and Panel — and an insight can take one card on a
+ * strong match only; RANK_RULE in lib/related.ts says how strong and how ties break.
+ * Measured on 2026-11-23 against the lab, which matched production at stream 1's switch:
+ * 17 of 29 presentation pages show one.
  *
  * This document's own topic row is taken FROM THE POOL rather than from
  * PRESENTATION_DETAIL_QUERY, which projects topics as labels for display and not in the
  * shape the ranker needs. One projection to keep in step instead of two.
  *
- * ── THE DATE FALLBACK IS A LIVE PATH HERE, WHICH IT IS NOT ON AN ARTICLE ─────
+ * ── THE DATE FALLBACK: AN UNTAGGED PRESENTATION ──────────────────────────────
  *
- * `lib/related.ts` records that nothing in the corpus ever fails to score. That was
- * measured on insights. `rankRelated` skips any candidate with an empty topic set, so a
- * presentation carrying NO topics scores nothing against anything and falls through to
- * the most recent eligible rows under a "Recent Presentations" heading. Two of nine
- * presentations are in that state today.
+ * The ranker skips any candidate with an empty topic set, so a presentation carrying NO
+ * topics scores nothing against anything, in either category, and falls through to the
+ * most recent presentations under a "Recent Presentations" heading. No presentation is in
+ * that state on 2026-11-23: stream 1 gave every judged document at least one tag. Two were
+ * on 2026-10-28, `knowledge-graphs-and-ia` and `information-design`, and a presentation
+ * published without topics would be again.
  *
  * Left as it is rather than special-cased: the fallback is the designed behaviour and a
- * page with no way forward would be worse. The real fix is content — those documents
- * want topics, which would also put them into the index's facets, where they are
- * currently just as invisible.
+ * page with no way forward would be worse. The real fix is content — such a document
+ * wants topics, which would also put it into the index's facets, where it is otherwise
+ * just as invisible.
  */
-const branch = branchForType(presentation._type)
-const eligibleGenres = genresForBranch(branch, related.genres?.tops, related.genres?.concepts)
+const category = categoryForType(presentation._type)
+const categories = genresByCategory(related.genres?.tops, related.genres?.concepts)
 const self = related.pool.find((row) => row._id === presentation._id)
-const {items: relatedItems, isFallback} = rankRelated(
-  {_id: presentation._id, topics: self?.topics},
+const {items: relatedItems, isFallback} = rankAcross(
+  {_id: presentation._id, type: presentation._type, genreId: self?.genreId, topics: self?.topics},
   related.pool,
-  eligibleGenres,
+  categories,
+  RANK_RULE,
 )
 
 /**
@@ -715,12 +719,7 @@ const jsonLd = [
     }
     {
       relatedItems.length > 0 && (
-        <RelatedBand
-          noun="Presentations"
-          basePath="/presentations"
-          isFallback={isFallback}
-          items={relatedItems}
-        />
+        <RelatedBand category={category} isFallback={isFallback} items={relatedItems} />
       )
     }
   </main>

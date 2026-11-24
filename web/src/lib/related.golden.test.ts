@@ -11,7 +11,7 @@
  *   column is what Andy judged, so this is the proof that the module the site runs is the
  *   ranker the research measured. A failure here means the port drifted.
  *
- *   WITHOUT SCORES, under the shipping rule — CROSS_RULE, ties by genre — the lists are what
+ *   WITHOUT SCORES, under RANK_RULE, the rule the pages pass, the lists are what
  *   stream 2 ships until the tagger's scores arrive in stream 3. They are a node:test
  *   SNAPSHOT, related.golden.test.ts.snapshot, recorded once and reviewed by Andy against v5.
  *   A failure here means the shipped lists changed: deliberate, after a review, if the rule or
@@ -35,7 +35,7 @@ import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {test} from 'node:test'
 import {
-  CROSS_RULE,
+  RANK_RULE,
   genresByCategory,
   rankAcross,
   type GenreConcept,
@@ -84,9 +84,6 @@ const withoutScores = fixture.pool.map((doc) => ({
   topics: doc.topics.map(({score: _score, ...topic}) => topic),
 }))
 
-/** The rule the pages run. CROSS_RULE carries no tie-break of its own; the pages add it. */
-const SHIPPING_RULE: RankRule = {...CROSS_RULE, tieBreak: 'genre-strength'}
-
 test('the fixture holds the 73 judged documents, and a v5 list for each', () => {
   assert.equal(fixture.pool.length, 73)
   assert.deepEqual(Object.keys(fixture.v5).sort(), fixture.pool.map((d) => d.slug).sort())
@@ -97,5 +94,5 @@ test('with v5’s scores, every page’s list equals M3.5’s v5 column', () => 
 })
 
 test('without scores, every page’s list matches the reviewed snapshot', (t) => {
-  t.assert.snapshot(listsFor(withoutScores, SHIPPING_RULE))
+  t.assert.snapshot(listsFor(withoutScores, RANK_RULE))
 })
