@@ -44,9 +44,10 @@
  */
 
 import {stegaClean} from '@sanity/client/stega'
-/* The `.ts` extension is deliberate, and the only one in src/. The recommendations research
-   (docs/recommendations-research/) runs this file under plain Node, whose type stripping
-   resolves no extensionless paths. Astro's tsconfig allows it (allowImportingTsExtensions). */
+/* The `.ts` extension is deliberate, and the only one in src/ outside the tests. The tests and
+   the recommendations research (docs/recommendations-research/) run this file under plain
+   Node, whose type stripping resolves no extensionless paths. Astro's tsconfig allows it
+   (allowImportingTsExtensions). */
 import {subtree} from './genres.ts'
 
 export type RelatedTopic = {
@@ -69,82 +70,9 @@ export type RelatedCandidate = {
 export type GenreConcept = {
   _id: string | null
   prefLabel: string | null
-  parent?: string | null
   broader?: (string | null)[] | null
 }
 export type GenreTops = {_id: string | null; prefLabel: string | null}
-
-/** Which branch of the Genre tree a page's related list may draw from. */
-export type Branch = 'document' | 'note' | 'presentation'
-
-/**
- * The Sanity type a page is built from decides its branch. Genre then does the filtering,
- * and it is not redundant with the type: four documents stored as `article` carry a
- * Presentation genre (they are interviews awaiting the `presentation` type), and genre is
- * what keeps them out of an article's related list.
- */
-export function branchForType(type: string): Branch {
-  if (type === 'note') return 'note'
-  if (type === 'presentation') return 'presentation'
-  return 'document'
-}
-
-/**
- * The genre ids eligible for a branch.
- *
- * ── THE ONE PLACE A LABEL IS LOAD-BEARING ────────────────────────────────────
- *
- * "Document", "Presentation" and "Note" are matched by `prefLabel`, because the rule itself
- * is stated in terms of those named concepts and the tree offers nothing else to key on —
- * "the Document child that happens to have children" would identify Note today and break
- * the day Case Study gains a narrower concept.
- *
- * So renaming one of those three in the Genre scheme silently empties a pool, and the page
- * would fall back to "Recent" everywhere while looking entirely plausible. It THROWS
- * instead: a build that cannot resolve the vocabulary should fail, not quietly degrade.
- */
-export function genresForBranch(
-  branch: Branch,
-  tops: (GenreTops | null)[] | null | undefined,
-  concepts: (GenreConcept | null)[] | null | undefined,
-): Set<string> {
-  const allTops = (tops ?? []).filter(Boolean) as GenreTops[]
-  const all = (concepts ?? []).filter(Boolean) as GenreConcept[]
-
-  /* stegaClean: preview encodes this label — see STEGA AND LOGIC in sanity/load-query.ts. */
-  const topId = (label: string) => allTops.find((t) => stegaClean(t.prefLabel) === label)?._id
-  const conceptId = (label: string) => all.find((c) => stegaClean(c.prefLabel) === label)?._id
-
-  const documentId = topId('Document')
-  const presentationId = topId('Presentation')
-  const noteId = conceptId('Note')
-
-  if (!documentId || !presentationId || !noteId) {
-    throw new Error(
-      '[related] the Genre scheme is missing one of "Document", "Presentation" or "Note". ' +
-        'Related-content pools are derived from those three concepts by prefLabel — see ' +
-        'genresForBranch. Renaming one requires updating this function.',
-    )
-  }
-
-  /* The Note subtree is Note plus anything whose parent is Note. Two levels is all the
-     scheme has, and a deeper Note branch would want a real ancestor walk. */
-  const noteBranch = new Set<string>([noteId])
-  for (const c of all) if (c.parent === noteId && c._id) noteBranch.add(c._id)
-
-  if (branch === 'note') return noteBranch
-
-  const wanted = branch === 'presentation' ? presentationId : documentId
-  const ids = new Set<string>()
-  for (const c of all) {
-    if (!c._id || c.parent !== wanted) continue
-    /* An article's pool is the Document branch MINUS the Note subtree. Clipping and Book
-       Note are excluded by their parent already; Note itself has to be named. */
-    if (branch === 'document' && noteBranch.has(c._id)) continue
-    ids.add(c._id)
-  }
-  return ids
-}
 
 /**
  * The three ratios rank; `sharedCount` is the raw number behind `shared`, for the crossing rule.
@@ -257,50 +185,16 @@ function scoreCandidates<T extends RelatedCandidate>(
   return scored.sort(byTiers)
 }
 
-export type RankedRelated<T> = {
-  /** Up to `limit` items. Empty only when nothing in the pool scored at all. */
-  items: T[]
-  /** True when nothing scored, so the band shows recent content under a changed heading. */
-  isFallback: boolean
-}
-
-/**
- * Rank a pool against one document.
- *
- * The pool arrives newest-first from GROQ, and every sort below is stable, so publication
- * date is the tie-break at every level without being compared explicitly.
- */
-export function rankRelated<T extends RelatedCandidate>(
-  current: {_id: string; topics?: (RelatedTopic | null)[] | null},
-  pool: T[],
-  eligibleGenres: Set<string>,
-  limit = 3,
-): RankedRelated<T> {
-  const mine = ((current.topics ?? []).filter(Boolean) as RelatedTopic[]).filter((t) => t._id)
-
-  /* Self is never its own related content, and a document whose genre sits outside the
-     branch is not eligible — including one with no genre at all. */
-  const candidates = pool.filter(
-    (c) => c._id !== current._id && c.genreId && eligibleGenres.has(c.genreId),
-  )
-
-  const scored = scoreCandidates(mine, candidates)
-
-  if (scored.length) return {items: scored.slice(0, limit).map((s) => s.item), isFallback: false}
-
-  /* Nothing matched on any tier. Measured on the current corpus this never happens — the
-     thinnest document, `who-kap`, has no shared tags and five sibling matches — so this is
-     a guard for a newly published document with an unusual tag rather than a live path. */
-  return {items: candidates.slice(0, limit), isFallback: true}
-}
-
 /*
  * ══ CROSS-CATEGORY RANKING (2026-10-27) ═════════════════════════════════════
  *
- * The replacement for the branch rule above. It was built beside that rule so the pages kept
- * building while the research ran, and both detail pages have used it since 2026-11-23; the
- * branch rule stays only until its removal. Specified in docs/recommendations-research/plan.md
+ * Both detail pages' rule since 2026-11-23. Specified in docs/recommendations-research/plan.md
  * → Cross-category ranking; decided by Andy on 2026-10-22.
+ *
+ * It replaced the BRANCH RULE, which kept an article's list to articles, a note's to notes and
+ * a presentation's to presentations, by three genre branches resolved from three labels. The
+ * two were built side by side while the research ran, so the pages kept building; the branch
+ * rule was removed once they moved over, and is in git history, last at `b4e85bd`.
  *
  * ── TWO CATEGORIES, AND THEY ARE THE GENRE SCHEME'S TWO TOP CONCEPTS ─────────
  *
@@ -343,9 +237,16 @@ export function categoryForType(type: string): Category {
 /**
  * The genre ids in each category.
  *
- * The two top concepts are found by `prefLabel`, for the reason `genresForBranch` gives: the
- * rule is stated in terms of those named concepts. A rename would silently empty a category,
- * so it THROWS instead.
+ * ── THE ONE PLACE A LABEL IS LOAD-BEARING ────────────────────────────────────
+ *
+ * "Document" and "Presentation" are matched by `prefLabel`, because the rule itself is stated
+ * in terms of those named concepts and the tree offers nothing else to key on: they are the
+ * Genre scheme's two top concepts, and nothing marks which is which.
+ *
+ * So renaming one in the Studio would silently empty a category, and every page in it would
+ * fall back to "Recent" while looking entirely plausible. It THROWS instead: a build that
+ * cannot resolve the vocabulary should fail, not quietly degrade. The branch rule this
+ * replaced matched a third label, "Note", which the two-category rule no longer needs.
  */
 export function genresByCategory(
   tops: (GenreTops | null)[] | null | undefined,
@@ -439,12 +340,22 @@ export type RankRule = CrossRule & {tieBreak?: 'genre-strength'}
  */
 export const RANK_RULE: RankRule = {...CROSS_RULE, tieBreak: 'genre-strength'}
 
-export type RankedAcross<T> = RankedRelated<T> & {
+export type RankedAcross<T> = {
+  /** Up to `limit` items. Empty only when the page's category holds no other document. */
+  items: T[]
+  /** True when nothing related, so the band shows the newest from home under "Recent". */
+  isFallback: boolean
   /** How many of `items` came from the other category. 0 on a fallback. */
   crossed: number
 }
 
-/** Rank a pool against one document: its own category first, the other on a strong match. */
+/**
+ * Rank a pool against one document: its own category first, the other on a strong match.
+ *
+ * The pool arrives newest-first from GROQ, and every sort below is stable, so publication date
+ * is the last tie-break at every level without being compared explicitly. That is the
+ * ranker's only notion of date: it never reads `pubDate`.
+ */
 export function rankAcross<T extends RelatedCandidate>(
   current: {
     _id: string

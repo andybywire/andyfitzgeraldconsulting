@@ -1,7 +1,8 @@
 # Related resources: where the algorithm landed
 
-*2026-11-12. The configuration the research settled on: v5's tags under v4's ranking rule. The
-live site still runs the older branch rule until promotion (plan.md → Phase 6).*
+*2026-11-12. The configuration the research settled on: v5's tags under v4's ranking rule.
+Stream 2 wired the site to it on branch `related-ranker` (2026-11-23), without tag scores until
+stream 3; until that branch merges, the live site runs the older branch rule.*
 
 It runs in two stages. **Tagging** happens once per document, and it is the only place a
 semantic search runs. **Ranking** happens for every page at build, from the stored tags alone.
@@ -68,5 +69,5 @@ flowchart TB
 |---|---|
 | Tagging | `studio/tagger/`: `score.ts` (queries), `tagger.ts` (selection), `propose.ts` (author tags and exclusions) |
 | Stored tags | `topic` and `topicScores` on articles, case studies, notes and presentations |
-| Relatedness and policy | `web/src/lib/related.ts` → `rankAcross`, under `CROSS_RULE` and `tieBreak: 'genre-strength'` |
+| Relatedness and policy | `web/src/lib/related.ts` → `rankAcross`, under `RANK_RULE`: `CROSS_RULE` and `tieBreak: 'genre-strength'` |
 | Categories | `web/src/lib/genres.ts` → `subtree`, from the Genre scheme's two top concepts |

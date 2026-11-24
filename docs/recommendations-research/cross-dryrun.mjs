@@ -1,3 +1,17 @@
+// ── STOPPED RUNNING ON 2026-11-23, WITH THE SITE'S OLD BRANCH RULE ───────────────────────────
+//
+// This script imports `rankRelated`, `branchForType` and `genresForBranch` beside `rankAcross` from
+// web/src/lib/related.ts. That was the site's branch rule, and stream 2 removed it once both detail
+// pages moved to `rankAcross` (stream-2-ranker.md → Decided at the start, 3). Andy chose a recorded
+// commit over a frozen copy of the rule. The script last runs at `b4e85bd`, on branch
+// `related-ranker`, and on branch `recommendations-research`, where the research ran:
+//
+//   git worktree add ../afc-old-rule b4e85bd
+//
+// It compared the category change against the branch rule, which is the half that needs the old
+// code. Its other questions, the categories and crossing counts by threshold, can be asked of
+// `rankAcross` alone if they come up again.
+//
 // Dry run of the cross-category ranker (web/src/lib/related.ts → rankAcross) over corpus.json.
 //
 //   node docs/recommendations-research/fetch-corpus.mjs && node docs/recommendations-research/cross-dryrun.mjs

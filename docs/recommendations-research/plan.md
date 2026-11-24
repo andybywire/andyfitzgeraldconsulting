@@ -15,14 +15,14 @@ Manager starter prompt come at the end.
 | [value-add.md](value-add.md) | The "why": what a taxonomy adds over embeddings, and where it doesn't |
 | [how.md](how.md) | The "how": the steps a reader should take, as we discover them, including what failed |
 | `report-m1-m2.md`, `report-m3.md` | Measurements from 2026-10-21, before any taxonomy work |
-| `fetch-corpus.mjs`, `measure.mjs`, `m3.mjs` | Measurement scripts, read-only. Run `fetch-corpus.mjs` first; it writes `corpus.json` beside itself |
+| `fetch-corpus.mjs`, `measure.mjs`, `m3.mjs` | Measurement scripts, read-only. Run `fetch-corpus.mjs` first; it writes `corpus.json` beside itself. **`measure.mjs` and `m3.mjs` stopped running on 2026-11-23**, when stream 2 removed the old rule they import: check out `b4e85bd` to run them |
 | `lab-api.mjs` | The authenticated client the writing scripts share: token from `sanity exec`, and writes to `production-26` refused |
 | `tags-backup.mjs`, `tags-restore.mjs` | Snapshot every document's tag fields, and put them back exactly. Restore is a dry run unless given `--write` |
 | `backups/` | Committed tag snapshots: the revert points |
 | `score-spike.mjs`, `spike-report.mjs`, `scores/` | The score matrix for every document and concept, for one query recipe: `definition`, `example` or `combined` (spends quota; with `--base`, only on new or changed concepts), and its analysis (spends none) |
 | `report-spike.md` | How the scores behave, which normalization to use, and threshold tables |
 | `baseline.mjs`, `baseline-columns.mjs` | The embeddings-only baseline: raw rankings per page (spends quota), and the two M3 columns derived from them (spends none) |
-| `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none) |
+| `cross-dryrun.mjs` | The cross-category ranker run over `corpus.json`, on the hand tags or a tag set: categories, the effect of the category change, crossing counts by threshold, and the cross cards a rule produces (spends none). **Stopped running on 2026-11-23** with the old rule: check out `b4e85bd` |
 | `tagger.mjs`, `tagset.mjs` | The tagger, a pure function from a score matrix to tags (one query per concept, or two combined by mean or max), and its runner, which writes one simulated tag set per version, including the v2 candidates (spends none, writes no dataset). Since 2026-11-06 `tagger.mjs` re-exports `studio/tagger/tagger.ts`, the tagger the Studio runs |
 | `tagsets/` | Committed tag sets, one file per version: `v0.json` and on |
 | `taxonomy-columns.mjs` | The taxonomy columns of M3.n, the counterpart of `baseline-columns.mjs`: tag sets loaded, topics rebuilt in the query's shape and proved against the hand tags, and the ranker run under a crossing rule, `TAXONOMY_CROSS` unless a version records its own (spends none) |
@@ -1175,7 +1175,9 @@ touches `production-26` or the site's pages.
         the rule the committed M1, M2 and first M3 reports measured. The proposal is a frozen copy
         in this folder: the old rule is `rankAcross` with the eligible genres as the home set
         and crossing off, so the copy reuses the real scorer and the reports stay reproducible.
-        Andy's call.
+        Andy's call. **Decided otherwise (Andy, 2026-11-21):** no frozen copy. The scripts stop
+        running, and each one's header names `b4e85bd`, the last commit with the old rule
+        (stream-2-ranker.md → Decided at the start, 3).
 - [ ] **Merge to `main`**, which deploys. Andy's call, as always.
 
 ### The tagger: built 2026-11-12, lab only

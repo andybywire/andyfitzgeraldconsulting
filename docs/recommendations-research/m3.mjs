@@ -1,3 +1,16 @@
+// ── STOPPED RUNNING ON 2026-11-23, WITH THE SITE'S OLD BRANCH RULE ───────────────────────────
+//
+// This script imports `rankRelated`, `branchForType` and `genresForBranch` from
+// web/src/lib/related.ts. That was the site's branch rule, and stream 2 removed it once both detail
+// pages moved to `rankAcross` (stream-2-ranker.md → Decided at the start, 3). Andy chose a recorded
+// commit over a frozen copy of the rule. The script last runs at `b4e85bd`, on branch
+// `related-ranker`, and on branch `recommendations-research`, where the research ran:
+//
+//   git worktree add ../afc-old-rule b4e85bd
+//
+// Even there it scores against the lab's embeddings live, so it never reproduced report-m3.md
+// from the repository alone.
+//
 // M3: where Sanity dataset embeddings diverge from the intended set (the site's own ranker).
 // Run fetch-corpus.mjs first, so both sides read the same corpus.
 //

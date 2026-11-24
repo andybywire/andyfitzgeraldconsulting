@@ -1,3 +1,17 @@
+// ── STOPPED RUNNING ON 2026-11-23, WITH THE SITE'S OLD BRANCH RULE ───────────────────────────
+//
+// This script imports `rankRelated`, `branchForType` and `genresForBranch` from
+// web/src/lib/related.ts. That was the site's branch rule, and stream 2 removed it once both detail
+// pages moved to `rankAcross` (stream-2-ranker.md → Decided at the start, 3). Andy chose a recorded
+// commit over a frozen copy of the rule. The script last runs at `b4e85bd`, on branch
+// `related-ranker`, and on branch `recommendations-research`, where the research ran:
+//
+//   git worktree add ../afc-old-rule b4e85bd
+//
+// Even there it cannot regenerate report-m1-m2.md: that report was made from production-26 on
+// 2026-10-21, and the committed corpus.json is the lab's, fetched 2026-11-06. Run today, it
+// writes report-m1-m2.recommendations-lab.md beside it.
+//
 // M1 (tier contribution vs flat shared tags) and M2 (Dice vs Jaccard ordering) over corpus.json.
 // The intended set comes from the site's own ranker; `compare` below is a copy of the private
 // function in web/src/lib/related.ts, checked against rankRelated before anything is reported.

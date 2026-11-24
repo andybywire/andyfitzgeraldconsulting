@@ -194,6 +194,19 @@ expect a conflict.
    the first push and the preview rehearsal wait for Andy's go-ahead (decision 5).
 5. **Remove the old rule:** `rankRelated`, `branchForType`, `genresForBranch` and the `parent`
    projection the branch rule used, with the scripts handled as decided above.
+
+   **DONE 2026-11-23.** Gone from `related.ts`: the three functions, the `Branch` type, and
+   `RankedRelated`, folded into `RankedAcross` as its only user. Gone from the query and
+   `GenreConcept`: the genre concepts' first `parent`. The topics' `parent` stays, since the
+   tiers relate through it; the query's comment now says why the two differ. The one argument
+   `genresByCategory` had borrowed from `genresForBranch`, why a top concept's label is
+   load-bearing, moved into its own comment.
+   - **Nothing a visitor sees changed:** a lab build after the removal is byte-identical to
+     piece 4's, all 89 pages and every asset, and the band check still matches on all 76.
+   - **The scripts (decision 3):** `measure.mjs`, `m3.mjs` and `cross-dryrun.mjs` each open
+     with a header naming `b4e85bd`, the last commit with the old rule, and fail as it says, on
+     the missing `branchForType` export. plan.md's script table says the same, as does the
+     Phase 6 note that proposed a frozen copy.
 6. ~~**The Studio tool, if it's in this stream**~~ **A stream of its own** (decision 4): a pane
    listing every tagged piece, with how many other pieces' lists it appears in, and which. It
    runs the shared module over one GROQ pool query in the Studio. This is where the module moves
