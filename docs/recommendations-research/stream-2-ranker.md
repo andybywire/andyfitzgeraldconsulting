@@ -214,6 +214,37 @@ expect a conflict.
 7. **Merge.** Stream 1's swap is done (2026-11-21), so nothing waits on it. Verify, then hand
    Andy the eyeball steps.
 
+   **Built against `production-26` on 2026-11-23** (Andy's go-ahead; a read, writing nothing),
+   at `bee339f`:
+   - **The band check passes on all 76 pages,** with the lab's counts: 18 insight pages and 17
+     presentation pages show a cross card, and only *The Calm Before the Storm* falls back.
+   - **Every related band is identical to the lab build's.** The two builds otherwise differ
+     only by the dataset's name in image URLs, the `_updatedAt` stamps stream 1's import
+     reset, and one paragraph edited in production since the switch, on
+     `stats-view-for-taxonomy-manager-concept-scheme`. That edit reaches the feeds and the
+     search index but not the tags, so no list moved.
+   - **The site gates pass on it:** links, HTML validation, budgets and accessibility.
+
+   **Pushed and rehearsed on 2026-11-23** (Andy's go-ahead), at `bee339f`:
+   - **`checks.yml` passed both jobs** on the runner, the 41 tests among them.
+   - **The preview deploy passed** (`workflow_dispatch` on `related-ranker`): built, shipped and
+     health-checked. The preview host now runs this branch until the next push to `main`.
+   - **Its bands match the production build's on 64 of 76 pages.** The other 12 differ only by
+     three drafts the preview renders and a production build never sees: `cs-meetup`,
+     `galls-law-when-complexity-comes-cheap` and `content-operations-strategy-design`.
+   - **Found on the way, and settled by Andy (2026-11-24): not a problem.** The redirect is
+     working as intended, and the draft will be deleted, so it never publishes. Kept as a
+     record of what the preview showed. The draft insight `cs-meetup` sits at a URL
+     that `nginx/redirects.conf:138` already sends to the presentation *Conversations with
+     Robots: Voice, AI & Structured Content*. On the preview, the draft is a cross card on 10
+     presentation pages, and every one of those cards redirects to that presentation, including
+     the card on that presentation's own page. If published as it stands, its page would build
+     and never be reachable. Not the ranker's doing: the ranker only made the clash visible.
+
+   Still to do: the merge, which is Andy's. `related-ranker` carries `lab-to-production`'s
+   commits, so it brings them to `main` unless that branch merges first. A merge touching
+   `web/**` deploys production and the preview.
+
 ## Verification
 
 - `pnpm test`, `astro check`, the Studio typecheck and Prettier, as code gates.
