@@ -1415,10 +1415,10 @@ export type CASE_STUDY_BAND_QUERY_RESULT = {
 export type FEED_ARTICLES_QUERY_RESULT = Array<{
   _id: string
   _type: 'article'
-  slug: string | null
+  slug: string
   genre: string | null
   topics: Array<string | null> | null
-  pubDate: string | null
+  pubDate: string
   title: string | null
   shortDescription: string | null
   heroImage: {
@@ -1483,10 +1483,10 @@ export type FEED_ARTICLES_QUERY_RESULT = Array<{
 export type FEED_NOTES_QUERY_RESULT = Array<{
   _id: string
   _type: 'note'
-  slug: string | null
+  slug: string
   genre: string | null
   topics: Array<string | null> | null
-  pubDate: string | null
+  pubDate: string
   title: string | null
   shortDescription: string | null
   bodyText: Array<
@@ -1545,10 +1545,10 @@ export type FEED_NOTES_QUERY_RESULT = Array<{
 export type FEED_PRESENTATIONS_QUERY_RESULT = Array<{
   _id: string
   _type: 'presentation'
-  slug: string | null
+  slug: string
   genre: string | null
   topics: Array<string | null> | null
-  pubDate: string | null
+  pubDate: string
   title: string | null
   description: string | null
   poster: {
@@ -1626,44 +1626,44 @@ export type GENRE_NAV_QUERY_RESULT = {
   older:
     | {
         _type: 'article'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | {
         _type: 'caseStudy'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | {
         _type: 'note'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | {
         _type: 'presentation'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | null
   newer:
     | {
         _type: 'article'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | {
         _type: 'caseStudy'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | {
         _type: 'note'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | {
         _type: 'presentation'
-        slug: string | null
+        slug: string
         title: string | null
       }
     | null
@@ -1719,7 +1719,7 @@ export type HOME_INSIGHTS_QUERY_RESULT = {
     | {
         _id: string
         _type: 'article'
-        slug: string | null
+        slug: string
         pubDate: string | null
         _updatedAt: string
         genre: string | null
@@ -1737,7 +1737,7 @@ export type HOME_INSIGHTS_QUERY_RESULT = {
     | {
         _id: string
         _type: 'caseStudy'
-        slug: string | null
+        slug: string
         pubDate: string | null
         _updatedAt: string
         genre: string | null
@@ -1755,7 +1755,7 @@ export type HOME_INSIGHTS_QUERY_RESULT = {
     | {
         _id: string
         _type: 'note'
-        slug: string | null
+        slug: string
         pubDate: string | null
         _updatedAt: string
         genre: string | null
@@ -1769,7 +1769,7 @@ export type HOME_INSIGHTS_QUERY_RESULT = {
     | {
         _id: string
         _type: 'article'
-        slug: string | null
+        slug: string
         pubDate: string | null
         _updatedAt: string
         genre: string | null
@@ -1781,7 +1781,7 @@ export type HOME_INSIGHTS_QUERY_RESULT = {
     | {
         _id: string
         _type: 'caseStudy'
-        slug: string | null
+        slug: string
         pubDate: string | null
         _updatedAt: string
         genre: string | null
@@ -1793,7 +1793,7 @@ export type HOME_INSIGHTS_QUERY_RESULT = {
     | {
         _id: string
         _type: 'note'
-        slug: string | null
+        slug: string
         pubDate: string | null
         _updatedAt: string
         genre: string | null
@@ -1814,7 +1814,7 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
   | {
       _id: string
       _type: 'article'
-      slug: string | null
+      slug: string
       pubDate: string | null
       _updatedAt: string
       genre: string | null
@@ -1833,7 +1833,7 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
   | {
       _id: string
       _type: 'caseStudy'
-      slug: string | null
+      slug: string
       pubDate: string | null
       _updatedAt: string
       genre: string | null
@@ -1852,7 +1852,7 @@ export type INSIGHTS_INDEX_QUERY_RESULT = Array<
   | {
       _id: string
       _type: 'note'
-      slug: string | null
+      slug: string
       pubDate: string | null
       _updatedAt: string
       genre: string | null
@@ -2062,7 +2062,7 @@ export type INSIGHT_RSS_BAND_QUERY_RESULT = {
 export type INSIGHTS_REVIEW_QUERY_RESULT = Array<
   | {
       _type: 'article'
-      slug: string | null
+      slug: string
       title: string | null
       pubDate: string | null
       genre: string | null
@@ -2076,7 +2076,7 @@ export type INSIGHTS_REVIEW_QUERY_RESULT = Array<
     }
   | {
       _type: 'caseStudy'
-      slug: string | null
+      slug: string
       title: string | null
       pubDate: string | null
       genre: string | null
@@ -2095,7 +2095,7 @@ export type INSIGHTS_REVIEW_QUERY_RESULT = Array<
 // Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {		"params": {"slug": slug.current}	}
 export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
   params: {
-    slug: string | null
+    slug: string
   }
 }>
 
@@ -2104,7 +2104,7 @@ export type INSIGHT_SLUGS_QUERY_RESULT = Array<{
 // Query: *[_type == "page" && defined(slug.current)] {		"params": {"slug": slug.current}	}
 export type PAGE_SLUGS_QUERY_RESULT = Array<{
   params: {
-    slug: string | null
+    slug: string
   }
 }>
 
@@ -2266,7 +2266,7 @@ export type PAGE_WORK_WITH_ME_BAND_QUERY_RESULT = {
 export type PRESENTATIONS_INDEX_QUERY_RESULT = Array<{
   _id: string
   _type: 'presentation'
-  slug: string | null
+  slug: string
   pubDate: string | null
   _updatedAt: string
   genre: string | null
@@ -2306,7 +2306,7 @@ export type PRESENTATIONS_INDEX_QUERY_RESULT = Array<{
 // Query: *[_type == "presentation" && defined(slug.current)] {		"params": {"slug": slug.current}	}
 export type PRESENTATION_SLUGS_QUERY_RESULT = Array<{
   params: {
-    slug: string | null
+    slug: string
   }
 }>
 
@@ -2490,11 +2490,11 @@ export type PRESENTATION_RSS_BAND_QUERY_RESULT = {
 // Query: *[_type == "presentation" && slug.current == $slug][0] {		"older": *[			_type == "presentation"			&& defined(slug.current)			&& (pubDate < ^.pubDate || (pubDate == ^.pubDate && _id < ^._id))		] | order(pubDate desc, _id desc)[0] {			"slug": slug.current,			title		},		"newer": *[			_type == "presentation"			&& defined(slug.current)			&& (pubDate > ^.pubDate || (pubDate == ^.pubDate && _id > ^._id))		] | order(pubDate asc, _id asc)[0] {			"slug": slug.current,			title		}	}
 export type PRESENTATION_NAV_QUERY_RESULT = {
   older: {
-    slug: string | null
+    slug: string
     title: string | null
   } | null
   newer: {
-    slug: string | null
+    slug: string
     title: string | null
   } | null
 } | null
@@ -2518,8 +2518,8 @@ export type RELATED_POOL_QUERY_RESULT = {
     | {
         _id: string
         _type: 'article'
-        slug: string | null
-        pubDate: string | null
+        slug: string
+        pubDate: string
         _updatedAt: string
         title: string | null
         shortDescription: string | null
@@ -2548,8 +2548,8 @@ export type RELATED_POOL_QUERY_RESULT = {
     | {
         _id: string
         _type: 'caseStudy'
-        slug: string | null
-        pubDate: string | null
+        slug: string
+        pubDate: string
         _updatedAt: string
         title: string | null
         shortDescription: string | null
@@ -2578,8 +2578,8 @@ export type RELATED_POOL_QUERY_RESULT = {
     | {
         _id: string
         _type: 'note'
-        slug: string | null
-        pubDate: string | null
+        slug: string
+        pubDate: string
         _updatedAt: string
         title: string | null
         shortDescription: string | null
@@ -2602,8 +2602,8 @@ export type RELATED_POOL_QUERY_RESULT = {
     | {
         _id: string
         _type: 'presentation'
-        slug: string | null
-        pubDate: string | null
+        slug: string
+        pubDate: string
         _updatedAt: string
         title: string | null
         shortDescription: null
@@ -2699,7 +2699,7 @@ export type SEARCH_INSIGHTS_QUERY_RESULT = Array<
   | {
       _id: string
       _type: 'article'
-      slug: string | null
+      slug: string
       pubDate: string | null
       title: string | null
       shortDescription: string | null
@@ -2713,7 +2713,7 @@ export type SEARCH_INSIGHTS_QUERY_RESULT = Array<
   | {
       _id: string
       _type: 'caseStudy'
-      slug: string | null
+      slug: string
       pubDate: string | null
       title: string | null
       shortDescription: string | null
@@ -2727,7 +2727,7 @@ export type SEARCH_INSIGHTS_QUERY_RESULT = Array<
   | {
       _id: string
       _type: 'note'
-      slug: string | null
+      slug: string
       pubDate: string | null
       title: string | null
       shortDescription: string | null
@@ -2746,7 +2746,7 @@ export type SEARCH_INSIGHTS_QUERY_RESULT = Array<
 export type SEARCH_PRESENTATIONS_QUERY_RESULT = Array<{
   _id: string
   _type: 'presentation'
-  slug: string | null
+  slug: string
   pubDate: string | null
   title: string | null
   description: string | null
@@ -2763,7 +2763,7 @@ export type SEARCH_PRESENTATIONS_QUERY_RESULT = Array<{
 export type SEARCH_PAGES_QUERY_RESULT = Array<{
   _id: string
   _type: 'page'
-  slug: string | null
+  slug: string
   _updatedAt: string
   title: string | null
   description: string
@@ -2775,7 +2775,7 @@ export type SEARCH_PAGES_QUERY_RESULT = Array<{
 export type SEARCH_REVIEWS_QUERY_RESULT = Array<{
   _id: string
   _type: 'review'
-  slug: string | null
+  slug: string
   author: string | null
   excerpt: string | null
   employer: string | null
@@ -2984,7 +2984,7 @@ export type SINGLETON_RSS_TOUCH_QUERY_RESULT = {
 // Variable: SITEMAP_INSIGHTS_QUERY
 // Query: *[_type in ["article", "caseStudy", "note"] && defined(slug.current)] {		"slug": slug.current,		_updatedAt	}
 export type SITEMAP_INSIGHTS_QUERY_RESULT = Array<{
-  slug: string | null
+  slug: string
   _updatedAt: string
 }>
 
@@ -2992,7 +2992,7 @@ export type SITEMAP_INSIGHTS_QUERY_RESULT = Array<{
 // Variable: SITEMAP_PRESENTATIONS_QUERY
 // Query: *[_type == "presentation" && defined(slug.current)] {		"slug": slug.current,		_updatedAt	}
 export type SITEMAP_PRESENTATIONS_QUERY_RESULT = Array<{
-  slug: string | null
+  slug: string
   _updatedAt: string
 }>
 
@@ -3000,7 +3000,7 @@ export type SITEMAP_PRESENTATIONS_QUERY_RESULT = Array<{
 // Variable: SITEMAP_PAGES_QUERY
 // Query: *[_type == "page" && defined(slug.current)] {		"slug": slug.current,		_updatedAt	}
 export type SITEMAP_PAGES_QUERY_RESULT = Array<{
-  slug: string | null
+  slug: string
   _updatedAt: string
 }>
 
