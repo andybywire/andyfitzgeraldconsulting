@@ -12,6 +12,7 @@
     "dev": "pnpm -r --parallel dev",
     "typegen": "pnpm --filter studio typegen",
     "test": "pnpm -r --if-present test",
+    "checks": "node scripts/checks.mjs",
     "parity": "pnpm --filter web parity",
     "links": "pnpm --filter web links",
     "validate": "pnpm --filter web validate",
