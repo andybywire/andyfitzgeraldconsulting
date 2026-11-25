@@ -149,6 +149,36 @@ jobs:
       # succeeded, and a run lists every failure at once. Gating on the install's
       # outcome rather than on `always()` is what stops a failed install from
       # producing five misleading failures of its own.
+      #
+      # ── EACH CHECK SAYS WHAT FAILED ───────────────────────────────────────
+      #
+      # Added 2026-11-25. Until then the run summary's only annotation was
+      # "Process completed with exit code 1", under the JOB's name — so a red run
+      # did not say which of the five checks had failed. Three Studio upgrades
+      # went red that way, each on a DIFFERENT check (Studio type-check on
+      # 2026-10-23, Prettier on 2026-11-13, TypeGen drift on 2026-11-25), and each
+      # read from the summary as "a type error".
+      #
+      # So each check ends `|| { echo "::error title=…::…"; exit 1; }`. The
+      # `::error::` line is a GitHub workflow command: it puts an annotation on the
+      # run summary, titled with the check's name and saying how to reproduce and
+      # fix it. `exit 1` keeps the step failing, which `echo` alone would not.
+      # The step log still holds the detail — the diff, the file and line.
+      #
+      # Each message sits beside the check it explains, on purpose. Two other
+      # shapes were considered and rejected:
+      #
+      #   one "explain" step at the end, reading `steps.<id>.outcome`
+      #     Keeps the checks' commands untouched, but puts every message far from
+      #     its check, where a new check's author will not see the pattern.
+      #
+      #   CI calling `pnpm checks` as a single step
+      #     One list of checks instead of two, but the Actions UI would show one
+      #     step instead of five. Per-step results are what diagnosed the
+      #     2026-11-25 failure, and what the proof above is recorded against.
+      #
+      # So the list IS kept twice: here, and in scripts/checks.mjs, which runs the
+      # same five commands locally in the same order. Change one, change both.
 
       # ── TYPEGEN DRIFT: KEYED ON THE DIFF, NOT ON TYPEGEN ──────────────────
       #
@@ -162,11 +192,26 @@ jobs:
       #
       # It leaves the REGENERATED file in the working tree, which the next step
       # relies on.
+      #
+      # TypeGen ships inside the Studio's `sanity` package, so a Studio upgrade
+      # upgrades the generator too — and a newer generator can write different
+      # types from unchanged queries. On 2026-11-25, @sanity/codegen 8.3.0 → 8.3.4
+      # began typing a field filtered by `defined()` as non-null: 48 lines of
+      # drift, with no query touched. Regenerate in the upgrade's own commit.
+      #
+      # `pnpm typegen` gets a message of its own because a generator that crashes
+      # is a different problem from a file that has drifted.
       - name: TypeGen drift
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: |
-          pnpm typegen
-          git diff --exit-code web/sanity.types.ts
+          pnpm typegen || {
+            echo "::error title=TypeGen drift::TypeGen itself failed, before any comparison. The step log has its error; pnpm typegen reproduces it."
+            exit 1
+          }
+          git diff --exit-code web/sanity.types.ts || {
+            echo "::error title=TypeGen drift::web/sanity.types.ts is not what TypeGen generates from this commit; the step log shows the diff. Run pnpm typegen and commit the file. After a Studio upgrade, suspect the generator before any query: it ships in the sanity package."
+            exit 1
+          }
 
       # Runs after the drift step, so it checks the code against types regenerated
       # from the queries as they are now, not against whatever was committed. That
@@ -176,14 +221,27 @@ jobs:
       # stale file and this one reports what it was hiding.
       - name: astro check
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm --filter web check
+        run: |
+          pnpm --filter web check || {
+            echo "::error title=astro check::The site has a type or template error; the step log names the file and line. pnpm --filter web check reproduces it."
+            exit 1
+          }
 
       # The Studio had no type check anywhere until this step. It covers 24 files,
       # every schema among them, in about a second — cold as well as warm, measured
       # 2026-10-08 with `--incremental false` — so it costs nothing to run here.
+      #
+      # The message's upgrade hint is from 2026-10-23: sanity 6.20.0 left two
+      # copies of @sanity/client in the Studio's tree, and the taxonomy plugin's
+      # filters stopped type-checking (fixed in e04044e). One case, so it is
+      # offered as a thing to check, not as the usual cause.
       - name: Studio type-check
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm --filter studio typecheck
+        run: |
+          pnpm --filter studio typecheck || {
+            echo "::error title=Studio type-check::The Studio has a type error; the step log names the file and line. pnpm --filter studio typecheck reproduces it. After an upgrade, check for two copies of one package (pnpm why), as with @sanity/client in e04044e."
+            exit 1
+          }
 
       # ── UNIT TESTS: node:test, EVERY PACKAGE THAT HAS A `test` SCRIPT ──────
       #
@@ -207,17 +265,32 @@ jobs:
       #
       # A `.test.ts` file must never sit under web/src/pages, where Astro would
       # route it as an endpoint. The glob would still run it.
+      #
+      # A timeout kills the step before the message can print; GitHub annotates
+      # that case itself, as "exceeded the maximum execution time".
       - name: Unit tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         timeout-minutes: 2
-        run: pnpm test
+        run: |
+          pnpm test || {
+            echo "::error title=Unit tests::A unit test failed, or no test ran; the step log names which. pnpm test reproduces it."
+            exit 1
+          }
 
       # The whole repo, minus .prettierignore. One style repo-wide has been a
       # CLAUDE.md rule since phase 0; this is the first thing that enforces it. A
       # failure lists the files, and `pnpm format` rewrites them.
+      #
+      # The message names .prettierignore because the 2026-11-13 failure was a
+      # generated corpus.json committed beside a Studio upgrade: a file to ignore,
+      # not to reformat.
       - name: Prettier
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: pnpm exec prettier --check .
+        run: |
+          pnpm exec prettier --check . || {
+            echo "::error title=Prettier::Some files are not formatted; the step log lists them. pnpm format rewrites them. A generated file belongs in .prettierignore instead."
+            exit 1
+          }
 
   # ── THE SITE GATES, ON BRANCHES ONLY ──────────────────────────────────────
   #
